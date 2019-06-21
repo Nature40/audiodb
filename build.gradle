@@ -1,0 +1,102 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+compileJava.options.encoding = 'UTF-8'
+
+repositories {
+    jcenter()
+    
+    maven { // needed for compile group: 'com.github.aelstad', name: 'keccakj', version: '1.1.0'
+      url 'https://repository.mulesoft.org/nexus/content/repositories/public'
+    }
+}
+
+dependencies {
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.2'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.2'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.11.2'
+  	compile group: 'com.lmax', name: 'disruptor', version: '3.4.2'
+  	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.2'  	
+  	
+	compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.15.v20190215'
+	compile group: 'org.eclipse.jetty', name: 'jetty-security', version: '9.4.15.v20190215'
+	
+	compile group: 'org.json', name: 'json', version: '20180813'
+	compile group: 'org.yaml', name: 'snakeyaml', version: '1.24'
+	
+	compile group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
+	
+	compile group: 'com.samskivert', name: 'jmustache', version: '1.14'
+
+	compile group: 'com.github.aelstad', name: 'keccakj', version: '1.1.0'		
+	
+	compile group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.10.6'
+	runtime group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.10.6'
+	runtime group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.10.6'
+}
+
+sourceSets.main.java.srcDir 'src'
+
+
+jar {
+	from file('src/log4j2.xml')
+	destinationDir file('package')
+	
+	manifest {
+		String classPathFiles = "";
+		for(java.io.File file : files(configurations.runtime)) {
+			classPathFiles += "lib/"+file.getName()+" "; 
+		}
+		println("the class path: "+classPathFiles);	
+	
+        attributes 	'Built-Date': new Date(),
+					'Built-JDK': System.getProperty('java.version'),
+					'Main-Class': 'audio.Terminal',
+					'Class-Path': classPathFiles
+    }
+}
+
+compileJava   {
+  sourceCompatibility = "1.8"
+  targetCompatibility = "1.8"
+}
+
+tasks.withType(JavaCompile){
+    //options.deprecation = true
+	//options.listFiles = true
+	//options.verbose = true
+}
+
+task clean_package(type: Delete) {
+  delete 'package'
+}
+
+task copy_lib(type: Copy) {
+	from files(configurations.runtime)
+    into 'package/lib'
+}
+
+task copy_add(type: Copy) {
+	from fileTree('add')
+	into 'package'
+}
+
+task copy_webcontent(type: Copy) {
+	from fileTree('webcontent')
+	into 'package/webcontent'
+}
+
+task copy_mustache(type: Copy) {
+	from fileTree('mustache')
+	into 'package/mustache'
+}
+
+task copy_build(type: Copy, dependsOn: [jar]) {
+	from fileTree('build/libs')
+	into 'package'
+}
+
+task _package(dependsOn:[ clean_package, copy_build, copy_lib, copy_webcontent, copy_mustache, copy_add ]) {
+	group = 'project' 
+}

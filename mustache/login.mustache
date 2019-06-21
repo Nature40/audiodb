@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="referrer" content="same-origin" />
+<script>
+{{>sha3.min.js}}
+function getNonce(len) {
+	var rnd = new Uint32Array(len);
+	window.crypto.getRandomValues(rnd);
+	var nonce = "";
+	var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	var charsLen = chars.length;
+	for(var i = 0; i < len; i++) {
+		nonce += chars[rnd[i] % charsLen];
+	}
+	return nonce;
+}
+var salt = '{{salt}}';
+var server_nonce = '{{server_nonce}}';
+var client_nonce = getNonce(8);
+function hash(user, password) {
+	var h = sha3_512(salt + user + salt + password + salt);
+	return sha3_512(server_nonce + client_nonce + h + client_nonce + server_nonce);
+}
+function login() {
+	var u = document.getElementById('user').value;
+	var p = document.getElementById('password').value;
+	var h = hash(u, p);
+	window.location.href = "/login?server_nonce=" + server_nonce + "&client_nonce=" + client_nonce +"&hash=" + h;
+}
+document.onkeydown = function (e) {
+	if(e.code === 'Enter') {
+		login();
+	}
+}
+</script>
+</head>
+
+<body>
+<hr>
+<h2>Local Login</h2>
+
+user name:<br>
+<input type="text" name="user name" value="" id="user">
+<br>
+password:<br>
+<input type="password" name="password" value="" id="password">
+<br><br>
+
+<button onclick="login()">login</button>
+<i>User name and password will not be send in plaintext.</i>
+<br>
+<br>
+<hr>
+<h2>Login by third party (Single sign-on)</h2>
+
+<table>
+{{#jws}}
+  <tr>
+    <td>
+	  <a href="{{{redirect_target}}}">{{{link_text}}}</a>
+    </td>
+	<td style="width: 20px;">
+    </td>
+    <td>
+	  {{{link_description}}}
+    </td>
+  </tr>
+{{/jws}}
+</table>
+
+<br>
+<br>
+<br>
+<hr>
+<i>By login action you agree to store identifiing cookies in your browser.</i>
+		
+</body>
+</html>
