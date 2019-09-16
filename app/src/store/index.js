@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import identity from './identity'
 import account from './account'
 import label_definitions from './label_definitions'
 
@@ -9,6 +10,7 @@ const isDev = process.env.NODE_ENV !== 'production'
 
 export default new Vuex.Store({
   modules: {
+    identity,
     account,
     label_definitions,
   },

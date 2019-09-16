@@ -8,10 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.yaml.snakeyaml.Yaml;
+
+import audio.LabelDefinition;
+import util.collections.vec.Vec;
 
 public class YamlUtil {
 	
@@ -34,6 +41,29 @@ public class YamlUtil {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static void writeSafe(Path path, Consumer<Map<String, Object>> writer) {
+		LinkedHashMap<String, Object> yamlMap = new LinkedHashMap<String, Object>();
+		writer.accept(yamlMap);
+		writeSafeYamlMap(path, yamlMap);
+	}
+	
+	public static void optPut(Map<String, Object> map, String name, String value) {
+		if(value != null && !value.isEmpty()) {
+			map.put(name, value);
+		}
+	}
+	
+	public static <T> void putArray(Map<String, Object> map, String name, Iterable<T> iterable, Function<T, Object> mapper) {
+		Vec<Object> vec = new Vec<Object>();
+		iterable.forEach(label -> vec.add(mapper.apply(label)));
+		map.put(name, vec);
+	}
+	
+	public static <T> Vec<T> getVec(YamlMap yamlMap, String name, Function<YamlMap, T> mapper) {
+		List<YamlMap> ldList = yamlMap.getList(name).asMaps();
+		return ldList.stream().map(mapper).collect(Vec.collector());
 	}
 
 }

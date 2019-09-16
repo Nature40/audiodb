@@ -5,8 +5,20 @@
       Audio
     </v-toolbar-title> 
     &nbsp;&nbsp;&nbsp;<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="name" style="max-width: 500px;" placeholder="select audio sample" :allowEmpty="false"/>    
-    <div style="position: absolute; right: 2px;">
-      <a :href="apiBase + 'logout'">logout</a>
+    <div style="position: absolute; right: 2px;" v-if="identity !== undefined">
+      <v-menu>
+        <template v-slot:activator="{on}">
+          <v-btn v-on="on" icon outline><v-icon>perm_identity</v-icon></v-btn>
+        </template>
+        <v-list>
+        <v-list-tile>
+          <v-list-tile-title>Signed in as <b>{{identity.user}}</b></v-list-tile-title>
+        </v-list-tile>
+        <v-list-tile>
+          <v-list-tile-title><a :href="apiBase + 'logout'"><v-icon>call_end</v-icon>Sign out</a></v-list-tile-title>
+        </v-list-tile>
+        </v-list>        
+      </v-menu>
     </div>
   </v-toolbar>
 
@@ -24,7 +36,7 @@
 <script>
 import player from './player'
 
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import axios from 'axios'
 
 export default {
@@ -41,7 +53,13 @@ data () {
 },
 computed: {
   ...mapState({
-    apiBase: 'apiBase',
+    apiBase: state => state.apiBase,
+    identity: state => state.identity.data,
+  }),
+},
+methods: {
+  ...mapActions({
+    identityInit: 'identity/init',
   }),
 },
 mounted() {
@@ -50,7 +68,8 @@ mounted() {
   .then(function(response) {
       self.samples = response.data.samples;
       self.samplesLoading = false;
-  })
+  });
+  this.identityInit();
 },
 }
 </script>

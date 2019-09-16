@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.stream.StreamSupport;
 
 import javax.servlet.ServletException;
@@ -29,14 +28,15 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.server.session.SessionHandler;
-import org.json.JSONWriter;
 
 import audio.Broker;
 import audio.server.api.AccountHandler;
 import audio.server.api.AccountsHandler;
+import audio.server.api.IdentityHandler;
 import audio.server.api.LabelDefinitionsHandler;
 import audio.server.api.LoginHandler;
 import audio.server.api.LogoutHandler;
+import audio.server.api.SamplesHandler;
 
 public class Webserver {
 	static final Logger log = LogManager.getLogger();
@@ -68,6 +68,7 @@ public class Webserver {
 		server.setConnectors(new Connector[] {httpServerConnector});
 
 		DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
+		sessionIdManager.setWorkerName(null);
 		SessionHandler sessionHandler = new SessionHandler();
 		sessionHandler.setSessionIdManager(sessionIdManager);
 		sessionHandler.setHttpOnly(true);
@@ -87,6 +88,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler()));
 		handlerList.addHandler(createContext("/account", true, new AccountHandler(broker)));
+		handlerList.addHandler(createContext("/identity", true, new IdentityHandler(broker)));
 		handlerList.addHandler(createContext("/accounts", true, new AccountsHandler(broker)));
 		handlerList.addHandler(createContext("/label_definitions", true, new LabelDefinitionsHandler(broker)));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
@@ -141,33 +143,6 @@ public class Webserver {
 				}
 			}
 		}
-	}
-
-	private static class SamplesHandler extends AbstractHandler {
-
-		@Override
-		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-			baseRequest.setHandled(true);
-			response.setContentType("application/json");
-			JSONWriter json = new JSONWriter(response.getWriter());
-
-			json.object();
-			json.key("samples");
-			json.array();
-			Path root = Paths.get("data");
-			for(Path path:getPaths(root)) {
-				if(path.toFile().isFile()) {
-					json.object();
-					json.key("name");
-					json.value(root.relativize(path).toString());
-					json.endObject();
-				}
-			}
-
-			json.endArray();
-			json.endObject();
-		}
-
 	}
 
 	private static class NoContentHandler extends AbstractHandler {

@@ -1,7 +1,15 @@
 <template>
 <v-container>
+  <div class="send-overlay" v-show="sendMessage !== undefined">
+    {{sendMessage}}
+  </div>
   <div style="position: absolute; right: 0px;">
-    <label-definitions @onDialog="labelDefinitionsDialogOpen = $event" />  
+    <label-definitions @onDialog="labelDefinitionsDialogOpen = $event" />
+    <div class="send-error" v-show="sendMessageError !== undefined">
+      <v-icon color="red">warning</v-icon>
+      {{sendMessageError}}
+      <br>{{sendMessageErrorReason}}
+    </div>  
   </div>
   <div v-show="!imageLoaded" style="position: absolute; background-color: lightgrey; padding: 100px; margin: 100px; margin-left: 400px;; border-style: solid;">
     <h1>loading ...</h1>
@@ -66,7 +74,7 @@
       </tr>
       <tbody>
       <tr v-for="(label, index) in labels" :key="index">
-        <td><v-btn icon title="remove label"><v-icon @click="labels.splice(index, 1)">delete_forever</v-icon></v-btn></td>
+        <td><v-btn icon title="remove label"><v-icon @click="onLabelRemove(index)">delete_forever</v-icon></v-btn></td>
         <td>{{label.start.toFixed(3)}}</td>
         <td>{{label.end.toFixed(3)}}</td>
         <td><span v-for="labelName in label.labels" :key="labelName" class="label-name">{{labelName}}</span></td>
@@ -80,11 +88,13 @@
       </table>
     </v-flex>
   </v-layout>
+   
 </v-container>
 </template>
 
 <script>
 
+import axios from 'axios'
 import { mapState, mapActions } from 'vuex'
 
 import labelDefinitions from './label-definitions'
@@ -114,6 +124,9 @@ data: () => ({
   labels: [],
   selectLabel: false,
   labelDefinitionsDialogOpen: false,
+  sendMessage: undefined,
+  sendMessageError: undefined,
+  sendMessageErrorReason: undefined,
 }),
 computed: {
   ...mapState({
@@ -159,15 +172,64 @@ methods: {
   onLabelSave() {
     var names = this.selectedLabelNames.map(l=>l.name);
     var label = {start: this.labelStartTime, end: this.labelEndTime, labels: names, comment: this.labelComment};
-    this.labels.push(label);
-    this.labelStartTime = undefined;
-    this.labelEndTime = undefined;
+    //this.labels.push(label);
+    //this.labelStartTime = undefined;
+    //this.labelEndTime = undefined;
+    this.postAddLabel(label);
   },
   addLabelName(labelText) {
     var x = {name: labelText};
     this.customLabelNames.push(x);
     this.selectedLabelNames.push(x);
   },
+  postAddLabel(label) {
+    this.sendMessage = "send: add label";
+    this.sendMessageError = undefined;
+    axios.post(this.apiBase + 'samples' + '/' + this.sample.name + '/' + 'labels', {actions: [{action: "add_label", label: label}]})
+    .then((response) => {
+      this.sendMessage = undefined;
+      this.sendMessageError = undefined;
+      this.labelStartTime = undefined;
+      this.labelEndTime = undefined;
+      this.labels = response.data.labels;
+    })
+    .catch(() => {
+      this.sendMessage = undefined;
+      this.sendMessageError = "could not send: add label. You may tray again.";
+    });
+  },
+  refreshLabels() {
+    console.log("refreshLabels");
+    axios.get(this.apiBase + 'samples' + '/' + this.sample.name + '/' + 'labels')
+    .then(response => {
+      this.labels = response.data.labels;
+    })
+    .catch(() => {
+      this.labels = [];
+    });
+  },
+  onLabelRemove(index) {
+    //this.labels.splice(index, 1);
+    this.postRemoveLabel(this.labels[index]);
+  },
+  postRemoveLabel(label) {
+    this.sendMessage = "send: remove label";
+    this.sendMessageError = undefined;
+    axios.post(this.apiBase + 'samples' + '/' + this.sample.name + '/' + 'labels', {actions: [{action: "remove_label", label: label}]})
+    .then((response) => {
+      this.sendMessage = undefined;
+      this.sendMessageError = undefined;
+      this.labelStartTime = undefined;
+      this.labelEndTime = undefined;
+      this.labels = response.data.labels;
+    })
+    .catch((error) => {
+      this.sendMessage = undefined;
+      console.log(error.response);
+      this.sendMessageError = "could not send: remove label. You may tray again.";
+      this.sendMessageErrorReason = error === undefined ? "unkown reason" : error.response === undefined ? "unkown reason" : error.response.data === undefined ? "unkown reason" : error.response.data; 
+    });
+  },  
 },
 watch: {
   currentTimeUser() {
@@ -178,11 +240,14 @@ watch: {
     }
   },
   sample() {
+    console.log("watch sample");
     //this.imageLoaded = false;
+    this.refreshLabels();
   },
 },
 mounted() {
   var self = this;
+  this.refreshLabels();
   this.label_definitions_init();
   refPlayer = this;
   var audio = document.getElementById('player');
@@ -190,10 +255,6 @@ mounted() {
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const image = document.getElementById('image');
-
-
-  
-
   audio.addEventListener("progress", function() {
     console.log("progress"); 
     }, true
@@ -370,6 +431,22 @@ audio {
   width: 100px;
   display: inline-block;
   margin-right: 10px;
+}
+
+.send-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: #5e5e5e30;
+}
+
+.send-error {
+  color: #ee2727e0;
+  background-color: #73717138;
+  border-color: #ff0e008c;
+  border-style: solid;
+  padding: 5px;
 }
 
 </style>

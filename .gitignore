@@ -1,16 +1,17 @@
-.gradle
-.settings
-bin
-build
-data
-log
-package
-src_testing
+/.gradle
+/.settings
+/bin
+/build
+/data
+/log
+/package
+/samples
+/src_testing
 
-.classpath
-.project
-accounts.yaml
-config.yaml
-label_definitions.yaml
+/.classpath
+/.project
+/accounts.yaml
+/config.yaml
+/label_definitions.yaml
 
-webcontent/app
+/webcontent/app
