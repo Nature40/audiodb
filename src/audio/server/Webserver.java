@@ -36,6 +36,7 @@ import audio.server.api.IdentityHandler;
 import audio.server.api.LabelDefinitionsHandler;
 import audio.server.api.LoginHandler;
 import audio.server.api.LogoutHandler;
+import audio.server.api.QueryHandler;
 import audio.server.api.SamplesHandler;
 
 public class Webserver {
@@ -91,6 +92,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/identity", true, new IdentityHandler(broker)));
 		handlerList.addHandler(createContext("/accounts", true, new AccountsHandler(broker)));
 		handlerList.addHandler(createContext("/label_definitions", true, new LabelDefinitionsHandler(broker)));
+		handlerList.addHandler(createContext("/query", true, new QueryHandler()));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
 		handlerList.addHandler(new BaseRedirector("/web/app/"));
 		//if(broker.config().login) {

@@ -13,6 +13,9 @@ getters: {
   },
   isError: state => {
     return state.error !== undefined;
+  },
+  isRole: (state) => (role) => {
+    return state.data === undefined ? false : state.data.roles.includes(role);
   }
 },
 mutations: {

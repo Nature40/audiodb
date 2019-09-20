@@ -24,12 +24,12 @@ public class Role {
 		this.roles = roles;
 	}
 
-	public boolean has(BitSet roles) {
-		return roles.get(index);
+	public boolean has(BitSet roleBits) {
+		return roleBits.get(index);
 	}
 
-	public void check(BitSet roles) {
-		if(!roles.get(index)) {
+	public void check(BitSet roleBits) {
+		if(!roleBits.get(index)) {
 			throw new RuntimeException("role not accessible: " + name);
 		}
 	}

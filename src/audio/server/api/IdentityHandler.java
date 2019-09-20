@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -29,14 +30,19 @@ public class IdentityHandler extends AbstractHandler {
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		baseRequest.setHandled(true);
 		HttpSession session = request.getSession(false);
-		Account account = (Account) session.getAttribute("account");		
+		Account account = (Account) session.getAttribute("account");
+		String authentication = (String) session.getAttribute("authentication");
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		String[] roleNames = broker.roleManager().getRoleNames(roleBits);
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
+		json.key("authentication");
+		json.value(authentication);
 		json.key("user");
 		json.value(account.username);
 		json.key("roles");
-		json.value(account.roles);
+		json.value(roleNames);
 		json.endObject();
 	}
 }

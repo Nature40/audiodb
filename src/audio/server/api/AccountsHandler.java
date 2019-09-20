@@ -6,6 +6,7 @@ import java.util.BitSet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,7 +62,8 @@ public class AccountsHandler extends AbstractHandler {
 	}
 
 	public void handlePOST(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		role_create_account.check((BitSet) request.getSession().getAttribute("roles"));
+		HttpSession session = request.getSession(false);
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
 		log.info("accounts");		
 
 		JSONObject jsonReq = new JSONObject(new JSONTokener(baseRequest.getReader()));
@@ -72,6 +74,7 @@ public class AccountsHandler extends AbstractHandler {
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
 			case "create_account": {
+				role_create_account.check(roleBits);
 				log.info("create_account action");
 				String user = jsonAction.getString("user");
 				String hash = jsonAction.getString("hash");

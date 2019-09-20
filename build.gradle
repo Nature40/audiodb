@@ -24,6 +24,7 @@ dependencies {
 	
 	compile group: 'org.json', name: 'json', version: '20180813'
 	compile group: 'org.yaml', name: 'snakeyaml', version: '1.24'
+	compile group: 'com.opencsv', name: 'opencsv', version: '4.6'	
 	
 	compile group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
 	

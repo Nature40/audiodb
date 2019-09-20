@@ -1,12 +1,38 @@
 <template>
 <v-app>
   <v-toolbar app>
+    <v-menu offset-y>
+      <template v-slot:activator="{ on }">
+        <v-toolbar-side-icon  v-on="on"></v-toolbar-side-icon>        
+      </template>
+      <v-list>
+        <v-list-tile>
+          <v-list-tile-title><b>Navigate</b></v-list-tile-title>
+        </v-list-tile>
+        <v-list-tile>
+          <v-list-tile-title><a href="#/audio"><v-icon>arrow_forward</v-icon>audio</a></v-list-tile-title>
+        </v-list-tile>        
+        <v-list-tile>
+          <v-list-tile-title><a href="#/export"><v-icon>arrow_forward</v-icon>export</a></v-list-tile-title>
+        </v-list-tile>       
+      </v-list>
+    </v-menu>
     <v-toolbar-title class="headline text-uppercase">
       Account
     </v-toolbar-title> 
+    <identity-dialog></identity-dialog>
   </v-toolbar>
-
-  <v-content v-if="account !== undefined">
+  <v-content v-if="identity !== undefined">
+    <h2>Account details</h2>
+    <br><b>authentication:</b> {{identity.authentication}}
+    <br>
+    <br><b>user:</b> {{identity.user}}
+    <br>
+    <br><b>roles:</b> <span style="background-color: #998c8c4f;"><span v-for="role in identity.roles" :key="role" class="role">{{role}}</span></span>
+  </v-content>
+  <v-content v-if="isRole('create_account') && account !== undefined">
+    <hr>
+    <h2>Create new account</h2>
     <v-text-field
       v-model="inputUser"
       ref="inputUser"
@@ -74,6 +100,8 @@
 </template>
 
 <script>
+import identityDialog from './identity-dialog'
+
 import { sha3_512 } from 'js-sha3'
 import axios from 'axios'
 
@@ -82,6 +110,7 @@ import { mapState, mapGetters, mapActions } from 'vuex'
 export default {
 name: 'account-view',
 components: {
+  identityDialog,
 },
 data () {
   return {
@@ -103,9 +132,11 @@ computed: {
     account: state => state.account.data,
     accountLoading: state => state.account.loading,
     accountError: state => state.account.error,
+    identity: state => state.identity.data,
   }),
   ...mapGetters({
-  }),
+    isRole: 'identity/isRole',
+  }), 
   hash() {
     if(this.account === undefined) {
       return undefined;
@@ -113,10 +144,14 @@ computed: {
     var salt = this.account.salt;
     return sha3_512(salt + this.inputUser + salt + this.inputPassword + salt);
   },
+  /*testing() {
+    return this.$store.getters['identity/isRole']('cool');
+  }*/
 },
 methods: {
   ...mapActions({
     accountInit: 'account/init',
+    identityInit: 'identity/init',
   }),
   sh() {
     return sha3_512('');
@@ -162,7 +197,18 @@ methods: {
   },
 },
 mounted() {
+  this.identityInit();
   this.accountInit();
 },
 }
 </script>
+
+<style scoped>
+
+.role {
+  padding: 5px;
+  background-color: #e8f4ff;
+  margin: 5px;  
+}
+
+</style>

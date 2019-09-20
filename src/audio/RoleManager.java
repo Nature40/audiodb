@@ -19,13 +19,14 @@ public class RoleManager {
 		addRole("admin", "create_account");
 	}
 
-	public void addRole(String roleName) {
-		int index = ci.incrementAndGet();
+	public synchronized Role addRole(String roleName) {
+		int index = ci.getAndIncrement();
 		Role role = new Role(index, roleName);
 		roles.add(role);
+		return role;
 	}
 
-	public void addRole(String roleName, String... roleNames) {
+	public synchronized Role addRole(String roleName, String... roleNames) {
 		int len = roleNames.length;
 		Role[] containedRoles = new Role[len];
 		for (int i = 0; i < len; i++) {
@@ -35,9 +36,10 @@ public class RoleManager {
 			}
 			containedRoles[i] = role;
 		}
-		int index = ci.incrementAndGet();
+		int index = ci.getAndIncrement();
 		Role role = new Role(index, roleName, containedRoles);
 		roles.add(role);
+		return role;
 	}
 
 	public Role getRole(String roleName) {
@@ -58,17 +60,22 @@ public class RoleManager {
 		throw new RuntimeException("role not found: " + roleName);
 	}
 
-	public BitSet getBitSet(String[] roleNames) {
+	public BitSet getRoleBits(String[] roleNames) {
 		BitSet bitSet = new BitSet();
 		for(String roleName:roleNames) {
 			Role role = getRole(roleName);
 			if(role == null) {
-				log.warn("role not found: " + roleName);
-			} else {
-				role.populate(bitSet);
+				log.info("role not found - add role: " + roleName);
+				role = addRole(roleName);
 			}
+			role.populate(bitSet);		
 		}
 		return bitSet;
+	}
+
+	public String[] getRoleNames(BitSet roleBits) {
+		String[] roleNames = roleBits.stream().mapToObj(i -> this.roles.get(i).name).toArray(String[]::new);
+		return roleNames;
 	}
 
 }

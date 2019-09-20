@@ -96,8 +96,9 @@ public class JwsHandler extends AbstractHandler {
 
 			HttpSession session = request.getSession(true);
 			AccessHandler.injectSameSite(response);
+			session.setAttribute("authentication", "jws");
 			session.setAttribute("account", account);
-			session.setAttribute("roles", broker.roleManager().getBitSet(account.roles));
+			session.setAttribute("roles", broker.roleManager().getRoleBits(account.roles));
 
 			request.setHandled(true);
 			response.setHeader(HttpHeader.LOCATION.asString(), redirect_target);

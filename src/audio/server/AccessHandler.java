@@ -71,8 +71,9 @@ public class AccessHandler extends AbstractHandler {
 				HttpSession session = request.getSession(true);
 				injectSameSite(response);				
 				Account account = broker.config().default_account;
+				session.setAttribute("authentication", "no");
 				session.setAttribute("account", account);
-				session.setAttribute("roles", broker.roleManager().getBitSet(account.roles));
+				session.setAttribute("roles", broker.roleManager().getRoleBits(account.roles));
 			}
 		}
 	}

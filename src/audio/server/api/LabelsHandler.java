@@ -23,7 +23,7 @@ import util.yaml.YamlUtil;
 
 public class LabelsHandler {
 
-	private final Path samplesRoot = Paths.get("samples");
+	private static final Path samplesRoot = Paths.get("samples");
 
 	public void handle(String sample, String target, Request request, HttpServletResponse response) throws IOException {
 		request.setHandled(true);
@@ -52,6 +52,20 @@ public class LabelsHandler {
 			throw new RuntimeException("no call");
 		}
 	}
+	
+	private static Path getSamplePath(String sample) {
+		return samplesRoot.resolve(sample);
+	}
+	
+	private static Path getLabelsPath(String sample) {
+		Path samplePath = getSamplePath(sample);
+		return samplePath.resolve("labels.yaml");
+	}
+	
+	public static Vec<Label> loadLabels(String sample) {
+		Path labelsPath = getLabelsPath(sample);
+		return loadLabels(labelsPath);		
+	}
 
 	private static Vec<Label> loadLabels(Path labelsPath) {
 		if(!Files.exists(labelsPath)) {
@@ -62,9 +76,8 @@ public class LabelsHandler {
 	}
 
 	private void handleRoot_GET(String sample, Request request, HttpServletResponse response) throws IOException {
-		Path samplePath = samplesRoot.resolve(sample);
-		Path labelsPath = samplePath.resolve("labels.yaml");
-		Vec<Label> labels = loadLabels(labelsPath);		
+		Path labelsPath = getLabelsPath(sample);
+		Vec<Label> labels = loadLabels(sample);		
 		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", labels, Label::toJSON));		
 	}
 

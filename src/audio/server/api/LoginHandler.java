@@ -59,8 +59,9 @@ public class LoginHandler extends AbstractHandler {
 			if(account != null) {
 				HttpSession session = request.getSession(true);
 				AccessHandler.injectSameSite(response);
+				session.setAttribute("authentication", "login");
 				session.setAttribute("account", account);
-				session.setAttribute("roles", broker.roleManager().getBitSet(account.roles));			
+				session.setAttribute("roles", broker.roleManager().getRoleBits(account.roles));			
 				baseRequest.setHandled(true);
 				response.setHeader(HttpHeader.LOCATION.asString(), "/");
 				response.setStatus(HttpServletResponse.SC_FOUND);
