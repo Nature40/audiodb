@@ -13,23 +13,32 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.CompressedContentFormat;
 import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.http2.HTTP2Cipher;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.OptionalSslConnectionFactory;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import audio.Broker;
+import audio.Config;
 import audio.server.api.AccountHandler;
 import audio.server.api.AccountsHandler;
 import audio.server.api.IdentityHandler;
@@ -52,21 +61,79 @@ public class Webserver {
 		}
 	}
 
-	public static void main(String[] srgs) throws Exception {
-
-		Broker broker = new Broker();
-
-		log.info("starting server");
-
+	private static HttpConfiguration createBaseHttpConfiguration() {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
 		httpConfiguration.setSendServerVersion(false);
 		httpConfiguration.setSendDateHeader(false);
 		httpConfiguration.setSendXPoweredBy(false);
+		return httpConfiguration;
+	}
+
+	private static ServerConnector createHttpConnector(Server server, int http_port) {
+		HttpConfiguration httpConfiguration = createBaseHttpConfiguration();
 		HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(httpConfiguration);		
-		Server server = new Server();
 		ServerConnector httpServerConnector = new ServerConnector(server, httpConnectionFactory);
-		httpServerConnector.setPort(broker.config().http_port);
-		server.setConnectors(new Connector[] {httpServerConnector});
+		httpServerConnector.setPort(http_port);
+		return httpServerConnector;
+	}
+
+	private static HttpConfiguration createHttpsConfiguration(int https_port) {
+		HttpConfiguration httpsConfiguration = createBaseHttpConfiguration();
+		httpsConfiguration.setSecureScheme("https");
+		httpsConfiguration.setSecurePort(https_port);
+		return httpsConfiguration;
+	}
+
+
+
+
+	private static ServerConnector createHttpsConnector(Server server, int https_port, String keystore_path, String keystore_password) {
+		HttpConfiguration httpsConfiguration = createHttpsConfiguration(https_port);
+		httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
+
+		HTTP2ServerConnectionFactory https2ConnectionFactory = new HTTP2ServerConnectionFactory(httpsConfiguration);
+		ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
+		alpn.setDefaultProtocol("h2");
+
+		SslContextFactory sslContextFactory = new SslContextFactory.Server();
+		sslContextFactory.setKeyStorePath(keystore_path);
+		sslContextFactory.setKeyStorePassword(keystore_password);
+		sslContextFactory.setCipherComparator(HTTP2Cipher.COMPARATOR);
+
+		//SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory,HttpVersion.HTTP_1_1.asString());
+		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
+
+		OptionalSslConnectionFactory optionalSslConnectionFactory = new OptionalSslConnectionFactory(sslConnectionFactory, HttpVersion.HTTP_1_1.asString());
+
+		HttpConnectionFactory httpsConnectionFactory = new HttpConnectionFactory(httpsConfiguration);
+
+		ServerConnector httpServerConnector = new ServerConnector(server, optionalSslConnectionFactory, sslConnectionFactory, alpn, https2ConnectionFactory, httpsConnectionFactory);
+		//ServerConnector httpServerConnector = new ServerConnector(server, sslContextFactory, httpsConnectionFactory);
+		httpServerConnector.setPort(https_port);
+
+		return httpServerConnector;
+	}
+
+
+
+	public static void main(String[] srgs) throws Exception {
+
+		Broker broker = new Broker();
+		Config config = broker.config();
+
+		log.info("starting server");
+
+
+
+		Server server = new Server();
+		if(config.enableHttps()) {
+			ServerConnector httpConnector = createHttpConnector(server, config.http_port);
+			ServerConnector httpsConnector = createHttpsConnector(server, config.https_port, config.keystore_path, config.keystore_password);
+			server.setConnectors(new Connector[] {httpConnector, httpsConnector});
+		} else {
+			ServerConnector httpConnector = createHttpConnector(server, config.http_port);
+			server.setConnectors(new Connector[] {httpConnector});
+		}		
 
 		DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
 		sessionIdManager.setWorkerName(null);
@@ -78,6 +145,7 @@ public class Webserver {
 		sessionCokkieConfig.setPath("/");
 
 		HandlerList handlerList = new HandlerList();
+		handlerList.addHandler(new OptionalSecuredRedirectHandler());
 		handlerList.addHandler(sessionHandler);
 		handlerList.addHandler(new InjectHandler());
 		if(broker.config().login) {
@@ -96,7 +164,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/web", true, webcontent()));
 		handlerList.addHandler(new BaseRedirector("/web/app/"));
 		//if(broker.config().login) {
-			handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
+		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
 		//}
 		handlerList.addHandler(new NoContentHandler());		
 		server.setHandler(handlerList);
@@ -121,7 +189,7 @@ public class Webserver {
 		resourceHandler.setResourceBase("webcontent");
 		resourceHandler.setDirectoriesListed(false);
 		resourceHandler.setCacheControl("no-store,no-cache,must-revalidate");
-		resourceHandler.setPrecompressedFormats(new CompressedContentFormat[]{CompressedContentFormat.GZIP});
+		resourceHandler.setPrecompressedFormats(new CompressedContentFormat[]{CompressedContentFormat.BR, CompressedContentFormat.GZIP});
 		return resourceHandler;
 	}
 
@@ -137,6 +205,9 @@ public class Webserver {
 		@Override
 		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 			response.setHeader("X-Robots-Tag", "noindex, nofollow");
+			response.setHeader("X-Frame-Options", "deny");
+			response.setHeader("Referrer-Policy", "no-referrer");
+			response.setHeader("X-Content-Type-Options", "nosniff");
 			if("127.0.0.1".equals(baseRequest.getRemoteAddr())) {
 				response.setHeader("Access-Control-Allow-Origin", "*");
 				response.setHeader("Access-Control-Allow-Headers", "content-type");

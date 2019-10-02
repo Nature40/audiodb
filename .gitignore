@@ -12,6 +12,7 @@
 /.project
 /accounts.yaml
 /config.yaml
+/keystore.jks
 /label_definitions.yaml
 
 /webcontent/app

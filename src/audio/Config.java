@@ -10,12 +10,15 @@ import util.yaml.YamlMap;
 public class Config {
 	private static final Logger log = LogManager.getLogger();
 	
-	public static final Config DEFAULT = new Config();	
-	
+	public static final Config DEFAULT = new Config();
+
 	public final boolean login;
 	public final Account default_account;	
 	public final ReadonlyList<JwsConfig> jwsConfigs;
 	public final int http_port;
+	public final int https_port;
+	public final String keystore_path;
+	public final String keystore_password;
 	
 	@SuppressWarnings("unchecked")
 	private Config() {
@@ -23,19 +26,28 @@ public class Config {
 		default_account = new Account("anonymous", "", "", new String[] {"admin"});
 		this.jwsConfigs = ReadonlyList.EMPTY;
 		this.http_port = 8080;
+		this.https_port = 8000;
+		this.keystore_path = "keystore.jks";
+		this.keystore_password = "";
 	}
 	
-	public Config(boolean login, Account default_account, ReadonlyList<JwsConfig> jwsConfigs, int http_port) {
+	public Config(boolean login, Account default_account, ReadonlyList<JwsConfig> jwsConfigs, int http_port, int https_port, String keystore_path, String keystore_password) {
 		this.login = login;
 		this.default_account = default_account;
 		this.jwsConfigs = jwsConfigs;
 		this.http_port = http_port;
+		this.https_port = https_port;
+		this.keystore_path = keystore_path;
+		this.keystore_password = keystore_password;
 	}
 	
 	public static Config ofYAML(YamlMap yamlMap) {
 		boolean login = yamlMap.optBoolean("login", DEFAULT.login);
 		Account default_account = DEFAULT.default_account;
 		int http_port = yamlMap.optInt("http_port", DEFAULT.http_port);
+		int https_port = yamlMap.optInt("https_port", DEFAULT.https_port);
+		String keystore_path = yamlMap.optString("keystore_path", DEFAULT.keystore_path);
+		String keystore_password = yamlMap.optString("keystore_password", DEFAULT.keystore_password);
 		
 		Vec<JwsConfig> jwsConfigs = new Vec<JwsConfig>();
 		
@@ -52,7 +64,11 @@ public class Config {
 			log.warn(e);
 		}
 		
-		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port);
+		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port, https_port, keystore_path, keystore_password);
+	}
+	
+	public boolean enableHttps() {
+		return !keystore_password.isEmpty();
 	}
 
 }
