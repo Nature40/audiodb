@@ -1,7 +1,6 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -14,18 +13,26 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.json.JSONWriter;
 
 import com.opencsv.CSVWriter;
 
+import audio.Broker;
 import audio.Label;
+import audio.Sample;
 import audio.server.Webserver;
 import util.collections.vec.Vec;
 
 public class QueryHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
 
-	private final SampleHandler sampleHandler = new SampleHandler();
+	private final SampleHandler sampleHandler;
+	
+	private final Broker broker;
+
+	public QueryHandler(Broker broker) {
+		this.broker = broker;
+		sampleHandler = new SampleHandler(broker);
+	}
 
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -61,14 +68,12 @@ public class QueryHandler extends AbstractHandler {
 				)) {
 			String[] header = new String[]{"sample", "start", "end", "label", "comment"};
 			writer.writeNext(header, false);
-			Path root = Paths.get("data");
-			for(Path path:Webserver.getPaths(root)) {
-				String sample = root.relativize(path).toString();
+			for(Sample sample:broker.samples().sampleMap.values()) {
 				Vec<Label> labels = LabelsHandler.loadLabels(sample);
 				for(Label label:labels) {					
-					String[] row = new String[]{sample, Double.toString(label.start), Double.toString(label.end), Arrays.toString(label.labels), label.comment};
+					String[] row = new String[]{sample.id, Double.toString(label.start), Double.toString(label.end), Arrays.toString(label.labels), label.comment};
 					writer.writeNext(row, false);
-				}
+				}	
 			}
 		}
 	}

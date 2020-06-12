@@ -17,12 +17,12 @@
   </div>
   <v-layout text-xs-center wrap>
     <v-flex xs12 mb-5 >
-      <audio id="player" :src="apiBase + 'audio/'+ sample.name" type="audio/ogg" controls>
+      <audio id="player" :src="apiBase + 'samples/'+ sample.id + '/data'" type="audio/wav" controls>
       </audio>
       <br>
       <div style="display: inline-block;">
       <canvas id="canvas" width="1024" :height="canvasHeight" style="background-color: #d1d1d1;" @mousedown="startDrag" @mousemove="dragMove" class="spectrogram" />
-      <img id="image" :src="apiBase + 'spectrum/' + sample.name" style="width: 1800px; display: none;" />
+      <img id="image" :src="apiBase + 'spectrum/' + sample.id" style="width: 1800px; display: none;" />
       <br>
       <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position">start label</v-btn>
       <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position">end label</v-btn>
@@ -185,7 +185,7 @@ methods: {
   postAddLabel(label) {
     this.sendMessage = "send: add label";
     this.sendMessageError = undefined;
-    axios.post(this.apiBase + 'samples' + '/' + this.sample.name + '/' + 'labels', {actions: [{action: "add_label", label: label}]})
+    axios.post(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'labels', {actions: [{action: "add_label", label: label}]})
     .then((response) => {
       this.sendMessage = undefined;
       this.sendMessageError = undefined;
@@ -200,7 +200,7 @@ methods: {
   },
   refreshLabels() {
     console.log("refreshLabels");
-    axios.get(this.apiBase + 'samples' + '/' + this.sample.name + '/' + 'labels')
+    axios.get(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'labels')
     .then(response => {
       this.labels = response.data.labels;
     })
@@ -215,7 +215,7 @@ methods: {
   postRemoveLabel(label) {
     this.sendMessage = "send: remove label";
     this.sendMessageError = undefined;
-    axios.post(this.apiBase + 'samples' + '/' + this.sample.name + '/' + 'labels', {actions: [{action: "remove_label", label: label}]})
+    axios.post(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'labels', {actions: [{action: "remove_label", label: label}]})
     .then((response) => {
       this.sendMessage = undefined;
       this.sendMessageError = undefined;

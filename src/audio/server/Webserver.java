@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.stream.StreamSupport;
 
 import javax.servlet.ServletException;
@@ -153,14 +154,14 @@ public class Webserver {
 		}
 		handlerList.addHandler(new JwsHandler(broker));
 		handlerList.addHandler(new AccessHandler(broker));
-		handlerList.addHandler(createContext("/spectrum", true, new SpectrumHandler()));
+		handlerList.addHandler(createContext("/spectrum", true, new SpectrumHandler(broker)));
 		handlerList.addHandler(createContext("/audio", true, audio()));
-		handlerList.addHandler(createContext("/samples", true, new SamplesHandler()));
+		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/account", true, new AccountHandler(broker)));
 		handlerList.addHandler(createContext("/identity", true, new IdentityHandler(broker)));
 		handlerList.addHandler(createContext("/accounts", true, new AccountsHandler(broker)));
 		handlerList.addHandler(createContext("/label_definitions", true, new LabelDefinitionsHandler(broker)));
-		handlerList.addHandler(createContext("/query", true, new QueryHandler()));
+		handlerList.addHandler(createContext("/query", true, new QueryHandler(broker)));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
 		handlerList.addHandler(new BaseRedirector("/web/app/"));
 		//if(broker.config().login) {
@@ -207,7 +208,7 @@ public class Webserver {
 			response.setHeader("X-Robots-Tag", "noindex, nofollow");
 			response.setHeader("X-Frame-Options", "deny");
 			response.setHeader("Referrer-Policy", "no-referrer");
-			response.setHeader("X-Content-Type-Options", "nosniff");
+			//response.setHeader("X-Content-Type-Options", "nosniff");
 			if("127.0.0.1".equals(baseRequest.getRemoteAddr())) {
 				response.setHeader("Access-Control-Allow-Origin", "*");
 				response.setHeader("Access-Control-Allow-Headers", "content-type");
@@ -243,6 +244,22 @@ public class Webserver {
 				.toArray(Path[]::new);
 		dirStream.close();
 		return paths;
+	}
+
+	public static ArrayList<Path> getAudioPaths(Path root, ArrayList<Path> collector) throws IOException {
+		if(collector == null) {
+			collector = new ArrayList<Path>();
+		}
+		for(Path path:Files.newDirectoryStream(root)) {
+			if(path.toFile().isDirectory()) {
+				getAudioPaths(path, collector);
+			} else if(path.toFile().isFile()) {
+				collector.add(path);
+			} else {
+				log.warn("unknown entity: " + path);
+			}
+		}
+		return collector;
 	}
 
 	public static class BaseRedirector extends AbstractHandler

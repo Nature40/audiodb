@@ -12,10 +12,10 @@ import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.json.JSONWriter;
 
 import audio.Account;
 import audio.Label;
+import audio.Sample;
 import util.JsonUtil;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -25,7 +25,7 @@ public class LabelsHandler {
 
 	private static final Path samplesRoot = Paths.get("samples");
 
-	public void handle(String sample, String target, Request request, HttpServletResponse response) throws IOException {
+	public void handle(Sample sample, String target, Request request, HttpServletResponse response) throws IOException {
 		request.setHandled(true);
 		if(target.equals("/")) {
 			handleRoot(sample, request, response);
@@ -40,7 +40,7 @@ public class LabelsHandler {
 		}		
 	}
 
-	private void handleRoot(String sample, Request request, HttpServletResponse response) throws IOException {
+	private void handleRoot(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		switch(request.getMethod()) {
 		case "GET":
 			handleRoot_GET(sample, request, response);
@@ -53,16 +53,16 @@ public class LabelsHandler {
 		}
 	}
 	
-	private static Path getSamplePath(String sample) {
-		return samplesRoot.resolve(sample);
+	private static Path getSamplePath(Sample sample) {
+		return samplesRoot.resolve(sample.id);
 	}
 	
-	private static Path getLabelsPath(String sample) {
+	private static Path getLabelsPath(Sample sample) {
 		Path samplePath = getSamplePath(sample);
 		return samplePath.resolve("labels.yaml");
 	}
 	
-	public static Vec<Label> loadLabels(String sample) {
+	public static Vec<Label> loadLabels(Sample sample) {
 		Path labelsPath = getLabelsPath(sample);
 		return loadLabels(labelsPath);		
 	}
@@ -75,15 +75,15 @@ public class LabelsHandler {
 		return YamlUtil.getVec(yamlMap, "labels", Label::ofYAML);
 	}
 
-	private void handleRoot_GET(String sample, Request request, HttpServletResponse response) throws IOException {
+	private void handleRoot_GET(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		Path labelsPath = getLabelsPath(sample);
 		Vec<Label> labels = loadLabels(sample);		
 		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", labels, Label::toJSON));		
 	}
 
-	private void handleRoot_POST(String sample, Request request, HttpServletResponse response) throws IOException {
+	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		Account account = (Account) request.getSession(false).getAttribute("account");
-		Path samplePath = samplesRoot.resolve(sample);
+		Path samplePath = samplesRoot.resolve(sample.id);
 		samplePath.toFile().mkdirs();
 		Path labelsPath = samplePath.resolve("labels.yaml");
 		Vec<Label> labels = loadLabels(labelsPath);

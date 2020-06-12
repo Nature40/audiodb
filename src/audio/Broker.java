@@ -18,6 +18,7 @@ public class Broker {
 	private RoleManager roleManager;
 	private AccountManager accountManager;
 	private LabelDefinitions labelDefinitions;
+	private Samples samples;
 	
 	public Broker() {		
 	}
@@ -78,6 +79,17 @@ public class Broker {
 			labelDefinitions = new LabelDefinitions(Paths.get("label_definitions.yaml"));
 		}
 		return labelDefinitions;
+	}
+	
+	public Samples samples() {
+		return samples == null ? loadSamples() : samples;
+	}
+
+	private synchronized Samples loadSamples() {
+		if(samples == null) {
+			samples = new Samples();
+		}
+		return samples;
 	}
 
 }

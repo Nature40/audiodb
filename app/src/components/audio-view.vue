@@ -17,7 +17,7 @@
     <v-toolbar-title class="headline text-uppercase">
       Audio
     </v-toolbar-title> 
-    &nbsp;&nbsp;&nbsp;<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="name" style="max-width: 500px;" placeholder="select audio sample" :allowEmpty="false"/>    
+    &nbsp;&nbsp;&nbsp;<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 500px;" placeholder="select audio sample" :allowEmpty="false"/>    
     <identity-dialog></identity-dialog>
   </v-toolbar>
 
