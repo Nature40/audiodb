@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
 import org.yaml.snakeyaml.Yaml;
@@ -15,6 +17,7 @@ import audio.Broker;
 import audio.Sample;
 
 public class SampleHandler {
+	static final Logger log = LogManager.getLogger();
 
 	private final LabelsHandler labelsHandler = new LabelsHandler();
 	private final SpectrumHandler spectrumHandler;
@@ -61,9 +64,25 @@ public class SampleHandler {
 	}
 
 	private void handleData(Sample sample, Request request, HttpServletResponse response) throws IOException {
-		response.setContentType("audio/wav");
 		File file = sample.path.toFile();
-		response.setContentLengthLong(file.length());
+		long len = file.length();
+		
+		
+		String rangeText = request.getHeader("Range");
+		if(rangeText != null) {
+			log.info("rangeText " + rangeText);
+			if(rangeText.equals("bytes=0-")) {
+				log.info("full range ");
+				response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+				response.setHeader("Content-Range", "bytes 0-" + (len-1) + "/" + len );
+			} else {
+				throw new RuntimeException("partial ranges not implemented");
+			}
+		}
+		
+		response.setContentType("audio/wav");
+		response.setContentLengthLong(len);
+
 		try(FileInputStream in = new FileInputStream(file)) {
 			IO.copy(in, response.getOutputStream());
 		}
@@ -72,6 +91,8 @@ public class SampleHandler {
 	private void handleMeta(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		//response.setContentType("text/yaml; charset=utf-8");
 		response.setContentType("text/plain; charset=utf-8");
+		
+
 		
 		LinkedHashMap<String, Object> yamlMap = new LinkedHashMap<String, Object>();
 		yamlMap.put("id", sample.id);

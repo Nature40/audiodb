@@ -7,6 +7,7 @@
     {{currentTimeAudio.toFixed(3)}} / {{duration.toFixed(3)}} 
   </div>
   <div style="position: absolute; right: 0px;">
+    <player-settings />
     <label-definitions @onDialog="labelDefinitionsDialogOpen = $event" />
     <div class="send-error" v-show="sendMessageError !== undefined">
       <v-icon color="red">warning</v-icon>
@@ -106,6 +107,7 @@
 import axios from 'axios'
 import { mapState, mapActions } from 'vuex'
 
+import playerSettings from './player-settings'
 import labelDefinitions from './label-definitions'
 
 var refPlayer = undefined;
@@ -113,7 +115,8 @@ var refPlayer = undefined;
 export default {
 props: ['sample'],
 components: {
-  labelDefinitions
+  playerSettings,
+  labelDefinitions,
 },
 data: () => ({
   currentTimeAudio: 0,      
@@ -251,9 +254,11 @@ methods: {
 watch: {
   currentTimeUser() {
     if(this.currentTimeUser !== this.currentTimeAudio) {
-      //console.log("user change");
+      console.log("user change");
       var audio = document.getElementById('player');
+      console.log(audio);
       audio.currentTime = this.currentTimeUser;
+      console.log("set currentTimeUser " + this.currentTimeUser);
     }
   },
   sample() {

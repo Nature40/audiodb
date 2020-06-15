@@ -15,8 +15,17 @@
           </v-toolbar-items>
         </v-toolbar>
         <div>
-          start
-          {{sample}}
+         <h1>{{sample.id}}</h1>
+         <br>
+         <br>
+          <table class="table-meta">
+            <tbody>
+              <tr v-for="(value, key) in meta" :key="key">
+                <td><b>{{key}}</b></td> 
+                <td>{{value}}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </v-card>
     </v-dialog>
@@ -24,7 +33,8 @@
 
 <script>
 
-//import axios from 'axios'
+import axios from 'axios'
+import YAML from 'yaml'
 import { mapState, mapActions } from 'vuex'
 
 export default {
@@ -33,20 +43,38 @@ components: {
 },
 data: () => ({
   dialog: false,
+  meta: undefined,
 }),
 computed: {
   ...mapState({
     apiBase: state => state.apiBase,
-
   }),
 },  
 methods: {
   ...mapActions({
 
   }),
-
+  refeshMeta() {
+    this.meta = undefined;
+    if(this.dialog) {
+      axios.get(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'meta')
+      .then(response => {
+        var data = response.data;
+        this.meta = YAML.parse(data);
+      })
+      .catch(() => {
+        this.meta = undefined;
+      });
+    }
+  }
 },
 watch: {
+  sample() {
+    this.refeshMeta();
+  },
+  dialog() {
+    this.refeshMeta();
+  },
 },
 mounted() {
 },    
@@ -55,7 +83,7 @@ mounted() {
 
 <style scoped>
 
-.table-label-definitions {
+.table-meta {
   padding: 3px;
   margin: 10px;
   border-style: solid;
@@ -65,11 +93,15 @@ mounted() {
   box-shadow: 5px 5px 7px #443c3145;
 }
 
-.table-label-definitions tbody tr:nth-child(odd) td {
+.table-meta tbody tr td {
+  padding: 3px;
+}
+
+.table-meta tbody tr:nth-child(odd) td {
   background-color: #ececec50;
 }
 
-.table-label-definitions tbody tr:nth-child(even) td {
+.table-meta tbody tr:nth-child(even) td {
   background-color: #dbdbdb50;
 }
 

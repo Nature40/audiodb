@@ -48,7 +48,6 @@ import audio.server.api.LoginHandler;
 import audio.server.api.LogoutHandler;
 import audio.server.api.QueryHandler;
 import audio.server.api.SamplesHandler;
-import audio.server.api.SpectrumHandler;
 
 public class Webserver {
 	static final Logger log = LogManager.getLogger();
