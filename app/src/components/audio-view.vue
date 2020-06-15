@@ -18,6 +18,7 @@
       Audio
     </v-toolbar-title> 
     &nbsp;&nbsp;&nbsp;<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 500px;" placeholder="select audio sample" :allowEmpty="false"/>    
+    <audio-meta v-if="selectedSample !== undefined" :sample="selectedSample"/>
     <identity-dialog></identity-dialog>
   </v-toolbar>
 
@@ -35,6 +36,7 @@
 <script>
 import player from './player'
 import identityDialog from './identity-dialog'
+import audioMeta from './audio-meta'
 
 import { mapState, mapActions } from 'vuex'
 import axios from 'axios'
@@ -43,7 +45,8 @@ export default {
 name: 'audio-view',
 components: {
   player,
-  identityDialog
+  identityDialog,
+  audioMeta,
 },
 data () {
   return {

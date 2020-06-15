@@ -1,4 +1,4 @@
-package audio.server;
+package audio.server.api;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -20,10 +20,11 @@ import org.jtransforms.fft.FloatFFT_1D;
 
 import audio.Broker;
 import audio.Sample;
+import audio.server.Renderer;
 import util.image.ImageRGBA;
 import util.image.Lut;
 
-public class SpectrumHandler extends AbstractHandler {
+public class SpectrumHandler {
 	static final Logger log = LogManager.getLogger();
 	
 	private final Broker broker;
@@ -32,17 +33,7 @@ public class SpectrumHandler extends AbstractHandler {
 		this.broker = broker;
 	}
 
-	@Override
-	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		baseRequest.setHandled(true);
-		
-	
-		target = target.replaceAll("/", "");
-		target = target.replaceAll("\\\\", "");
-		log.info("spectrum " + target);
-		
-		Sample sample = broker.samples().getThrow(target);
-
+	public void handle(Sample sample, Request baseRequest, HttpServletResponse response) throws IOException {
 		try {
 			AudioInputStream in = AudioSystem.getAudioInputStream(sample.file());
 			log.info("Format: " + in.getFormat());

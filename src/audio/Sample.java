@@ -1,7 +1,6 @@
 package audio;
 
 import java.io.File;
-import java.io.InputStream;
 import java.nio.file.Path;
 
 public class Sample {
@@ -16,6 +15,14 @@ public class Sample {
 
 	public File file() {
 		return path.toFile();
+	}
+	
+	public Path fileName() {
+		return path.getFileName();
+	}
+	
+	public Path filePath() {
+		return path.getParent();
 	}
 
 }

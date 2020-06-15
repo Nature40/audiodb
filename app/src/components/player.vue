@@ -22,7 +22,7 @@
       <br>
       <div style="display: inline-block;">
       <canvas id="canvas" width="1024" :height="canvasHeight" style="background-color: #d1d1d1;" @mousedown="startDrag" @mousemove="dragMove" class="spectrogram" />
-      <img id="image" :src="apiBase + 'spectrum/' + sample.id" style="width: 1800px; display: none;" />
+      <img id="image" :src="apiBase + 'samples/' + sample.id + '/spectrum'" style="width: 1800px; display: none;" />
       <br>
       <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position">start label</v-btn>
       <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position">end label</v-btn>

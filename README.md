@@ -1,4 +1,4 @@
 # AudioDB
 
-requirements: Java 9 (or newer)
+Requirements: Java 9 (or newer)
 

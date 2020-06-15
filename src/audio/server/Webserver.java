@@ -48,6 +48,7 @@ import audio.server.api.LoginHandler;
 import audio.server.api.LogoutHandler;
 import audio.server.api.QueryHandler;
 import audio.server.api.SamplesHandler;
+import audio.server.api.SpectrumHandler;
 
 public class Webserver {
 	static final Logger log = LogManager.getLogger();
@@ -154,7 +155,6 @@ public class Webserver {
 		}
 		handlerList.addHandler(new JwsHandler(broker));
 		handlerList.addHandler(new AccessHandler(broker));
-		handlerList.addHandler(createContext("/spectrum", true, new SpectrumHandler(broker)));
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/account", true, new AccountHandler(broker)));

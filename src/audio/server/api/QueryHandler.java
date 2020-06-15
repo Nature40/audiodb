@@ -1,8 +1,6 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 
 import javax.servlet.ServletException;
@@ -19,7 +17,6 @@ import com.opencsv.CSVWriter;
 import audio.Broker;
 import audio.Label;
 import audio.Sample;
-import audio.server.Webserver;
 import util.collections.vec.Vec;
 
 public class QueryHandler extends AbstractHandler {
