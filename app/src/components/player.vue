@@ -3,6 +3,9 @@
   <div class="send-overlay" v-show="sendMessage !== undefined">
     {{sendMessage}}
   </div>
+  <div style="position: absolute; left: 100px;">
+    {{currentTimeAudio.toFixed(3)}} / {{duration.toFixed(3)}} 
+  </div>
   <div style="position: absolute; right: 0px;">
     <label-definitions @onDialog="labelDefinitionsDialogOpen = $event" />
     <div class="send-error" v-show="sendMessageError !== undefined">
@@ -20,19 +23,24 @@
       <audio id="player" :src="apiBase + 'samples/'+ sample.id + '/data'" type="audio/wav" controls>
       </audio>
       <br>
-      <div style="display: inline-block;">
-      <canvas id="canvas" width="1024" :height="canvasHeight" style="background-color: #d1d1d1;" @mousedown="startDrag" @mousemove="dragMove" class="spectrogram" />
-      <img id="image" :src="apiBase + 'samples/' + sample.id + '/spectrum'" style="width: 1800px; display: none;" />
+      <div style="display: inline-block; ">
+              <v-slider
+        v-model="currentTimeUser"
+        :min="0"
+        :max="duration"
+        :step="0"
+        style="margin-bottom: -25px; margin-top: -10px;"
+        :style="{ width: canvasWidth + 'px' }"        
+      ></v-slider>
+      <canvas id="canvas" :width="canvasWidth" :height="canvasHeight" style="background-color: #d1d1d1;" @mousedown="startDrag" @mousemove="dragMove" class="spectrogram" />
+      <img id="image" :src="spectrumUrl" style="width: 1800px; display: none;" />
       <br>
-      <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position">start label</v-btn>
-      <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position">end label</v-btn>
-      <span v-show="labelEndTime !== undefined">
-        <v-text-field v-model="labelComment" placeholder="comment" class="input-comment"></v-text-field>
+
         <multiselect 
           v-model="selectedLabelNames" 
           :options="mergedLabelNames" 
           label="name" 
-          style="max-width: 300px; display: inline-block;" 
+          style="max-width: 300px; display: inline-block; vertical-align: top;" 
           placeholder="Search or add label"
           tagPlaceholder="Press ENTER to add this as new label" 
           :allowEmpty="true"
@@ -42,26 +50,27 @@
           track-by="name"
           @open="selectLabel = true"
           @close="selectLabel = false"
+          :limit="1"
+          :limitText="count => `and ${count} more`"
+          :class="{ 'hide': (labelEndTime === undefined) }"
         />
-      </span>
-      <v-btn @click="onLabelSave" small round color="primary" v-show="labelEndTime !== undefined" title="store current label">save</v-btn>
-      <v-btn @click="onLabelDiscard" small round color="primary" v-show="labelEndTime !== undefined" title="remove current label">discard</v-btn>
-      <br>
-      <v-slider
-        v-model="currentTimeUser"
-        :min="0"
-        :max="duration"
-        :step="0"
-        style="width: 1040px;"
-      ></v-slider>
+
+        <div style="position: relative; display: inline-block; vertical-align: top;">
+          <v-btn small round color="primary" class="hide" >start label</v-btn>
+          <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position" style="position: absolute; top: 0px; left: 0px;">start label</v-btn>
+          <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;">end label</v-btn>
+          <v-btn @click="onLabelSave" small round color="primary" v-show="labelEndTime !== undefined" title="store current label" style="position: absolute; top: 0px; left: 0px;">save</v-btn>
+        </div>
+        <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="remove current label" style="vertical-align: top;">discard</v-btn>
+        <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
       </div>
-      <br>
-      {{currentTimeAudio.toFixed(3)}} / {{duration.toFixed(3)}}
-      <br>
-      <br>
       press <b>[SPACE]</b> key to <b>play</b> / <b>pause</b> audio
       <br>
       press <b>[ENTER]</b> key to <b :class="{active: labelStartTime === undefined}">mark start</b> / <b :class="{active: labelStartTime !== undefined && labelEndTime === undefined}">mark end</b> / <b :class="{active: labelStartTime !== undefined && labelEndTime !== undefined && !selectLabel}">save label</b>
+      <br>
+      on spectrogram hold <b>[left mouse button]</b> and <b>[move mouse left/right]</b> to move in time <b></b>
+
+      <br>
       <br>
       <table class="table-labels">
       <tr>
@@ -112,7 +121,8 @@ data: () => ({
   duration: 0,
   frequencyData: [],
   sampleRate: 10000,
-  canvasHeight: 320,
+  canvasWidth: 1024,
+  canvasHeight: 512,
   imageLoaded: false,
   dragStartX: undefined,
   secondsPerColumn: undefined,
@@ -127,6 +137,7 @@ data: () => ({
   sendMessage: undefined,
   sendMessageError: undefined,
   sendMessageErrorReason: undefined,
+  threshold: 13.5,
 }),
 computed: {
   ...mapState({
@@ -138,6 +149,9 @@ computed: {
   },
   shortcutsBlocked() {
     return this.labelDefinitionsDialogOpen;
+  },
+  spectrumUrl() {
+    return this.apiBase + 'samples/' + this.sample.id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold;
   },
 },  
 methods: {
@@ -229,7 +243,10 @@ methods: {
       this.sendMessageError = "could not send: remove label. You may tray again.";
       this.sendMessageErrorReason = error === undefined ? "unkown reason" : error.response === undefined ? "unkown reason" : error.response.data === undefined ? "unkown reason" : error.response.data; 
     });
-  },  
+  },
+  onWindowResize() {
+    this.canvasWidth = document.body.clientWidth - 200;
+  }  
 },
 watch: {
   currentTimeUser() {
@@ -245,8 +262,15 @@ watch: {
     this.refreshLabels();
   },
 },
+created() {
+  window.addEventListener("resize", this.onWindowResize.bind(this));
+},
+destroyed() {
+  window.removeEventListener("resize", this.onWindowResize.bind(this));
+},
 mounted() {
   var self = this;
+  this.onWindowResize();
   this.refreshLabels();
   this.label_definitions_init();
   refPlayer = this;
@@ -271,13 +295,13 @@ mounted() {
     console.log("timeupdate"); 
     }, true
   );
-  setInterval(function() {
+  setInterval(() => {
     self.imageLoaded = image.complete;
     var currentTime = audio.currentTime;
     self.currentTimeAudio = currentTime;
     self.currentTimeUser = currentTime;
     self.duration = audio.duration;
-    var canvasNowColumn = 512;
+    var canvasNowColumn = this.canvasWidth / 2;
     var columnsPerSecond = image.naturalWidth / audio.duration;
     self.secondsPerColumn = audio.duration / image.naturalWidth;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -285,7 +309,7 @@ mounted() {
     //ctx.drawImage(image, (currentTime*collumnsPerSecond) - canvasNowColumn, 0 , 1000, 256, 0, 0, 1000, 256);
     var sx = (currentTime*columnsPerSecond) - canvasNowColumn;
     var sy = 0;
-    var sWidth = 1024;
+    var sWidth = self.canvasWidth;
     var sHeight = self.canvasHeight;
     var dx = 0;
     var dy = 0;
@@ -356,6 +380,10 @@ mounted() {
 </script>
 
 <style scoped>
+
+.hide {
+  visibility: hidden;
+}
 
 .table-labels {
   border-style: solid;
