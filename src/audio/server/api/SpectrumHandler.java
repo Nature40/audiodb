@@ -38,7 +38,7 @@ public class SpectrumHandler {
 			
 			
 			
-			AudioInputStream in = AudioSystem.getAudioInputStream(sample.file());
+			AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile());
 			AudioFormat audioFormat = in.getFormat();
 			log.info("Format: " + audioFormat);
 			log.info("FrameLength: " + in.getFrameLength());

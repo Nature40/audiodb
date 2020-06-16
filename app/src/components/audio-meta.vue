@@ -15,9 +15,15 @@
           </v-toolbar-items>
         </v-toolbar>
         <div>
-         <h1>{{sample.id}}</h1>
-         <br>
-         <br>
+          <table class="table-meta">
+            <tbody>
+              <tr v-for="(value, key) in sampleMeta" :key="key">
+                <td><b>{{key}}</b></td> 
+                <td>{{value}}</td>
+              </tr>
+            </tbody>
+          </table>
+
           <table class="table-meta">
             <tbody>
               <tr v-for="(value, key) in meta" :key="key">
@@ -43,6 +49,7 @@ components: {
 },
 data: () => ({
   dialog: false,
+  sampleMeta: undefined,
   meta: undefined,
 }),
 computed: {
@@ -60,7 +67,9 @@ methods: {
       axios.get(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'meta')
       .then(response => {
         var data = response.data;
-        this.meta = YAML.parse(data);
+        var parsed = YAML.parse(data);
+        this.sampleMeta = parsed.sample;
+        this.meta = parsed.meta;
       })
       .catch(() => {
         this.meta = undefined;

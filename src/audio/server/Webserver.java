@@ -253,7 +253,9 @@ public class Webserver {
 			if(path.toFile().isDirectory()) {
 				getAudioPaths(path, collector);
 			} else if(path.toFile().isFile()) {
-				collector.add(path);
+				if(path.getFileName().toString().endsWith(".yaml")) {
+					collector.add(path);
+				}
 			} else {
 				log.warn("unknown entity: " + path);
 			}

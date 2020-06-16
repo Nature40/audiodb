@@ -64,12 +64,64 @@ public class SampleHandler {
 	}
 
 	private void handleData(Sample sample, Request request, HttpServletResponse response) throws IOException {
-		File file = sample.path.toFile();
-		long len = file.length();
-		
-		
+		File file = sample.getAudioFile();
+		long fileLen = file.length();
+
 		String rangeText = request.getHeader("Range");
-		if(rangeText != null) {
+		if(rangeText == null) {
+			response.setContentType("audio/wave");
+			response.setContentLengthLong(fileLen);
+			try(FileInputStream in = new FileInputStream(file)) {
+				IO.copy(in, response.getOutputStream());
+			}
+		} else {
+			if(rangeText.startsWith("bytes=")) {
+				String rangeIntervalText = rangeText.substring(6);
+				log.info("rangeIntervalText |" + rangeIntervalText + "|");
+				if(rangeIntervalText.contains(",")) {
+					throw new RuntimeException("unknown Range header, multiple ranges not supported: " + rangeText);
+				}
+				int rangeIntervalTextSeperatorIndex = rangeIntervalText.indexOf("-");
+				if(rangeIntervalTextSeperatorIndex < 0) {
+					throw new RuntimeException("unknown Range header: " + rangeText);
+				}
+				String rangeStartText = rangeIntervalText.substring(0, rangeIntervalTextSeperatorIndex);
+				String rangeEndText = rangeIntervalText.substring(rangeIntervalTextSeperatorIndex + 1);
+				log.info("rangeIntervalText |" + rangeStartText + "|" + rangeEndText + "|");
+				if(rangeStartText.isEmpty()) {
+					throw new RuntimeException("unknown Range header, suffix-length not supported: " + rangeText);
+				}
+				long rangeStart = Long.parseLong(rangeStartText);
+				if(rangeStart < 0) {
+					throw new RuntimeException("unknown Range header: " + rangeText);
+				}
+				long rangeEnd = rangeEndText.isEmpty() ? (fileLen - 1) : Long.parseLong(rangeEndText);
+				if(rangeEnd < rangeStart) {
+					throw new RuntimeException("unknown Range header: " + rangeText);
+				}
+				if(rangeEnd >= fileLen) {
+					throw new RuntimeException("unknown Range header: " + rangeText);
+				}
+				long rangeLen = rangeEnd - rangeStart + 1;
+				try(FileInputStream in = new FileInputStream(file)) {
+					if(rangeStart != 0) {					
+						in.skip(rangeStart);
+					}
+					response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+					response.setContentType("audio/wave");
+					response.setContentLengthLong(fileLen);
+					response.setHeader("Content-Range", "bytes "+ rangeStart +"-" + rangeEnd + "/" + fileLen);
+					IO.copy(in, response.getOutputStream(), rangeLen);
+				}
+			} else {
+				throw new RuntimeException("unknown Range header: " + rangeText);
+			}
+		}
+
+
+		/*if(rangeText == null) {
+			byteCount = len;
+		} else {
 			log.info("rangeText " + rangeText);
 			if(rangeText.equals("bytes=0-")) {
 				log.info("full range ");
@@ -78,27 +130,31 @@ public class SampleHandler {
 			} else {
 				throw new RuntimeException("partial ranges not implemented");
 			}
-		}
-		
-		response.setContentType("audio/wav");
-		response.setContentLengthLong(len);
+		}*/
 
-		try(FileInputStream in = new FileInputStream(file)) {
-			IO.copy(in, response.getOutputStream());
-		}
+
 	}
-	
+
+
+
+
+
+
 	private void handleMeta(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		//response.setContentType("text/yaml; charset=utf-8");
 		response.setContentType("text/plain; charset=utf-8");
-		
 
-		
 		LinkedHashMap<String, Object> yamlMap = new LinkedHashMap<String, Object>();
-		yamlMap.put("id", sample.id);
-		yamlMap.put("audio_file_name", sample.fileName().toString());
-		yamlMap.put("audio_file_path", sample.filePath().toString());
-		yamlMap.put("audio_file_size", sample.file().length());
+
+		LinkedHashMap<String, Object> yamlMapSample = new LinkedHashMap<String, Object>();
+		yamlMap.put("sample", yamlMapSample);
+		yamlMapSample.put("id", sample.id);
+		yamlMapSample.put("directory", sample.directoryPath.toString());
+		yamlMapSample.put("audio_file_name", sample.getAudioFileName());
+		yamlMapSample.put("audio_file_size", sample.getAudioFile().length());
+
+		yamlMap.put("meta", sample.getMetaMap().getRootMap());
+
 		new Yaml().dump(yamlMap, response.getWriter());
 
 	}

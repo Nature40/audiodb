@@ -279,4 +279,8 @@ public class YamlMap {
 	public String toString() {
 		return map.toString();
 	}
+	
+	public Map<String, Object> getRootMap() {
+		return map;
+	}
 }

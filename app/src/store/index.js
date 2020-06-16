@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import identity from './identity'
 import account from './account'
 import label_definitions from './label_definitions'
+import settings from './settings'
 
 Vue.use(Vuex)
 
@@ -13,6 +14,7 @@ export default new Vuex.Store({
     identity,
     account,
     label_definitions,
+    settings,
   },
   strict: isDev,
   state: {

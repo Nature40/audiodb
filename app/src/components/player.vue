@@ -21,7 +21,7 @@
   </div>
   <v-layout text-xs-center wrap>
     <v-flex xs12 mb-5 >
-      <audio id="player" :src="apiBase + 'samples/'+ sample.id + '/data'" type="audio/wav" controls>
+      <audio id="player" :src="apiBase + 'samples/'+ sample.id + '/data'" type="audio/wav" controls preload="auto">
       </audio>
       <br>
       <div style="display: inline-block; ">
@@ -33,7 +33,7 @@
         style="margin-bottom: -25px; margin-top: -10px;"
         :style="{ width: canvasWidth + 'px' }"        
       ></v-slider>
-      <canvas id="canvas" :width="canvasWidth" :height="canvasHeight" style="background-color: #d1d1d1;" @mousedown="startDrag" @mousemove="dragMove" class="spectrogram" />
+      <canvas id="canvas" :class="{ 'semi_transparent': (!imageLoaded) }" :width="canvasWidth" :height="canvasHeight" style="background-color: #d1d1d1;" @mousedown="startDrag" @mousemove="dragMove" class="spectrogram" />
       <img id="image" :src="spectrumUrl" style="width: 1800px; display: none;" />
       <br>
 
@@ -69,7 +69,10 @@
       <br>
       press <b>[ENTER]</b> key to <b :class="{active: labelStartTime === undefined}">mark start</b> / <b :class="{active: labelStartTime !== undefined && labelEndTime === undefined}">mark end</b> / <b :class="{active: labelStartTime !== undefined && labelEndTime !== undefined && !selectLabel}">save label</b>
       <br>
+      press <b>[LEFT/RIGTH ARROW]</b> key to move <b>back/forward</b> in time
+      <br>
       on spectrogram hold <b>[left mouse button]</b> and <b>[move mouse left/right]</b> to move in time <b></b>
+
 
       <br>
       <br>
@@ -140,12 +143,12 @@ data: () => ({
   sendMessage: undefined,
   sendMessageError: undefined,
   sendMessageErrorReason: undefined,
-  threshold: 13.5,
 }),
 computed: {
   ...mapState({
     apiBase: 'apiBase',
     label_definitions: state => state.label_definitions === undefined ? undefined : state.label_definitions.data,
+    threshold: state => state.settings.player_spectrum_threshold,
   }),
   mergedLabelNames() {
     return this.label_definitions === undefined ? this.customLabelNames : this.label_definitions.concat(this.customLabelNames);
@@ -254,11 +257,11 @@ methods: {
 watch: {
   currentTimeUser() {
     if(this.currentTimeUser !== this.currentTimeAudio) {
-      console.log("user change");
+      //console.log("user change");
       var audio = document.getElementById('player');
-      console.log(audio);
+      //console.log(audio);
       audio.currentTime = this.currentTimeUser;
-      console.log("set currentTimeUser " + this.currentTimeUser);
+      //console.log("set currentTimeUser " + this.currentTimeUser);
     }
   },
   sample() {
@@ -348,13 +351,20 @@ mounted() {
     ctx.lineTo(canvasNowColumn, self.canvasHeight); 
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'red';
-    ctx.stroke();          
+    ctx.stroke();
+  }, 40);
 
+  var someKeysAreDown = false;
+  
+  window.onkeyup = () => {
+    someKeysAreDown = false;
+  };
 
-
-  }, 0 /*, 40*/);
-
-  window.onkeydown = function(e) {
+  window.onkeydown = (e) => {
+    if(someKeysAreDown) {
+      return;
+    }
+    someKeysAreDown = true;
     if(refPlayer.shortcutsBlocked) {
       return;
     }
@@ -378,6 +388,10 @@ mounted() {
       } else if(refPlayer.labelStartTime !== undefined && refPlayer.labelEndTime !== undefined && !refPlayer.selectLabel) {
           refPlayer.onLabelSave();
       }
+    } else if (e.key === 'ArrowLeft' && refPlayer !== undefined) {
+      this.currentTimeUser -= 1;
+    } else if (e.key === 'ArrowRight' && refPlayer !== undefined) {
+      this.currentTimeUser += 1;
     }
   };
 },    
@@ -388,6 +402,11 @@ mounted() {
 
 .hide {
   visibility: hidden;
+}
+
+.semi_transparent {
+  opacity: 0.5;
+  filter: blur(10px);
 }
 
 .table-labels {

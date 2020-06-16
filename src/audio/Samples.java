@@ -14,30 +14,35 @@ import audio.server.Webserver;
 
 public class Samples {
 	static final Logger log = LogManager.getLogger();
-	
+
 	public Map<String, Sample> sampleMap;
-	
+
 	public Samples() {
 		sampleMap = new ConcurrentSkipListMap<String, Sample>();
 		rescan();
 	}
-	
+
 	public void rescan() {
 		try {
 			Path root = Paths.get("data");
 			sampleMap.clear();
 			ArrayList<Path> paths = Webserver.getAudioPaths(root, null);
 			for(Path path:paths) {
-				String id = root.relativize(path).toString();
-				id = id.replaceAll("/", "__");
-				id = id.replaceAll("\\\\", "__");
-				Sample sample = new Sample(id, path);
-				sampleMap.put(id, sample);
+				try {
+					String id = root.relativize(path).toString();
+					id = id.replaceAll("/", "__");
+					id = id.replaceAll("\\\\", "__");
+					Sample sample = new Sample(id, path);
+					sample.loadMeta();
+					sampleMap.put(id, sample);
+				} catch (Exception e) {
+					log.warn("error in " + path + "   " + e);
+				}
 			}
 		} catch (IOException e) {
 			log.warn(e);
 		}
-		
+
 	}
 
 	public Sample getThrow(String id) {
