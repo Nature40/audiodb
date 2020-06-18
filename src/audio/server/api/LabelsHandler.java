@@ -52,16 +52,16 @@ public class LabelsHandler {
 			throw new RuntimeException("no call");
 		}
 	}
-	
+
 	private static Path getSamplePath(Sample sample) {
 		return samplesRoot.resolve(sample.id);
 	}
-	
+
 	private static Path getLabelsPath(Sample sample) {
 		Path samplePath = getSamplePath(sample);
 		return samplePath.resolve("labels.yaml");
 	}
-	
+
 	public static Vec<Label> loadLabels(Sample sample) {
 		Path labelsPath = getLabelsPath(sample);
 		return loadLabels(labelsPath);		
@@ -76,17 +76,18 @@ public class LabelsHandler {
 	}
 
 	private void handleRoot_GET(Sample sample, Request request, HttpServletResponse response) throws IOException {
-		Path labelsPath = getLabelsPath(sample);
-		Vec<Label> labels = loadLabels(sample);		
-		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", labels, Label::toJSON));		
+		/*Path labelsPath = getLabelsPath(sample);
+		Vec<Label> labels = loadLabels(sample);*/
+
+		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", sample.getLabels(), Label::toJSON));		
 	}
 
 	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		Account account = (Account) request.getSession(false).getAttribute("account");
-		Path samplePath = samplesRoot.resolve(sample.id);
+		/*Path samplePath = samplesRoot.resolve(sample.id);
 		samplePath.toFile().mkdirs();
 		Path labelsPath = samplePath.resolve("labels.yaml");
-		Vec<Label> labels = loadLabels(labelsPath);
+		Vec<Label> labels = loadLabels(labelsPath);*/
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
 		int jsonActionsLen = jsonActions.length();
@@ -94,35 +95,45 @@ public class LabelsHandler {
 			JSONObject jsonAction = jsonActions.getJSONObject(i);
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
-			case "add_label": {				;
+			case "add_label": {
 				Label label = Label.ofJSON(jsonAction.getJSONObject("label")).withCreator(account.username, LocalDateTime.now());				
-				labels.add(label);
+				sample.getLabels().add(label);
 				break;
 			}
-			case "remove_label": {				;
-			Label label = Label.ofJSON(jsonAction.getJSONObject("label"));				
-			if(labels.removeIf(l->{
-				return l.start == label.start && l.end == label.end;
-			})) {
-				// nothing
-			} else {
-				throw new RuntimeException("label to remove not found");
+			case "remove_label": {
+				Label label = Label.ofJSON(jsonAction.getJSONObject("label"));				
+				if(sample.getLabels().removeIf(l->{
+					return l.start == label.start && l.end == label.end;
+				})) {
+					// nothing
+				} else {
+					throw new RuntimeException("label to remove not found");
+				}
+				break;
 			}
-			break;
-		}
+			case "replace_label": {
+				Label label = Label.ofJSON(jsonAction.getJSONObject("label"));				
+				int labelIndex = sample.getLabels().findIndexOf(l -> l.start == label.start && l.end == label.end);
+				if(labelIndex < 0) {
+					throw new RuntimeException("label to replace not found");
+				} else {
+					sample.getLabels().setFast(labelIndex, label);
+				}
+				break;
+			}
 			default:
 				throw new RuntimeException("unknown action:" + actionName);
 			}
 		}
-		
-		YamlUtil.writeSafe(labelsPath, map -> YamlUtil.putArray(map, "labels", labels, Label::toMap));
-		
+
+		sample.writeMeta();		
+
 		JsonUtil.write(response, json -> {
 			json.key("massage");
 			json.value("ok");
 			json.key("labels");
 			json.array();
-			for(Label label:labels) {
+			for(Label label:sample.getLabels()) {
 				label.toJSON(json);
 			}
 			json.endArray();

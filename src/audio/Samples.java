@@ -33,7 +33,7 @@ public class Samples {
 					id = id.replaceAll("/", "__");
 					id = id.replaceAll("\\\\", "__");
 					Sample sample = new Sample(id, path);
-					sample.loadMeta();
+					sample.readMeta();
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
 					log.warn("error in " + path + "   " + e);

@@ -37,6 +37,19 @@ public class JsonUtil {
 		}
 		return items;
 	}
+	
+	public static String[] optStrings(JSONObject json, String name) {
+		JSONArray jsonArray = json.optJSONArray(name);
+		if(jsonArray == null) {
+			return new String[] {};
+		}
+		int jsonArrayLen = jsonArray.length();
+		String[] items = new String[jsonArrayLen];
+		for (int i = 0; i < jsonArrayLen; i++) {
+			items[i] = jsonArray.get(i).toString();
+		}
+		return items;
+	}
 
 	public static void writeOpt(JSONWriter json, String name, String value) {
 		if(value != null && !value.isEmpty()) {
@@ -80,5 +93,7 @@ public class JsonUtil {
 		Object value = json.opt(name);		
 		return value == null ? def :  LocalDateTime.parse(value.toString());
 	}
+
+	
 
 }

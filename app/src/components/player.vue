@@ -15,9 +15,12 @@
       <br>{{sendMessageErrorReason}}
     </div>  
   </div>
-  <div v-show="!imageLoaded" style="position: absolute; background-color: lightgrey; padding: 100px; margin: 100px; margin-left: 400px;; border-style: solid;">
+  <div v-show="!imageLoaded" style="position: absolute; background-color: lightgrey; padding: 100px; margin: 100px; margin-left: 400px;; border-style: solid;">    
     <h1>loading ...</h1>
     <ring-loader loading="loading" color="#000000" size="50px" />
+  </div>
+  <div v-show="imageError && imageLoaded" style="position: absolute; background-color: lightgrey; padding: 100px; margin: 100px; margin-left: 400px;; border-style: solid;">    
+    <h1>Error loading visualisation</h1>
   </div>
   <v-layout text-xs-center wrap>
     <v-flex xs12 mb-5 >
@@ -62,8 +65,9 @@
           <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;">end label</v-btn>
           <v-btn @click="onLabelSave" small round color="primary" v-show="labelEndTime !== undefined" title="store current label" style="position: absolute; top: 0px; left: 0px;">save</v-btn>
         </div>
-        <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="remove current label" style="vertical-align: top;">discard</v-btn>
+        <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;">discard</v-btn>
         <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
+        <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;">play selection</v-btn>
       </div>
       press <b>[SPACE]</b> key to <b>play</b> / <b>pause</b> audio
       <br>
@@ -81,17 +85,24 @@
         <th>remove</th>
         <th>start</th>
         <th>end</th>
+        <th>generated</th>
         <th>label</th>
         <th>move to</th>
         <th>comment</th>
       </tr>
       <tbody>
-      <tr v-for="(label, index) in labels" :key="index">
+      <tr v-for="(label, index) in labels" :key="index" :class="{'selected-label-entry': (selectedLabelEntry === label)}">
         <td><v-btn icon title="remove label"><v-icon @click="onLabelRemove(index)">delete_forever</v-icon></v-btn></td>
         <td>{{label.start.toFixed(3)}}</td>
         <td>{{label.end.toFixed(3)}}</td>
+        <td><span v-for="labelName in label.generated_labels" :key="labelName" class="label-name">{{labelName}}</span></td>
         <td><span v-for="labelName in label.labels" :key="labelName" class="label-name">{{labelName}}</span></td>
-        <td><v-btn icon title="move to label start"><v-icon @click="currentTimeUser = label.start">redo</v-icon></v-btn></td>
+        <td>
+          <v-btn icon title="move to label start">
+            <v-icon @click="onSelectLabelEntry(label)" v-if="selectedLabelEntry !== label">redo</v-icon>
+            <v-icon @click="onSelectLabelEntry(label)" v-if="selectedLabelEntry === label">details</v-icon>
+          </v-btn>
+        </td>
         <td>{{label.comment}}</td>
       </tr>
       <tr v-if="labels.length === 0">
@@ -130,6 +141,7 @@ data: () => ({
   canvasWidth: 1024,
   canvasHeight: 512,
   imageLoaded: false,
+  imageError: false,
   dragStartX: undefined,
   secondsPerColumn: undefined,
   labelStartTime: undefined,
@@ -143,6 +155,12 @@ data: () => ({
   sendMessage: undefined,
   sendMessageError: undefined,
   sendMessageErrorReason: undefined,
+  audio: undefined,
+  renderThis: undefined,
+  timerID: undefined,
+  animationFrameID: undefined,
+  playSection: false,
+  selectedLabelEntry: undefined,
 }),
 computed: {
   ...mapState({
@@ -169,6 +187,7 @@ methods: {
     this.dragStartX = e.pageX;
   },
   dragMove(e) {
+    this.requestRender();
     if(this.dragStartX !== undefined) {
       if(e.buttons == 1) { // left mouse button
         var offsetX = e.pageX - this.dragStartX;
@@ -182,24 +201,40 @@ methods: {
   onLabelStart() {
     this.labelStartTime = this.currentTimeAudio;
   },
-  onLabelEnd() {
+  onLabelEnd() {    
     this.labelEndTime = this.currentTimeAudio;
+    this.audio.pause();
   },
   onLabelDiscard() {
     this.labelStartTime = undefined;
     this.labelEndTime = undefined;
-  },
+    this.selectedLabelEntry = undefined;
+  },  
   onLabelSave() {
     var names = this.selectedLabelNames.map(l=>l.name);
-    var label = {start: this.labelStartTime, end: this.labelEndTime, labels: names, comment: this.labelComment};
-    //this.labels.push(label);
-    //this.labelStartTime = undefined;
-    //this.labelEndTime = undefined;
-    this.postAddLabel(label);
+    var label = this.selectedLabelEntry === undefined ? {} : this.selectedLabelEntry;
+    label.start = this.labelStartTime;
+    label.end = this.labelEndTime;
+    label.labels = names;
+    label.comment = this.labelComment;
+    if(this.selectedLabelEntry === undefined) {
+      this.postAddLabel(label);
+    } else {
+      this.postReplaceLabel(label);
+    }    
+  },
+  onLabelPlay() {
+    this.audio.pause();
+    this.currentTimeUser = this.labelStartTime;
+    this.audio.play();
+    this.playSection = true;
   },
   addLabelName(labelText) {
-    var x = {name: labelText};
-    this.customLabelNames.push(x);
+    let x = this.mergedLabelNames.find(label => label.name === labelText);
+    if(x === undefined) {
+      x = {name: labelText};
+      this.customLabelNames.push(x);
+    }
     this.selectedLabelNames.push(x);
   },
   postAddLabel(label) {
@@ -216,6 +251,22 @@ methods: {
     .catch(() => {
       this.sendMessage = undefined;
       this.sendMessageError = "could not send: add label. You may tray again.";
+    });
+  },
+  postReplaceLabel(label) {
+    this.sendMessage = "send: add label";
+    this.sendMessageError = undefined;
+    axios.post(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'labels', {actions: [{action: "replace_label", label: label}]})
+    .then((response) => {
+      this.sendMessage = undefined;
+      this.sendMessageError = undefined;
+      this.labelStartTime = undefined;
+      this.labelEndTime = undefined;
+      this.labels = response.data.labels;
+    })
+    .catch(() => {
+      this.sendMessage = undefined;
+      this.sendMessageError = "could not send: replace label. You may tray again.";
     });
   },
   refreshLabels() {
@@ -252,15 +303,142 @@ methods: {
   },
   onWindowResize() {
     this.canvasWidth = document.body.clientWidth - 200;
-  }  
+  },
+  render() {
+    //console.log(this.audio.paused);
+    this.timerID = undefined;
+    this.animationFrameID = undefined;
+    if(this.audio.paused) {
+      this.timerID = setTimeout(this.renderThis, 1000);
+    } else {
+      this.animationFrameID = requestAnimationFrame(this.renderThis);
+    }
+
+    this.imageLoaded = this.image.complete;
+    var currentTime = this.audio.currentTime;
+    if(isNaN(currentTime)) {
+      return;
+    }
+    if(this.playSection && this.labelEndTime !== undefined) {
+      if(this.labelEndTime <= currentTime) {
+        this.audio.pause();
+        this.playSection = false;
+        currentTime = this.labelEndTime;
+        this.audio.currentTime = currentTime;
+      }
+    }
+    var duration = this.audio.duration;
+    if(isNaN(duration)) {
+      this.duration = 0;
+      return;
+    }
+    //console.log("render currentTime: " + currentTime);
+    this.currentTimeAudio = currentTime;
+    this.currentTimeUser = currentTime;
+    this.duration = duration;
+    var canvasNowColumn = this.canvasWidth / 2;
+    var columnsPerSecond = this.image.naturalWidth / duration;
+    this.secondsPerColumn = duration / this.image.naturalWidth;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    //ctx.drawImage(image, canvasNowColumn - (currentTime*collumnsPerSecond), 0);
+    //ctx.drawImage(image, (currentTime*collumnsPerSecond) - canvasNowColumn, 0 , 1000, 256, 0, 0, 1000, 256);
+    var sx = (currentTime*columnsPerSecond) - canvasNowColumn;
+    var sy = 0;
+    var sWidth = this.canvasWidth;
+    var sHeight = this.canvasHeight;
+    var dx = 0;
+    var dy = 0;
+    var dWidth = sWidth;
+    var dHeight = sHeight;
+    this.ctx.drawImage(this.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+
+    if(this.labelStartTime !== undefined) {
+      var labelXStart = canvasNowColumn - (currentTime - this.labelStartTime)*columnsPerSecond;
+      var endTime = this.labelEndTime === undefined ? currentTime : this.labelEndTime;
+      var labelXEnd = canvasNowColumn - (currentTime - endTime)*columnsPerSecond; 
+      this.ctx.fillStyle = "rgba(255,255,0,0.5)";
+      this.ctx.fillRect(labelXStart, 0, labelXEnd - labelXStart, this.canvasHeight);
+    }
+
+    this.ctx.lineWidth = 5;
+    this.ctx.strokeStyle = 'rgba(0,255,0,0.9)';
+    this.ctx.beginPath();
+    for (let i = 0; i < this.labels.length; i++) {
+      let label = this.labels[i];
+      let xStart = canvasNowColumn - (currentTime - label.start)*columnsPerSecond;
+      let xEnd = canvasNowColumn - (currentTime - label.end)*columnsPerSecond;
+      //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
+      this.ctx.moveTo(xStart, this.canvasHeight - 3);
+      this.ctx.lineTo(xEnd, this.canvasHeight - 3);
+    }
+    this.ctx.stroke();
+
+    this.ctx.fillStyle = 'rgba(255,255,255,1)';
+    this.ctx.beginPath();
+    for (let i = 0; i < this.labels.length; i++) {
+      let label = this.labels[i];
+      let x = canvasNowColumn - (currentTime - label.end)*columnsPerSecond;
+      let y = this.canvasHeight - 10;
+      //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
+      this.ctx.moveTo(x, y);
+      this.ctx.lineTo(x - 7, y + 5);
+      this.ctx.lineTo(x, y + 9);
+      this.ctx.lineTo(x, y);
+    }
+    this.ctx.closePath();
+    this.ctx.fill();
+
+    this.ctx.fillStyle = 'rgba(255,255,255,1)';
+    this.ctx.beginPath();
+    for (let i = 0; i < this.labels.length; i++) {
+      let label = this.labels[i];
+      let x = canvasNowColumn - (currentTime - label.start)*columnsPerSecond;
+      let y = this.canvasHeight - 10;
+      //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
+      this.ctx.moveTo(x, y);
+      this.ctx.lineTo(x + 7, y + 5);
+      this.ctx.lineTo(x, y + 9);
+      this.ctx.lineTo(x, y);
+    }
+    this.ctx.closePath();
+    this.ctx.fill();
+    
+
+    this.ctx.beginPath();     
+    this.ctx.moveTo(canvasNowColumn, 0); 
+    this.ctx.lineTo(canvasNowColumn, this.canvasHeight); 
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = 'rgba(255,0,0,0.9)';
+    this.ctx.stroke();    
+  },
+  requestRender() {
+    if(this.timerID !== undefined) {
+      clearTimeout(this.timerID);
+      this.timerID = undefined;
+    }
+    if(this.animationFrameID === undefined) {
+      this.animationFrameID = requestAnimationFrame(this.renderThis);
+    }
+  },
+  onSelectLabelEntry(label) {
+    this.currentTimeUser = label.start;
+    if(this.selectedLabelEntry === label) {
+      this.selectedLabelEntry = undefined;
+    } else {
+      this.selectedLabelEntry = label;
+      this.labelStartTime = this.selectedLabelEntry.start;
+      this.labelEndTime = this.selectedLabelEntry.end;
+      this.labelComment = this.selectedLabelEntry.comment;
+      this.selectedLabelNames = [];
+      this.selectedLabelEntry.labels.forEach(name => this.addLabelName(name));
+    }
+  },
 },
 watch: {
   currentTimeUser() {
     if(this.currentTimeUser !== this.currentTimeAudio) {
-      //console.log("user change");
-      var audio = document.getElementById('player');
-      //console.log(audio);
-      audio.currentTime = this.currentTimeUser;
+      console.log("user change " + this.currentTimeUser + "   " + this.duration);
+      this.audio.currentTime = this.currentTimeUser;
       //console.log("set currentTimeUser " + this.currentTimeUser);
     }
   },
@@ -277,82 +455,46 @@ destroyed() {
   window.removeEventListener("resize", this.onWindowResize.bind(this));
 },
 mounted() {
-  var self = this;
   this.onWindowResize();
   this.refreshLabels();
   this.label_definitions_init();
   refPlayer = this;
-  var audio = document.getElementById('player');
+  this.audio = document.getElementById('player');
 
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  const image = document.getElementById('image');
-  audio.addEventListener("progress", function() {
-    console.log("progress"); 
+  this.canvas = document.getElementById('canvas');
+  this.ctx = this.canvas.getContext('2d');
+  this.image = document.getElementById('image');
+  this.image.onerror = () => {
+    this.imageLoaded = true;
+    this.imageError = true;
+  }
+  this.image.onload = () => {
+    this.imageLoaded = true;
+    this.imageError = false;
+  }
+  this.audio.addEventListener("progress", () => {
+    console.log("progress");
+    this.requestRender(); 
     }, true
   );
-  audio.addEventListener("play", function() {
+  this.audio.addEventListener("play", () => {
     console.log("play");
+    this.requestRender();
     }, true
   );
-  audio.addEventListener("playing", function() {
-    console.log("playing"); 
+  this.audio.addEventListener("playing", () => {
+    console.log("playing");
+    this.requestRender(); 
     }, true
   );
-  audio.addEventListener("timeupdate", function() {
-    console.log("timeupdate"); 
+  this.audio.addEventListener("timeupdate", () => {
+    console.log("timeupdate");
+    this.requestRender(); 
     }, true
   );
-  setInterval(() => {
-    self.imageLoaded = image.complete;
-    var currentTime = audio.currentTime;
-    self.currentTimeAudio = currentTime;
-    self.currentTimeUser = currentTime;
-    self.duration = audio.duration;
-    var canvasNowColumn = this.canvasWidth / 2;
-    var columnsPerSecond = image.naturalWidth / audio.duration;
-    self.secondsPerColumn = audio.duration / image.naturalWidth;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //ctx.drawImage(image, canvasNowColumn - (currentTime*collumnsPerSecond), 0);
-    //ctx.drawImage(image, (currentTime*collumnsPerSecond) - canvasNowColumn, 0 , 1000, 256, 0, 0, 1000, 256);
-    var sx = (currentTime*columnsPerSecond) - canvasNowColumn;
-    var sy = 0;
-    var sWidth = self.canvasWidth;
-    var sHeight = self.canvasHeight;
-    var dx = 0;
-    var dy = 0;
-    var dWidth = sWidth;
-    var dHeight = sHeight;
-    ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
 
-    if(self.labelStartTime !== undefined) {
-      var labelXStart = canvasNowColumn - (currentTime - self.labelStartTime)*columnsPerSecond;
-      var endTime = self.labelEndTime === undefined ? currentTime : self.labelEndTime;
-      var labelXEnd = canvasNowColumn - (currentTime - endTime)*columnsPerSecond; 
-      ctx.fillStyle = "rgba(255,255,0,0.5)";
-      ctx.fillRect(labelXStart, 0, labelXEnd - labelXStart, self.canvasHeight);
-    }
-
-    ctx.beginPath();
-    for (var i = 0; i < self.labels.length; i++) {
-      var label = self.labels[i];
-      var xStart = canvasNowColumn - (currentTime - label.start)*columnsPerSecond;
-      var xEnd = canvasNowColumn - (currentTime - label.end)*columnsPerSecond;
-      //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
-      ctx.moveTo(xStart, self.canvasHeight - 3);
-      ctx.lineTo(xEnd, self.canvasHeight - 3);
-    }
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = 'rgb(0,255,0)';
-    ctx.stroke();  
-
-    ctx.beginPath();     
-    ctx.moveTo(canvasNowColumn, 0); 
-    ctx.lineTo(canvasNowColumn, self.canvasHeight); 
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'red';
-    ctx.stroke();
-  }, 40);
+  this.renderThis = this.render.bind(this);
+  this.timerID = setTimeout(this.renderThis, 500);
 
   var someKeysAreDown = false;
   
@@ -370,10 +512,10 @@ mounted() {
     }
     console.log(e.key);
     if(e.key === ' ') {
-      if(audio.paused) {
-        audio.play();
+      if(this.audio.paused) {
+        this.audio.play();
       } else {
-        audio.pause();
+        this.audio.pause();
       }
       if (e.target == document.body) {
         e.preventDefault();
@@ -449,6 +591,12 @@ mounted() {
   background-color: #dbdbdb;
 }
 
+.table-labels tbody tr.selected-label-entry td {
+  color: #168000;
+  background-color: #39682461;
+}
+
+
 .label-name {
   background-color: #c8b69887;
   padding: 3px;
@@ -500,6 +648,7 @@ audio {
   border-style: solid;
   padding: 5px;
 }
+
 
 </style>
 

@@ -9,7 +9,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
+import util.collections.vec.Vec;
 import util.yaml.YamlMap;
+import util.yaml.YamlUtil;
 
 public class Sample {
 	static final Logger log = LogManager.getLogger();
@@ -22,6 +24,7 @@ public class Sample {
 	private String audioFilename;
 	private Path audioPath;
 	private File audioFile;
+	private Vec<Label> labels;
 
 	public Sample(String id, Path metaPath) {
 		this.id = id;		
@@ -30,7 +33,7 @@ public class Sample {
 	}
 	
 	
-	public void loadMeta() {
+	public void readMeta() {
 		Object inObject;
 		try(InputStream in = new FileInputStream(metaPath.toFile())) {
 			inObject = new Yaml().load(in);			
@@ -47,6 +50,20 @@ public class Sample {
 		audioFilename = yamlMap.getString("file");
 		audioPath = directoryPath.resolve(audioFilename);
 		audioFile = audioPath.toFile();
+		
+		labels = new Vec<Label>();
+		for(YamlMap labelMap:yamlMap.optList("Labels").asMaps()) {		
+			log.info(labelMap.toString());
+			Label label = Label.ofYAML(labelMap);
+			log.info(label.toString());
+			labels.add(label);
+		}
+	}
+	
+	public void writeMeta() {		
+		YamlUtil.putArray(yamlMap.getRootMap(), "Labels", labels, Label::toMap);		
+		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getRootMap());
+
 	}
 	
 	public File getAudioFile() {
@@ -57,8 +74,11 @@ public class Sample {
 		return audioFilename;
 	}
 
-
 	public YamlMap getMetaMap() {
 		return yamlMap;
+	}
+
+	public Vec<Label> getLabels() {
+		return labels;
 	}
 }

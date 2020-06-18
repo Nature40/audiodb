@@ -652,6 +652,30 @@ public class Vec<T> implements List<T> {
 		}
 		return false;
 	}
+	
+	public int findIndexOf(Predicate<? super T> predicate) {
+		int len = size;
+		T[] data = items;
+		for (int i = 0; i < len; i++) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return i;
+			}
+		}		
+		return -1;
+	}
+	
+	public T find(Predicate<? super T> predicate) {
+		int len = size;
+		T[] data = items;
+		for (int i = 0; i < len; i++) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return e;
+			}
+		}		
+		return null;
+	}
 
 	@Override
 	public T set(int index, T e) {
