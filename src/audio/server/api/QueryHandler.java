@@ -63,12 +63,12 @@ public class QueryHandler extends AbstractHandler {
 				CSVWriter.DEFAULT_ESCAPE_CHARACTER,
 				CSVWriter.DEFAULT_LINE_END
 				)) {
-			String[] header = new String[]{"sample", "start", "end", "label", "comment"};
+			String[] header = new String[]{"sample", "start", "end", "generated_label", "label", "comment"};
 			writer.writeNext(header, false);
 			for(Sample sample:broker.samples().sampleMap.values()) {
-				Vec<Label> labels = LabelsHandler.loadLabels(sample);
+				Vec<Label> labels = sample.getLabels();
 				for(Label label:labels) {					
-					String[] row = new String[]{sample.id, Double.toString(label.start), Double.toString(label.end), Arrays.toString(label.labels), label.comment};
+					String[] row = new String[]{sample.id, Double.toString(label.start), Double.toString(label.end), Arrays.toString(label.generated_labels), Arrays.toString(label.labels), label.comment};
 					writer.writeNext(row, false);
 				}	
 			}

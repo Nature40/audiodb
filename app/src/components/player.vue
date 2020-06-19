@@ -61,13 +61,13 @@
 
         <div style="position: relative; display: inline-block; vertical-align: top;">
           <v-btn small round color="primary" class="hide" >start label</v-btn>
-          <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position" style="position: absolute; top: 0px; left: 0px;">start label</v-btn>
-          <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;">end label</v-btn>
-          <v-btn @click="onLabelSave" small round color="primary" v-show="labelEndTime !== undefined" title="store current label" style="position: absolute; top: 0px; left: 0px;">save</v-btn>
+          <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position" style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_takeoff</v-icon> start label</v-btn>
+          <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_land</v-icon> end label</v-btn>
+          <v-btn @click="onLabelSave" small round color="primary" v-show="labelEndTime !== undefined" title="store current label" style="position: absolute; top: 0px; left: 0px;"><v-icon>push_pin</v-icon> save</v-btn>
         </div>
-        <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;">discard</v-btn>
+        <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;"><v-icon>power_off</v-icon> discard</v-btn>
         <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
-        <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;">play selection</v-btn>
+        <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;"><v-icon>play_arrow</v-icon> play selection</v-btn>
       </div>
       press <b>[SPACE]</b> key to <b>play</b> / <b>pause</b> audio
       <br>

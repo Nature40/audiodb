@@ -16,7 +16,8 @@
     </v-menu>     
     <v-toolbar-title class="headline text-uppercase">
       Audio
-    </v-toolbar-title> 
+    </v-toolbar-title>
+    <audio-browser v-if="samples !== undefined && samples !== []" :samples="samples" @select-sample="selectedSample = $event"/> 
     &nbsp;&nbsp;&nbsp;<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 1000px;" placeholder="select audio sample" :allowEmpty="false"/>    
     <audio-meta v-if="selectedSample !== undefined" :sample="selectedSample"/>
     <identity-dialog></identity-dialog>
@@ -37,6 +38,7 @@
 import player from './player'
 import identityDialog from './identity-dialog'
 import audioMeta from './audio-meta'
+import audioBrowser from './audio-browser'
 
 import { mapState, mapActions } from 'vuex'
 import axios from 'axios'
@@ -47,6 +49,7 @@ components: {
   player,
   identityDialog,
   audioMeta,
+  audioBrowser
 },
 data () {
   return {
@@ -67,11 +70,11 @@ methods: {
   }),
 },
 mounted() {
-  var self = this;
-  axios.get(self.apiBase + 'samples')
-  .then(function(response) {
-      self.samples = response.data.samples;
-      self.samplesLoading = false;
+  axios.get(this.apiBase + 'samples')
+  .then(response => {
+      this.samples = response.data.samples;
+      this.samplesLoading = false;
+      this.samples.forEach(sample => sample.datetime = new Date(sample.timestamp * 1000));
   });
   this.identityInit();
 },

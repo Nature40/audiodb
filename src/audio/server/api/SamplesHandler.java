@@ -3,7 +3,7 @@ package audio.server.api;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,9 +16,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
-import audio.Role;
 import audio.Sample;
-import audio.server.Webserver;
 
 public class SamplesHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
@@ -55,6 +53,8 @@ public class SamplesHandler extends AbstractHandler {
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
+	
+	private static final LocalDateTime UNIX_EPOCH = LocalDateTime.of(1970,1,1,0,0);
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json");
@@ -82,6 +82,12 @@ public class SamplesHandler extends AbstractHandler {
 			json.object();
 			json.key("id");
 			json.value(sample.id);
+			json.key("location");
+			json.value(sample.getMetaMap().optString("location",""));
+			json.key("timestamp");
+			long timestamp = sample.getMetaMap().optLong("timestamp", 0);			
+			//LocalDateTime datetime = UNIX_EPOCH.plusSeconds(timestamp);			
+			json.value(timestamp);
 			json.endObject();
 		}
 		json.endArray();

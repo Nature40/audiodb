@@ -64,6 +64,7 @@ data () {
     headers: [{ text: 'sample', value: 'sample', align: "center" },
     { text: 'start', value: 'start', align: "center" },
     { text: 'end', value: 'end', align: "center" },
+    { text: 'generated_label', value: 'label', align: "center" },
     { text: 'label', value: 'label', align: "center" },
     { text: 'comment', value: 'comment', align: "center" },
     ],

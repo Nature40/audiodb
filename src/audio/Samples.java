@@ -32,6 +32,7 @@ public class Samples {
 					String id = root.relativize(path).toString();
 					id = id.replaceAll("/", "__");
 					id = id.replaceAll("\\\\", "__");
+					id = id.replaceAll(".yaml", "");
 					Sample sample = new Sample(id, path);
 					sample.readMeta();
 					sampleMap.put(id, sample);

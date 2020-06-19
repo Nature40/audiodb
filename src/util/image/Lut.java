@@ -88,6 +88,28 @@ public class Lut {
 		return lut;
 	}
 	
+	public static float[] getLogLUT256f(double min, double max) {		
+		float[] lut = new float[256];
+		double f = Math.log(max - min + 1);
+		for (int i = 0; i < 256; i++) {
+			double v = i / 256d;
+			double w = Math.expm1(v * f) + min;
+			lut[i] = (float) w;
+		}
+		return lut;
+	}
+	
+	public static float[] getLogLUT256fLogMinMax(double min, double max) {		
+		float[] lut = new float[256];
+		double range = max - min;
+		for (int i = 0; i < 256; i++) {
+			double v = i / 256d;
+			double w = Math.exp(v * range + min);
+			lut[i] = (float) w;
+		}
+		return lut;
+	}
+	
 	public static short[] getLogLUT256s(double min, double max) {		
 		short[] lut = new short[256];
 		double f = Math.log(max - min + 1);

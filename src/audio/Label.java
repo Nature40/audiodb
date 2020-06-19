@@ -13,7 +13,9 @@ import util.JsonUtil;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
-public class Label {	
+public class Label {
+	private static final LocalDateTime DEFAULT_TIMESTAMP = Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()).toLocalDateTime();	
+	
 	public final double start;
 	public final double end;
 	public final String[] generated_labels;
@@ -75,8 +77,6 @@ public class Label {
 		}
 		return map;
 	}
-
-	private static final LocalDateTime DEFAULT_TIMESTAMP = Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()).toLocalDateTime();
 
 	public static Label ofYAML(YamlMap yamlMap) {
 		double start = yamlMap.getDouble("start");
