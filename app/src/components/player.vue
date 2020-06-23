@@ -167,6 +167,8 @@ computed: {
     apiBase: 'apiBase',
     label_definitions: state => state.label_definitions === undefined ? undefined : state.label_definitions.data,
     threshold: state => state.settings.player_spectrum_threshold,
+    playbackRate: state => state.settings.player_playbackRate,
+    preservesPitch: state => state.settings.player_preservesPitch,
   }),
   mergedLabelNames() {
     return this.label_definitions === undefined ? this.customLabelNames : this.label_definitions.concat(this.customLabelNames);
@@ -446,6 +448,15 @@ watch: {
     console.log("watch sample");
     //this.imageLoaded = false;
     this.refreshLabels();
+  },
+  playbackRate() {
+    this.audio.playbackRate = this.playbackRate;
+    this.audio.defaultPlaybackRate = this.playbackRate;    
+  },
+  preservesPitch() {
+    this.audio.preservesPitch = this.preservesPitch;
+    this.audio.mozPreservesPitch = this.preservesPitch;
+    this.audio.webkitPreservesPitch  = this.preservesPitch;
   },
 },
 created() {

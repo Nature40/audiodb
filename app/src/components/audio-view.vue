@@ -18,7 +18,8 @@
       Audio
     </v-toolbar-title>
     <audio-browser v-if="samples !== undefined && samples !== []" :samples="samples" @select-sample="selectedSample = $event"/> 
-    &nbsp;&nbsp;&nbsp;<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 1000px;" placeholder="select audio sample" :allowEmpty="false"/>    
+    &nbsp;&nbsp;&nbsp;<!--<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 1000px;" placeholder="select audio sample" :allowEmpty="false"/>    -->
+    <span v-if="selectedSample !== undefined"><b>{{selectedSample.location}}</b> {{selectedSample.datetime}}</span>
     <audio-meta v-if="selectedSample !== undefined" :sample="selectedSample"/>
     <identity-dialog></identity-dialog>
   </v-toolbar>
