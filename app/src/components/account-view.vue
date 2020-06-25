@@ -29,6 +29,9 @@
     <br><b>user:</b> {{identity.user}}
     <br>
     <br><b>roles:</b> <span style="background-color: #998c8c4f;"><span v-for="role in identity.roles" :key="role" class="role">{{role}}</span></span>
+    <br>
+    <br><v-btn @click="webauthn_register">webauthn_register (TESTING)</v-btn>
+    <v-btn @click="webauthn_validate">webauthn_validate (TESTING)</v-btn>
   </v-content>
   <v-content v-if="isRole('create_account') && account !== undefined">
     <hr>
@@ -56,6 +59,7 @@
     <v-btn @click="generate_password">generate password</v-btn>
     <br>
     <v-btn @click="create_account" :loading="createAccountDialog" :disabled="$refs.inputUser === undefined || $refs.inputPassword === undefined || !$refs.inputUser.valid || !$refs.inputPassword.valid">create account</v-btn>
+    <br>
   </v-content>
 
   <v-content v-show="accountLoading">
@@ -104,8 +108,18 @@ import identityDialog from './identity-dialog'
 
 import { sha3_512 } from 'js-sha3'
 import axios from 'axios'
+import cbor from 'cbor-js'
 
 import { mapState, mapGetters, mapActions } from 'vuex'
+
+function arrayBufferToBase64(arrayBuffer) {
+  let byteBuffer = new Uint8Array(arrayBuffer);
+  let text = String.fromCharCode.apply(null, byteBuffer);
+  let base64 = btoa(text);
+  return(base64)
+}
+
+let rpId = window.location.hostname;
 
 export default {
 name: 'account-view',
@@ -194,6 +208,110 @@ methods: {
           }
       }      
     });
+  },
+  async webauthn_register() {
+
+
+
+    var textEncoder = new TextEncoder("utf-8");
+    var textDecoder = new TextDecoder("utf-8");
+
+    var userIdBuffer = textEncoder.encode(this.identity.user);
+    console.log(this.identity.user);
+    console.log(userIdBuffer);
+    console.log(textDecoder.decode(userIdBuffer));
+
+    
+
+    var publicKey = {
+      authenticatorSelection:{
+        authenticatorAttachment: "cross-platform",
+        requireResidentKey: true,
+        userVerification: "required"
+      },
+      challenge: new Uint8Array(26) /* this actually is given from the server */,
+      rp: {
+        name: "AudioDB",
+        id: rpId,
+      },
+      user: {
+        id: userIdBuffer,
+        name: this.identity.user,
+        displayName: this.identity.user,
+      },
+      pubKeyCredParams: [ {
+        type: "public-key",
+        alg: -7, // -7 indicates the elliptic curve algorithm ECDSA with SHA-256
+      } ],
+    };
+
+    try {
+      var credentialInfo = await navigator.credentials.create({ publicKey });
+      console.log(credentialInfo);
+      console.log("id: " + credentialInfo.id);
+      console.log("id: " + arrayBufferToBase64(credentialInfo.rawId));
+      console.log(credentialInfo.response);
+      var clientData = JSON.parse(textDecoder.decode(credentialInfo.response.clientDataJSON));
+      console.log(clientData);
+      var attestationObject = cbor.decode(credentialInfo.response.attestationObject);
+      console.log(attestationObject);
+      console.log(attestationObject.authData);
+      console.log("fmt: " + attestationObject.fmt);
+      console.log(attestationObject.attStmt);
+      console.log("alg: " + attestationObject.attStmt.alg);
+      console.log("sig: " + attestationObject.attStmt.sig);
+      console.log("x5c: " + attestationObject.attStmt.x5c);
+
+      var request = {};
+      request.rpId = rpId;
+      request.clientDataJSON = arrayBufferToBase64(credentialInfo.response.clientDataJSON);
+      request.attestationObject = arrayBufferToBase64(credentialInfo.response.attestationObject);
+      console.log(request);
+      
+      var registerResponse = await axios.post(this.apiBase + 'WebAuthn/register', request);
+      console.log(registerResponse);
+
+    } catch(err) {
+      alert(err);
+    }
+
+    /*navigator.credentials.create({ publicKey })
+      .then( newCredentialInfo => {
+        console.log(newCredentialInfo);
+      }).catch(function (err) {
+        alert(err);
+    });*/
+  },
+
+  async webauthn_validate() {
+    var publicKey = {
+      challenge: new Uint8Array(26),
+      rpId: rpId,
+    };
+
+    try {
+      var credentialInfo = await navigator.credentials.get({ publicKey });
+      console.log(credentialInfo);
+      var authenticatorAssertionResponse = credentialInfo.response;
+      console.log(authenticatorAssertionResponse);
+
+      var request = {};
+      request.credentialId = credentialInfo.id;
+      request.authenticatorData = arrayBufferToBase64(authenticatorAssertionResponse.authenticatorData);
+      request.signature = arrayBufferToBase64(authenticatorAssertionResponse.signature);
+      request.clientDataJSON = arrayBufferToBase64(authenticatorAssertionResponse.clientDataJSON);
+      request.userHandle = arrayBufferToBase64(authenticatorAssertionResponse.userHandle);
+      request.rpId = rpId;
+      console.log(request);
+      
+      var verifyResponse = await axios.post(this.apiBase + 'WebAuthn/verify', request);
+      console.log(verifyResponse);
+
+
+    } catch(err) {
+      alert(err);
+    }
+
   },
 },
 mounted() {

@@ -42,6 +42,8 @@ dependencies {
 	runtime group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.10.6'
 	runtime group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.10.6'
 	
+	compile group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.12.0.RELEASE'
+	
 	compile group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 }
 

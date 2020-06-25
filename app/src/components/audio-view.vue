@@ -30,6 +30,28 @@
       <br>
       <br>
       <h1>no audio sample selected</h1>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>      
+      <i>
+        <div style="text-align: left;">
+        Web application compatibility is tested on up-to-date <b>Mozilla Firefox</b> and <b>Google Chrome</b>.
+        <br>
+        <br>
+        Limitations on <b>Google Chrome</b>:
+        <ul>
+          <li>Audio pitch is always constant for different playback rates. (Settings - Playback rate - unchecked box preserve pitch has no effect)</li>
+        </ul>
+        </div>      
+      </i>
+
     </div>
   </v-content>
 </v-app>

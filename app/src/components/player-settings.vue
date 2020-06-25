@@ -53,7 +53,7 @@
 
       <v-layout row>
         <b>Playback rate (audio speed)</b>
-        <v-checkbox v-model="user_preservesPitch" label="preserve pitch" style="padding-left: 30px; margin-top: 0px; padding-top: 0px;" hide-details></v-checkbox>
+        <v-checkbox v-model="user_preservesPitch" label="preserve pitch (non preserve pitch Firefox only)" style="padding-left: 30px; margin-top: 0px; padding-top: 0px;" hide-details></v-checkbox>
       </v-layout>
 
       <v-layout row>

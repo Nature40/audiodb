@@ -48,6 +48,7 @@ import audio.server.api.LoginHandler;
 import audio.server.api.LogoutHandler;
 import audio.server.api.QueryHandler;
 import audio.server.api.SamplesHandler;
+import audio.server.api.WebAuthnHandler;
 
 public class Webserver {
 	static final Logger log = LogManager.getLogger();
@@ -153,6 +154,7 @@ public class Webserver {
 			handlerList.addHandler(createContext("/login", true, new LoginHandler(broker)));
 		}
 		handlerList.addHandler(new JwsHandler(broker));
+		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));
 		handlerList.addHandler(new AccessHandler(broker));
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
