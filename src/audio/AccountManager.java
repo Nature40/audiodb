@@ -118,4 +118,13 @@ public class AccountManager {
 		acc2.add(account);
 		this.accounts = acc2;
 	}
+
+	public Account getAccount(String username) {
+		for(Account account:accounts) {
+			if(account.username.equals(username)) {
+				return account;
+			}
+		}
+		return null;
+	}
 }

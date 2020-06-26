@@ -4,13 +4,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Base64.Decoder;
-import java.util.Base64.Encoder;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -23,7 +19,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import com.webauthn4j.WebAuthnManager;
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.data.AuthenticationData;
@@ -38,40 +33,15 @@ import com.webauthn4j.data.client.challenge.DefaultChallenge;
 import com.webauthn4j.server.ServerProperty;
 
 import audio.Broker;
+import audio.WebAuthn;
 
 public class WebAuthnHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
 
-	private final WebAuthnManager webAuthnManager = WebAuthnManager.createNonStrictWebAuthnManager();
-
-	private final SampleHandler sampleHandler;
-
-	private final Broker broker;
-	
-	private static final Comparator<byte[]> BYTES_COMPARATOR = new Comparator<byte[]>() {
-		@Override
-		public int compare(byte[] o1, byte[] o2) {
-			int len = o1.length;
-			int lenCmp = len - o2.length;
-			if(lenCmp != 0) {
-				return lenCmp;
-			}
-			for (int i = 0; i < len; i++) {
-				int cmp = o1[i] - o2[i];
-				if(cmp != 0) {
-					return cmp;
-				}
-			}
-			return 0;
-		}		
-	};
-	
-	private ConcurrentSkipListMap<byte[], Authenticator> authenticatorMap = new ConcurrentSkipListMap<byte[], Authenticator>(BYTES_COMPARATOR);
-		
+	private final Broker broker;	
 
 	public WebAuthnHandler(Broker broker) {
 		this.broker = broker;
-		sampleHandler = new SampleHandler(broker);
 	}
 
 	@Override
@@ -115,6 +85,7 @@ public class WebAuthnHandler extends AbstractHandler {
 	}
 
 	private void handleRegister(Request request, HttpServletResponse response) throws IOException {
+		WebAuthn webAuthn = broker.webAuthn();
 		try{
 			JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 
@@ -141,16 +112,16 @@ public class WebAuthnHandler extends AbstractHandler {
 			RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, userVerificationRequired, userPresenceRequired, expectedExtensionIds);
 
 
-			RegistrationData registrationData = webAuthnManager.parse(registrationRequest);
-			webAuthnManager.validate(registrationData, registrationParameters);
+			RegistrationData registrationData = webAuthn.webAuthnManager.parse(registrationRequest);
+			webAuthn.webAuthnManager.validate(registrationData, registrationParameters);
 
 			Authenticator authenticator =
-					new AuthenticatorImpl( // You may create your own Authenticator implementation to save friendly authenticator name
+					new AuthenticatorImpl(
 							registrationData.getAttestationObject().getAuthenticatorData().getAttestedCredentialData(),
 							registrationData.getAttestationObject().getAttestationStatement(),
 							registrationData.getAttestationObject().getAuthenticatorData().getSignCount()
 							);
-			save(authenticator);
+			webAuthn.save(authenticator);
 		}
 		catch (Exception e){			
 			log.error(e);
@@ -159,91 +130,20 @@ public class WebAuthnHandler extends AbstractHandler {
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
-
-
 		response.setContentType("text/plain;charset=utf-8");		
 		response.getWriter().write("WebAuthn");
-	}
-	
-	public static final Encoder BASE64_ENCODER = Base64.getEncoder();
-	public static final Decoder BASE64_DECODER = Base64.getDecoder();
-	
-	public static String bytesToBase64(byte[] bytes) {
-		return BASE64_ENCODER.encodeToString(bytes);
-	}
-		
-	
-	public static String bytesToString(byte[] bytes) {
-		return new String(bytes, StandardCharsets.UTF_8);
-	}
-	
-	public static byte[] base64ToBytes(String base64) {
-		return BASE64_DECODER.decode(base64);
-	}
-	
-	public static String base64ToString(String base64) {
-		return bytesToString(base64ToBytes(base64));
-	}
-	
-	public static JSONObject bytesToJSON(byte[] bytes) {
-		return new JSONObject(new JSONTokener(bytesToString(bytes)));
-	}
+	}	
 
 	private void handleVerify(Request request, HttpServletResponse response) throws IOException {
+		WebAuthn webAuthn = broker.webAuthn();
 		try{
 			JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
-
-			// Client properties
-			byte[] credentialId = base64ToBytes(jsonReq.getString("credentialId"));
-			byte[] userHandle = base64ToBytes(jsonReq.getString("userHandle"));
-			String userID = bytesToString(userHandle);
-			byte[] authenticatorData = base64ToBytes(jsonReq.getString("authenticatorData"));
-			byte[] clientDataJSON = base64ToBytes(jsonReq.getString("clientDataJSON"));
-			JSONObject clientDataJSONobject = bytesToJSON(clientDataJSON);
-			String clientExtensionJSON = null /* set clientExtensionJSON */;
-			byte[] signature = base64ToBytes(jsonReq.getString("signature"));
-			
-			log.info("clientDataJSON " + bytesToString(clientDataJSON));
-			log.info("credentialId " + bytesToBase64(credentialId));
-			log.info("userID " + userID);
-
-			// Server properties
-			Origin origin = new Origin(clientDataJSONobject.getString("origin"));
-			String rpId = jsonReq.getString("rpId");
-			Challenge challenge = new DefaultChallenge(base64ToBytes(clientDataJSONobject.getString("challenge")));
-			byte[] tokenBindingId = null /* set tokenBindingId */;
-			ServerProperty serverProperty = new ServerProperty(origin, rpId, challenge, tokenBindingId);
-
-			// expectations
-			boolean userVerificationRequired = true;
-			boolean userPresenceRequired = true;
-			List<String> expectedExtensionIds = Collections.emptyList();
-
-			Authenticator authenticator = load(credentialId);
-
-			AuthenticationRequest authenticationRequest =
-					new AuthenticationRequest(
-							credentialId,
-							userHandle,
-							authenticatorData,
-							clientDataJSON,
-							clientExtensionJSON,
-							signature
-							);
-			AuthenticationParameters authenticationParameters =
-					new AuthenticationParameters(
-							serverProperty,
-							authenticator,
-							userVerificationRequired,
-							userPresenceRequired,
-							expectedExtensionIds
-							);
-
-			AuthenticationData	authenticationData = webAuthnManager.parse(authenticationRequest);	
-			webAuthnManager.validate(authenticationData, authenticationParameters);
-			
+			AuthenticationRequest authenticationRequest = webAuthn.createAuthenticationRequest(jsonReq);
+			Authenticator authenticator = webAuthn.load(authenticationRequest.getCredentialId());
+			AuthenticationParameters authenticationParameters = webAuthn.createAuthenticationParameters(jsonReq, authenticator);
+			AuthenticationData authenticationData = webAuthn.validateAuthention(jsonReq, authenticationRequest, authenticationParameters);
 			response.setContentType("text/plain;charset=utf-8");		
-			response.getWriter().write("Validated identity: " + userID);
+			response.getWriter().write("Validated identity: " + WebAuthn.bytesToString(authenticationData.getUserHandle()));
 		}
 		catch (Exception e){			
 			log.error(e);
@@ -252,17 +152,5 @@ public class WebAuthnHandler extends AbstractHandler {
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}		
-	}	
-	
-	private void save(Authenticator authenticator) {
-		byte[] credentialId = authenticator.getAttestedCredentialData().getCredentialId();
-		authenticatorMap.put(credentialId, authenticator);
-		log.info("Aaguid " + authenticator.getAttestedCredentialData().getAaguid());
-		log.info("COSEKey " + authenticator.getAttestedCredentialData().getCOSEKey());
-		log.info("CredentialId " + bytesToBase64(credentialId));
-	}
-
-	private Authenticator load(byte[] credentialId) {
-		return authenticatorMap.get(credentialId);
 	}
 }

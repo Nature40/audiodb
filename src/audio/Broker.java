@@ -19,6 +19,7 @@ public class Broker {
 	private AccountManager accountManager;
 	private LabelDefinitions labelDefinitions;
 	private Samples samples;
+	private WebAuthn webAuthn;
 	
 	public Broker() {		
 	}
@@ -90,6 +91,17 @@ public class Broker {
 			samples = new Samples();
 		}
 		return samples;
+	}
+	
+	public WebAuthn webAuthn() {
+		return webAuthn == null ? loadWebAuthn() : webAuthn;
+	}
+
+	private synchronized WebAuthn loadWebAuthn() {
+		if(webAuthn == null) {
+			webAuthn = new WebAuthn();
+		}
+		return webAuthn;
 	}
 
 }

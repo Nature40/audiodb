@@ -45,6 +45,7 @@ import audio.server.api.AccountsHandler;
 import audio.server.api.IdentityHandler;
 import audio.server.api.LabelDefinitionsHandler;
 import audio.server.api.LoginHandler;
+import audio.server.api.LoginWebAuthnHandler;
 import audio.server.api.LogoutHandler;
 import audio.server.api.QueryHandler;
 import audio.server.api.SamplesHandler;
@@ -152,6 +153,7 @@ public class Webserver {
 		handlerList.addHandler(new InjectHandler());
 		if(broker.config().login) {
 			handlerList.addHandler(createContext("/login", true, new LoginHandler(broker)));
+			handlerList.addHandler(createContext("/loginWebAuthn", true, new LoginWebAuthnHandler(broker)));
 		}
 		handlerList.addHandler(new JwsHandler(broker));
 		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));
