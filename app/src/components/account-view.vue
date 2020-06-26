@@ -220,6 +220,7 @@ methods: {
     console.log(this.identity.user);
     console.log(userIdBuffer);
     console.log(textDecoder.decode(userIdBuffer));
+    console.log(arrayBufferToBase64(userIdBuffer));
 
     
 
@@ -296,7 +297,7 @@ methods: {
       console.log(authenticatorAssertionResponse);
 
       var request = {};
-      request.credentialId = credentialInfo.id;
+      request.credentialId = arrayBufferToBase64(credentialInfo.rawId);
       request.authenticatorData = arrayBufferToBase64(authenticatorAssertionResponse.authenticatorData);
       request.signature = arrayBufferToBase64(authenticatorAssertionResponse.signature);
       request.clientDataJSON = arrayBufferToBase64(authenticatorAssertionResponse.clientDataJSON);
@@ -305,7 +306,7 @@ methods: {
       console.log(request);
       
       var verifyResponse = await axios.post(this.apiBase + 'WebAuthn/verify', request);
-      console.log(verifyResponse);
+      alert(verifyResponse.data);
 
 
     } catch(err) {
