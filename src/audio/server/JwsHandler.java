@@ -91,8 +91,12 @@ public class JwsHandler extends AbstractHandler {
 
 			JwsConfig jwsConfig = broker.config().jwsConfigs.first();
 
-			String[] roles = jwsConfig.roles;
-			Account account = new Account(username, roles);
+			Account account = broker.accountManager().getAccount(username);
+			if(account == null) {
+				String[] roles = jwsConfig.roles;
+				account = Account.ofEmpty(username, roles);
+				broker.accountManager().addAccount(account, true);
+			}
 
 			HttpSession session = request.getSession(true);
 			AccessHandler.injectSameSite(response);
@@ -155,7 +159,7 @@ public class JwsHandler extends AbstractHandler {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static PrivateKey stringToPrivateKey(String s) {
 		byte[] bytes = Base64.getDecoder().decode(s);		
 		PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(bytes);

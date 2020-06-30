@@ -23,7 +23,7 @@ public class Config {
 	@SuppressWarnings("unchecked")
 	private Config() {
 		login = true;
-		default_account = new Account("anonymous", "", "", new String[] {"admin"});
+		default_account = Account.ofPassword("anonymous", "", "", new String[] {"admin"});
 		this.jwsConfigs = ReadonlyList.EMPTY;
 		this.http_port = 8080;
 		this.https_port = 8000;

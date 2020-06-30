@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
@@ -11,6 +12,7 @@ import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +22,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import com.webauthn4j.authenticator.Authenticator;
-import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.data.AuthenticationData;
 import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationRequest;
@@ -32,8 +33,10 @@ import com.webauthn4j.data.client.challenge.Challenge;
 import com.webauthn4j.data.client.challenge.DefaultChallenge;
 import com.webauthn4j.server.ServerProperty;
 
+import audio.Account;
 import audio.Broker;
 import audio.WebAuthn;
+import audio.WebAuthnAccount;
 
 public class WebAuthnHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
@@ -60,12 +63,26 @@ public class WebAuthnHandler extends AbstractHandler {
 				String next = i < 0 ? "/" : target.substring(i);
 				log.info(name);
 				switch(name) {
-				case "register":
-					handleRegister(baseRequest, response);
+				case "register": {
+					switch (baseRequest.getMethod()) {
+					case "POST":
+						handleRegisterPOST(baseRequest, response);
+						break;
+					default:
+						throw new RuntimeException("no request");
+					}
 					break;
-				case "verify":
-					handleVerify(baseRequest, response);
-					break;					
+				}
+				case "verify": {
+					switch (baseRequest.getMethod()) {
+					case "POST":
+						handleVerifyPOST(baseRequest, response);
+						break;
+					default:
+						throw new RuntimeException("no request");
+					}
+					break;
+				}
 				default:
 					throw new RuntimeException("no request");
 				}
@@ -84,13 +101,17 @@ public class WebAuthnHandler extends AbstractHandler {
 		response.getWriter().write("WebAuthn");
 	}
 
-	private void handleRegister(Request request, HttpServletResponse response) throws IOException {
+	private void handleRegisterPOST(Request request, HttpServletResponse response) throws IOException {
 		WebAuthn webAuthn = broker.webAuthn();
 		try{
 			JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 
 			byte[] clientDataJSON = Base64.getDecoder().decode(jsonReq.getString("clientDataJSON"));
 			JSONObject clientDataJSONobject = new JSONObject(new JSONTokener(new String(clientDataJSON, StandardCharsets.UTF_8)));
+			byte[] challengeBytes = WebAuthn.base64UrlToBytes(clientDataJSONobject.getString("challenge"));
+			log.info(Arrays.toString(challengeBytes));
+			WebAuthn.takeChallenge(challengeBytes);
+			Challenge challenge = new DefaultChallenge(challengeBytes);
 			byte[] attestationObject = Base64.getDecoder().decode(jsonReq.getString("attestationObject"));		
 			log.info("clientDataJSON " + new String(clientDataJSON, StandardCharsets.UTF_8));
 			log.info("attestationObject " + Arrays.toString(attestationObject));
@@ -101,7 +122,7 @@ public class WebAuthnHandler extends AbstractHandler {
 			// Server properties
 			Origin origin = new Origin(clientDataJSONobject.getString("origin"));
 			String rpId = jsonReq.getString("rpId");
-			Challenge challenge = new DefaultChallenge(Base64.getDecoder().decode(clientDataJSONobject.getString("challenge")));
+
 			byte[] tokenBindingId = null /* set tokenBindingId */;
 			ServerProperty serverProperty = new ServerProperty(origin, rpId, challenge, tokenBindingId);
 
@@ -115,13 +136,17 @@ public class WebAuthnHandler extends AbstractHandler {
 			RegistrationData registrationData = webAuthn.webAuthnManager.parse(registrationRequest);
 			webAuthn.webAuthnManager.validate(registrationData, registrationParameters);
 
-			Authenticator authenticator =
-					new AuthenticatorImpl(
-							registrationData.getAttestationObject().getAuthenticatorData().getAttestedCredentialData(),
-							registrationData.getAttestationObject().getAttestationStatement(),
-							registrationData.getAttestationObject().getAuthenticatorData().getSignCount()
-							);
-			webAuthn.save(authenticator);
+			log.info("clientDataJSONobject " + clientDataJSONobject);
+
+
+			WebAuthnAccount webAuthnAccount = new WebAuthnAccount(registrationData.getAttestationObjectBytes());
+
+			HttpSession session = request.getSession(false);
+			Account account = (Account) session.getAttribute("account");
+			account = Account.withWebAuthn(account, webAuthnAccount);
+			broker.accountManager().setAccount(account, true);
+			session.setAttribute("account", account);
+
 		}
 		catch (Exception e){			
 			log.error(e);
@@ -134,16 +159,21 @@ public class WebAuthnHandler extends AbstractHandler {
 		response.getWriter().write("WebAuthn");
 	}	
 
-	private void handleVerify(Request request, HttpServletResponse response) throws IOException {
+	private void handleVerifyPOST(Request request, HttpServletResponse response) throws IOException {
 		WebAuthn webAuthn = broker.webAuthn();
+		log.info(request.getOriginalURI());
 		try{
 			JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
+			JSONObject clientDataJSONobject = WebAuthn.base64ToJSON(jsonReq.getString("clientDataJSON"));
+			byte[] challengeBytes = WebAuthn.base64UrlToBytes(clientDataJSONobject.getString("challenge"));
+			WebAuthn.takeChallenge(challengeBytes);	
 			AuthenticationRequest authenticationRequest = webAuthn.createAuthenticationRequest(jsonReq);
-			Authenticator authenticator = webAuthn.load(authenticationRequest.getCredentialId());
+			Account account = broker.accountManager().loadByCredentialId(authenticationRequest.getCredentialId());
+			Authenticator authenticator = account.webAuthnAccount().authenticator();
 			AuthenticationParameters authenticationParameters = webAuthn.createAuthenticationParameters(jsonReq, authenticator);
 			AuthenticationData authenticationData = webAuthn.validateAuthention(jsonReq, authenticationRequest, authenticationParameters);
 			response.setContentType("text/plain;charset=utf-8");		
-			response.getWriter().write("Validated identity: " + WebAuthn.bytesToString(authenticationData.getUserHandle()));
+			response.getWriter().write("Validated identity: " + account.username);
 		}
 		catch (Exception e){			
 			log.error(e);
@@ -153,4 +183,5 @@ public class WebAuthnHandler extends AbstractHandler {
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}		
 	}
+
 }

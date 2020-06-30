@@ -3,16 +3,19 @@ package audio;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.github.aelstad.keccakj.fips202.SHA3_512;
+import com.webauthn4j.authenticator.Authenticator;
 
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -25,6 +28,27 @@ public class AccountManager {
 	private String salt = null;
 
 	private volatile List<Account> accounts = new ArrayList<Account>();
+
+	public static final Comparator<byte[]> BYTES_COMPARATOR = new Comparator<byte[]>() {
+		@Override
+		public int compare(byte[] o1, byte[] o2) {
+			int len = o1.length;
+			int lenCmp = len - o2.length;
+			if(lenCmp != 0) {
+				return lenCmp;
+			}
+			for (int i = 0; i < len; i++) {
+				int cmp = o1[i] - o2[i];
+				if(cmp != 0) {
+					return cmp;
+				}
+			}
+			return 0;
+		}		
+	};
+
+	private volatile ConcurrentSkipListMap<byte[], Account> webAuthnCredentialIdMap = new ConcurrentSkipListMap<byte[], Account>(BYTES_COMPARATOR);
+
 
 	ConcurrentHashMap<String, Boolean> serverNonceMap = new ConcurrentHashMap<String, Boolean>();
 
@@ -50,7 +74,7 @@ public class AccountManager {
 
 	public Account validate(String server_nonce, String client_nonce, String client_hash) {
 		List<Account> acc = accounts;
-		
+
 		if(!serverNonceMap.replace(server_nonce, Boolean.TRUE, Boolean.FALSE)) {
 			return null;
 		}
@@ -100,14 +124,15 @@ public class AccountManager {
 		}
 		this.salt = salt;
 		this.accounts = accounts;
+		refreshWebAuthn();
 		return true;
 	}
-	
+
 	public String salt() {
 		return salt;
 	}
 
-	public synchronized void addAccount(Account account) {
+	public synchronized void addAccount(Account account, boolean write) {
 		List<Account> accOld = accounts;
 		for(Account a:accOld) {
 			if(a.username.equals(account.username)) {
@@ -117,6 +142,26 @@ public class AccountManager {
 		ArrayList<Account> acc2 = new ArrayList<Account>(accOld);
 		acc2.add(account);
 		this.accounts = acc2;
+		if(write) {
+			write();
+		}
+		refreshWebAuthn();
+	}
+
+	public void setAccount(Account account, boolean write) {
+		List<Account> accOld = accounts;
+		ArrayList<Account> acc2 = new ArrayList<Account>();
+		for(Account a:accOld) {
+			if(!a.username.equals(account.username)) {
+				acc2.add(a);
+			}
+		}		
+		acc2.add(account);
+		this.accounts = acc2;
+		refreshWebAuthn();
+		if(write) {
+			write();
+		}		
 	}
 
 	public Account getAccount(String username) {
@@ -127,4 +172,28 @@ public class AccountManager {
 		}
 		return null;
 	}
+
+	private void refreshWebAuthn() {
+		ConcurrentSkipListMap<byte[], Account> m = new ConcurrentSkipListMap<byte[], Account>(BYTES_COMPARATOR);
+		for(Account account:accounts) {
+			WebAuthnAccount webAuthnAccount = account.webAuthnAccount();
+			if(webAuthnAccount != null) {
+				Authenticator authenticator = account.webAuthnAccount().authenticator();
+				byte[] credentialId = authenticator.getAttestedCredentialData().getCredentialId();
+				m.put(credentialId, account);
+				log.info("Aaguid " + authenticator.getAttestedCredentialData().getAaguid());
+				log.info("COSEKey " + authenticator.getAttestedCredentialData().getCOSEKey());
+				log.info("CredentialId " + WebAuthn.bytesToBase64(credentialId));
+			}
+		}
+		webAuthnCredentialIdMap = m;
+	}
+
+
+
+	public Account loadByCredentialId(byte[] credentialId) {
+		return webAuthnCredentialIdMap.get(credentialId);
+	}
+
+
 }

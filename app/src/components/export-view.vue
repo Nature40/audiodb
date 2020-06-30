@@ -33,6 +33,7 @@
         <td>{{ props.item.sample }}</td>      
         <td style="text-align: right;">{{ parseFloat(props.item.start).toFixed(3) }}</td> 
         <td style="text-align: right;">{{ parseFloat(props.item.end).toFixed(3) }}</td> 
+        <td>{{ props.item.generated_label }}</td> 
         <td>{{ props.item.label }}</td> 
         <td>{{ props.item.comment }}</td> 
       </template>
@@ -61,12 +62,13 @@ components: {
 },
 data () {
   return {
-    headers: [{ text: 'sample', value: 'sample', align: "center" },
-    { text: 'start', value: 'start', align: "center" },
-    { text: 'end', value: 'end', align: "center" },
-    { text: 'generated_label', value: 'label', align: "center" },
-    { text: 'label', value: 'label', align: "center" },
-    { text: 'comment', value: 'comment', align: "center" },
+    headers: [
+      { text: 'sample', value: 'sample', align: "center" },
+      { text: 'start', value: 'start', align: "center" },
+      { text: 'end', value: 'end', align: "center" },
+      { text: 'generated_label', value: 'generated_label', align: "center" },
+      { text: 'label', value: 'label', align: "center" },
+      { text: 'comment', value: 'comment', align: "center" },
     ],
     data: undefined,
     dataUrl: undefined,    

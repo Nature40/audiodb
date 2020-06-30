@@ -151,12 +151,11 @@ public class Webserver {
 		handlerList.addHandler(new OptionalSecuredRedirectHandler());
 		handlerList.addHandler(sessionHandler);
 		handlerList.addHandler(new InjectHandler());
-		if(broker.config().login) {
-			handlerList.addHandler(createContext("/login", true, new LoginHandler(broker)));
-			handlerList.addHandler(createContext("/loginWebAuthn", true, new LoginWebAuthnHandler(broker)));
-		}
+		//if(broker.config().login) {
+		handlerList.addHandler(createContext("/login", true, new LoginHandler(broker)));
+		handlerList.addHandler(createContext("/loginWebAuthn", true, new LoginWebAuthnHandler(broker)));
+		//}
 		handlerList.addHandler(new JwsHandler(broker));
-		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));
 		handlerList.addHandler(new AccessHandler(broker));
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
@@ -167,6 +166,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/query", true, new QueryHandler(broker)));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
 		handlerList.addHandler(new BaseRedirector("/web/app/"));
+		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));
 		//if(broker.config().login) {
 		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
 		//}

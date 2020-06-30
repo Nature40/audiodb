@@ -2,6 +2,7 @@ package audio;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,45 +32,46 @@ import com.webauthn4j.server.ServerProperty;
 public class WebAuthn {
 	static final Logger log = LogManager.getLogger();
 	
+	public final static ConcurrentSkipListSet<byte[]> challenges = new ConcurrentSkipListSet<byte[]>(AccountManager.BYTES_COMPARATOR);
+	
 	public final WebAuthnManager webAuthnManager = WebAuthnManager.createNonStrictWebAuthnManager();
 	
 	WebAuthn() {
 	}
 	
-	private static final Comparator<byte[]> BYTES_COMPARATOR = new Comparator<byte[]>() {
-		@Override
-		public int compare(byte[] o1, byte[] o2) {
-			int len = o1.length;
-			int lenCmp = len - o2.length;
-			if(lenCmp != 0) {
-				return lenCmp;
-			}
-			for (int i = 0; i < len; i++) {
-				int cmp = o1[i] - o2[i];
-				if(cmp != 0) {
-					return cmp;
-				}
-			}
-			return 0;
-		}		
-	};
-
-	private ConcurrentSkipListMap<byte[], Authenticator> authenticatorMap = new ConcurrentSkipListMap<byte[], Authenticator>(BYTES_COMPARATOR);
-	
-	public void save(Authenticator authenticator) {
-		byte[] credentialId = authenticator.getAttestedCredentialData().getCredentialId();
-		authenticatorMap.put(credentialId, authenticator);
-		log.info("Aaguid " + authenticator.getAttestedCredentialData().getAaguid());
-		log.info("COSEKey " + authenticator.getAttestedCredentialData().getCOSEKey());
-		log.info("CredentialId " + bytesToBase64(credentialId));
-	}
-
-	public Authenticator load(byte[] credentialId) {
-		return authenticatorMap.get(credentialId);
-	}
-	
 	public static final Encoder BASE64_ENCODER = Base64.getEncoder();
 	public static final Decoder BASE64_DECODER = Base64.getDecoder();
+	
+	public static final Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder();
+	public static final Decoder BASE64_URL_DECODER = Base64.getUrlDecoder();
+	
+	
+	public static byte[] createChallenge() {
+		byte[] challengeBytes = new byte[26];
+		do {
+			ThreadLocalRandom.current().nextBytes(challengeBytes);
+		} while (!challenges.add(challengeBytes));
+		log.info("create challenge");
+		log.info(Arrays.toString(challengeBytes));
+		log.info("existings challenges");
+		for(byte[] cmpChallenge:challenges) {
+			log.info(Arrays.toString(cmpChallenge));
+		}
+		return challengeBytes;
+	}
+	
+	public static void takeChallenge(byte[] challengeBytes) {
+		log.info("take challenge");
+		new RuntimeException().printStackTrace();
+		log.info(Arrays.toString(challengeBytes));
+		log.info("existings challenges");
+		for(byte[] cmpChallenge:challenges) {
+			log.info(Arrays.toString(cmpChallenge));
+		}
+		if(!challenges.remove(challengeBytes)) {						
+			throw new RuntimeException("not valid challenge");
+		}		
+	}	
 
 	public static String bytesToBase64(byte[] bytes) {
 		return BASE64_ENCODER.encodeToString(bytes);
@@ -81,6 +85,10 @@ public class WebAuthn {
 	public static byte[] base64ToBytes(String base64) {
 		return BASE64_DECODER.decode(base64);
 	}
+	
+	public static byte[] base64UrlToBytes(String base64Url) {
+		return BASE64_URL_DECODER.decode(base64Url);
+	}
 
 	public static String base64ToString(String base64) {
 		return bytesToString(base64ToBytes(base64));
@@ -92,6 +100,10 @@ public class WebAuthn {
 
 	public static JSONObject base64ToJSON(String base64) {
 		return bytesToJSON(base64ToBytes(base64));
+	}
+	
+	public static JSONObject base64UrlToJSON(String base64Url) {
+		return bytesToJSON(base64UrlToBytes(base64Url));
 	}
 
 	public AuthenticationRequest createAuthenticationRequest(JSONObject jsonReq) {
@@ -112,7 +124,8 @@ public class WebAuthn {
 		JSONObject clientDataJSONobject = base64ToJSON(jsonReq.getString("clientDataJSON"));
 		Origin origin = new Origin(clientDataJSONobject.getString("origin"));
 		String rpId = jsonReq.getString("rpId");
-		Challenge challenge = new DefaultChallenge(base64ToBytes(clientDataJSONobject.getString("challenge")));
+		byte[] challengeBytes = base64UrlToBytes(clientDataJSONobject.getString("challenge"));
+		Challenge challenge = new DefaultChallenge(challengeBytes);
 		byte[] tokenBindingId = null;
 		ServerProperty serverProperty = new ServerProperty(origin, rpId, challenge, tokenBindingId);
 		boolean userVerificationRequired = true;

@@ -30,8 +30,12 @@
     <br>
     <br><b>roles:</b> <span style="background-color: #998c8c4f;"><span v-for="role in identity.roles" :key="role" class="role">{{role}}</span></span>
     <br>
-    <br><v-btn @click="webauthn_register">webauthn_register (TESTING)</v-btn>
-    <v-btn @click="webauthn_validate">webauthn_validate (TESTING)</v-btn>
+  </v-content>
+  <v-content  v-if="identity !== undefined">
+    <hr>
+    <h2>FIDO2 (WebAuthn, CTAP2)</h2>
+    <br><v-btn @click="webauthn_register"><v-icon>fingerprint</v-icon> Register</v-btn>
+    <v-btn @click="webauthn_validate"><v-icon>done</v-icon> Validate</v-btn>
   </v-content>
   <v-content v-if="isRole('create_account') && account !== undefined">
     <hr>
@@ -56,9 +60,9 @@
       @click:append="showPassword = !showPassword"
       style="max-width: 300px; display: inline-block;"
     />
-    <v-btn @click="generate_password">generate password</v-btn>
+    <v-btn @click="generate_password"><v-icon>edit</v-icon> generate password</v-btn>
     <br>
-    <v-btn @click="create_account" :loading="createAccountDialog" :disabled="$refs.inputUser === undefined || $refs.inputPassword === undefined || !$refs.inputUser.valid || !$refs.inputPassword.valid">create account</v-btn>
+    <v-btn @click="create_account" :loading="createAccountDialog" :disabled="$refs.inputUser === undefined || $refs.inputPassword === undefined || !$refs.inputUser.valid || !$refs.inputPassword.valid"><v-icon>person_add</v-icon> create account</v-btn>
     <br>
   </v-content>
 
@@ -117,6 +121,16 @@ function arrayBufferToBase64(arrayBuffer) {
   let text = String.fromCharCode.apply(null, byteBuffer);
   let base64 = btoa(text);
   return(base64)
+}
+
+function base64ToUint8Array(base64) {
+    var binary = window.atob(base64);
+    var len = binary.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
 }
 
 let rpId = window.location.hostname;
@@ -210,43 +224,48 @@ methods: {
     });
   },
   async webauthn_register() {
-
-
-
-    var textEncoder = new TextEncoder("utf-8");
-    var textDecoder = new TextDecoder("utf-8");
-
-    var userIdBuffer = textEncoder.encode(this.identity.user);
-    console.log(this.identity.user);
-    console.log(userIdBuffer);
-    console.log(textDecoder.decode(userIdBuffer));
-    console.log(arrayBufferToBase64(userIdBuffer));
-
-    
-
-    var publicKey = {
-      authenticatorSelection:{
-        authenticatorAttachment: "cross-platform",
-        requireResidentKey: true,
-        userVerification: "required"
-      },
-      challenge: new Uint8Array(26) /* this actually is given from the server */,
-      rp: {
-        name: "AudioDB",
-        id: rpId,
-      },
-      user: {
-        id: userIdBuffer,
-        name: this.identity.user,
-        displayName: this.identity.user,
-      },
-      pubKeyCredParams: [ {
-        type: "public-key",
-        alg: -7, // -7 indicates the elliptic curve algorithm ECDSA with SHA-256
-      } ],
-    };
-
     try {
+      var textEncoder = new TextEncoder("utf-8");
+      var textDecoder = new TextDecoder("utf-8");
+
+      var userIdBuffer = textEncoder.encode(this.identity.user);
+      console.log(this.identity.user);
+      console.log(userIdBuffer);
+      console.log(textDecoder.decode(userIdBuffer));
+      console.log(arrayBufferToBase64(userIdBuffer));
+
+      var challengeResponse = await fetch(this.apiBase + 'loginWebAuthn', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+      });
+      var challengeResponseJson = await challengeResponse.json();
+      var challengeText = challengeResponseJson.challenge;
+      var challenge = base64ToUint8Array(challengeText);
+
+      var publicKey = {
+        authenticatorSelection:{
+          authenticatorAttachment: "cross-platform",
+          requireResidentKey: true,
+          userVerification: "required"
+        },
+        challenge: challenge,
+        rp: {
+          name: "AudioDB",
+          id: rpId,
+        },
+        user: {
+          id: userIdBuffer,
+          name: this.identity.user,
+          displayName: this.identity.user,
+        },
+        pubKeyCredParams: [ {
+          type: "public-key",
+          alg: -7, // -7 indicates the elliptic curve algorithm ECDSA with SHA-256
+        } ],
+      };
+
       var credentialInfo = await navigator.credentials.create({ publicKey });
       console.log(credentialInfo);
       console.log("id: " + credentialInfo.id);
@@ -271,6 +290,7 @@ methods: {
       
       var registerResponse = await axios.post(this.apiBase + 'WebAuthn/register', request);
       console.log(registerResponse);
+      alert("registered");
 
     } catch(err) {
       alert(err);
@@ -285,12 +305,24 @@ methods: {
   },
 
   async webauthn_validate() {
-    var publicKey = {
-      challenge: new Uint8Array(26),
-      rpId: rpId,
-    };
+    
 
     try {
+      var challengeResponse = await fetch(this.apiBase + 'loginWebAuthn', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+      });
+      var challengeResponseJson = await challengeResponse.json();
+      var challengeText = challengeResponseJson.challenge;
+      var challenge = base64ToUint8Array(challengeText);
+      
+      var publicKey = {
+        challenge: challenge,
+        rpId: rpId,
+      };
+
       var credentialInfo = await navigator.credentials.get({ publicKey });
       console.log(credentialInfo);
       var authenticatorAssertionResponse = credentialInfo.response;

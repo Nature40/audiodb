@@ -78,9 +78,8 @@ public class AccountsHandler extends AbstractHandler {
 				log.info("create_account action");
 				String user = jsonAction.getString("user");
 				String hash = jsonAction.getString("hash");
-				Account account = new Account(user, hash.getBytes(), new String[] {});
-				broker.accountManager().addAccount(account);
-				broker.accountManager().write();
+				Account account = Account.ofHash(user, hash.getBytes(), new String[] {});
+				broker.accountManager().addAccount(account, true);
 				break;
 			}				
 			default:
