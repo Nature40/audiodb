@@ -30,12 +30,17 @@
       v-if="table !== undefined"
     >
       <template v-slot:items="props">
-        <td>{{ props.item.sample }}</td>      
-        <td style="text-align: right;">{{ parseFloat(props.item.start).toFixed(3) }}</td> 
-        <td style="text-align: right;">{{ parseFloat(props.item.end).toFixed(3) }}</td> 
-        <td>{{ props.item.generated_label }}</td> 
-        <td>{{ props.item.label }}</td> 
-        <td>{{ props.item.comment }}</td> 
+        <tr>
+          <td v-for="(column, index) in columns" :key="column" :class="columnPresenters[index].class">
+            {{columnPresenters[index].toText(props.item[column])}}
+          </td> 
+          <!--<td>{{ props.item.sample }}</td>      
+          <td style="text-align: right;">{{ parseFloat(props.item.start).toFixed(3) }}</td> 
+          <td style="text-align: right;">{{ parseFloat(props.item.end).toFixed(3) }}</td> 
+          <td>{{ props.item.generated_label }}</td> 
+          <td>{{ props.item.label }}</td> 
+          <td>{{ props.item.comment }}</td>-->
+        </tr> 
       </template>
     </v-data-table>
     <div v-if="data === undefined">
@@ -61,15 +66,7 @@ components: {
   identityDialog,
 },
 data () {
-  return {
-    headers: [
-      { text: 'sample', value: 'sample', align: "center" },
-      { text: 'start', value: 'start', align: "center" },
-      { text: 'end', value: 'end', align: "center" },
-      { text: 'generated_label', value: 'generated_label', align: "center" },
-      { text: 'label', value: 'label', align: "center" },
-      { text: 'comment', value: 'comment', align: "center" },
-    ],
+  return {    
     data: undefined,
     dataUrl: undefined,    
   }
@@ -92,6 +89,38 @@ computed: {
       skip_empty_lines: true
     });
   },
+  columns() {
+    if(this.data === undefined) {
+      return [];
+    }
+    return this.data.substring(0, this.data.indexOf('\n')).split(',');
+  },
+  headers() {
+    return this.columns.map(name => {
+      return { text: name, value: name, align: "center" };
+    });
+  },
+  columnPresenters() {
+    return this.columns.map(name => {
+      var o = {};
+      switch(name) {
+        case 'sample':
+        case 'generated_label':
+        case 'label':
+          o.toText = v => v;
+          break;
+        case 'start':
+        case 'end':
+          o.toText = v => parseFloat(v).toFixed(1);
+          o.class = 'number-fixed';
+          break;
+        default:
+          o.toText = v => parseFloat(v).toFixed(2);
+          o.class = 'number-fixed';
+      }
+      return o;
+    }); 
+  },
 },
 watch: {
   data() {
@@ -107,7 +136,7 @@ methods: {
   ...mapActions({
   }),
   getData() {
-    axios.get(this.queryUrl)
+    axios.post(this.queryUrl)
     .then((response) => {
       this.data = response.data;
     })
@@ -120,3 +149,11 @@ mounted() {
 },
 }
 </script>
+
+<style scoped>
+
+.number-fixed {
+  text-align: right;
+}
+
+</style>

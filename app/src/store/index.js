@@ -18,7 +18,8 @@ export default new Vuex.Store({
   },
   strict: isDev,
   state: {
-    apiBase: isDev ? 'http://127.0.0.1:8080/' : '../../',
+    //apiBase: isDev ? 'http://127.0.0.1:8080/' : '../../',
+    apiBase: isDev ? 'https://localhost:8000/' : '../../',
   },
   mutations: {
 

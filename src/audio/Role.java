@@ -35,7 +35,8 @@ public class Role {
 	}
 
 	public void populate(BitSet bitSet) {
-		log.info("populate role: " + name);
+		//log.info("populate role: " + name);
+		//new RuntimeException().printStackTrace();
 		bitSet.set(index);
 		if(roles != null) {
 			for(Role role:roles) {
