@@ -10,6 +10,8 @@ import 'vue-multiselect/dist/vue-multiselect.min.css'
 
 import RingLoader from 'vue-spinner/src/RingLoader.vue';
 Vue.component('ring-loader', RingLoader);
+import PulseLoader from 'vue-spinner/src/PulseLoader.vue';
+Vue.component('pulse-loader', PulseLoader);
 
 import './fonts/fonts.css'
 

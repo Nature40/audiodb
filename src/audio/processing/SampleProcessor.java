@@ -19,14 +19,19 @@ import audio.Sample;
 
 public class SampleProcessor {
 	static final Logger log = LogManager.getLogger();
+	
+	public static final int n = 1024;
+	public static final int n2 = n / 2;
+	public static final int step = 256;
 
 	private final Sample sample;
 	public short[] data;
 	public int frameLength;
 	public double sampleRate;
-	public float[][] fq;
-	
-	public static final int n = 1024;
+	public float[][] fq;	
+
+	public int fqCols;
+	private double sampleRateN2;	
 
 	public SampleProcessor(Sample sample) {
 		this.sample = sample;
@@ -39,6 +44,24 @@ public class SampleProcessor {
 	public double posToSeconds(int pos) {
 		return pos / sampleRate;
 	}
+	
+	public int frequencyToIndex(double frequency) {
+		return (int) (frequency / sampleRateN2);
+	}
+	
+	public double indexToFrequency(int index) {
+		return index * sampleRateN2;
+	}
+	
+	public int timeToCol(int t) {
+		return Math.floorDiv(t, step);
+	}
+	
+	public int colToTime(int col) {
+		return col * step;
+	}
+	
+	
 
 	public void loadData(int additionalSpace) {
 		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {				
@@ -80,6 +103,8 @@ public class SampleProcessor {
 			byteBuffer.asShortBuffer().get(fullShorts);				
 			this.data = fullShorts;
 			
+			sampleRateN2 = sampleRate / n / 2d;
+			
 		} catch (UnsupportedAudioFileException | IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -104,20 +129,19 @@ public class SampleProcessor {
 		return weight;
 	}
 	
-	public void transform(int n, int step) {
-		int cols = ((frameLength - n) / step) + 1;
-		int cutoff = n/2;
-		float[][] fq = new float[cols][n];
+	public void transform() {
+		fqCols = ((frameLength - n) / step) + 1;
+		float[][] fq = new float[fqCols][n];
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);		
 		float[] a = new float[n];
-		for (int pos = 0; pos < cols; pos++) {			
+		for (int pos = 0; pos < fqCols; pos++) {			
 			for (int i = 0; i < n; i++) {
 				a[i] = data[pos*step + i] * weight[i];
 			}
 			fft.realForward(a);
 			float[] f = fq[pos];
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < n2; i++) {
 				f[i] = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 			}
 		}

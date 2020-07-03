@@ -3,7 +3,7 @@ package audio.processing;
 public class Metric_intensity extends Metric {
 	public final static Metric_intensity INSATNCE = new Metric_intensity();
 	
-	public double calc(SampleProcessor sampleProcessor, int start, int end) {		
+	public double calc(SampleProcessor sampleProcessor, int start, int end, int colStart, int colEnd) {		
 		short[] data = sampleProcessor.data;		
 		double sum = 0;
 		for(int i = start; i <= end; i++) {

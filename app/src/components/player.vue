@@ -17,7 +17,7 @@
   </div>
   <div v-show="!imageLoaded" style="position: absolute; background-color: lightgrey; padding: 100px; margin: 100px; margin-left: 400px;; border-style: solid;">    
     <h1>loading ...</h1>
-    <ring-loader loading="loading" color="#000000" size="50px" />
+    <ring-loader :loading="!imageLoaded" color="#000000" size="50px" />
   </div>
   <div v-show="imageError && imageLoaded" style="position: absolute; background-color: lightgrey; padding: 100px; margin: 100px; margin-left: 400px;; border-style: solid;">    
     <h1>Error loading visualisation</h1>
