@@ -162,8 +162,13 @@ public class YamlMap {
 	}
 
 	public double optDouble(String name) {
-		if(contains(name)) {
-			return getDouble(name);
+		if(contains(name)) {			
+			Object o = getObject(name);
+			if(o instanceof Number) {
+				return ((Number) o).doubleValue();
+			} else {
+				return Double.parseDouble(o.toString());
+			}			
 		}
 		return Double.NaN;
 	}

@@ -171,8 +171,8 @@ public class QueryHandler extends AbstractHandler {
 			row[0] = sample.id;
 			row[1] = Double.toString(label.start);
 			row[2] = Double.toString(label.end);
-			row[3] = Arrays.toString(label.generated_labels);
-			row[4] = Arrays.toString(label.labels);
+			row[3] = Arrays.toString(label.getGeneratorLabelNames());
+			row[4] = Arrays.toString(label.getUserLabelNames());
 			//row[5] = label.comment;
 
 			int posStart = sampleProcessor.secondsToPos(label.start);

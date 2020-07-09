@@ -5,7 +5,7 @@ public class Metric_max_intensity_frequency extends Metric {
 	
 	public double calc(SampleProcessor sampleProcessor, int start, int end, int colStart, int colEnd) {		
 		float[][] data = sampleProcessor.fq;
-		int cutoff = sampleProcessor.n2;
+		int cutoff = SampleProcessor.n2;
 		double[] sum = new double[cutoff];
 		for(int pos = colStart; pos < colEnd; pos++) {
 			float[] col = data[pos];

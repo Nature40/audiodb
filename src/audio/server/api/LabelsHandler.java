@@ -96,7 +96,7 @@ public class LabelsHandler {
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
 			case "add_label": {
-				Label label = Label.ofJSON(jsonAction.getJSONObject("label")).withCreator(account.username, LocalDateTime.now());				
+				Label label = Label.ofJSON(jsonAction.getJSONObject("label")).withCreator(account.username, LocalDateTime.now().toString());				
 				sample.getLabels().add(label);
 				break;
 			}

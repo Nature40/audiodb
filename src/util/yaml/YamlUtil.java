@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
 import audio.LabelDefinition;
@@ -55,6 +57,12 @@ public class YamlUtil {
 		}
 	}
 	
+	public static void optPut(Map<String, Object> map, String name, double value) {
+		if(Double.isFinite(value)) {
+			map.put(name, value);
+		}
+	}
+	
 	public static <T> void putArray(Map<String, Object> map, String name, Iterable<T> iterable, Function<T, Object> mapper) {
 		Vec<Object> vec = new Vec<Object>();
 		iterable.forEach(label -> vec.add(mapper.apply(label)));
@@ -65,5 +73,16 @@ public class YamlUtil {
 		List<YamlMap> ldList = yamlMap.getList(name).asMaps();
 		return ldList.stream().map(mapper).collect(Vec.collector());
 	}
-
+	
+	public static <T> Vec<T> optVec(YamlMap yamlMap, String name, Function<YamlMap, T> parser) {
+		Vec<T> vec = new Vec<T>();
+		List<YamlMap> data = yamlMap.optList(name).asMaps();		
+		for(YamlMap v:data) {
+			T element = parser.apply(v);
+			if(element != null) {
+				vec.add(element);
+			}
+		}		
+		return vec;
+	}
 }

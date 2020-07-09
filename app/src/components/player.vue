@@ -43,7 +43,6 @@
         <multiselect 
           v-model="selectedLabelNames" 
           :options="mergedLabelNames" 
-          label="name" 
           style="max-width: 300px; display: inline-block; vertical-align: top;" 
           placeholder="Search or add label"
           tagPlaceholder="Press ENTER to add this as new label" 
@@ -51,7 +50,6 @@
           :taggable="true"
           :multiple="true"
           @tag="addLabelName"
-          track-by="name"
           @open="selectLabel = true"
           @close="selectLabel = false"
           :limit="1"
@@ -68,6 +66,10 @@
         <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;"><v-icon>power_off</v-icon> discard</v-btn>
         <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
         <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;"><v-icon>play_arrow</v-icon> play selection</v-btn>
+      </div>
+      <div v-if="selectedLabelEntry !== undefined && selectedLabelEntry.generated_labels !== undefined && selectedLabelEntry.generated_labels.length > 0" style="margin-bottom: 20px;">
+        Generated labels: <span :class="{'button-generated-label': !isSelectedLabelName(generatorLabel.name), 'button-generated-label-selected': isSelectedLabelName(generatorLabel.name)}" v-for="(generatorLabel, i) in selectedLabelEntry.generated_labels" :key="i" @click="addLabelName(generatorLabel.name)">{{generatorLabel.name}} ({{generatorLabel.reliability.toFixed(1)}})</span>
+        <br>(Click on a generated label to set it as verifed label.)
       </div>
       press <b>[SPACE]</b> key to <b>play</b> / <b>pause</b> audio
       <br>
@@ -95,8 +97,8 @@
         <td><v-btn icon title="remove label"><v-icon @click="onLabelRemove(index)">delete_forever</v-icon></v-btn></td>
         <td>{{label.start.toFixed(3)}}</td>
         <td>{{label.end.toFixed(3)}}</td>
-        <td><span v-for="labelName in label.generated_labels" :key="labelName" class="label-name">{{labelName}}</span></td>
-        <td><span v-for="labelName in label.labels" :key="labelName" class="label-name">{{labelName}}</span></td>
+        <td><span v-for="(generatorLabel, i) in label.generated_labels" :key="i" class="label-name">{{generatorLabel.name}}</span></td>
+        <td><span v-for="(userLabel, i) in label.labels" :key="i" class="label-name">{{userLabel.name}}</span></td>
         <td>
           <v-btn icon title="move to label start">
             <v-icon @click="onSelectLabelEntry(label)" v-if="selectedLabelEntry !== label">redo</v-icon>
@@ -171,7 +173,11 @@ computed: {
     preservesPitch: state => state.settings.player_preservesPitch,
   }),
   mergedLabelNames() {
-    return this.label_definitions === undefined ? this.customLabelNames : this.label_definitions.concat(this.customLabelNames);
+    var names = this.customLabelNames.slice();
+    if(this.label_definitions !== undefined) {
+      this.label_definitions.forEach(d => names.push(d.name));
+    }
+    return names;
   },
   shortcutsBlocked() {
     return this.labelDefinitionsDialogOpen;
@@ -213,11 +219,15 @@ methods: {
     this.selectedLabelEntry = undefined;
   },  
   onLabelSave() {
-    var names = this.selectedLabelNames.map(l=>l.name);
-    var label = this.selectedLabelEntry === undefined ? {} : this.selectedLabelEntry;
-    label.start = this.labelStartTime;
-    label.end = this.labelEndTime;
-    label.labels = names;
+    var label = this.selectedLabelEntry === undefined ? {start: this.labelStartTime, end: this.labelEndTime, labels: [], generated_labels: []} : this.selectedLabelEntry;
+    var userLabels = this.selectedLabelNames.map(v => {
+      var e = label.labels.find(a => a === v);
+      if( e === undefined) {
+        e = {name: v};
+      }
+      return e;
+    });
+    label.labels = userLabels; 
     label.comment = this.labelComment;
     if(this.selectedLabelEntry === undefined) {
       this.postAddLabel(label);
@@ -232,12 +242,12 @@ methods: {
     this.playSection = true;
   },
   addLabelName(labelText) {
-    let x = this.mergedLabelNames.find(label => label.name === labelText);
-    if(x === undefined) {
-      x = {name: labelText};
-      this.customLabelNames.push(x);
+    if(!this.mergedLabelNames.includes(labelText)) {
+      this.customLabelNames.push(labelText);
     }
-    this.selectedLabelNames.push(x);
+    if(!this.selectedLabelNames.includes(labelText)) {
+      this.selectedLabelNames.push(labelText);
+    }
   },
   postAddLabel(label) {
     this.sendMessage = "send: add label";
@@ -432,9 +442,12 @@ methods: {
       this.labelEndTime = this.selectedLabelEntry.end;
       this.labelComment = this.selectedLabelEntry.comment;
       this.selectedLabelNames = [];
-      this.selectedLabelEntry.labels.forEach(name => this.addLabelName(name));
+      this.selectedLabelEntry.labels.forEach(userLabel => this.addLabelName(userLabel.name));
     }
   },
+  isSelectedLabelName(name) {
+    return this.selectedLabelNames.includes(name);
+  }
 },
 watch: {
   currentTimeUser() {
@@ -658,6 +671,24 @@ audio {
   border-color: #ff0e008c;
   border-style: solid;
   padding: 5px;
+}
+
+.button-generated-label {
+  background-color: #cecece;
+  padding: 1px 10px 1px 10px;
+  margin: 1px 10px 1px 10px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #9b9d9b; 
+}
+
+.button-generated-label-selected {
+  background-color: #cecece;
+  padding: 1px 10px 1px 10px;
+  margin: 1px 10px 1px 10px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #3bb93b;
 }
 
 

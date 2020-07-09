@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 
+import audio.GeneratorLabel;
 import audio.Label;
 import util.collections.vec.Vec;
 
@@ -50,9 +51,32 @@ public class JsonUtil {
 		}
 		return items;
 	}
+	
+	public static <T> Vec<T> optVec(JSONObject json, String name, Function<JSONObject, T> parser) {
+		Vec<T> vec = new Vec<T>();
+		JSONArray jsonArray = json.optJSONArray(name);
+		if(jsonArray != null) {
+			int jsonArrayLen = jsonArray.length();
+			for (int i = 0; i < jsonArrayLen; i++) {
+				JSONObject value = jsonArray.getJSONObject(i);
+				T element = parser.apply(value);
+				if(element != null) {
+					vec.add(element);
+				}
+			}	
+		}
+		return vec;
+	}
 
 	public static void writeOpt(JSONWriter json, String name, String value) {
 		if(value != null && !value.isEmpty()) {
+			json.key(name);
+			json.value(value);
+		}
+	}
+	
+	public static void writeOpt(JSONWriter json, String name, double value) {
+		if(Double.isFinite(value)) {
 			json.key(name);
 			json.value(value);
 		}
@@ -93,6 +117,8 @@ public class JsonUtil {
 		Object value = json.opt(name);		
 		return value == null ? def :  LocalDateTime.parse(value.toString());
 	}
+
+
 
 	
 

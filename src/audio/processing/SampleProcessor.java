@@ -29,9 +29,13 @@ public class SampleProcessor {
 	public int frameLength;
 	public double sampleRate;
 	public float[][] fq;	
+	public float[][] bins;
 
+	private int binRows;
+	
 	public int fqCols;
-	private double sampleRateN2;	
+	private double sampleRateN2;
+	private double binFactor;
 
 	public SampleProcessor(Sample sample) {
 		this.sample = sample;
@@ -53,15 +57,17 @@ public class SampleProcessor {
 		return index * sampleRateN2;
 	}
 	
+	public int indexToBin(int index) {
+		return (int) (index * binFactor);
+	}
+	
 	public int timeToCol(int t) {
 		return Math.floorDiv(t, step);
 	}
 	
 	public int colToTime(int col) {
 		return col * step;
-	}
-	
-	
+	}	
 
 	public void loadData(int additionalSpace) {
 		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {				
@@ -104,6 +110,7 @@ public class SampleProcessor {
 			this.data = fullShorts;
 			
 			sampleRateN2 = sampleRate / n / 2d;
+			binFactor = sampleRateN2 / 1000d;
 			
 		} catch (UnsupportedAudioFileException | IOException e) {
 			throw new RuntimeException(e);
@@ -146,6 +153,19 @@ public class SampleProcessor {
 			}
 		}
 		this.fq = fq;
+	}
+	
+	public void calcBins() {
+		binRows = indexToBin(n2 - 1) + 1;
+		bins = new float[fqCols][binRows];
+		for (int pos = 0; pos < fqCols; pos++) {			
+			float[] f = fq[pos];
+			float[] b = bins[pos];
+			for (int i = 0; i < n2; i++) {
+				int bin = indexToBin(i);
+				b[bin] += f[i];
+			}
+		}
 	}
 
 }
