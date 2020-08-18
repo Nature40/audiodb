@@ -21,7 +21,8 @@ public class Broker {
 	private Samples samples;
 	private WebAuthn webAuthn;
 	
-	public Broker() {		
+	public Broker() {
+		samples(); // preload sample metadata
 	}
 	
 	public Config config() {

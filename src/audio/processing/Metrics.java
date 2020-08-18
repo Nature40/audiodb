@@ -20,6 +20,9 @@ public class Metrics {
 		m.add(Metric_max_intensity.INSATNCE);
 		m.add(Metric_max_intensity_frequency.INSATNCE);
 		m.add(Metric_biophonic_intensity.INSATNCE);
+		m.add(Metric_bin1.INSATNCE);
+		m.add(Metric_bin2.INSATNCE);
+		m.add(Metric_bin3.INSATNCE);
 		
 		for(Metric metric:m) {
 			mMap.put(metric.name, metric);

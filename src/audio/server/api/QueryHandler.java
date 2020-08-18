@@ -154,16 +154,27 @@ public class QueryHandler extends AbstractHandler {
 	}
 
 	private void process(CSVWriter writer, Vec<Metric> metrics) {
-		for(Sample sample:broker.samples().sampleMap.values()) {
+		/*for(Sample sample:broker.samples().sampleMap.values()) {
 			processSample(writer, sample, metrics);
-		}
+		}*/
+		
+		/*broker.samples().sampleMap.values().stream().sequential().limit(20).forEach(sample -> {
+			processSample(writer, sample, metrics);
+		});*/
+		
+		broker.samples().sampleMap.values().stream().parallel().limit(20).forEach(sample -> {
+			processSample(writer, sample, metrics);
+		});
 	}
 
-	private void processSample(CSVWriter writer, Sample sample, Vec<Metric> metrics) {
+	private Vec<String[]> processSample(Sample sample, Vec<Metric> metrics) {
+		
+		Vec<String[]> rows = new Vec<String[]>();
 
 		SampleProcessor sampleProcessor = new SampleProcessor(sample);
 		sampleProcessor.loadData(0);	
 		sampleProcessor.transform();
+		sampleProcessor.calcBins();
 
 		Vec<Label> labels = sample.getLabels();
 		for(Label label:labels) {					
@@ -216,7 +227,19 @@ public class QueryHandler extends AbstractHandler {
 				}
 
 			}
-			writer.writeNext(row, false);
-		}	
+			rows.add(row);
+			//writer.writeNext(row, false);
+		}
+		
+		return rows;
+	}
+	
+	private void processSample(CSVWriter writer, Sample sample, Vec<Metric> metrics) {		
+		Vec<String[]> rows = processSample(sample, metrics);
+		synchronized (writer) {
+			for(String[] row:rows) {
+				writer.writeNext(row, false);
+			}			
+		}
 	}
 }
