@@ -30,8 +30,7 @@ public class Sample {
 		this.id = id;		
 		this.metaPath = metaPath;
 		this.directoryPath = metaPath.getParent();
-	}
-	
+	}	
 	
 	public void readMeta() {
 		Object inObject;

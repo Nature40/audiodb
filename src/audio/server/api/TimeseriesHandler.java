@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -19,23 +20,21 @@ import org.json.JSONWriter;
 import com.opencsv.CSVWriter;
 
 import audio.Broker;
-import audio.Label;
 import audio.Sample;
-import audio.processing.Metric;
-import audio.processing.Metrics;
-import audio.processing.SampleProcessor;
+import util.AudioTimeUtil;
 import util.collections.vec.Vec;
+import util.yaml.YamlMap;
 
-public class QueryHandler extends AbstractHandler {
+public class TimeseriesHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
-
-	private final SampleHandler sampleHandler;
 
 	private final Broker broker;
 
-	public QueryHandler(Broker broker) {
+	String[] DEFINED_INDICES = new String[] {"ndsi_left",  "biophony_left",  "anthrophony_left",  "ADI_0.1000.Hz",  "ADI_1000.2000.Hz",  "ADI_2000.3000.Hz", "ADI_3000.4000.Hz",  "ADI_4000.5000.Hz",  "ADI_5000.6000.Hz",  "ADI_6000.7000.Hz",  "ADI_7000.8000.Hz",  "ADI_8000.9000.Hz",  "ADI_9000.10000.Hz",  "ADI",  "bioacoustic_index",  "acoustic_evenness",  "acoustic_complexity"};
+
+
+	public TimeseriesHandler(Broker broker) {
 		this.broker = broker;
-		sampleHandler = new SampleHandler(broker);
 	}
 
 	@Override
@@ -45,6 +44,9 @@ public class QueryHandler extends AbstractHandler {
 			baseRequest.setHandled(true);
 			if(target.equals("/")) {
 				switch(baseRequest.getMethod()) {
+				case "GET":
+					handleRootGET(baseRequest, response);
+					break;				
 				case "POST":
 					handleRootPOST(baseRequest, response);
 					break;
@@ -64,10 +66,10 @@ public class QueryHandler extends AbstractHandler {
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
 				switch(name) {
-				case "metrics":
+				case "indices":
 					switch(baseRequest.getMethod()) {
 					case "GET":
-						handleMetrics(baseRequest, response);
+						handleIndices(baseRequest, response);
 						break;
 					default: {
 						String errorText = "unknown method in " + baseRequest.getMethod();
@@ -91,39 +93,44 @@ public class QueryHandler extends AbstractHandler {
 		}
 	}
 
-	private void handleMetrics(Request request, Response response) throws IOException {
+	private void handleIndices(Request request, Response response) throws IOException {
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
-		json.key("metrics");
+		json.key("indices");
 		json.array();
-		for(Metric metric:Metrics.metrics) {
+		for(String name : DEFINED_INDICES) {
 			json.object();
 			json.key("name");
-			json.value(metric.name);
+			json.value(name);
 			json.endObject();	
 		}
 		json.endArray();
 		json.endObject();		
 	}
 
-	static final int HEADER_META_ROWS = 1;
+	static final int HEADER_META_ROWS = 2;
 
 	private void handleRootPOST(Request request, HttpServletResponse response) throws IOException {
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
-		JSONArray jsonMetrics = jsonReq.getJSONArray("metrics");
-		int jsonMetricsLen = jsonMetrics.length();
-		Vec<Metric> metrics = new Vec<Metric>();
-		for(int i=0; i<jsonMetricsLen; i++) {
-			JSONObject jsonMetric = jsonMetrics.getJSONObject(i);
-			String name = jsonMetric.getString("name");
-			Metric metric = Metrics.metricsMap.get(name);
-			if(metric == null) {
-				throw new RuntimeException("Metric not found: " + name);
-			}
-			metrics.add(metric);
+		JSONArray jsonIndices = jsonReq.getJSONArray("indices");
+		int jsonIndicesLen = jsonIndices.length();
+		Vec<String> indices = new Vec<String>();
+		for(int i=0; i<jsonIndicesLen; i++) {
+			JSONObject jsonIndex = jsonIndices.getJSONObject(i);
+			String name = jsonIndex.getString("name");
+			indices.add(name);
 		}
+		process(indices, response);
+	}
 
+	private void handleRootGET(Request request, HttpServletResponse response) throws IOException {
+		Vec<String> indices = new Vec<String>();
+		indices.addAll(DEFINED_INDICES);
+		process(indices, response);
+	}
+
+	private void process(Vec<String> indices, HttpServletResponse response) throws IOException {
 		response.setContentType("text/csv;charset=utf-8");		
 		try(CSVWriter writer = new CSVWriter(
 				response.getWriter(), 
@@ -132,72 +139,53 @@ public class QueryHandler extends AbstractHandler {
 				CSVWriter.DEFAULT_ESCAPE_CHARACTER,
 				CSVWriter.DEFAULT_LINE_END
 				)) {
-			String[] header = new String[HEADER_META_ROWS + metrics.size()];
-			header[0] = "sample";
+			String[] header = new String[HEADER_META_ROWS + indices.size()];
+			header[0] = "plotID";
+			header[1] = "datetime";
 
-			for (int i = 0; i < metrics.size(); i++) {
-				header[HEADER_META_ROWS + i] = metrics.get(i).name;
+			for (int i = 0; i < indices.size(); i++) {
+				header[HEADER_META_ROWS + i] = indices.get(i);
 			}
 
 			writer.writeNext(header, false);
-			process(writer, metrics);
+			process(writer, indices);
+		}	
+	}
+
+	private void process(CSVWriter writer, Vec<String> indices) {
+		/*broker.samples().sampleMap.values().stream().parallel().limit(20).forEach(sample -> {
+			processSample(writer, sample, indices);
+		});*/
+		for(Sample sample : broker.samples().sampleMap.values()) {
+			processSample(writer, sample, indices);
 		}
 	}
 
-	private void process(CSVWriter writer, Vec<Metric> metrics) {
-		broker.samples().sampleMap.values().stream().parallel().limit(20).forEach(sample -> {
-			processSample(writer, sample, metrics);
-		});
-	}
-
-	private Vec<String[]> processSample(Sample sample, Vec<Metric> metrics) {
+	private Vec<String[]> processSample(Sample sample, Vec<String> indices) {
 		
+		long unixTimestamp = sample.getMetaMap().getNumber("timestamp").longValue();
+		LocalDateTime timestamp = AudioTimeUtil.ofAudiotime(unixTimestamp);
+
+		YamlMap indicesMap = sample.getMetaMap().getMap("indices");
+
 		Vec<String[]> rows = new Vec<String[]>();
 
-		SampleProcessor sampleProcessor = new SampleProcessor(sample);
-		sampleProcessor.loadData(0);	
-		sampleProcessor.transform();
-		sampleProcessor.calcBins();
+		String[] row = new String[HEADER_META_ROWS + indices.size()];
+		row[0] = sample.getMetaMap().getString("location");
+		row[1] = AudioTimeUtil.toTextMinutes(timestamp);
 
-		Vec<Label> labels = sample.getLabels();
-		
-		String[] row = new String[HEADER_META_ROWS + metrics.size()];
-		row[0] = sample.id;
-
-
-		int posStart = 0;
-		int posEnd = sampleProcessor.frameLength - 1;
-
-		int colStart = sampleProcessor.timeToCol(posStart);
-		int colEnd = sampleProcessor.timeToCol(posEnd);
-		
-		if(colStart >= sampleProcessor.fqCols) {
-			colStart = sampleProcessor.fqCols - 1;
-		}
-		
-		if(colEnd >= sampleProcessor.fqCols) {
-			colEnd = sampleProcessor.fqCols - 1;
-		}
-
-		//log.info(sampleProcessor.frameLength + "  "  + posStart + "  "  + posEnd);
-
-		for (int i = 0; i < metrics.size(); i++) {
-			try {
-				row[HEADER_META_ROWS + i] = Double.toString(metrics.get(i).apply(sampleProcessor, posStart, posEnd, colStart, colEnd));
-			} catch (Exception e) {
-				//log.warn(e);
-				row[HEADER_META_ROWS + i] = "NA";
-			}
-
+		for (int i = 0; i < indices.size(); i++) {
+			String value = Double.toString(indicesMap.optDouble(indices.get(i), Double.NaN));
+			row[HEADER_META_ROWS + i] = value;
 		}
 		rows.add(row);
 		//writer.writeNext(row, false);
-		
+
 		return rows;
 	}
-	
-	private void processSample(CSVWriter writer, Sample sample, Vec<Metric> metrics) {		
-		Vec<String[]> rows = processSample(sample, metrics);
+
+	private void processSample(CSVWriter writer, Sample sample, Vec<String> indices) {		
+		Vec<String[]> rows = processSample(sample, indices);
 		synchronized (writer) {
 			for(String[] row:rows) {
 				writer.writeNext(row, false);

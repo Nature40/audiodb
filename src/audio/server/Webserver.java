@@ -49,6 +49,7 @@ import audio.server.api.LoginWebAuthnHandler;
 import audio.server.api.LogoutHandler;
 import audio.server.api.QueryHandler;
 import audio.server.api.SamplesHandler;
+import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
 
 public class Webserver {
@@ -164,6 +165,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/accounts", true, new AccountsHandler(broker)));
 		handlerList.addHandler(createContext("/label_definitions", true, new LabelDefinitionsHandler(broker)));
 		handlerList.addHandler(createContext("/query", true, new QueryHandler(broker)));
+		handlerList.addHandler(createContext("/timeseries", true, new TimeseriesHandler(broker)));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
 		handlerList.addHandler(new BaseRedirector("/web/app/"));
 		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));

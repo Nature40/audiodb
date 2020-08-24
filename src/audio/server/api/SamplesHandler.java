@@ -53,8 +53,6 @@ public class SamplesHandler extends AbstractHandler {
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
-	
-	private static final LocalDateTime UNIX_EPOCH = LocalDateTime.of(1970,1,1,0,0);
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json");
@@ -85,8 +83,7 @@ public class SamplesHandler extends AbstractHandler {
 			json.key("location");
 			json.value(sample.getMetaMap().optString("location",""));
 			json.key("timestamp");
-			long timestamp = sample.getMetaMap().optLong("timestamp", 0);			
-			//LocalDateTime datetime = UNIX_EPOCH.plusSeconds(timestamp);			
+			long timestamp = sample.getMetaMap().optLong("timestamp", 0);		
 			json.value(timestamp);
 			json.endObject();
 		}

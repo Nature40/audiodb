@@ -218,6 +218,17 @@ public class Vec<T> implements List<T> {
 		size = newSize;
 		return true;
 	}
+	
+	public boolean addAll(T[] a) {
+		int addLen = a.length;
+		int newSize = size + addLen;
+		if(items.length < newSize) {
+			grow(newSize);
+		}
+		System.arraycopy(a, 0, items, size, addLen);
+		size = newSize;
+		return true;
+	}
 
 	public void addAllFast(Collection<? extends T> c) {
 		T[] a = (T[]) c.toArray();
