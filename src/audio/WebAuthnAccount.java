@@ -32,7 +32,7 @@ public class WebAuthnAccount {
 	}
 	
 	private static AuthenticatorImpl createAuthenticator(AttestationObject attestationObject) {
-		AuthenticatorData<RegistrationExtensionAuthenticatorOutput<?>> authenticatorData = attestationObject.getAuthenticatorData();
+		AuthenticatorData<RegistrationExtensionAuthenticatorOutput> authenticatorData = attestationObject.getAuthenticatorData();
 		AttestedCredentialData AttestedCredentialData = authenticatorData.getAttestedCredentialData();
 		AttestationStatement attestationStatement = attestationObject.getAttestationStatement();
 		long signCount = authenticatorData.getSignCount();

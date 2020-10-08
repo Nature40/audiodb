@@ -1,3 +1,31 @@
+plugins { 
+  id "com.github.ben-manes.versions" version "0.33.0" // update check task: dependencyUpdates  https://github.com/ben-manes/gradle-versions-plugin
+}
+
+/*
+check for updates:
+gradle dependencyUpdates
+or
+./gradlew dependencyUpdates
+*/
+
+/*
+list (transitive) dependencies
+gradle dependencies
+or
+./gradlew dependencies
+*/
+
+def isNonStable = { String version ->
+  return version.contains('alpha') || version.contains('beta') 
+}
+
+dependencyUpdates {
+  rejectVersionIf {  // reject all non stable versions
+    isNonStable(it.candidate.version)
+  }
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
@@ -12,34 +40,34 @@ repositories {
 }
 
 dependencies {
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.2'
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.2'
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.11.2'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.13.3'
   	compile group: 'com.lmax', name: 'disruptor', version: '3.4.2'
-  	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.2'  	
+  	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.3'  	
   	
-	compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.20.v20190813'
-	compile group: 'org.eclipse.jetty', name: 'jetty-security', version: '9.4.20.v20190813'
-	compile group: 'org.eclipse.jetty.http2', name: 'http2-server', version: '9.4.20.v20190813'
-	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '9.4.20.v20190813'
-	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: '9.4.20.v20190813' // ALPN support for Java 8
+	compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.32.v20200930'
+	compile group: 'org.eclipse.jetty', name: 'jetty-security', version: '9.4.32.v20200930'
+	compile group: 'org.eclipse.jetty.http2', name: 'http2-server', version: '9.4.32.v20200930'
+	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '9.4.32.v20200930'
+	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: '9.4.32.v20200930' // ALPN support for Java 8
 	
-	compile group: 'org.json', name: 'json', version: '20180813'
-	compile group: 'org.yaml', name: 'snakeyaml', version: '1.24'
+	compile group: 'org.json', name: 'json', version: '20200518'
+	compile group: 'org.yaml', name: 'snakeyaml', version: '1.27'
 	compile group: 'com.opencsv', name: 'opencsv', version: '4.6'
 	
 	compile group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
 	
-	compile group: 'com.samskivert', name: 'jmustache', version: '1.14'
+	compile group: 'com.samskivert', name: 'jmustache', version: '1.15'
 
 	compile group: 'com.github.aelstad', name: 'keccakj', version: '1.1.0'		
 	
-	compile group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.10.6'
-	runtime group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.10.6'
-	runtime group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.10.6'
+	compile group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.2'
+	runtime group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.2'
+	runtime group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.2'
 	
-	compile group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.12.0.RELEASE'
+	compile group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.13.0.RELEASE'
 	
 	compile group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 }
@@ -66,8 +94,8 @@ jar {
 }
 
 compileJava   {
-  sourceCompatibility = "1.8"
-  targetCompatibility = "1.8"
+  sourceCompatibility = 11
+  targetCompatibility = 11
 }
 
 tasks.withType(JavaCompile){

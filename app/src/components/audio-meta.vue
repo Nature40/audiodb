@@ -28,7 +28,24 @@
             <tbody>
               <tr v-for="(value, key) in meta" :key="key">
                 <td><b>{{key}}</b></td> 
-                <td>{{value}}</td>
+                <td v-if="Array.isArray(value)">
+                  <table class="table-meta">
+                    <tbody>
+                      <tr v-for="(subValue, subIndex) in value" :key="subIndex">
+                        <td v-if="typeof subValue === 'object' && subValue !== null"><span v-for="(subsubValue, subsubKey) in subValue" :key="subsubKey" style="padding-right: 15px;"><b>{{subsubKey}}</b>: {{subsubValue}}</span></td>
+                        <td v-else>{{subValue}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td v-else-if="typeof value === 'object' && value !== null">
+                  <table class="table-meta">
+                    <tbody>
+                      <tr v-for="(subValue, subKey) in value" :key="subKey"><td><b>{{subKey}}</b></td><td>{{subValue}}</td></tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td v-else>{{value}}</td>
               </tr>
             </tbody>
           </table>

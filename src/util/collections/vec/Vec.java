@@ -124,16 +124,17 @@ public class Vec<T> implements List<T> {
 		return a;
 	}
 	
-	public T[] toArray(IntFunction<T[]> generator) {
+	@Override
+	public <E> E[] toArray(IntFunction<E[]> generator) {
 		int len = size;
-		T[] a = generator.apply(len);
+		E[] a = generator.apply(len);
 		System.arraycopy(items, 0, a, 0, len);
 		return a;
 	}
 	
-	public T[] toArray(IntFunction<T[]> generator, int fromIndex, int toIndex) {
+	public <E> E[] toArray(IntFunction<E[]> generator, int fromIndex, int toIndex) {
 		int len = toIndex - fromIndex;
-		T[] a = generator.apply(len);
+		E[] a = generator.apply(len);
 		System.arraycopy(items, fromIndex, a, 0, len);
 		return a;
 	}

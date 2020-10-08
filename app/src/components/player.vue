@@ -43,7 +43,7 @@
         <multiselect 
           v-model="selectedLabelNames" 
           :options="mergedLabelNames" 
-          style="max-width: 300px; display: inline-block; vertical-align: top;" 
+          style="max-width: 500px; display: inline-block; vertical-align: top;" 
           placeholder="Search or add label"
           tagPlaceholder="Press ENTER to add this as new label" 
           :allowEmpty="true"
@@ -61,11 +61,13 @@
           <v-btn small round color="primary" class="hide" >start label</v-btn>
           <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position" style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_takeoff</v-icon> start label</v-btn>
           <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_land</v-icon> end label</v-btn>
-          <v-btn @click="onLabelSave" small round color="primary" v-show="labelEndTime !== undefined" title="store current label" style="position: absolute; top: 0px; left: 0px;"><v-icon>push_pin</v-icon> save</v-btn>
         </div>
-        <v-btn @click="onLabelDiscard" small round color="primary" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;"><v-icon>power_off</v-icon> discard</v-btn>
         <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
         <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;"><v-icon>play_arrow</v-icon> play selection</v-btn>
+        <v-btn @click="onLabelSaveAndNext" small round color="green" :class="{ 'hide': (!hasNextSelection) }" title="play just current selection" style="vertical-align: top;"><v-icon>done</v-icon> save and go to next selection</v-btn>
+        <v-btn @click="onLabelSave()" small round color="green" v-show="labelEndTime !== undefined" title="store current label" style="vertical-align: top;"><v-icon>push_pin</v-icon> save</v-btn>
+        <v-btn @click="onLabelDiscard" small round color="red" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;"><v-icon>power_off</v-icon> discard</v-btn>
+
       </div>
       <div v-if="selectedLabelEntry !== undefined && selectedLabelEntry.generated_labels !== undefined && selectedLabelEntry.generated_labels.length > 0" style="margin-bottom: 20px;">
         Generated labels: <span :class="{'button-generated-label': !isSelectedLabelName(generatorLabel.name), 'button-generated-label-selected': isSelectedLabelName(generatorLabel.name)}" v-for="(generatorLabel, i) in selectedLabelEntry.generated_labels" :key="i" @click="addLabelName(generatorLabel.name)">{{generatorLabel.name}} ({{generatorLabel.reliability.toFixed(1)}})</span>
@@ -101,8 +103,8 @@
         <td><span v-for="(userLabel, i) in label.labels" :key="i" class="label-name">{{userLabel.name}}</span></td>
         <td>
           <v-btn icon title="move to label start">
-            <v-icon @click="onSelectLabelEntry(label)" v-if="selectedLabelEntry !== label">redo</v-icon>
-            <v-icon @click="onSelectLabelEntry(label)" v-if="selectedLabelEntry === label">details</v-icon>
+            <v-icon @click="onSelectLabelEntry(label, index)" v-if="selectedLabelEntry !== label">redo</v-icon>
+            <v-icon @click="onSelectLabelEntry(label, index)" v-if="selectedLabelEntry === label">details</v-icon>
           </v-btn>
         </td>
         <td>{{label.comment}}</td>
@@ -163,6 +165,7 @@ data: () => ({
   animationFrameID: undefined,
   playSection: false,
   selectedLabelEntry: undefined,
+  selectedLabelEntryIndex: -1,
 }),
 computed: {
   ...mapState({
@@ -184,6 +187,12 @@ computed: {
   },
   spectrumUrl() {
     return this.apiBase + 'samples/' + this.sample.id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold;
+  },
+  hasNextSelection() {
+    if(this.selectedLabelEntryIndex < 0) {
+      return false;
+    }
+    return this.labels !== undefined && this.selectedLabelEntryIndex + 1 < this.labels.length;
   },
 },  
 methods: {
@@ -217,8 +226,9 @@ methods: {
     this.labelStartTime = undefined;
     this.labelEndTime = undefined;
     this.selectedLabelEntry = undefined;
+    this.selectedLabelEntryIndex = -1;
   },  
-  onLabelSave() {
+  onLabelSave(funcSuccess) {
     var label = this.selectedLabelEntry === undefined ? {start: this.labelStartTime, end: this.labelEndTime, labels: [], generated_labels: []} : this.selectedLabelEntry;
     var userLabels = this.selectedLabelNames.map(v => {
       var e = label.labels.find(a => a === v);
@@ -230,10 +240,18 @@ methods: {
     label.labels = userLabels; 
     label.comment = this.labelComment;
     if(this.selectedLabelEntry === undefined) {
-      this.postAddLabel(label);
+      this.postAddLabel(label, funcSuccess);
     } else {
-      this.postReplaceLabel(label);
+      this.postReplaceLabel(label, funcSuccess);
     }    
+  },
+  onLabelSaveAndNext() {
+    var index = this.selectedLabelEntryIndex + 1;
+      this.onLabelSave(() => {
+        if(this.labels !== undefined && index < this.labels.length)
+        var label = this.labels[index];
+        this.onSelectLabelEntry(label, index);
+      });
   },
   onLabelPlay() {
     this.audio.pause();
@@ -249,7 +267,7 @@ methods: {
       this.selectedLabelNames.push(labelText);
     }
   },
-  postAddLabel(label) {
+  postAddLabel(label, funcSuccess) {
     this.sendMessage = "send: add label";
     this.sendMessageError = undefined;
     axios.post(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'labels', {actions: [{action: "add_label", label: label}]})
@@ -259,13 +277,18 @@ methods: {
       this.labelStartTime = undefined;
       this.labelEndTime = undefined;
       this.labels = response.data.labels;
+      this.selectedLabelEntry = undefined;
+      this.selectedLabelEntryIndex = -1;
+      if(funcSuccess !== undefined) {
+        funcSuccess();
+      }
     })
     .catch(() => {
       this.sendMessage = undefined;
       this.sendMessageError = "could not send: add label. You may tray again.";
     });
   },
-  postReplaceLabel(label) {
+  postReplaceLabel(label, funcSuccess) {
     this.sendMessage = "send: add label";
     this.sendMessageError = undefined;
     axios.post(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'labels', {actions: [{action: "replace_label", label: label}]})
@@ -275,6 +298,11 @@ methods: {
       this.labelStartTime = undefined;
       this.labelEndTime = undefined;
       this.labels = response.data.labels;
+      this.selectedLabelEntry = undefined;
+      this.selectedLabelEntryIndex = -1;
+      if(funcSuccess !== undefined) {
+        funcSuccess();
+      }      
     })
     .catch(() => {
       this.sendMessage = undefined;
@@ -432,12 +460,14 @@ methods: {
       this.animationFrameID = requestAnimationFrame(this.renderThis);
     }
   },
-  onSelectLabelEntry(label) {
+  onSelectLabelEntry(label, index) {
     this.currentTimeUser = label.start;
     if(this.selectedLabelEntry === label) {
       this.selectedLabelEntry = undefined;
+      this.selectedLabelEntryIndex = -1;
     } else {
       this.selectedLabelEntry = label;
+      this.selectedLabelEntryIndex = index;
       this.labelStartTime = this.selectedLabelEntry.start;
       this.labelEndTime = this.selectedLabelEntry.end;
       this.labelComment = this.selectedLabelEntry.comment;

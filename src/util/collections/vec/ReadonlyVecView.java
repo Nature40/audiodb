@@ -121,7 +121,7 @@ public class ReadonlyVecView<T> implements ReadonlyList<T> {
 	}
 
 	@Override
-	public T[] toArray(IntFunction<T[]> generator) {
+	public <E> E[] toArray(IntFunction<E[]> generator) {
 		return vec.toArray(generator);
 	}
 }

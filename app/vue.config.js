@@ -8,6 +8,9 @@ module.exports = {
       host: 'localhost',  
 	  port: 8081,
 	  https: true,
+	  headers: {
+		"Access-Control-Allow-Origin": "*",
+	  },	  
     },
     productionSourceMap: false,
     configureWebpack: {

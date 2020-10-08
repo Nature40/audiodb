@@ -77,7 +77,7 @@ public class SampleHandler {
 		} else {
 			if(rangeText.startsWith("bytes=")) {
 				String rangeIntervalText = rangeText.substring(6);
-				log.info("rangeIntervalText |" + rangeIntervalText + "|");
+				//log.info("rangeIntervalText |" + rangeIntervalText + "|");
 				if(rangeIntervalText.contains(",")) {
 					throw new RuntimeException("unknown Range header, multiple ranges not supported: " + rangeText);
 				}
@@ -87,7 +87,7 @@ public class SampleHandler {
 				}
 				String rangeStartText = rangeIntervalText.substring(0, rangeIntervalTextSeperatorIndex);
 				String rangeEndText = rangeIntervalText.substring(rangeIntervalTextSeperatorIndex + 1);
-				log.info("rangeIntervalText |" + rangeStartText + "|" + rangeEndText + "|");
+				//log.info("rangeIntervalText |" + rangeStartText + "|" + rangeEndText + "|");
 				if(rangeStartText.isEmpty()) {
 					throw new RuntimeException("unknown Range header, suffix-length not supported: " + rangeText);
 				}

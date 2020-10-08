@@ -55,16 +55,6 @@ import audio.server.api.WebAuthnHandler;
 public class Webserver {
 	static final Logger log = LogManager.getLogger();
 
-	static class HelloWorld extends AbstractHandler {
-		@Override
-		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-			response.setContentType("text/html; charset=utf-8");
-			response.setStatus(HttpServletResponse.SC_OK);
-			response.getWriter().println("<h1>Hello World</h1>");
-			baseRequest.setHandled(true);
-		}
-	}
-
 	private static HttpConfiguration createBaseHttpConfiguration() {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
 		httpConfiguration.setSendServerVersion(false);

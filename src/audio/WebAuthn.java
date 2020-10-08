@@ -62,7 +62,7 @@ public class WebAuthn {
 	
 	public static void takeChallenge(byte[] challengeBytes) {
 		log.info("take challenge");
-		new RuntimeException().printStackTrace();
+		//new RuntimeException().printStackTrace();
 		log.info(Arrays.toString(challengeBytes));
 		log.info("existings challenges");
 		for(byte[] cmpChallenge:challenges) {

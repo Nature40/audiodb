@@ -19,7 +19,7 @@
     </v-toolbar-title>
     <audio-browser v-if="samples !== undefined && samples !== []" :samples="samples" @select-sample="selectedSample = $event"/> 
     &nbsp;&nbsp;&nbsp;<!--<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 1000px;" placeholder="select audio sample" :allowEmpty="false"/>    -->
-    <span v-if="selectedSample !== undefined"><b>{{selectedSample.location}}</b> {{selectedSample.datetime}}</span>
+    <span v-if="selectedSample !== undefined" style="font-size: 1.5em;"><b>{{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
     <audio-meta v-if="selectedSample !== undefined" :sample="selectedSample"/>
     <identity-dialog></identity-dialog>
   </v-toolbar>
@@ -66,6 +66,15 @@ import audioBrowser from './audio-browser'
 import { mapState, mapActions } from 'vuex'
 import axios from 'axios'
 
+const yearFormat = new Intl.DateTimeFormat('en', { year: 'numeric' });
+const monthFormat = new Intl.DateTimeFormat('en', { month: '2-digit' });
+const dayFormat = new Intl.DateTimeFormat('en', { day: '2-digit' });
+const hourFormat = new Intl.DateTimeFormat('en', { hour: '2-digit', hour12: false });
+//const minuteFormat = new Intl.DateTimeFormat('en', { minute: '2-digit' }); // no leading zero
+//const secondFormat = new Intl.DateTimeFormat('en', { second: '2-digit' }); // no leading zero
+
+
+
 export default {
 name: 'audio-view',
 components: {
@@ -91,6 +100,18 @@ methods: {
   ...mapActions({
     identityInit: 'identity/init',
   }),
+  toDate(date) {
+    const year = yearFormat.format(date);
+    const month = monthFormat.format(date);
+    const day = dayFormat.format(date);
+    return `${year}-${month}-${day}`;
+  },
+  toTime(date) {
+    const hour = hourFormat.format(date);
+    const minute = date.getMinutes().toString().padStart(2,'0');
+    const second = date.getSeconds().toString().padStart(2,'0');
+    return `${hour}:${minute}:${second}`;
+  },  
 },
 mounted() {
   axios.get(this.apiBase + 'samples')

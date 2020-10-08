@@ -86,7 +86,8 @@ public interface ReadonlyList<E> extends List<E> {
 		throw new UnsupportedOperationException("readonly");
 	}
 	
-	public E[] toArray(IntFunction<E[]> generator);
+	@Override
+	public <T> T[] toArray(IntFunction<T[]> generator);
 	
 	public default E first() {
 		return this.get(0);
