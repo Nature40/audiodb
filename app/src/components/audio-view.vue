@@ -17,9 +17,9 @@
     <v-toolbar-title class="headline text-uppercase">
       Audio
     </v-toolbar-title>
-    <audio-browser v-if="samples !== undefined && samples !== []" :samples="samples" @select-sample="selectedSample = $event"/> 
+    <audio-browser :selected-sample="selectedSample" @select-sample="selectedSample = $event"/> 
     &nbsp;&nbsp;&nbsp;<!--<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 1000px;" placeholder="select audio sample" :allowEmpty="false"/>    -->
-    <span v-if="selectedSample !== undefined" style="font-size: 1.5em;"><b>{{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
+    <span v-if="selectedSample !== undefined" style="font-size: 1.5em; background-color: #0000000a; padding: 2px;"><b><v-icon>place</v-icon> {{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
     <audio-meta v-if="selectedSample !== undefined" :sample="selectedSample"/>
     <identity-dialog></identity-dialog>
   </v-toolbar>
@@ -29,8 +29,9 @@
     <div v-if="selectedSample === undefined" style="text-align: center;">
       <br>
       <br>
-      <h1>no audio sample selected</h1>
+      <h1>No audio sample selected.</h1>
       <br>
+      Click the <i>Browse-button</i> to select an audio sample.
       <br>
       <br>
       <br>
@@ -64,7 +65,6 @@ import audioMeta from './audio-meta'
 import audioBrowser from './audio-browser'
 
 import { mapState, mapActions } from 'vuex'
-import axios from 'axios'
 
 const yearFormat = new Intl.DateTimeFormat('en', { year: 'numeric' });
 const monthFormat = new Intl.DateTimeFormat('en', { month: '2-digit' });
@@ -86,8 +86,6 @@ components: {
 data () {
   return {
     selectedSample: undefined,
-    samples: [],
-    samplesLoading: true,
   }
 },
 computed: {
@@ -114,12 +112,6 @@ methods: {
   },  
 },
 mounted() {
-  axios.get(this.apiBase + 'samples')
-  .then(response => {
-      this.samples = response.data.samples;
-      this.samplesLoading = false;
-      this.samples.forEach(sample => sample.datetime = new Date(sample.timestamp * 1000));
-  });
   this.identityInit();
 },
 }

@@ -145,7 +145,7 @@ data () {
     showPassword: false,
     rules: {
       required: v => !!v || 'Required.',
-      min: v => v.length >= 8 || 'Min 8 characters',
+      min: v => v.length >= 12 || 'Min 12 characters',
     },
     inputUser: '',
     inputPassword: '',
@@ -196,7 +196,7 @@ methods: {
     return nonce;
   },
   generate_password() {
-    this.inputPassword = this.getNonce(8);
+    this.inputPassword = this.getNonce(12);
     this.showPassword = true;
     console.log(this.$refs.inputUser.valid);
   },
