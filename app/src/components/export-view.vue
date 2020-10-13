@@ -21,7 +21,7 @@
   </v-toolbar>
 
   <v-content>
-
+    <h2>Metrics export</h2>
     Click on below items to select metrics for audio processing.
     <div style="width: 200px;">
       <div style="display: flex; justify-content: flex-end; align-items: center;">
@@ -69,6 +69,14 @@
     <div v-if="process_request_last === 'error'">
       Processing resulted in an error.
     </div>
+
+    <hr>
+    <div>
+      <br>
+      <h2>Timeseries export</h2>
+      <a :href="this.apiBase + 'timeseries'" download="timeseries.csv">export download</a>
+    </div>
+
   </v-content>
 
 

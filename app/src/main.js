@@ -12,6 +12,8 @@ import RingLoader from 'vue-spinner/src/RingLoader.vue';
 Vue.component('ring-loader', RingLoader);
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue';
 Vue.component('pulse-loader', PulseLoader);
+import ClipLoader from 'vue-spinner/src/ClipLoader.vue';
+Vue.component('clip-loader', ClipLoader);
 
 import './fonts/fonts.css'
 

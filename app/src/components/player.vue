@@ -449,7 +449,12 @@ methods: {
     this.ctx.lineTo(canvasNowColumn, this.canvasHeight); 
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = 'rgba(255,0,0,0.9)';
-    this.ctx.stroke();    
+    this.ctx.stroke();
+    
+    if(!this.imageLoaded) {
+      this.ctx.font = '50px sans-serif';    
+      this.ctx.fillText('Refreshing spectrogram ...', 100, 100);
+    }
   },
   requestRender() {
     if(this.timerID !== undefined) {
@@ -488,8 +493,12 @@ watch: {
     }
   },
   sample() {
-    console.log("watch sample");
-    //this.imageLoaded = false;
+    this.sendMessage = undefined;
+    this.sendMessageError = undefined;
+    this.labelStartTime = undefined;
+    this.labelEndTime = undefined;
+    this.selectedLabelEntry = undefined;
+    this.selectedLabelEntryIndex = -1;
     this.refreshLabels();
   },
   playbackRate() {

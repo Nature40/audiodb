@@ -204,7 +204,8 @@ public class Webserver {
 			response.setHeader("X-Frame-Options", "deny");
 			response.setHeader("Referrer-Policy", "no-referrer");
 			//response.setHeader("X-Content-Type-Options", "nosniff");
-			if("127.0.0.1".equals(baseRequest.getRemoteAddr())) {
+			log.info("baseRequest.getRemoteAddr() " + baseRequest.getRemoteAddr());
+			if("127.0.0.1".equals(baseRequest.getRemoteAddr())  || "[0:0:0:0:0:0:0:1]".equals(baseRequest.getRemoteAddr())) {
 				response.setHeader("Access-Control-Allow-Origin", "*");
 				response.setHeader("Access-Control-Allow-Headers", "content-type");
 				if(baseRequest.getMethod().equals("OPTIONS")) {
