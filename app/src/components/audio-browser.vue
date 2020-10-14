@@ -11,7 +11,7 @@
           <v-toolbar-title>Browse Audio Samples</v-toolbar-title>
           <v-spacer></v-spacer>
           <clip-loader :loading="samplesLoading" color="#000000" size="20px" /> <span v-show="samplesLoading"> Loading audio samples</span>
-          <span v-show="samplesLoadingMessage !== undefined">{{samplesLoadingMessage}}</span>
+          <span v-show="samplesIsError">{{samplesError}}</span>
           <v-btn @click="refresh()" icon v-show="!samplesLoading"><v-icon>refresh</v-icon></v-btn>
           <v-spacer></v-spacer>
           <v-toolbar-items>
@@ -54,9 +54,7 @@
 
 <script>
 
-import { mapState, mapActions } from 'vuex'
-
-import axios from 'axios'
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 const yearFormat = new Intl.DateTimeFormat('en', { year: 'numeric' });
 const monthFormat = new Intl.DateTimeFormat('en', { month: '2-digit' });
@@ -71,18 +69,21 @@ components: {
 },
 data: () => ({
   dialog: false,
-  samples: [],
-  samplesLoading: false,  
-  samplesLoadingMessage: 'init',
 }),
 computed: {
   ...mapState({
     apiBase: state => state.apiBase,
+    samples: state => state.samples.data,
+    samplesLoading: state => state.samples.loading,
+    samplesError: state => state.samples.error,
   }),
+  ...mapGetters({
+      samplesIsError: 'samples/isError',
+  })  
 },  
 methods: {
   ...mapActions({
-
+    samplesQuery: 'samples/query',
   }),
   toDate(date) {
     const year = yearFormat.format(date);
@@ -102,21 +103,8 @@ methods: {
     this.$emit('select-sample', sample);
     this.dialog = false;
   },
-  async refresh() {
-    this.samplesLoading = true;
-    this.samplesLoadingMessage = undefined;
-    var params = {};
-    try {
-      var response = await axios.post(this.apiBase + 'samples', params);
-      this.samples = response.data.samples;
-      this.samplesLoading = false;
-      this.samplesLoadingMessage = undefined;
-      this.samples.forEach(sample => sample.datetime = new Date(sample.timestamp * 1000));
-    } catch {
-      this.samplesLoading = false;
-      this.samplesLoadingMessage = "Error loading audio samples";
-    }
-
+  refresh() {
+    this.samplesQuery();
   }  
 },
 watch: {
@@ -124,7 +112,7 @@ watch: {
   },
 },
 mounted() {
-  this.refresh();
+  this.refresh();  
 },    
 }
 </script>

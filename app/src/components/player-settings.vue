@@ -1,7 +1,7 @@
 <template>
 <v-dialog v-model="dialog" width="700">
       <template v-slot:activator="{ on }">
-        <v-btn v-on="on" color="grey">
+        <v-btn v-on="on" color="grey" title="adjust audio player settings">
           <v-icon>settings</v-icon>
           settings
         </v-btn>

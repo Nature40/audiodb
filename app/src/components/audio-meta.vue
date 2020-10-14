@@ -1,17 +1,17 @@
 <template>
-<v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
+<v-dialog v-model="dialog" fullscreen hide-overlay>
       <template v-slot:activator="{on}">
-        <v-btn v-on="on"><v-icon>post_add</v-icon> Metadata</v-btn>
+        <v-btn v-on="on" color="grey" title="show audio sample metadata"><v-icon>post_add</v-icon> Metadata</v-btn>
       </template>
       <v-card>
-        <v-toolbar dark color="primary">
-          <v-btn icon dark @click="dialog = false">
+        <v-toolbar>
+          <v-btn icon @click="dialog = false">
             <v-icon>close</v-icon>
           </v-btn>
           <v-toolbar-title>Audio File Metadata</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-toolbar-items>
-            <v-btn dark flat @click="dialog = false">Close</v-btn>
+            <v-btn flat @click="dialog = false">Close</v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <div>

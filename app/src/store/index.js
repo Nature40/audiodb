@@ -4,6 +4,7 @@ import identity from './identity'
 import account from './account'
 import label_definitions from './label_definitions'
 import settings from './settings'
+import samples from './samples'
 
 Vue.use(Vuex)
 
@@ -15,6 +16,7 @@ export default new Vuex.Store({
     account,
     label_definitions,
     settings,
+    samples,
   },
   strict: isDev,
   state: {

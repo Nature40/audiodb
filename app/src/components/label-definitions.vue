@@ -1,17 +1,17 @@
 <template>
-<v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
+<v-dialog v-model="dialog" fullscreen hide-overlay>
       <template v-slot:activator="{on}">
-        <v-btn v-on="on" color="grey"><v-icon>description</v-icon> Label Definitions</v-btn>
+        <v-btn v-on="on" color="grey" title="show list of defined labels"><v-icon>description</v-icon> Label Definitions</v-btn>
       </template>
       <v-card>
-        <v-toolbar dark color="primary">
-          <v-btn icon dark @click="dialog = false">
+        <v-toolbar>
+          <v-btn icon @click="dialog = false">
             <v-icon>close</v-icon>
           </v-btn>
           <v-toolbar-title>Label Definitions</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-toolbar-items>
-            <v-btn dark flat @click="save" v-if="user_label_definitions !== undefined">Save</v-btn>
+            <v-btn flat @click="save" v-if="user_label_definitions !== undefined">Save</v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <div v-if="savePending">

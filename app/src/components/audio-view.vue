@@ -18,9 +18,9 @@
       Audio
     </v-toolbar-title>
     <audio-browser :selected-sample="selectedSample" @select-sample="selectedSample = $event"/> 
-    &nbsp;&nbsp;&nbsp;<!--<multiselect v-model="selectedSample" :options="samples" :loading="samplesLoading" label="id" style="max-width: 1000px;" placeholder="select audio sample" :allowEmpty="false"/>    -->
-    <span v-if="selectedSample !== undefined" style="font-size: 1.5em; background-color: #0000000a; padding: 2px;"><b><v-icon>place</v-icon> {{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
-    <audio-meta v-if="selectedSample !== undefined" :sample="selectedSample"/>
+    <v-btn icon v-show="samplesPrevious(selectedSample) !== undefined" title="select previous audio sample" @click="selectedSample = samplesPrevious(selectedSample)"><v-icon>skip_previous</v-icon></v-btn>
+    <span v-if="selectedSample !== undefined" style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample"><b><v-icon>place</v-icon> {{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
+    <v-btn icon v-show="samplesNext(selectedSample) !== undefined" title="select next audio sample" @click="selectedSample = samplesNext(selectedSample)"><v-icon>skip_next</v-icon></v-btn>
     <identity-dialog></identity-dialog>
   </v-toolbar>
 
@@ -61,10 +61,9 @@
 <script>
 import player from './player'
 import identityDialog from './identity-dialog'
-import audioMeta from './audio-meta'
 import audioBrowser from './audio-browser'
 
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 const yearFormat = new Intl.DateTimeFormat('en', { year: 'numeric' });
 const monthFormat = new Intl.DateTimeFormat('en', { month: '2-digit' });
@@ -80,7 +79,6 @@ name: 'audio-view',
 components: {
   player,
   identityDialog,
-  audioMeta,
   audioBrowser
 },
 data () {
@@ -93,6 +91,10 @@ computed: {
     apiBase: state => state.apiBase,
     identity: state => state.identity.data,
   }),
+  ...mapGetters({
+      samplesPrevious: 'samples/previous',
+      samplesNext: 'samples/next',
+  })    
 },
 methods: {
   ...mapActions({
