@@ -153,7 +153,7 @@ data: () => ({
   secondsPerColumn: undefined,
   labelStartTime: undefined,
   labelEndTime: undefined,
-  labelComment: undefined,
+  labelComment: "",
   selectedLabelNames: [],
   customLabelNames: [],
   labels: [],
@@ -227,6 +227,7 @@ methods: {
   },
   onLabelDiscard() {
     this.labelStartTime = undefined;
+    this.labelComment = "";
     this.labelEndTime = undefined;
     this.selectedLabelEntry = undefined;
     this.selectedLabelEntryIndex = -1;
@@ -279,6 +280,7 @@ methods: {
       this.sendMessageError = undefined;
       this.labelStartTime = undefined;
       this.labelEndTime = undefined;
+      this.labelComment = "";
       this.labels = response.data.labels;
       this.selectedLabelEntry = undefined;
       this.selectedLabelEntryIndex = -1;
@@ -300,6 +302,7 @@ methods: {
       this.sendMessageError = undefined;
       this.labelStartTime = undefined;
       this.labelEndTime = undefined;
+      this.labelComment = "";
       this.labels = response.data.labels;
       this.selectedLabelEntry = undefined;
       this.selectedLabelEntryIndex = -1;
@@ -335,6 +338,7 @@ methods: {
       this.sendMessageError = undefined;
       this.labelStartTime = undefined;
       this.labelEndTime = undefined;
+      this.labelComment = "";
       this.labels = response.data.labels;
     })
     .catch((error) => {
@@ -500,6 +504,7 @@ watch: {
     this.sendMessageError = undefined;
     this.labelStartTime = undefined;
     this.labelEndTime = undefined;
+    this.labelComment = "";
     this.selectedLabelEntry = undefined;
     this.selectedLabelEntryIndex = -1;
     this.refreshLabels();
@@ -576,7 +581,7 @@ mounted() {
     if(refPlayer.shortcutsBlocked) {
       return;
     }
-    console.log(e.key);
+    //console.log(e.key);
     if(e.key === ' ') {
       if(this.audio.paused) {
         this.audio.play();
