@@ -42,7 +42,7 @@ import audio.Broker;
 import audio.Config;
 import audio.server.api.AccountHandler;
 import audio.server.api.AccountsHandler;
-import audio.server.api.IdentityHandler;
+import audio.server.api.PhotoHandler;
 import audio.server.api.LabelDefinitionsHandler;
 import audio.server.api.LoginHandler;
 import audio.server.api.LoginWebAuthnHandler;
@@ -151,7 +151,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/account", true, new AccountHandler(broker)));
-		handlerList.addHandler(createContext("/identity", true, new IdentityHandler(broker)));
+		handlerList.addHandler(createContext("/identity", true, new PhotoHandler(broker)));
 		handlerList.addHandler(createContext("/accounts", true, new AccountsHandler(broker)));
 		handlerList.addHandler(createContext("/label_definitions", true, new LabelDefinitionsHandler(broker)));
 		handlerList.addHandler(createContext("/query", true, new QueryHandler(broker)));
@@ -162,6 +162,9 @@ public class Webserver {
 		//if(broker.config().login) {
 		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
 		//}
+		
+		handlerList.addHandler(createContext("/photo", true, new PhotoHandler(broker)));
+		
 		handlerList.addHandler(new NoContentHandler());		
 		server.setHandler(handlerList);
 		//SessionHandler sessionHandler = new SessionHandler();

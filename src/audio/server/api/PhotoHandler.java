@@ -16,33 +16,38 @@ import org.json.JSONWriter;
 
 import audio.Account;
 import audio.Broker;
+import photo.PhotoDB;
 
-public class IdentityHandler extends AbstractHandler {
+public class PhotoHandler extends AbstractHandler {
 	private static final Logger log = LogManager.getLogger();
 	
 	private final Broker broker;
 
-	public IdentityHandler(Broker broker) {
+	public PhotoHandler(Broker broker) {
 		this.broker = broker;
 	}
 
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		baseRequest.setHandled(true);
-		HttpSession session = request.getSession(false);
-		Account account = (Account) session.getAttribute("account");
-		String authentication = (String) session.getAttribute("authentication");
-		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		String[] roleNames = broker.roleManager().getRoleNames(roleBits);
+		
+		PhotoDB phototDB = broker.photoDB();
+
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
-		json.key("authentication");
-		json.value(authentication);
-		json.key("user");
-		json.value(account.username);
-		json.key("roles");
-		json.value(roleNames);
-		json.endObject();
+		json.key("photos");
+		json.array();
+		
+		phototDB.foreach(photo -> {
+			json.object();
+			json.key("id");
+			json.value(photo.id);
+			json.endObject();	
+		});		
+		
+		json.endArray();
+		json.endObject();		
+
 	}
 }

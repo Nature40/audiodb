@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
+import photo.PhotoDB;
 import util.yaml.YamlMap;
 
 public class Broker {
@@ -20,6 +21,8 @@ public class Broker {
 	private LabelDefinitions labelDefinitions;
 	private Samples samples;
 	private WebAuthn webAuthn;
+	
+	private PhotoDB photoDB;
 	
 	public Broker() {
 		samples(); // preload sample metadata
@@ -103,6 +106,17 @@ public class Broker {
 			webAuthn = new WebAuthn();
 		}
 		return webAuthn;
+	}
+	
+	public PhotoDB photoDB() {
+		return photoDB == null ? loadPhotoDB() : photoDB;
+	}
+
+	private synchronized PhotoDB loadPhotoDB() {
+		if(photoDB == null) {
+			photoDB = new PhotoDB();
+		}
+		return photoDB;
 	}
 
 }
