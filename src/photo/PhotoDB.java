@@ -92,8 +92,21 @@ public class PhotoDB {
 		return id;
 	}
 	
-	public void foreach(Consumer<Photo> consumer) {
+	public void foreachLocation(Consumer<? super LocationPhotoDB> consumer) {
+		locationPhotoDBMap.values().forEach(consumer);
+	}
+	
+	public void foreachPhoto(Consumer<? super Photo> consumer) {
 		photoMap.values().forEach(consumer);
+	}	
+
+	public Photo getPhoto(String id) {
+		return photoMap.get(id);		
+	}
+
+	public LocationPhotoDB getLocationPhotoDB(String location) {
+		return locationPhotoDBMap.get(location);
+		
 	}
 
 }

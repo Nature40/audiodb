@@ -1,29 +1,22 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-// import example from './module-example'
+import photos from './photos.js'
+import photo from './photo.js'
+import meta from './meta.js'
 
 Vue.use(Vuex)
-
-/*
- * If not building with SSR mode, you can
- * directly export the Store instantiation;
- *
- * The function below can be async too; either use
- * async/await or return a Promise which resolves
- * with the Store instance.
- */
 
 const isDev = process.env.DEV;
 
 export default function (/* { ssrContext } */) {
   const Store = new Vuex.Store({
     modules: {
-      // example
+      photos,
+      photo,
+      meta
     },
 
-    // enable strict mode (adds overhead!)
-    // for dev mode only
     strict: process.env.DEBUGGING,
 
     getters: {
@@ -39,7 +32,7 @@ export default function (/* { ssrContext } */) {
         return Vue.prototype.$axios.get(path, params);
       },
     },
-  })
+  });
 
-  return Store
+  return Store;
 }

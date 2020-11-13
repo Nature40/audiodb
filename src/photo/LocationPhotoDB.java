@@ -1,6 +1,7 @@
 package photo;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 public class LocationPhotoDB {
 	
@@ -14,5 +15,9 @@ public class LocationPhotoDB {
 
 	public void insert(Photo photo) {
 		photoMap.put(photo.id, photo);	
+	}
+	
+	public void foreachPhoto(Consumer<? super Photo> consumer) {
+		photoMap.values().forEach(consumer);
 	}
 }

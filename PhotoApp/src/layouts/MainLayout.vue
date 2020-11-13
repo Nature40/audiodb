@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="hHh lpR fFf" class="fit">
     <q-header elevated>
       <q-toolbar>
         <q-btn
@@ -24,18 +24,23 @@
       bordered
       content-class="bg-grey-1"
     >
-      <q-list>
-        <q-item-label
-          header
-          class="text-grey-8"
-        >
-          Components
-        </q-item-label>
-      </q-list>
+      <q-scroll-area class="fit">
+      <q-item clickable :active="true" v-ripple to="/query">
+        <q-item-section avatar><q-icon name="search" /></q-item-section><q-item-section>Query</q-item-section>
+      </q-item>
+      <q-item clickable :active="true" v-ripple to="/browser">
+        <q-item-section avatar><q-icon name="view_module" /></q-item-section><q-item-section>Browser</q-item-section>
+      </q-item>
+      <q-item clickable :active="true" v-ripple to="/viewer">
+        <q-item-section avatar><q-icon name="crop_original" /></q-item-section><q-item-section>Viewer</q-item-section>
+      </q-item>
+      </q-scroll-area>
     </q-drawer>
 
-    <q-page-container>
-      <router-view />
+    <q-page-container class="fit">
+      <keep-alive>
+        <router-view />
+      </keep-alive>
     </q-page-container>
   </q-layout>
 </template>
@@ -47,7 +52,7 @@ export default {
   components: { },
   data () {
     return {
-      leftDrawerOpen: false,
+      leftDrawerOpen: true,
     }
   },
   mounted () {

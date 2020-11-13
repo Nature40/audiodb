@@ -1,10 +1,12 @@
 <template>
   <q-page class="flex flex-center">
-
-<div v-for="photo in photos" :key="photo.id">
-{{photo.id}}
+<div>
+<ul>
+<li>On query page select set of camera trap photos.</li>
+<li>On browser page select one photo.</li>
+<li>On viewer page inspect one photo.</li>
+</ul>
 </div>
-
   </q-page>
 </template>
 
@@ -29,7 +31,7 @@ export default {
   async mounted() {
     this.photosMessage = 'loading';
     try {
-      var r =  await this.apiGET(['photo']);
+      var r =  await this.apiGET(['PhotoDB','photos']);
       this.photos = r.data.photos;
       this.photosMessage = undefined;
     } catch {
