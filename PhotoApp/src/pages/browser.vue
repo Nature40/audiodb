@@ -1,12 +1,17 @@
 <template>
-  
-
 <div style="overflow: auto" class="fit">
-<span v-for="(photo, index) in photos" :key="photo.id">
-<img :src="api('PhotoDB', 'photos', photo.id)" width="320" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="photo.id"/>
-</span>
+
+<q-page class="flex flex-center" v-if="photos.length === 0">
+No photos selected in query.
+</q-page>  
+
+<div style="overflow: auto" class="fit" v-if="photos.length > 0">
+  <span v-for="(photo, index) in photos" :key="photo.id" style="display: inline-block; width: 320px; height: 240px;">
+    <img :src="api('PhotoDB', 'photos', photo.id, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="photo.id"/>
+  </span>
 </div>
 
+</div>
   
 </template>
 

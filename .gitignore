@@ -2,6 +2,7 @@
 /.settings
 /bin
 /build
+/cache
 /data
 /data_old
 /data_old2

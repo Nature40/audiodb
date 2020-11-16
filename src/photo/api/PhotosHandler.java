@@ -11,8 +11,10 @@ import org.json.JSONWriter;
 
 import audio.Broker;
 import photo.LocationPhotoDB;
+import photo.Photo;
 import photo.PhotoDB;
 import util.Web;
+import util.collections.vec.Vec;
 
 public class PhotosHandler {
 	private static final Logger log = LogManager.getLogger();
@@ -48,47 +50,38 @@ public class PhotosHandler {
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
-		}
-		
+		}		
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		
 		String location = Web.getString(request, "location", null);
 		
+		Vec<Photo> photos = new Vec<Photo>();
+		
 		if(location != null) {
 			LocationPhotoDB locationPhotoDB = photoDB.getLocationPhotoDB(location);
-			response.setContentType("application/json");
-			JSONWriter json = new JSONWriter(response.getWriter());
-			json.object();
-			json.key("photos");
-			json.array();
-			
-			locationPhotoDB.foreachPhoto(photo -> {
-				json.object();
-				json.key("id");
-				json.value(photo.id);
-				json.endObject();	
-			});		
-			
-			json.endArray();
-			json.endObject();	
+			locationPhotoDB.foreachPhoto(photos::add);
 		} else {
-			response.setContentType("application/json");
-			JSONWriter json = new JSONWriter(response.getWriter());
+			photoDB.foreachPhoto(photos::add);
+		}
+		
+		photos.sort(Photo.comparator);
+		
+		response.setContentType("application/json");
+		JSONWriter json = new JSONWriter(response.getWriter());
+		json.object();
+		json.key("photos");
+		json.array();
+		
+		photos.forEach(photo -> {
 			json.object();
-			json.key("photos");
-			json.array();
-			
-			photoDB.foreachPhoto(photo -> {
-				json.object();
-				json.key("id");
-				json.value(photo.id);
-				json.endObject();	
-			});		
-			
-			json.endArray();
-			json.endObject();			
-		}				
+			json.key("id");
+			json.value(photo.id);
+			json.endObject();	
+		});		
+		
+		json.endArray();
+		json.endObject();	
 	}
 }

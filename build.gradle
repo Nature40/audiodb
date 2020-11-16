@@ -70,6 +70,9 @@ dependencies {
 	compile group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.13.0.RELEASE'
 	
 	compile group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
+	compile group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
+	
+	compile group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.15.0'
 }
 
 sourceSets.main.java.srcDir 'src'
