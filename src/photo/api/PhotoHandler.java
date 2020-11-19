@@ -4,14 +4,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -22,24 +17,20 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.util.io.TeeOutputStream;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
+import org.json.JSONWriter;
 
-import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
-import com.drew.metadata.Directory;
-import com.drew.metadata.Metadata;
-import com.drew.metadata.Tag;
-import com.drew.metadata.exif.ExifIFD0Directory;
-import com.drew.metadata.exif.ExifSubIFDDirectory;
 
 import audio.Broker;
 import photo.Photo;
 import photo.PhotoDB;
+import photo.Tag;
+import util.JsonUtil;
 import util.SpiUtil;
 import util.Web;
 
@@ -96,7 +87,7 @@ public class PhotoHandler {
 	}
 
 	private void handleImage(Photo photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
-		File file = photo.path.toFile();
+		File file = photo.photoPath.toFile();
 		long reqWidth = Web.getInt(request, "width", 0);
 		long reqHeight = Web.getInt(request, "height", 0);
 		boolean cached = Web.getFlagBoolean(request, "cached");
@@ -214,31 +205,36 @@ public class PhotoHandler {
 		return dst;
 	}
 
-	public LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
-		return dateToConvert.toInstant()
-				.atZone(ZoneId.of("UTC"))
-				.toLocalDateTime();
-	}
+
 
 	private void handleRoot(Photo photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
-		response.setStatus(HttpServletResponse.SC_OK);
+		/*response.setStatus(HttpServletResponse.SC_OK);
 		response.setContentType("text/plain;charset=utf-8");
 		PrintWriter writer = response.getWriter();
 		writer.println(photo.id);
 
-		Metadata metadata = ImageMetadataReader.readMetadata(photo.path.toFile());
+		Metadata metadata = ImageMetadataReader.readMetadata(photo.photoPath.toFile());
 
 		ExifIFD0Directory directory1 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
 		Date date = directory1.getDate(ExifIFD0Directory.TAG_DATETIME);
 		writer.println(date);
-		writer.println(convertToLocalDateTimeViaInstant(date));
-
+		writer.println(Photo.convertToLocalDateTimeViaInstant(date));
 
 		for (Directory directory : metadata.getDirectories()) {
 			writer.println(directory.getClass());
 			for (Tag tag : directory.getTags()) {
 				writer.println(tag);
 			}
-		}
+		}*/
+		
+		response.setContentType("application/json");
+		JSONWriter json = new JSONWriter(response.getWriter());
+		json.object();
+		json.key("photo_meta");
+		json.object();
+		JsonUtil.writeOpt(json, "timestamp", photo.hasTimestamp(), photo.timestamp());
+		JsonUtil.writeOpt(json, "tags", photo.tags(), Tag::toJSON);
+		json.endObject();
+		json.endObject();
 	}
 }

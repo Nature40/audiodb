@@ -1,8 +1,10 @@
 package util.yaml;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import util.collections.ReadonlyList;
 import util.collections.array.ReadonlyArray;
@@ -63,5 +65,26 @@ public class YamlList {
 			}
 		}
 		return result;
+	}
+	
+	public boolean isEmpty() {
+		return list.isEmpty();
+	}
+
+	public <T> ReadonlyArray<T> asReadonlyList(Function<YamlMap, T> fun) {
+		@SuppressWarnings("unchecked")
+		T[] a = (T[]) new Object[list.size()];
+		int i = 0;
+		for(Object e : list) {
+			if(e instanceof Map) {
+				YamlMap yamlMap = new YamlMap((Map<String, Object>) e);
+				T v = fun.apply(yamlMap);
+				a[i] = v;
+			} else {
+				throw new RuntimeException("element is no map "+e);
+			}
+			i++;
+		}
+		return ReadonlyList.of(a);
 	}
 }

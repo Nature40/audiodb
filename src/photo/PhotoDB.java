@@ -51,7 +51,14 @@ public class PhotoDB {
 			if(path.toFile().isDirectory()) {
 				getLocationPhotoPaths(path, collector);
 			} else if(path.toFile().isFile()) {
+				String filename = path.getFileName().toString();
+				if(filename.endsWith(".JPG") || filename.endsWith(".jpg") ) {
 				collector.add(path);
+				} else if(filename.endsWith(".photo_meta")) {
+					// meta
+				} else {
+					log.warn("unknown file type: " + filename);
+				}
 			} else {
 				log.warn("unknown entity: " + path);
 			}
@@ -71,7 +78,7 @@ public class PhotoDB {
 				for(Path photoPath : photoPaths) {
 					String photoID = createID(photoPath);
 					log.info(photoPath + " -> " + photoID);
-					Photo photo = new Photo(locationID, photoID, photoPath);
+					Photo photo = new Photo(photoID, photoPath, locationID);
 					insert(photo);
 					locationPhotoDB.insert(photo);
 				}

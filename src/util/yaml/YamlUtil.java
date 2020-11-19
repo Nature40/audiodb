@@ -14,12 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
 import audio.LabelDefinition;
+import photo.Tag;
+import util.collections.ReadonlyList;
 import util.collections.vec.Vec;
 
 public class YamlUtil {
@@ -57,6 +60,18 @@ public class YamlUtil {
 		}
 	}
 	
+	public static void optPut(Map<String, Object> map, String name, String value, String def) {
+		if(value != def) {
+			map.put(name, value);
+		}
+	}
+	
+	public static void optPut(Map<String, Object> map, String name, long value, long def) {
+		if(value != def) {
+			map.put(name, value);
+		}
+	}
+	
 	public static void optPut(Map<String, Object> map, String name, double value) {
 		if(Double.isFinite(value)) {
 			map.put(name, value);
@@ -84,5 +99,21 @@ public class YamlUtil {
 			}
 		}		
 		return vec;
+	}
+
+	public static <E, T> void optPut(LinkedHashMap<String, Object> yamlMap, String name, ReadonlyList<E> list, Function<E, T> mapper) {
+		if(list.isEmpty()) {
+			return;
+		}
+		T[] a = list.mapArray(mapper);
+		yamlMap.put(name, a);
+	}
+	
+	public static <E, T> void optPut(LinkedHashMap<String, Object> yamlMap, String name, ReadonlyList<E> list, IntFunction<T[]> generator, Function<E, T> mapper) {
+		if(list.isEmpty()) {
+			return;
+		}
+		T[] a = list.mapArray(generator, mapper);
+		yamlMap.put(name, a);
 	}
 }

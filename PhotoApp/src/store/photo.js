@@ -1,5 +1,11 @@
+import meta from './photoMeta.js'
+
 export default {
   namespaced: true,
+
+  modules: {
+    meta
+  },
 
   state: () => ({
     index: undefined,
@@ -23,9 +29,10 @@ export default {
   },
   
   actions: {
-    setIndex({commit, rootState}, index) {
+    setIndex({commit, rootState, dispatch}, index) {
       var photo = rootState.photos.data[index];
       commit('setIndexAndPhoto', {index, photo});
+      dispatch('meta/query');
     },
     move({state, rootState, dispatch}, relative) {
       var index = state.index + relative;

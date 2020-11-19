@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -187,5 +188,26 @@ public class ReadonlyArray<E> implements ReadonlyList<E>, RandomAccess, Serializ
 	@Override
 	public List<E> subList(int fromIndex, int toIndex) {
 		return new ReadonlySubArray<E>(a, fromIndex, toIndex);
+	}
+	
+	@Override
+	public <T> T[] mapArray(Function<E, T> mapper) {
+		@SuppressWarnings("unchecked")
+		T[] a = (T[]) new Object[this.a.length];
+		for (int i = 0; i < this.a.length; i++) {
+			T v = mapper.apply(this.a[i]);
+			a[i] = v;
+		}
+		return a;
+	}
+	
+	@Override
+	public <T> T[] mapArray(IntFunction<T[]> generator, Function<E, T> mapper) {
+		T[] a = generator.apply(this.a.length);
+		for (int i = 0; i < this.a.length; i++) {
+			T v = mapper.apply(this.a[i]);
+			a[i] = v;
+		}
+		return a;
 	}
 }

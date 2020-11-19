@@ -7,6 +7,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,6 +17,8 @@ import org.json.JSONWriter;
 
 import audio.GeneratorLabel;
 import audio.Label;
+import photo.Tag;
+import util.collections.ReadonlyList;
 import util.collections.vec.Vec;
 
 public class JsonUtil {
@@ -38,7 +41,7 @@ public class JsonUtil {
 		}
 		return items;
 	}
-	
+
 	public static String[] optStrings(JSONObject json, String name) {
 		JSONArray jsonArray = json.optJSONArray(name);
 		if(jsonArray == null) {
@@ -51,7 +54,7 @@ public class JsonUtil {
 		}
 		return items;
 	}
-	
+
 	public static <T> Vec<T> optVec(JSONObject json, String name, Function<JSONObject, T> parser) {
 		Vec<T> vec = new Vec<T>();
 		JSONArray jsonArray = json.optJSONArray(name);
@@ -74,7 +77,7 @@ public class JsonUtil {
 			json.value(value);
 		}
 	}
-	
+
 	public static void writeOpt(JSONWriter json, String name, double value) {
 		if(Double.isFinite(value)) {
 			json.key(name);
@@ -118,8 +121,27 @@ public class JsonUtil {
 		return value == null ? def :  LocalDateTime.parse(value.toString());
 	}
 
+	public static void writeOpt(JSONWriter json, String name, boolean opt, long timestamp) {
+		if(opt) {
+			json.key(name);
+			json.value(timestamp);
+		}
+	}
+
+	public static <E> void writeOpt(JSONWriter json, String name, ReadonlyList<E> list, BiConsumer<E, JSONWriter> fun) {
+		if(list.isEmpty()) {
+			return;
+		}
+		json.key(name);
+		json.array();
+		for(E e : list) {
+			fun.accept(e, json);
+		}
+		json.endArray();
+	}
 
 
-	
+
+
 
 }
