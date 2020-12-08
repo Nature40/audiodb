@@ -11,7 +11,10 @@
         </v-list-tile>
         <v-list-tile>
           <v-list-tile-title><a href="#/export"><v-icon>arrow_forward</v-icon>export</a></v-list-tile-title>
-        </v-list-tile>       
+        </v-list-tile>     
+        <v-list-tile>
+          <v-list-tile-title><a href="#/classification"><v-icon>arrow_forward</v-icon>classification</a></v-list-tile-title>
+        </v-list-tile>           
       </v-list>
     </v-menu>     
     <v-toolbar-title class="headline text-uppercase">

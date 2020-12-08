@@ -26,7 +26,7 @@ import util.collections.ReadonlyList;
 import util.collections.vec.Vec;
 
 public class YamlUtil {
-	
+
 	public static YamlMap readYamlMap(Path path) {
 		try(InputStream in = new FileInputStream(path.toFile())) {
 			YamlMap yamlMap = YamlMap.ofObject(new Yaml().load(in));
@@ -35,7 +35,7 @@ public class YamlUtil {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static void writeSafeYamlMap(Path path, Map<String, Object> yamlMap) {		
 		Path writepath = Paths.get(path.toString()+"_temp");
 		try(FileWriter fileWriter = new FileWriter(writepath.toFile())){
@@ -47,48 +47,56 @@ public class YamlUtil {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static void writeSafe(Path path, Consumer<Map<String, Object>> writer) {
 		LinkedHashMap<String, Object> yamlMap = new LinkedHashMap<String, Object>();
 		writer.accept(yamlMap);
 		writeSafeYamlMap(path, yamlMap);
 	}
-	
+
 	public static void optPut(Map<String, Object> map, String name, String value) {
 		if(value != null && !value.isEmpty()) {
 			map.put(name, value);
 		}
 	}
-	
+
 	public static void optPut(Map<String, Object> map, String name, String value, String def) {
 		if(value != def) {
 			map.put(name, value);
 		}
 	}
-	
+
 	public static void optPut(Map<String, Object> map, String name, long value, long def) {
 		if(value != def) {
 			map.put(name, value);
 		}
 	}
+
+	public static void put(Map<String, Object> map, String name, long value) {
+		map.put(name, value);
+	}
 	
+	public static void put(Map<String, Object> map, String name, String value) {
+		map.put(name, value);
+	}
+
 	public static void optPut(Map<String, Object> map, String name, double value) {
 		if(Double.isFinite(value)) {
 			map.put(name, value);
 		}
 	}
-	
+
 	public static <T> void putArray(Map<String, Object> map, String name, Iterable<T> iterable, Function<T, Object> mapper) {
 		Vec<Object> vec = new Vec<Object>();
 		iterable.forEach(label -> vec.add(mapper.apply(label)));
 		map.put(name, vec);
 	}
-	
+
 	public static <T> Vec<T> getVec(YamlMap yamlMap, String name, Function<YamlMap, T> mapper) {
 		List<YamlMap> ldList = yamlMap.getList(name).asMaps();
 		return ldList.stream().map(mapper).collect(Vec.collector());
 	}
-	
+
 	public static <T> Vec<T> optVec(YamlMap yamlMap, String name, Function<YamlMap, T> parser) {
 		Vec<T> vec = new Vec<T>();
 		List<YamlMap> data = yamlMap.optList(name).asMaps();		
@@ -108,7 +116,7 @@ public class YamlUtil {
 		T[] a = list.mapArray(mapper);
 		yamlMap.put(name, a);
 	}
-	
+
 	public static <E, T> void optPut(LinkedHashMap<String, Object> yamlMap, String name, ReadonlyList<E> list, IntFunction<T[]> generator, Function<E, T> mapper) {
 		if(list.isEmpty()) {
 			return;

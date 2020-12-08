@@ -166,7 +166,7 @@ public class QueryHandler extends AbstractHandler {
 
 
 		int posStart = 0;
-		int posEnd = sampleProcessor.frameLength - 1;
+		int posEnd = sampleProcessor.dataLength - 1;
 
 		int colStart = sampleProcessor.timeToCol(posStart);
 		int colEnd = sampleProcessor.timeToCol(posEnd);

@@ -38,10 +38,13 @@ public class SpectrumHandler {
 			}
 			float threshold = (float) Web.getDouble(request, "threshold", 12);
 			
+		    double start = Web.getDouble(request, "start", Double.NaN);
+		    double end = Web.getDouble(request, "end", Double.NaN);
+			
 			SampleProcessor sampleProcessor = new SampleProcessor(sample);
-			sampleProcessor.loadData(0);
+			sampleProcessor.loadData(0, start, end);
 			short[] fullShorts = sampleProcessor.data;
-			int cols = ((sampleProcessor.frameLength - n) / step) + 1;
+			int cols = ((sampleProcessor.dataLength - n) / step) + 1;
 			
 			//ImageRGBA image = render2(fullShorts, n, step, cols, cutoff, threshold);
 			ImageRGBA image = render3(fullShorts, n, step, cols, cutoff, threshold);

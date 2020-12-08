@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
+import audio.ReviewedLabel.Reviewed;
 import util.collections.ReadonlyList;
 
 public class YamlMap {
@@ -301,5 +302,10 @@ public class YamlMap {
 			yamlList.asReadonlyList(fun);
 		}
 		return ReadonlyList.EMPTY;
+	}
+
+	public <T> T get(String name, Function<String, T> converter) {
+		String s = getString(name);
+		return converter.apply(s);
 	}
 }

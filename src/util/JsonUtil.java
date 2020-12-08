@@ -27,9 +27,22 @@ public class JsonUtil {
 		return json.get(name).toString();
 	}
 
+	public static <T> T getString(JSONObject json, String name, Function<String, T> converter) {
+		String s = getString(json, name);
+		if(s == null) {
+			throw new RuntimeException("missing: " + name);
+		}
+		return converter.apply(s);
+	}
+
 	public static String optString(JSONObject json, String name, String def) {	
 		Object value = json.opt(name);		
 		return value == null ? def : value.toString();
+	}
+
+	public static long optLong(JSONObject json, String name, long def) {	
+		Object value = json.opt(name);		
+		return value == null ? def : Long.parseLong(value.toString());
 	}
 
 	public static String[] getStrings(JSONObject json, String name) {
@@ -126,6 +139,16 @@ public class JsonUtil {
 			json.key(name);
 			json.value(timestamp);
 		}
+	}
+	
+	public static void write(JSONWriter json, String name, String value) {
+		json.key(name);
+		json.value(value);
+	}
+
+	public static void write(JSONWriter json, String name, long value) {
+		json.key(name);
+		json.value(value);
 	}
 
 	public static <E> void writeOpt(JSONWriter json, String name, ReadonlyList<E> list, BiConsumer<E, JSONWriter> fun) {

@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -15,6 +16,7 @@ import org.json.JSONTokener;
 
 import audio.Account;
 import audio.Label;
+import audio.ReviewedLabel;
 import audio.Sample;
 import util.JsonUtil;
 import util.collections.vec.Vec;
@@ -76,9 +78,7 @@ public class LabelsHandler {
 	}
 
 	private void handleRoot_GET(Sample sample, Request request, HttpServletResponse response) throws IOException {
-		/*Path labelsPath = getLabelsPath(sample);
-		Vec<Label> labels = loadLabels(sample);*/
-
+		sample.getLabels().sort(Label.INTERVAL_COMPARATOR);
 		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", sample.getLabels(), Label::toJSON));		
 	}
 
@@ -121,10 +121,24 @@ public class LabelsHandler {
 				}
 				break;
 			}
+			case "set_reviewed_label": {
+				double start = jsonAction.getDouble("start");
+				double end = jsonAction.getDouble("end");
+				int labelIndex = sample.getLabels().findIndexOf(l -> l.start == start && l.end == end);
+				Label label = sample.getLabels().get(labelIndex);
+				
+				String reviewer = account.username;
+				long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
+				ReviewedLabel reviewedLabel = ReviewedLabel.ofJSON(jsonAction.getJSONObject("reviewed_label")).withReviewer(reviewer, timestamp);				
+				label.setReviewedLabel(reviewedLabel);
+				break;
+			}
 			default:
 				throw new RuntimeException("unknown action:" + actionName);
 			}
 		}
+		
+		sample.getLabels().sort(Label.INTERVAL_COMPARATOR);
 
 		sample.writeMeta();		
 
