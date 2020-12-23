@@ -20,6 +20,11 @@ public class Broker {
 	private AccountManager accountManager;
 	private LabelDefinitions labelDefinitions;
 	private Samples samples;
+	
+	private ReviewListManager reviewListManager;
+	private volatile ReviewListManager reviewListManagerVolatile;
+	private Object reviewListManagerLock = new Object();
+	
 	private WebAuthn webAuthn;
 	
 	private PhotoDB photoDB;
@@ -95,6 +100,27 @@ public class Broker {
 			samples = new Samples();
 		}
 		return samples;
+	}
+	
+	public ReviewListManager reviewListManager() {		
+		return reviewListManager != null ? reviewListManager : loadReviewListManager();
+	}
+
+	private ReviewListManager loadReviewListManager() {
+		ReviewListManager r = reviewListManagerVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (reviewListManagerLock) {
+			r = reviewListManagerVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new ReviewListManager(Paths.get("review_lists"));
+			reviewListManagerVolatile = r;
+			reviewListManager = r;
+			return r;
+		}
 	}
 	
 	public WebAuthn webAuthn() {
