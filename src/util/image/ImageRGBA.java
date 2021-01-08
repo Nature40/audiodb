@@ -21,7 +21,6 @@ import ar.com.hjg.pngj.FilterType;
 import ar.com.hjg.pngj.IImageLine;
 import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.PngWriter;
-import ar.com.hjg.pngj.chunks.PngChunkTRNS;
 import util.Timer;
 
 /**

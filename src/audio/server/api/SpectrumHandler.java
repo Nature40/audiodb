@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.math3.analysis.function.Gaussian;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Request;

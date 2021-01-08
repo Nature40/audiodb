@@ -34,7 +34,7 @@ public class Samples {
 					id = id.replaceAll("\\\\", "__");
 					id = id.replaceAll(".yaml", "");
 					Sample sample = new Sample(id, path);
-					sample.readMeta();
+					sample.readFromFile();
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
 					log.warn("error in " + path + "   " + e);

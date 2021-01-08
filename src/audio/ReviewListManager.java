@@ -5,13 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import util.yaml.YamlMap;
-import util.yaml.YamlUtil;
 
 public class ReviewListManager {
 	private static final Logger log = LogManager.getLogger();
@@ -48,9 +44,8 @@ public class ReviewListManager {
 		}	
 	}
 	
-	private void load(Path path, String id) {
-		YamlMap yamlMap = YamlUtil.readYamlMap(path);
-		ReviewList reviewList = ReviewList.ofYAML(yamlMap);
+	private void load(Path path, String id) {		
+		ReviewList reviewList = ReviewList.ofFile(path);
 		reviewListMap.put(id, reviewList);
 	}
 	

@@ -27,13 +27,17 @@ public class Label {
 		return Double.compare(a.end, b.end);
 	};
 	
-	public Label(double start, double end, String comment, Vec<GeneratorLabel> generatorLabels, Vec<UserLabel> userLabels, Vec<ReviewedLabel> reviewedLabels) {
+	private Label(double start, double end, String comment, Vec<GeneratorLabel> generatorLabels, Vec<UserLabel> userLabels, Vec<ReviewedLabel> reviewedLabels) {
 		this.start = start;
 		this.end = end;
 		this.comment = comment;
 		this.generatorLabels = generatorLabels;
 		this.userLabels = userLabels;
 		this.reviewedLabels = reviewedLabels;
+	}
+
+	public Label(double start, double end) {
+		this(start, end, "", new Vec<GeneratorLabel>(), new Vec<UserLabel>(), new Vec<ReviewedLabel>());
 	}
 
 	public static Label ofJSON(JSONObject jsonLabel) {		
@@ -69,9 +73,9 @@ public class Label {
 		if(hasComment()) {
 			map.put("comment", comment);	
 		}
-		YamlUtil.putArray(map, "generated_labels", generatorLabels, GeneratorLabel::toMap);
-		YamlUtil.putArray(map, "labels", userLabels, UserLabel::toMap);
-		YamlUtil.putArray(map, "reviewed_labels", reviewedLabels, ReviewedLabel::toMap);
+		YamlUtil.putList(map, "generated_labels", generatorLabels, GeneratorLabel::toMap);
+		YamlUtil.putList(map, "labels", userLabels, UserLabel::toMap);
+		YamlUtil.putList(map, "reviewed_labels", reviewedLabels, ReviewedLabel::toMap);
 		return map;
 	}
 
@@ -109,5 +113,13 @@ public class Label {
 		} else {
 			reviewedLabels.setFast(index, reviewedLabel);
 		}
+	}
+	
+	public boolean isInterval(double label_start, double label_end) {
+		return (start - 0.001d) <= label_start && label_start <= (start + 0.001d) && (end - 0.001d) <= label_end && label_end <= (end + 0.001d);
+	}
+
+	public synchronized void addReview(ReviewedLabel reviewedLabel) {
+		reviewedLabels.add(reviewedLabel);		
 	}
 }

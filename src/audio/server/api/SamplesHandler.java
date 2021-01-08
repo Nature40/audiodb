@@ -3,7 +3,6 @@ package audio.server.api;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +21,7 @@ public class SamplesHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
 
 	private final SampleHandler sampleHandler;
-	
+
 	private final Broker broker;
 
 	public SamplesHandler(Broker broker) {
@@ -48,9 +47,13 @@ public class SamplesHandler extends AbstractHandler {
 		} catch(Exception e) {
 			e.printStackTrace();
 			log.error(e);
-			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
-			response.getWriter().println("ERROR: " + e.getMessage());
+			try {
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				response.setContentType("text/plain;charset=utf-8");
+				response.getWriter().println("ERROR: " + e.getMessage());
+			} catch(Exception e1) {
+				log.warn(e1);
+			}
 		}
 	}
 

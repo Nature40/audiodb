@@ -53,7 +53,6 @@ import audio.server.api.SamplesHandler;
 import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
 import photo.api.PhotoDBHandler;
-import photo.api.PhotosHandler;
 
 public class Webserver {
 	static final Logger log = LogManager.getLogger();

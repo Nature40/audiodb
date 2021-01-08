@@ -22,9 +22,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.stream.Collector.Characteristics;
 
-import audio.LabelDefinition;
 import util.collections.array.ReadonlySizedArray;
 import util.collections.array.iterator.ReadonlyArrayIterator;
 import util.collections.array.iterator.ReadonlyArrayReverseIterator;
@@ -38,14 +36,17 @@ public class Vec<T> implements List<T> {
 	protected int size;
 	protected T[] items;
 
+	@SuppressWarnings("unchecked")
 	public static <T> Vec<T> ofOne(T e) {
 		return new Vec<T>((T[]) new Object[] {e}, 1);
 	}
 
+	@SuppressWarnings("unchecked")
 	public Vec() {
 		items = (T[]) DEFAULT_SIZED_EMPTY_ARRAY;
 	}
 
+	@SuppressWarnings("unchecked")
 	public Vec(int initialCapacity) {
 		items = (T[]) new Object[initialCapacity];
 	}
@@ -88,11 +89,11 @@ public class Vec<T> implements List<T> {
 
 
 	@Override
-	public void forEach(Consumer<? super T> consumer) {
+	public void forEach(Consumer<? super T> action) {
 		int len = size;
 		T[] data = items;
 		for (int i = 0; i < len; i++) {
-			consumer.accept(data[i]);
+			action.accept(data[i]);
 		}
 	}
 

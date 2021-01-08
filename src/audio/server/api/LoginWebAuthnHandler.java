@@ -2,8 +2,6 @@ package audio.server.api;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ThreadLocalRandom;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -24,7 +22,6 @@ import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationRequest;
 
 import audio.Account;
-import audio.AccountManager;
 import audio.Broker;
 import audio.WebAuthn;
 import audio.server.AccessHandler;

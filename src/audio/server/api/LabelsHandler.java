@@ -140,7 +140,7 @@ public class LabelsHandler {
 		
 		sample.getLabels().sort(Label.INTERVAL_COMPARATOR);
 
-		sample.writeMeta();		
+		sample.writeToFile();		
 
 		JsonUtil.write(response, json -> {
 			json.key("massage");

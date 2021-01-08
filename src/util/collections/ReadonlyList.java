@@ -3,14 +3,12 @@ package util.collections;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import util.collections.array.ReadonlyArray;
-import util.yaml.YamlMap;
 
 public interface ReadonlyList<E> extends List<E> {
 	

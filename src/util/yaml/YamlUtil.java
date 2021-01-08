@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,13 +15,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
-import audio.LabelDefinition;
-import photo.Tag;
 import util.collections.ReadonlyList;
+import util.collections.vec.SyncVec;
 import util.collections.vec.Vec;
 
 public class YamlUtil {
@@ -86,7 +82,7 @@ public class YamlUtil {
 		}
 	}
 
-	public static <T> void putArray(Map<String, Object> map, String name, Iterable<T> iterable, Function<T, Object> mapper) {
+	public static <T> void putList(Map<String, Object> map, String name, Iterable<T> iterable, Function<T, Object> mapper) {
 		Vec<Object> vec = new Vec<Object>();
 		iterable.forEach(label -> vec.add(mapper.apply(label)));
 		map.put(name, vec);
@@ -107,6 +103,28 @@ public class YamlUtil {
 			}
 		}		
 		return vec;
+	}
+	
+	public static <T> SyncVec<T> optSyncVec(YamlMap yamlMap, String name, Function<YamlMap, T> parser) {
+		SyncVec<T> vec = new SyncVec<T>();
+		List<YamlMap> data = yamlMap.optList(name).asMaps();		
+		for(YamlMap v:data) {
+			T element = parser.apply(v);
+			if(element != null) {
+				vec.addUnsync(element);
+			}
+		}		
+		return vec;
+	}
+	
+	public static <T> void optListConsumer(YamlMap yamlMap, String name, Function<YamlMap, T> parser, Consumer<T> action) {
+		List<YamlMap> data = yamlMap.optList(name).asMaps();		
+		for(YamlMap v:data) {
+			T element = parser.apply(v);
+			if(element != null) {
+				action.accept(element);
+			}
+		}		
 	}
 
 	public static <E, T> void optPut(LinkedHashMap<String, Object> yamlMap, String name, ReadonlyList<E> list, Function<E, T> mapper) {

@@ -2,12 +2,9 @@ package util;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -15,9 +12,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 
-import audio.GeneratorLabel;
-import audio.Label;
-import photo.Tag;
 import util.collections.ReadonlyList;
 import util.collections.vec.Vec;
 

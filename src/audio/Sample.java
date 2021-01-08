@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,7 +20,7 @@ public class Sample {
 	public final String id;
 	public final Path metaPath;
 	public final Path directoryPath;
-	
+
 	private YamlMap yamlMap;
 	private String audioFilename;
 	private Path audioPath;
@@ -31,8 +32,8 @@ public class Sample {
 		this.metaPath = metaPath;
 		this.directoryPath = metaPath.getParent();
 	}	
-	
-	public void readMeta() {
+
+	public synchronized void readFromFile() {
 		Object inObject;
 		try(InputStream in = new FileInputStream(metaPath.toFile())) {
 			inObject = new Yaml().load(in);			
@@ -49,7 +50,7 @@ public class Sample {
 		audioFilename = yamlMap.getString("file");
 		audioPath = directoryPath.resolve(audioFilename);
 		audioFile = audioPath.toFile();
-		
+
 		labels = new Vec<Label>();
 		for(YamlMap labelMap:yamlMap.optList("Labels").asMaps()) {		
 			log.info(labelMap.toString());
@@ -58,26 +59,51 @@ public class Sample {
 			labels.add(label);
 		}
 	}
-	
-	public void writeMeta() {		
-		YamlUtil.putArray(yamlMap.getRootMap(), "Labels", labels, Label::toMap);		
-		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getRootMap());
 
+	public synchronized void writeToFile() {		
+		YamlUtil.putList(yamlMap.getRootMap(), "Labels", labels, Label::toMap);		
+		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getRootMap());
 	}
-	
-	public File getAudioFile() {
+
+	public synchronized File getAudioFile() {
 		return audioFile;
 	}
 
-	public String getAudioFileName() {
+	public synchronized String getAudioFileName() {
 		return audioFilename;
 	}
 
-	public YamlMap getMetaMap() {
+	public synchronized YamlMap getMetaMap() {
 		return yamlMap;
 	}
 
-	public Vec<Label> getLabels() {
+	public synchronized Vec<Label> getLabels() {
 		return labels;
+	}
+
+	public synchronized int findLabelIndexOf(double label_start, double label_end) {
+		return labels.findIndexOf(e -> e.isInterval(label_start, label_end));		
+	}
+
+	public synchronized Label getLabel(int label_index) {
+		return labels.get(label_index);		
+	}
+
+	public synchronized void setLabel(int label_index, Label label) {
+		labels.set(label_index, label);
+
+	}
+
+	public synchronized void addLabel(Label label) {
+		labels.add(label);		
+	}
+
+	public synchronized void mutate(Consumer<Sample> action) {
+		try {
+			action.accept(this);
+			writeToFile();
+		} catch(Exception e) {
+			readFromFile();
+		}
 	}
 }

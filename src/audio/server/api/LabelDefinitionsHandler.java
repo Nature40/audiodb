@@ -1,7 +1,6 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.util.BitSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,10 +15,8 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;
 
-import audio.Account;
 import audio.Broker;
 import audio.LabelDefinition;
-import audio.Role;
 import util.collections.vec.Vec;
 
 public class LabelDefinitionsHandler extends AbstractHandler {

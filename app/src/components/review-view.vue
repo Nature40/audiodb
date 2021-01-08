@@ -52,7 +52,7 @@
 
       <div>
         <span v-if="review_list_entry_sample_id !== undefined">
-          <b>{{review_list_entry_sample_id}}</b> {{review_list_entry.sample_start.toFixed(2) + ' - ' + review_list_entry.sample_end.toFixed(2)}}
+          <b>{{review_list_entry_sample_id}}</b> {{review_list_entry.label_start.toFixed(2) + ' - ' + review_list_entry.label_end.toFixed(2)}}
         </span>
       </div>  
 
@@ -129,13 +129,13 @@ computed: {
     if(this.labels === undefined || this.review_list_entry === undefined) {
       return undefined;
     }
-    return this.labels.find(label => equals_tolerant(label.start, this.review_list_entry.sample_start) && equals_tolerant(label.end, this.review_list_entry.sample_end));
+    return this.labels.find(label => equals_tolerant(label.start, this.review_list_entry.label_start) && equals_tolerant(label.end, this.review_list_entry.label_end));
   },
   spectrogramUrl() {
     if(this.review_list_entry_sample_id === undefined || this.review_list_entry === undefined) {
       return undefined;
     }
-    return this.apiBase + 'samples/' + this.review_list_entry_sample_id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold + "&start=" + this.review_list_entry.sample_start + "&end=" + this.review_list_entry.sample_end;
+    return this.apiBase + 'samples/' + this.review_list_entry_sample_id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold + "&start=" + this.review_list_entry.label_start + "&end=" + this.review_list_entry.label_end;
   },
   storedReviewed() {
     if(this.label === undefined || this.review_list_entry === undefined) {
@@ -346,7 +346,7 @@ methods: {
   async setReviewed(reviewed) {
     if(this.selected_review_list != undefined && this.review_list_entry !== undefined) {
       try {
-        var content = {actions: [{action: "set_reviewed_label", sample_id: this.review_list_entry_sample_id, sample_start: this.review_list_entry.sample_start, sample_end: this.review_list_entry.sample_end, label_name: this.review_list_entry.label_name, reviewed: reviewed}]}; 
+        var content = {actions: [{action: "set_reviewed_label", sample_id: this.review_list_entry_sample_id, label_start: this.review_list_entry.label_start, label_end: this.review_list_entry.label_end, label_name: this.review_list_entry.label_name, reviewed: reviewed}]}; 
         var response = await axios.post(this.apiBase + 'review_lists' + '/' + this.selected_review_list, content);
         this.review_list = response.data.review_list;
         this.review_list_message = undefined;
