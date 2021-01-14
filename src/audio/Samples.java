@@ -54,4 +54,8 @@ public class Samples {
 		return sample;
 	}
 
+	public Sample getSample(String sample_id) {
+		return sampleMap.get(sample_id);
+	}
+
 }

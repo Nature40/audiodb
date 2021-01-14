@@ -1,5 +1,7 @@
 package util.collections.vec;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -97,6 +99,19 @@ public class SyncVec<T> implements Iterable<T> {
 		T[] data = items;
 		for (int i = 0; i < len; i++) {
 			action.accept(data[i]);
+		}
+	}
+	
+	@FunctionalInterface
+	public static interface IndexedConsumer<T> {
+		void accept(int i, final T t);
+	}
+	
+	public void forEachIndexedUnsync(IndexedConsumer<? super T> action) {
+		int len = size;
+		T[] data = items;
+		for (int i = 0; i < len; i++) {
+			action.accept(i, data[i]);
 		}
 	}
 
@@ -212,5 +227,9 @@ public class SyncVec<T> implements Iterable<T> {
 			data[i] = null;
 		}		
 		size = 0;
+	}
+
+	public void sortUnsync(Comparator<? super T> c) {
+		Arrays.sort(items, 0, size, c);
 	}
 }

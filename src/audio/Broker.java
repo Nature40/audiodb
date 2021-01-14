@@ -31,6 +31,7 @@ public class Broker {
 	
 	public Broker() {
 		samples(); // preload sample metadata
+		reviewListManager();  // preload review_list metadata
 	}
 	
 	public Config config() {
@@ -117,11 +118,14 @@ public class Broker {
 				return r;
 			}
 			r = new ReviewListManager(Paths.get("review_lists"));
+			r.updateReviewLists(samples());
 			reviewListManagerVolatile = r;
 			reviewListManager = r;
 			return r;
 		}
 	}
+	
+
 	
 	public WebAuthn webAuthn() {
 		return webAuthn == null ? loadWebAuthn() : webAuthn;

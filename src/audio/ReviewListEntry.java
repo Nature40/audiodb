@@ -1,5 +1,6 @@
 package audio;
 
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.function.Predicate;
 
@@ -12,6 +13,22 @@ public class ReviewListEntry {
 	public final double label_end;
 	public final String label_name;
 	public final boolean classified;
+	
+	public static final Comparator<ReviewListEntry> COMPARATOR = (a,b) -> {
+		int c = a.sample_id.compareTo(b.sample_id);
+		if(c != 0) {
+			return c;
+		}		
+		c = Double.compare(a.label_start, b.label_start);
+		if(c != 0) {
+			return c;
+		}
+		c = Double.compare(a.label_end, b.label_end);
+		if(c != 0) {
+			return c;
+		}
+		return Boolean.compare(a.classified, b.classified);
+	};
 	
 	public static Predicate<ReviewListEntry> getKeyFunc(String sample_id, String label_name, double label_start, double label_end) {
 		return e -> e.sample_id.equals(sample_id) && e.label_name.equals(label_name) && e.isInterval(label_start, label_end);
@@ -52,5 +69,11 @@ public class ReviewListEntry {
 	
 	public boolean isInterval(double start, double end) {
 		return (start - 0.001d) <= label_start && label_start <= (start + 0.001d) && (end - 0.001d) <= label_end && label_end <= (end + 0.001d);
+	}
+
+	@Override
+	public String toString() {
+		return "ReviewListEntry [" + sample_id + ", " + label_start + " - " + label_end
+				+ ", " + label_name + ", " + classified + "]";
 	}
 }

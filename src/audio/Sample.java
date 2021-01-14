@@ -84,6 +84,10 @@ public class Sample {
 	public synchronized int findLabelIndexOf(double label_start, double label_end) {
 		return labels.findIndexOf(e -> e.isInterval(label_start, label_end));		
 	}
+	
+	public synchronized Label findLabel(double label_start, double label_end) {
+		return labels.find(e -> e.isInterval(label_start, label_end));		
+	}
 
 	public synchronized Label getLabel(int label_index) {
 		return labels.get(label_index);		

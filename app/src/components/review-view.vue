@@ -21,6 +21,8 @@
       Review list:  
     </v-toolbar-title> 
     <div style="margin-left: 10px;" v-if="review_lists_message === undefined"><v-select v-model="selected_review_list" :items="review_lists" label="Review list" solo item-text="id" /></div>
+    <div v-if="review_list !== undefined && reviewedCount < review_list.entries.length">some entries left</div>
+    <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="review_lists_message !== undefined">{{review_lists_message}}</div>
 
     <identity-dialog></identity-dialog>
@@ -40,14 +42,27 @@
         </span>
         <span :class="{hidden: (review_list_pos_pre_start || review_list_pos_past_end)}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>Position {{review_list_pos === undefined ? 0 : (review_list_pos + 1)}} of {{review_list === undefined ? 0 : review_list.entries.length}}</b>
-        </span>
+        </span>        
         <span :class="{hidden: !review_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>End of list reached</b>
         </span>
         <span :class="{hidden: review_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 3;">
           <v-btn @click="moveNextReviewListEntry"><v-icon>fast_forward</v-icon></v-btn>
           [Arrow Right]
-        </span> 
+        </span>
+        <span style="grid-row-start: 1; grid-column-start: 4; margin-left: 50px; margin-top: 0px;">
+          <v-switch
+                v-model="skip_review_entries"
+                label="show unreviewed entries only"
+                color="success"
+                hide-details
+                height="1"
+                style="margin-top: 0px;"
+          ></v-switch> 
+        </span>         
+        <span style="grid-row-start: 1; grid-column-start: 5; margin-left: 50px; background: #f8fff4; color: #499d2a;">
+          Reviewed {{reviewedCount}} of {{review_list === undefined ? NaN : review_list.entries.length}}
+        </span>        
       </div>
 
       <div>
@@ -73,7 +88,9 @@
         <div>[Esc]</div>
         <div>[Enter]</div>
         <div>[Space]</div>
-        <div>[Tab]</div>    
+        <div>[Tab]</div>
+        <div class="sending" :class="{hidden: !postReviewSending}">Sending review to server...</div>    
+        <div class="sending-error" :class="{hidden: !postReviewError}">ERROR sending review</div> 
       </div>      
 
   </v-layout>
@@ -116,6 +133,9 @@ data () {
     review_list: undefined,
     review_list_message: 'init',
     review_list_pos: undefined,
+    skip_review_entries: true,
+    postReviewSending: false,
+    postReviewError: false,
   }
 },
 computed: {
@@ -162,6 +182,12 @@ computed: {
   },
   review_list_pos_pre_start() {
     return this.review_list === undefined || this.review_list_pos === undefined || this.review_list_pos < 0;
+  },
+  reviewedCount() {
+    if(this.review_list === undefined) {
+      return NaN;
+    }
+    return this.review_list.entries.reduce((acc, entry) => entry.classified ? acc + 1 : acc, 0);
   },
 },
 watch: {
@@ -346,6 +372,8 @@ methods: {
   async setReviewed(reviewed) {
     if(this.selected_review_list != undefined && this.review_list_entry !== undefined) {
       try {
+        this.postReviewSending = true;
+        this.postReviewError = false;
         var content = {actions: [{action: "set_reviewed_label", sample_id: this.review_list_entry_sample_id, label_start: this.review_list_entry.label_start, label_end: this.review_list_entry.label_end, label_name: this.review_list_entry.label_name, reviewed: reviewed}]}; 
         var response = await axios.post(this.apiBase + 'review_lists' + '/' + this.selected_review_list, content);
         this.review_list = response.data.review_list;
@@ -354,24 +382,45 @@ methods: {
         console.log(this.review_list);
         this.moveNextReviewListEntry();
       } catch(e) {
+        this.postReviewError = true;
         console.log(e);
         this.review_list_message = 'error loading review_list ' + this.selected_review_list;
+      } finally {
+        this.postReviewSending = false;
       }
     }
   },
   movePrevReviewListEntry() {
     if(this.review_list !== undefined) {
-      if(this.review_list_pos > -1) {
-        this.review_list_pos--;
+      if(this.skip_review_entries) {
+        while(this.review_list_pos > -1) {
+          this.review_list_pos--;
+          if(this.review_list_pos > -1 && !this.review_list.entries[this.review_list_pos].classified) {
+            break;
+          }
+        }
+      } else {
+        if(this.review_list_pos > -1) {
+          this.review_list_pos--;
+        }
       }
     }
   }, 
   moveNextReviewListEntry() {
     if(this.review_list !== undefined) {
-      if(this.review_list_pos < this.review_list.entries.length) {
-        this.review_list_pos++;
+      if(this.skip_review_entries) {
+        while(this.review_list_pos < this.review_list.entries.length) {
+          this.review_list_pos++;
+          if(this.review_list_pos < this.review_list.entries.length && !this.review_list.entries[this.review_list_pos].classified) {
+            break;
+          }
+        }
+      } else {
+        if(this.review_list_pos < this.review_list.entries.length) {
+          this.review_list_pos++;
+        }
       }
-    }
+    }    
   },    
 },
 mounted() {
@@ -417,6 +466,26 @@ mounted() {
 
 .hidden {
   visibility: hidden;
+}
+
+.sending {
+  grid-column-start: 1;
+  grid-column-end: 4;
+  color: #ffa502;
+  text-shadow: 0 0 15px #d35400;
+  font-size: 2em;
+}
+
+.sending-error {
+    grid-column-start: 1;
+    grid-column-end: 4;
+    color: #ff0202;
+    text-shadow: 0 0 15px #d30000;
+    font-size: 2em;
+}
+
+button:active {
+  background-color: aqua;
 }
 
 </style>
