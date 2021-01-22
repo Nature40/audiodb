@@ -5,7 +5,7 @@
 <script>
 
 export default {
-name: 'App',
+name: 'AudioDB',
 components: {
 },
 data: () => ({ 

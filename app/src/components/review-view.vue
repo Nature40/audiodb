@@ -66,14 +66,27 @@
       </div>
 
       <div>
-        <span v-if="review_list_entry_sample_id !== undefined">
-          <b>{{review_list_entry_sample_id}}</b> {{review_list_entry.label_start.toFixed(2) + ' - ' + review_list_entry.label_end.toFixed(2)}}
+        <span style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample">
+          <span v-if="sampleMeta !== undefined">
+            <b><v-icon>place</v-icon> {{sampleMeta.location}} </b> 
+            <span><v-icon>date_range</v-icon> {{toDate(sampleMeta.datetime)}} </span> 
+            <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(sampleMeta.datetime)}}</span>
+          </span>
+          <!--<span v-if="review_list_entry_sample_id !== undefined">-->
+            <span v-else-if="review_list_entry_sample_id !== undefined">
+            <!--<b :class="{hidden: sampleMeta !== undefined}">{{review_list_entry_sample_id}}</b>-->
+            Loading sample ...
+          </span>
+        </span>
+        <span v-if="review_list_entry_sample_id !== undefined" style="padding-left: 100px; font-size: 1.2em;">
+          {{review_list_entry.label_start.toFixed(2) + ' - ' + review_list_entry.label_end.toFixed(2)}}
         </span>
       </div>  
 
-      <div v-if="review_list_entry_sample_id !== undefined">
+      <div v-if="review_list_entry_sample_id !== undefined" style="position: relative;">
         <audio ref="audio" :src="apiBase + 'samples/'+ review_list_entry_sample_id + '/data'" type="audio/wav" preload="auto" />
-        <img :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined"/>
+        <div class="audio-position" :style="audioPositionStyle"></div>        
+        <img ref="spectrogram" :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined" style="z-index: 0;"/>
       </div>
 
       <div v-if="review_list_entry_sample_id !== undefined" class="review-label">
@@ -91,8 +104,19 @@
         <div>[Tab]</div>
         <div class="sending" :class="{hidden: !postReviewSending}">Sending review to server...</div>    
         <div class="sending-error" :class="{hidden: !postReviewError}">ERROR sending review</div> 
-      </div>      
+      </div>
 
+      <div class="generated-labels" v-if="generated_labels !== undefined && generated_labels.length > 0">
+        <div class="generated-labels-header">Model</div>
+        <div class="generated-labels-header">Version</div>
+        <div class="generated-labels-header">Reliability</div>    
+
+        <template v-for="g in generated_labels">
+          <div class="generated-labels-cell" :key="JSON.stringify(g)+1">{{g.generator}}</div>
+          <div class="generated-labels-cell" :key="JSON.stringify(g)+2">{{g.model_version}}</div>
+          <div class="generated-labels-cell generated-labels-cell-reliability" :key="JSON.stringify(g)+4">{{Math.round(g.reliability * 100)}}</div>
+        </template>      
+      </div>
   </v-layout>
 
   <v-layout align-center justify-start column fill-height v-if="selected_review_list === undefined">
@@ -115,6 +139,11 @@ function equals_tolerant(a, b) {
 	return (a - 0.001) < b && b < (a + 0.001);
 }
 
+const yearFormat = new Intl.DateTimeFormat('en', { year: 'numeric' });
+const monthFormat = new Intl.DateTimeFormat('en', { month: '2-digit' });
+const dayFormat = new Intl.DateTimeFormat('en', { day: '2-digit' });
+const hourFormat = new Intl.DateTimeFormat('en', { hour: '2-digit', hour12: false });
+
 export default {
 name: 'review-view',
 components: {
@@ -136,6 +165,8 @@ data () {
     skip_review_entries: true,
     postReviewSending: false,
     postReviewError: false,
+    audioCurrentTime: undefined,
+    audioColumnsPerSecond: undefined,
   }
 },
 computed: {
@@ -150,6 +181,12 @@ computed: {
       return undefined;
     }
     return this.labels.find(label => equals_tolerant(label.start, this.review_list_entry.label_start) && equals_tolerant(label.end, this.review_list_entry.label_end));
+  },
+  generated_labels() {
+    if(this.label === undefined || this.review_list_entry === undefined) {
+      return undefined;
+    }
+    return this.label.generated_labels.filter(generated_label => this.review_list_entry.label_name === generated_label.name);
   },
   spectrogramUrl() {
     if(this.review_list_entry_sample_id === undefined || this.review_list_entry === undefined) {
@@ -188,6 +225,31 @@ computed: {
       return NaN;
     }
     return this.review_list.entries.reduce((acc, entry) => entry.classified ? acc + 1 : acc, 0);
+  },
+  audioCurrentTimePos() {
+    if(this.audioCurrentTime === undefined || this.label === undefined) {
+      return undefined;
+    }
+    return this.audioCurrentTime - this.label.start;
+  },
+  audioSpectrogramCurrentTimePos() {
+    if(this.audioCurrentTimePos === undefined || this.audioColumnsPerSecond === undefined) {
+      return undefined;
+    }
+    return this.audioCurrentTimePos * this.audioColumnsPerSecond;
+  },
+  audioPositionStyle() {
+    /*return {
+      left: '300px',
+    };*/
+    if(this.audioSpectrogramCurrentTimePos === undefined) {
+       return {
+         visibility: 'hidden',
+       };
+    }
+    return {
+      left: this.audioSpectrogramCurrentTimePos + 'px',
+    };
   },
 },
 watch: {
@@ -233,6 +295,7 @@ watch: {
       var parsed = YAML.parse(data);
       console.log(parsed);
       this.sampleMeta = parsed.meta;
+      this.sampleMeta.datetime = new Date(this.sampleMeta.timestamp * 1000);
     })
     .catch(() => {
       this.sampleMeta = undefined;
@@ -331,9 +394,15 @@ methods: {
   },
   animationFrame() {
     this.animationFrameID = undefined;
+    this.audioCurrentTime = undefined;
+    this.audioColumnsPerSecond = undefined; 
     if(this.label !== undefined && !this.$refs.audio.paused) {
       if(this.$refs.audio.currentTime < this.label.end) {
         //console.log(this.$refs.audio.currentTime);
+        this.audioCurrentTime = this.$refs.audio.currentTime;
+        if(this.$refs.spectrogram !== undefined && this.$refs.spectrogram.naturalWidth > 0) {
+          this.audioColumnsPerSecond = this.$refs.spectrogram.naturalWidth / (this.label.end - this.label.start);
+        }
         this.requestAnimationFrame();
       } else {
         this.$refs.audio.pause();
@@ -421,7 +490,19 @@ methods: {
         }
       }
     }    
-  },    
+  },
+  toDate(date) {
+    const year = yearFormat.format(date);
+    const month = monthFormat.format(date);
+    const day = dayFormat.format(date);
+    return `${year}-${month}-${day}`;
+  },  
+  toTime(date) {
+    const hour = hourFormat.format(date);
+    const minute = date.getMinutes().toString().padStart(2,'0');
+    const second = date.getSeconds().toString().padStart(2,'0');
+    return `${hour}:${minute}:${second}`;
+  },     
 },
 mounted() {
   this.animationFrameCallback = this.animationFrame.bind(this);
@@ -486,6 +567,40 @@ mounted() {
 
 button:active {
   background-color: aqua;
+}
+
+.generated-labels {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-items: center;
+  align-items: center;
+}
+
+.generated-labels-header {
+  color: rgb(161, 161, 161);
+  padding-right: 10px;
+  padding-bottom: 5px;
+}
+
+.generated-labels-cell {
+  color: rgb(94, 88, 88);
+  padding-right: 10px;
+  padding-bottom: 5px;
+}
+
+.generated-labels-cell-reliability {
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.audio-position {
+  position: absolute; 
+  z-index: 1; 
+  width: 1px;
+  height: 512px;
+  background-color: #ff0000b0;
+  box-shadow: 0px 0px 4px red;
+  transition: all 0.05s linear;
 }
 
 </style>
