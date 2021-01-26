@@ -102,9 +102,10 @@ public class Review_listHandler {
 						long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
 						ReviewedLabel reviewedLabel = new ReviewedLabel(entry.label_name, reviewed, reviewer, timestamp);							
 						label.addReview(reviewedLabel);
-						if(sample_label_index < 0) {
+						if(sample_label_index >= 0) {
 							sample.setLabel(sample_label_index, label);
 						} else {
+							log.info("add new label " + label);
 							sample.addLabel(label);
 						}
 					});					

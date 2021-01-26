@@ -20,7 +20,17 @@
     <v-toolbar-title class="headline text-uppercase">
       Review list:  
     </v-toolbar-title> 
-    <div style="margin-left: 10px;" v-if="review_lists_message === undefined"><v-select v-model="selected_review_list" :items="review_lists" label="Review list" solo item-text="id" /></div>
+    <div style="margin-left: 10px;" v-if="review_lists_message === undefined">
+      <v-select v-model="selected_review_list" :items="review_lists" label="Review list" solo item-text="id">
+        <template v-slot:item="props">
+          <span  style="white-space: nowrap;">
+          <span>{{props.item.id}} </span>
+          <span v-if="review_yes_counts[props.item.id] !== undefined" :class="{'confirmed-low': review_yes_counts[props.item.id] < 50, 'confirmed-done': review_yes_counts[props.item.id] >= 50}"> ({{review_yes_counts[props.item.id]}} confirmed)</span>
+          <span v-else class="confirmed-low"> (no confirmed)</span>
+          </span>
+        </template>
+      </v-select>
+    </div>
     <div v-if="review_list !== undefined && reviewedCount < review_list.entries.length">some entries left</div>
     <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="review_lists_message !== undefined">{{review_lists_message}}</div>
@@ -173,6 +183,7 @@ computed: {
   ...mapState({
     apiBase: state => state.apiBase,
     threshold: state => state.settings.player_spectrum_threshold,   
+    review_statistics: state => state.review_statistics.data,
   }),
   ...mapGetters({
   }),
@@ -251,6 +262,12 @@ computed: {
       left: this.audioSpectrogramCurrentTimePos + 'px',
     };
   },
+  review_yes_counts() {
+    if(this.review_statistics === undefined) {
+      return {};
+    }
+    return this.review_statistics.reviewed_yes_counts;
+  },
 },
 watch: {
   labels() {
@@ -320,8 +337,10 @@ watch: {
 },
 methods: {
   ...mapActions({
+    review_statistics_refresh: 'review_statistics/refresh',
   }),
   async refresh() {
+    this.review_statistics_refresh();
     this.review_lists_message = 'loading review_lists...';
     try {
       var response = await axios.get(this.apiBase + 'review_lists');
@@ -456,6 +475,7 @@ methods: {
         this.review_list_message = 'error loading review_list ' + this.selected_review_list;
       } finally {
         this.postReviewSending = false;
+        this.review_statistics_refresh();
       }
     }
   },
@@ -601,6 +621,14 @@ button:active {
   background-color: #ff0000b0;
   box-shadow: 0px 0px 4px red;
   transition: all 0.05s linear;
+}
+
+.confirmed-low {
+  color: red;
+}
+
+.confirmed-done {
+  color: green;
 }
 
 </style>

@@ -53,9 +53,9 @@ public class Sample {
 
 		labels = new Vec<Label>();
 		for(YamlMap labelMap:yamlMap.optList("Labels").asMaps()) {		
-			log.info(labelMap.toString());
+			//log.info(labelMap.toString());
 			Label label = Label.ofYAML(labelMap);
-			log.info(label.toString());
+			//log.info(label.toString());
 			labels.add(label);
 		}
 	}
@@ -84,7 +84,7 @@ public class Sample {
 	public synchronized int findLabelIndexOf(double label_start, double label_end) {
 		return labels.findIndexOf(e -> e.isInterval(label_start, label_end));		
 	}
-	
+
 	public synchronized Label findLabel(double label_start, double label_end) {
 		return labels.find(e -> e.isInterval(label_start, label_end));		
 	}
@@ -108,6 +108,55 @@ public class Sample {
 			writeToFile();
 		} catch(Exception e) {
 			readFromFile();
+		}
+	}
+
+	public synchronized void forEachReviewed(Consumer<ReviewedLabel> action) {
+		for(Label label : labels) {
+			label.reviewedLabels.forEach(action);
+		}
+	}
+
+	public synchronized void forEachLabel(Consumer<Label> action) {
+		labels.forEach(action);
+	}
+
+	public synchronized boolean checkLabelDublicates() {
+		int len = labels.size();
+		for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
+			Label label = labels.get(outerIndex);
+			for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
+				Label label2 = labels.get(innerIndex);
+				if(label.start == label2.start && label.end == label2.end) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public synchronized void checkAndCorrectLabelDublicates() {
+		if(checkLabelDublicates()) {
+			log.info("dublicate labels in " + id);
+			log.info("old labels size " + labels.size());			
+			int len = labels.size();
+			for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
+				Label label = labels.get(outerIndex);
+				if(label != null) {
+					for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
+						Label label2 = labels.get(innerIndex);
+						if(label2 != null && label.start == label2.start && label.end == label2.end) {
+							log.info("merge");
+							Label labelMerge = Label.merge(label, label2);
+							labels.setFast(outerIndex, labelMerge);
+							labels.setFast(innerIndex, null);
+						}
+					}
+				}
+			}
+			labels = labels.filter(label -> label != null);
+			log.info("new labels size " + labels.size());
+			writeToFile();
 		}
 	}
 }

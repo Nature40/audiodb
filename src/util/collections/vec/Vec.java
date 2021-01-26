@@ -383,6 +383,31 @@ public class Vec<T> implements List<T> {
 		}
 		return result;
 	}
+	
+	public boolean some(Predicate<? super T> predicate) {
+		int len = size;
+		T[] data = items;
+		for (int i = 0; i < len; i++) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public boolean all(Predicate<? super T> predicate) {
+		int len = size;
+		T[] data = items;
+		for (int i = 0; i < len; i++) {
+			T e = data[i];
+			if(!predicate.test(e)) {
+				return false;
+			}
+		}
+		return true;
+	}	
+
 
 	@Override
 	public ReadonlyVecSubView<T> subList(int fromIndex, int toIndex) {

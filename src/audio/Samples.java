@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,11 +31,13 @@ public class Samples {
 			for(Path path:paths) {
 				try {
 					String id = root.relativize(path).toString();
+					log.info("read " + id);
 					id = id.replaceAll("/", "__");
 					id = id.replaceAll("\\\\", "__");
 					id = id.replaceAll(".yaml", "");
 					Sample sample = new Sample(id, path);
 					sample.readFromFile();
+					sample.checkAndCorrectLabelDublicates();
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
 					log.warn("error in " + path + "   " + e);
@@ -57,5 +60,8 @@ public class Samples {
 	public Sample getSample(String sample_id) {
 		return sampleMap.get(sample_id);
 	}
-
+	
+	public void forEach(Consumer<Sample> action) {
+		sampleMap.values().forEach(action);
+	}
 }

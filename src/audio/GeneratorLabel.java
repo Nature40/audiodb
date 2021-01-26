@@ -66,4 +66,52 @@ public class GeneratorLabel {
 	public String name() {
 		return name;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((generation_date == null) ? 0 : generation_date.hashCode());
+		result = prime * result + ((generator == null) ? 0 : generator.hashCode());
+		result = prime * result + ((model_version == null) ? 0 : model_version.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		long temp;
+		temp = Double.doubleToLongBits(reliability);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		GeneratorLabel other = (GeneratorLabel) obj;
+		if (generation_date == null) {
+			if (other.generation_date != null)
+				return false;
+		} else if (!generation_date.equals(other.generation_date))
+			return false;
+		if (generator == null) {
+			if (other.generator != null)
+				return false;
+		} else if (!generator.equals(other.generator))
+			return false;
+		if (model_version == null) {
+			if (other.model_version != null)
+				return false;
+		} else if (!model_version.equals(other.model_version))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (Double.doubleToLongBits(reliability) != Double.doubleToLongBits(other.reliability))
+			return false;
+		return true;
+	}
 }

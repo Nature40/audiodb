@@ -122,4 +122,38 @@ public class Label {
 	public synchronized void addReview(ReviewedLabel reviewedLabel) {
 		reviewedLabels.add(reviewedLabel);		
 	}
+
+	public static Label merge(Label label, Label label2) {
+		double start = label.start;
+		double end = label.end;
+		String comment = label.comment;
+		Vec<GeneratorLabel> generatorLabels = label.generatorLabels.copy();
+		Vec<UserLabel> userLabels = label.userLabels.copy();
+		Vec<ReviewedLabel> reviewedLabels = label.reviewedLabels.copy();
+		if(start != label2.start || end != label2.end) {
+			throw new RuntimeException("not same interval label merge");
+		}
+		for(GeneratorLabel generatorLabel : label2.generatorLabels) {
+			if(!generatorLabels.some(g -> g.equals(generatorLabel))) {
+				generatorLabels.add(generatorLabel);
+			}
+		}
+		for(UserLabel userLabel : label2.userLabels) {
+			if(!userLabels.some(g -> g.equals(userLabel))) {
+				userLabels.add(userLabel);
+			}
+		}
+		for(ReviewedLabel reviewedLabel : label2.reviewedLabels) {
+			if(!reviewedLabels.some(g -> g.equals(reviewedLabel))) {
+				reviewedLabels.add(reviewedLabel);
+			}
+		}
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels);
+	}
+
+	@Override
+	public String toString() {
+		return "Label [start=" + start + ", end=" + end + ", comment=" + comment + ", generatorLabels="
+				+ generatorLabels + ", userLabels=" + userLabels + ", reviewedLabels=" + reviewedLabels + "]";
+	}
 }

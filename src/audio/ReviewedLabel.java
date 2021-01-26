@@ -97,4 +97,8 @@ public class ReviewedLabel {
 	public ReviewedLabel withReviewer(String reviewer, long timestamp) {
 		return new ReviewedLabel(this.name, this.reviewed, reviewer, timestamp);
 	}
+	
+	public boolean isYes() {
+		return this.reviewed == Reviewed.yes;
+	}
 }

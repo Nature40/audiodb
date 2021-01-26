@@ -74,4 +74,41 @@ public class UserLabel {
 	public UserLabel withCreator(String username, String date) {
 		return new UserLabel(this.name, username, date);
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((creation_date == null) ? 0 : creation_date.hashCode());
+		result = prime * result + ((creator == null) ? 0 : creator.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		UserLabel other = (UserLabel) obj;
+		if (creation_date == null) {
+			if (other.creation_date != null)
+				return false;
+		} else if (!creation_date.equals(other.creation_date))
+			return false;
+		if (creator == null) {
+			if (other.creator != null)
+				return false;
+		} else if (!creator.equals(other.creator))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		return true;
+	}
 }

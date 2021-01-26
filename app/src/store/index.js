@@ -5,6 +5,7 @@ import account from './account'
 import label_definitions from './label_definitions'
 import settings from './settings'
 import samples from './samples'
+import review_statistics from './review_statistics'
 
 Vue.use(Vuex)
 
@@ -17,6 +18,7 @@ export default new Vuex.Store({
     label_definitions,
     settings,
     samples,
+    review_statistics,
   },
   strict: isDev,
   state: {
