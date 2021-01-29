@@ -24,9 +24,10 @@
       <v-select v-model="selected_review_list" :items="review_lists" label="Review list" solo item-text="id">
         <template v-slot:item="props">
           <span  style="white-space: nowrap;">
-          <span>{{props.item.id}} </span>
-          <span v-if="review_yes_counts[props.item.id] !== undefined" :class="{'confirmed-low': review_yes_counts[props.item.id] < 50, 'confirmed-done': review_yes_counts[props.item.id] >= 50}"> ({{review_yes_counts[props.item.id]}} confirmed)</span>
-          <span v-else class="confirmed-low"> (no confirmed)</span>
+            <span v-show="review_open_counts[props.item.id] !== undefined">{{props.item.id}}, {{review_open_counts[props.item.id]}} left </span>
+            <span v-show="review_open_counts[props.item.id] === undefined" style="color: grey;">{{props.item.id}} </span>
+            <span v-if="review_yes_counts[props.item.id] !== undefined" :class="{'confirmed-low': review_yes_counts[props.item.id] < 50, 'confirmed-done': review_yes_counts[props.item.id] >= 50}"> ({{review_yes_counts[props.item.id]}} confirmed)</span>
+            <span v-else class="confirmed-low"> (no confirmed)</span>
           </span>
         </template>
       </v-select>
@@ -93,30 +94,31 @@
         </span>
       </div>  
 
-      <div v-if="review_list_entry_sample_id !== undefined" style="position: relative;">
+      <div v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)" style="position: relative;">
         <audio ref="audio" :src="apiBase + 'samples/'+ review_list_entry_sample_id + '/data'" type="audio/wav" preload="auto" />
         <div class="audio-position" :style="audioPositionStyle"></div>        
         <img ref="spectrogram" :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined" style="z-index: 0;"/>
       </div>
 
-      <div v-if="review_list_entry_sample_id !== undefined" class="review-label">
+      <div v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)" class="review-label">
         {{review_list_entry.label_name}}
       </div>
 
-      <div class="controls" v-if="review_list_entry_sample_id !== undefined">
+      <div class="controls" v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)">
         <div :class="{ 'reviewed-selected': storedReviewed === 'no' }"><v-btn @click="setReviewed('no')" color="red"><v-icon dark>clear</v-icon> NO</v-btn></div>
         <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
         <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green"><v-icon dark>done</v-icon> YES</v-btn></div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
+        <review-special-dialog @lock-audio-sample="onLockAudioSample" />        
         <div>[Esc]</div>
         <div>[Enter]</div>
         <div>[Space]</div>
         <div>[Tab]</div>
-        <div class="sending" :class="{hidden: !postReviewSending}">Sending review to server...</div>    
-        <div class="sending-error" :class="{hidden: !postReviewError}">ERROR sending review</div> 
+        <div class="sending" :class="{hidden: !postReviewSending}">{{postReviewMessage}}</div>    
+        <div class="sending-error" :class="{hidden: !postReviewError}">{{postReviewMessage}}</div> 
       </div>
 
-      <div class="generated-labels" v-if="generated_labels !== undefined && generated_labels.length > 0">
+      <div class="generated-labels" v-if="generated_labels !== undefined && generated_labels.length > 0 && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)">
         <div class="generated-labels-header">Model</div>
         <div class="generated-labels-header">Version</div>
         <div class="generated-labels-header">Reliability</div>    
@@ -126,6 +128,10 @@
           <div class="generated-labels-cell" :key="JSON.stringify(g)+2">{{g.model_version}}</div>
           <div class="generated-labels-cell generated-labels-cell-reliability" :key="JSON.stringify(g)+4">{{Math.round(g.reliability * 100)}}</div>
         </template>      
+      </div>
+
+      <div v-if="sampleMeta !== undefined && sampleMeta.sample_locked !== undefined" style="margin-top: 100px;">
+        <h2>This audio sample has been locked. Possibly because a human was audible.</h2>
       </div>
   </v-layout>
 
@@ -144,6 +150,8 @@ import axios from 'axios'
 import YAML from 'yaml'
 
 import identityDialog from './identity-dialog'
+import reviewSpecialDialog from './review-special-dialog'
+
 
 function equals_tolerant(a, b) {
 	return (a - 0.001) < b && b < (a + 0.001);
@@ -158,6 +166,7 @@ export default {
 name: 'review-view',
 components: {
   identityDialog,
+  reviewSpecialDialog,
 },
 data () {
   return {
@@ -173,6 +182,7 @@ data () {
     review_list_message: 'init',
     review_list_pos: undefined,
     skip_review_entries: true,
+    postReviewMessage: 'init',
     postReviewSending: false,
     postReviewError: false,
     audioCurrentTime: undefined,
@@ -268,6 +278,12 @@ computed: {
     }
     return this.review_statistics.reviewed_yes_counts;
   },
+  review_open_counts() {
+    if(this.review_statistics === undefined) {
+      return {};
+    }
+    return this.review_statistics.open_counts;
+  },  
 },
 watch: {
   labels() {
@@ -302,37 +318,7 @@ watch: {
     }
   },
   review_list_entry_sample_id() {
-    this.sampleMeta = undefined;
-    if(this.review_list_entry_sample_id === undefined) {
-      return;
-    }
-    axios.get(this.apiBase + 'samples' + '/' + this.review_list_entry_sample_id + '/' + 'meta')
-    .then(response => {
-      var data = response.data;
-      var parsed = YAML.parse(data);
-      console.log(parsed);
-      this.sampleMeta = parsed.meta;
-      this.sampleMeta.datetime = new Date(this.sampleMeta.timestamp * 1000);
-    })
-    .catch(() => {
-      this.sampleMeta = undefined;
-    });
-    
-    this.labels = undefined;
-    axios.get(this.apiBase + 'samples' + '/' + this.review_list_entry_sample_id + '/' + 'labels')
-    .then(response => {
-      var r = response.data.labels;
-      if(r.length === 0) {
-        this.labels = undefined;
-        this.labelIndex = undefined;
-      } else {
-        this.labels = r;
-        this.labelIndex = 0;
-      }      
-    })
-    .catch(() => {
-      this.labels = undefined;
-    });
+    this.refresh_sample();
   }
 },
 methods: {
@@ -462,6 +448,7 @@ methods: {
       try {
         this.postReviewSending = true;
         this.postReviewError = false;
+        this.postReviewMessage = 'Sending review to server ...';
         var content = {actions: [{action: "set_reviewed_label", sample_id: this.review_list_entry_sample_id, label_start: this.review_list_entry.label_start, label_end: this.review_list_entry.label_end, label_name: this.review_list_entry.label_name, reviewed: reviewed}]}; 
         var response = await axios.post(this.apiBase + 'review_lists' + '/' + this.selected_review_list, content);
         this.review_list = response.data.review_list;
@@ -472,7 +459,7 @@ methods: {
       } catch(e) {
         this.postReviewError = true;
         console.log(e);
-        this.review_list_message = 'error loading review_list ' + this.selected_review_list;
+        this.postReviewMessage = 'Error Sending review to server.';
       } finally {
         this.postReviewSending = false;
         this.review_statistics_refresh();
@@ -522,7 +509,64 @@ methods: {
     const minute = date.getMinutes().toString().padStart(2,'0');
     const second = date.getSeconds().toString().padStart(2,'0');
     return `${hour}:${minute}:${second}`;
-  },     
+  },
+  async onLockAudioSample() {
+    if(this.review_list_entry_sample_id === undefined) {
+      alert("no lock sent")
+      return;
+    }
+    console.log("send locked");
+
+    try {
+      this.postReviewSending = true;
+      this.postReviewError = false;
+      this.postReviewMessage = 'Sending locked status to server ...';
+      var content = {actions: [{action: "set_locked"}]}; 
+      var response = await axios.post(this.apiBase + 'samples' + '/' + this.review_list_entry_sample_id, content);
+      var r = response.data;
+      console.log(r);
+    } catch(e) {
+      this.postReviewError = true;
+      console.log(e);
+      this.postReviewMessage = 'Error sending locked status to server.';
+    } finally {
+      this.postReviewSending = false;
+      this.refresh_sample();
+    }
+  },
+  refresh_sample() {
+    this.sampleMeta = undefined;
+    if(this.review_list_entry_sample_id === undefined) {
+      return;
+    }
+    axios.get(this.apiBase + 'samples' + '/' + this.review_list_entry_sample_id + '/' + 'meta')
+    .then(response => {
+      var data = response.data;
+      var parsed = YAML.parse(data);
+      console.log(parsed);
+      this.sampleMeta = parsed.meta;
+      this.sampleMeta.datetime = new Date(this.sampleMeta.timestamp * 1000);
+    })
+    .catch(() => {
+      this.sampleMeta = undefined;
+    });
+    
+    this.labels = undefined;
+    axios.get(this.apiBase + 'samples' + '/' + this.review_list_entry_sample_id + '/' + 'labels')
+    .then(response => {
+      var r = response.data.labels;
+      if(r.length === 0) {
+        this.labels = undefined;
+        this.labelIndex = undefined;
+      } else {
+        this.labels = r;
+        this.labelIndex = 0;
+      }      
+    })
+    .catch(() => {
+      this.labels = undefined;
+    });
+  }        
 },
 mounted() {
   this.animationFrameCallback = this.animationFrame.bind(this);
@@ -545,7 +589,7 @@ mounted() {
 
 .controls {
   display: grid;
-  grid-template-columns: auto auto auto auto;
+  grid-template-columns: auto auto auto auto auto;
   justify-items: center;
   align-items: center;
 }

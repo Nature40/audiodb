@@ -26,6 +26,7 @@ public class Sample {
 	private Path audioPath;
 	private File audioFile;
 	private Vec<Label> labels;
+	private SampleUserLocked sampleUserLocked;
 
 	public Sample(String id, Path metaPath) {
 		this.id = id;		
@@ -57,6 +58,11 @@ public class Sample {
 			Label label = Label.ofYAML(labelMap);
 			//log.info(label.toString());
 			labels.add(label);
+		}
+		if(yamlMap.contains("sample_locked")) {
+			sampleUserLocked = SampleUserLocked.ofYAML(yamlMap.getMap("sample_locked"));
+		} else {
+			sampleUserLocked = null;
 		}
 	}
 
@@ -158,5 +164,19 @@ public class Sample {
 			log.info("new labels size " + labels.size());
 			writeToFile();
 		}
+	}
+
+	public synchronized boolean isSampleUserLocked() {
+		return sampleUserLocked != null;
+	}
+
+	public synchronized void setSampleUserLocked(SampleUserLocked sampleUserLocked) {
+		this.sampleUserLocked = sampleUserLocked;
+		if(sampleUserLocked != null) {
+			yamlMap.getRootMap().put("sample_locked", sampleUserLocked.toMap());
+		} else {
+			yamlMap.getRootMap().remove("sample_locked");
+		}
+		writeToFile();
 	}
 }

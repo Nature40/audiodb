@@ -3,7 +3,10 @@ package audio.server.api;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
+import java.util.function.Predicate;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -11,10 +14,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+import org.json.JSONWriter;
 import org.yaml.snakeyaml.Yaml;
 
+import audio.Account;
 import audio.Broker;
+import audio.Label;
+import audio.ReviewListEntry;
+import audio.ReviewedLabel;
 import audio.Sample;
+import audio.SampleUserLocked;
+import audio.ReviewedLabel.Reviewed;
+import util.JsonUtil;
 
 public class SampleHandler {
 	static final Logger log = LogManager.getLogger();
@@ -32,7 +46,7 @@ public class SampleHandler {
 	public void handle(String sampleText, String target, Request request, HttpServletResponse response) throws IOException {
 		Sample sample = broker.samples().getThrow(sampleText);
 		if(target.equals("/")) {
-			handleRoot(request, response);
+			handleRoot(sample, request, response);
 		} else {
 			int i = target.indexOf('/', 1);
 			if(i == 1) {
@@ -45,9 +59,15 @@ public class SampleHandler {
 				labelsHandler.handle(sample, next, request, response);
 				break;
 			case "spectrum":
+				if(sample.isSampleUserLocked()) {
+					return;
+				}
 				spectrumHandler.handle(sample, request, response);
 				break;
 			case "data":
+				if(sample.isSampleUserLocked()) {
+					return;
+				}
 				handleData(sample, request, response);
 				break;
 			case "meta":
@@ -59,8 +79,43 @@ public class SampleHandler {
 		}		
 	}
 
-	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		throw new RuntimeException("no call");
+	private void handleRoot(Sample sample, Request request, HttpServletResponse response) throws IOException {
+		switch(request.getMethod()) {
+		case "POST":
+			handleRoot_POST(sample, request, response);
+			break;
+		default:
+			throw new RuntimeException("no call");
+		}
+	}
+	
+	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {
+		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
+		JSONArray jsonActions = jsonReq.getJSONArray("actions");
+		int jsonActionsLen = jsonActions.length();
+		for (int i = 0; i < jsonActionsLen; i++) {
+			JSONObject jsonAction = jsonActions.getJSONObject(i);
+			String actionName = jsonAction.getString("action");
+			switch(actionName) {
+			case "set_locked": {
+				Account account = (Account) request.getSession(false).getAttribute("account");							
+				String username = account.username;
+				long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
+				SampleUserLocked sampleUserLocked = new SampleUserLocked(username, timestamp);
+				sample.setSampleUserLocked(sampleUserLocked);
+				break;
+			}
+			default:
+				throw new RuntimeException("unknown action:" + actionName);
+			}
+		}		
+
+		response.setContentType("application/json");
+		JSONWriter json = new JSONWriter(response.getWriter());
+		json.object();
+		json.key("result");
+		json.value("OK");
+		json.endObject();	
 	}
 
 	private void handleData(Sample sample, Request request, HttpServletResponse response) throws IOException {
@@ -131,14 +186,7 @@ public class SampleHandler {
 				throw new RuntimeException("partial ranges not implemented");
 			}
 		}*/
-
-
 	}
-
-
-
-
-
 
 	private void handleMeta(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		//response.setContentType("text/yaml; charset=utf-8");
@@ -158,5 +206,4 @@ public class SampleHandler {
 		new Yaml().dump(yamlMap, response.getWriter());
 
 	}
-
 }

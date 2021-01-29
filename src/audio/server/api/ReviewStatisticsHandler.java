@@ -60,7 +60,8 @@ public class ReviewStatisticsHandler extends AbstractHandler {
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 
-		HashMap<String, Integer> counterMap = new HashMap<String, Integer>();
+		HashMap<String, Integer> yesCounterMap = new HashMap<String, Integer>();
+		HashMap<String, Integer> openCounterMap = new HashMap<String, Integer>();
 
 		broker.samples().forEach(sample -> {
 			/*sample.forEachReviewed(reviewedLabel -> {
@@ -80,8 +81,8 @@ public class ReviewStatisticsHandler extends AbstractHandler {
 					ReviewedLabel reviewedLabel = label.reviewedLabels.get(0);
 					if(reviewedLabel.reviewed == Reviewed.yes) {
 						String name = reviewedLabel.name;
-						Integer counter = counterMap.get(name);
-						counterMap.put(name, counter == null ? 1 : (counter + 1));
+						Integer counter = yesCounterMap.get(name);
+						yesCounterMap.put(name, counter == null ? 1 : (counter + 1));
 						log.info("confirmed1 " + name + "    " + sample.id + "   " + label.start + "  " + label.end);
 					}
 					break;
@@ -94,8 +95,8 @@ public class ReviewStatisticsHandler extends AbstractHandler {
 						}
 					});
 					for(String name : names) {
-						Integer counter = counterMap.get(name);
-						counterMap.put(name, counter == null ? 1 : (counter + 1));
+						Integer counter = yesCounterMap.get(name);
+						yesCounterMap.put(name, counter == null ? 1 : (counter + 1));
 						log.info("confirmedN " + name + "    " + sample.id + "   " + label.start + "  " + label.end);
 					}
 				}
@@ -103,17 +104,40 @@ public class ReviewStatisticsHandler extends AbstractHandler {
 
 			});
 		});
+		
+		broker.reviewListManager().forEach((name, reviewList) -> {
+			int[] count = new int[] {0};
+			reviewList.forEach(entry -> {
+				if(!entry.classified) {
+					count[0]++;
+				}
+			});
+			int cnt = count[0];
+			if(cnt > 0) {
+				openCounterMap.put(name, cnt);
+			}
+		});
 
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
+		
 		json.key("reviewed_yes_counts");
 		json.object();
-		counterMap.forEach((name, count) -> {
+		yesCounterMap.forEach((name, count) -> {
 			json.key(name);
 			json.value(count);
 		});
 		json.endObject();
+		
+		json.key("open_counts");
+		json.object();
+		openCounterMap.forEach((name, count) -> {
+			json.key(name);
+			json.value(count);
+		});
+		json.endObject();
+		
 		json.endObject();
 	}
 }
