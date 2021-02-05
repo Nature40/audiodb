@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.BiConsumer;
@@ -382,6 +383,69 @@ public class Vec<T> implements List<T> {
 			}
 		}
 		return result;
+	}
+	
+	private static class Filtered<E> implements Iterator<E> {
+		protected final E[] a;
+		protected int pos;
+		protected int len;
+		protected Predicate<? super E> predicate;
+		
+		public Filtered(E[] a, Predicate<? super E> predicate) {
+			this.a = Objects.requireNonNull(a);
+			this.pos = 0;
+			this.len = a.length;
+			this.predicate = predicate;
+		}
+		
+		public Filtered(E[] a, int index, int size, Predicate<? super E> predicate) {
+			this.a = Objects.requireNonNull(a);
+			if(index < 0 || size < index || a.length < size) {
+				throw new IndexOutOfBoundsException(index + "   " + size);
+			}
+			this.pos = index;
+			this.len = size;
+			this.predicate = predicate;
+		}
+
+
+		@Override
+		public boolean hasNext() {
+			while(pos < len) {
+				if(predicate.test(a[pos])) {
+					return true;
+				}
+				pos++;
+			}			
+			return false;
+		}
+		
+		@Override
+		public E next() {
+			return a[pos++];
+		}
+		
+		@Override
+	    public void forEachRemaining(Consumer<? super E> action) {
+			Objects.requireNonNull(action);
+			while(pos < len) {
+				E v = a[pos];
+				if(predicate.test(v)) {
+					 action.accept(v);
+				}
+				pos++;
+			}
+	    }
+	}
+	
+	public Iterable<T> filteredIterableWeakView(Predicate<? super T> predicate) {
+		return new Iterable<T>() {
+			@Override
+			public Iterator<T> iterator() {
+				return new Filtered<T>(Vec.this.items, 0, Vec.this.size, predicate);
+			}
+			
+		};
 	}
 	
 	public boolean some(Predicate<? super T> predicate) {

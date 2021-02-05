@@ -64,13 +64,6 @@ public class ReviewStatisticsHandler extends AbstractHandler {
 		HashMap<String, Integer> openCounterMap = new HashMap<String, Integer>();
 
 		broker.samples().forEach(sample -> {
-			/*sample.forEachReviewed(reviewedLabel -> {
-				if(reviewedLabel.reviewed == Reviewed.yes) {
-					String name = reviewedLabel.name;
-				    Integer counter = counterMap.get(name);
-				    counterMap.put(name, counter == null ? 1 : (counter + 1));
-				}
-			});*/
 			sample.forEachLabel(label -> {
 				switch(label.reviewedLabels.size()) {
 				case 0: {
@@ -88,13 +81,13 @@ public class ReviewStatisticsHandler extends AbstractHandler {
 					break;
 				}
 				default: {
-					HashSet<String> names = new HashSet<String>();
+					HashSet<String> yesNames = new HashSet<String>();
 					label.reviewedLabels.forEach(reviewedLabel -> {
 						if(reviewedLabel.reviewed == Reviewed.yes) {
-							names.add(reviewedLabel.name);
+							yesNames.add(reviewedLabel.name);
 						}
 					});
-					for(String name : names) {
+					for(String name : yesNames) {
 						Integer counter = yesCounterMap.get(name);
 						yesCounterMap.put(name, counter == null ? 1 : (counter + 1));
 						log.info("confirmedN " + name + "    " + sample.id + "   " + label.start + "  " + label.end);

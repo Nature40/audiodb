@@ -24,7 +24,9 @@
     <v-btn icon v-show="samplesPrevious(selectedSample) !== undefined" title="select previous audio sample" @click="selectedSample = samplesPrevious(selectedSample)"><v-icon>skip_previous</v-icon></v-btn>
     <span v-if="selectedSample !== undefined" style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample"><b><v-icon>place</v-icon> {{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
     <v-btn icon v-show="samplesNext(selectedSample) !== undefined" title="select next audio sample" @click="selectedSample = samplesNext(selectedSample)"><v-icon>skip_next</v-icon></v-btn>
-    <identity-dialog></identity-dialog>
+    <div style="display: flex; position: absolute; right: 2px;" >
+      <identity-dialog />
+    </div>
   </v-toolbar>
 
   <v-content>

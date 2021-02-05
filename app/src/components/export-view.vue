@@ -20,7 +20,9 @@
     <v-toolbar-title class="headline text-uppercase">
       Export
     </v-toolbar-title> 
-    <identity-dialog></identity-dialog>
+    <div style="display: flex; position: absolute; right: 2px;" >
+      <identity-dialog />
+    </div>
   </v-toolbar>
 
   <v-content>

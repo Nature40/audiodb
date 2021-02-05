@@ -36,7 +36,10 @@
     <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="review_lists_message !== undefined">{{review_lists_message}}</div>
 
-    <identity-dialog></identity-dialog>
+    <div style="display: flex; position: absolute; right: 2px; width: 200px;" >
+      <review-statistics-dialog />
+      <identity-dialog />
+    </div>
   </v-toolbar>
 
   <v-content>
@@ -151,6 +154,7 @@ import YAML from 'yaml'
 
 import identityDialog from './identity-dialog'
 import reviewSpecialDialog from './review-special-dialog'
+import reviewStatisticsDialog from './review-statistics-dialog'
 
 
 function equals_tolerant(a, b) {
@@ -167,6 +171,7 @@ name: 'review-view',
 components: {
   identityDialog,
   reviewSpecialDialog,
+  reviewStatisticsDialog,
 },
 data () {
   return {

@@ -48,6 +48,7 @@ import audio.server.api.LoginHandler;
 import audio.server.api.LoginWebAuthnHandler;
 import audio.server.api.LogoutHandler;
 import audio.server.api.QueryHandler;
+import audio.server.api.ReviewStatisticsDetailedHandler;
 import audio.server.api.ReviewStatisticsHandler;
 import audio.server.api.Review_listsHandler;
 import audio.server.api.SamplesHandler;
@@ -155,6 +156,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/review_lists", true, new Review_listsHandler(broker)));
 		handlerList.addHandler(createContext("/review_statistics", true, new ReviewStatisticsHandler(broker)));
+		handlerList.addHandler(createContext("/review_statistics_detailed", true, new ReviewStatisticsDetailedHandler(broker)));
 		handlerList.addHandler(createContext("/account", true, new AccountHandler(broker)));
 		handlerList.addHandler(createContext("/identity", true, new IdentityHandler(broker)));
 		handlerList.addHandler(createContext("/accounts", true, new AccountsHandler(broker)));

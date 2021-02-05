@@ -23,7 +23,9 @@
     <v-toolbar-title class="headline text-uppercase">
       Account
     </v-toolbar-title> 
-    <identity-dialog></identity-dialog>
+    <div style="display: flex; position: absolute; right: 2px;" >
+      <identity-dialog />
+    </div>
   </v-toolbar>
   <v-content v-if="identity !== undefined">
     <h2>Account details</h2>

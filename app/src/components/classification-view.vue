@@ -21,7 +21,9 @@
       Classification:  
     </v-toolbar-title> 
     <div style="margin-left: 10px;"><v-select v-model="classification_label" :items="classification_labels" label="Label" solo /></div>
-    <identity-dialog></identity-dialog>
+    <div style="display: flex; position: absolute; right: 2px;" >
+      <identity-dialog />
+    </div>
   </v-toolbar>
 
   <v-content>
