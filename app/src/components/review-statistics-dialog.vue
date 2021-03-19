@@ -3,7 +3,15 @@
 
 
 <div style="width: 200px;">
-<v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
+<v-dialog 
+  v-model="dialog" 
+  fullscreen 
+  hide-overlay 
+  transition="dialog-bottom-transition"
+  @keydown.stop=""
+  @keyup.stop=""
+  @keypress.stop=""
+>
       <template v-slot:activator="{ on }">
         <v-btn v-on="on" outline>statistics</v-btn>
       </template>
@@ -75,6 +83,9 @@
             label="Threshold"
             placeholder="Placeholder"
             style="width: 100px;"
+            @keydown.stop=""
+            @keyup.stop=""
+            @keypress.stop=""
           ></v-text-field>
           
         <br>              

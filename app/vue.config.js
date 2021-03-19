@@ -5,12 +5,18 @@ module.exports = {
     outputDir: '../webcontent/app',
     filenameHashing: false,
     devServer: {
-      host: 'localhost',  
-	  port: 8081,
-	  https: true,
-	  headers: {
-		"Access-Control-Allow-Origin": "*",
-	  },	  
+		host: '127.0.0.1',
+		port: 8081,
+		https: false,
+		headers: {
+			"Access-Control-Allow-Origin": "*",
+		},
+		proxy: {
+			'': {
+				target: 'http://127.0.0.1:8080',
+				ws: false,	  
+			},
+		}
     },
     productionSourceMap: false,
     configureWebpack: {

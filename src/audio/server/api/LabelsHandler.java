@@ -6,8 +6,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.BitSet;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
@@ -15,6 +17,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import audio.Account;
+import audio.Broker;
 import audio.Label;
 import audio.ReviewedLabel;
 import audio.Sample;
@@ -26,6 +29,12 @@ import util.yaml.YamlUtil;
 public class LabelsHandler {
 
 	private static final Path samplesRoot = Paths.get("samples");
+	
+	private final Broker broker;
+
+	public LabelsHandler(Broker broker) {
+		this.broker = broker;
+	}
 
 	public void handle(Sample sample, String target, Request request, HttpServletResponse response) throws IOException {
 		request.setHandled(true);
@@ -82,8 +91,13 @@ public class LabelsHandler {
 		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", sample.getLabels(), Label::toJSON));		
 	}
 
-	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {
-		Account account = (Account) request.getSession(false).getAttribute("account");
+	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {		
+		HttpSession session = request.getSession(false);
+		Account account = (Account) session.getAttribute("account");
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		
+		
 		/*Path samplePath = samplesRoot.resolve(sample.id);
 		samplePath.toFile().mkdirs();
 		Path labelsPath = samplePath.resolve("labels.yaml");

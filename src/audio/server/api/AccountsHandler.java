@@ -25,11 +25,9 @@ public class AccountsHandler extends AbstractHandler {
 	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
-	private final Role role_create_account;
 
 	public AccountsHandler(Broker broker) {
 		this.broker = broker;
-		this.role_create_account = broker.roleManager().getThrowRole("create_account");
 	}
 
 	@Override
@@ -64,6 +62,8 @@ public class AccountsHandler extends AbstractHandler {
 	public void handlePOST(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		HttpSession session = request.getSession(false);
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		
 		log.info("accounts");		
 
 		JSONObject jsonReq = new JSONObject(new JSONTokener(baseRequest.getReader()));
@@ -74,7 +74,7 @@ public class AccountsHandler extends AbstractHandler {
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
 			case "create_account": {
-				role_create_account.check(roleBits);
+				broker.roleManager().role_create_account.checkHas(roleBits);
 				log.info("create_account action");
 				String user = jsonAction.getString("user");
 				String hash = jsonAction.getString("hash");

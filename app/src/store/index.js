@@ -22,8 +22,9 @@ export default new Vuex.Store({
   },
   strict: isDev,
   state: {
-    //apiBase: isDev ? 'http://127.0.0.1:8080/' : '../../',
-    apiBase: isDev ? 'https://localhost:8000/' : '../../',
+    //apiBase: isDev ? 'http://127.0.0.1:8080/' : '../../',  // HTTP
+    //apiBase: isDev ? 'https://localhost:8000/' : '../../', // HTTPS
+    apiBase: isDev ? 'http://127.0.0.1:8081/' : '../../', // HTTP proxy
   },
   mutations: {
 

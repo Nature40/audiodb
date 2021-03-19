@@ -149,7 +149,13 @@ public class YamlMap {
 	}
 
 	public long getLong(String name) {
-		return getNumber(name).longValue();
+		Object o = getObject(name);
+		if(o instanceof Number) {
+			return ((Number) o).longValue();
+		} else if(o instanceof String) {
+			return Long.parseLong((String) o);
+		}
+		throw new RuntimeException("element is not a number "+name);
 	}
 
 	public long optLong(String name, long def) {

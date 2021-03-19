@@ -6,6 +6,7 @@ state: {
   data: undefined,
   loading: false,
   error: undefined,
+  readonly: true,
 },
 getters: {
   isLoading: state => {
@@ -16,7 +17,10 @@ getters: {
   },
   isRole: (state) => (role) => {
     return state.data === undefined ? false : state.data.roles.includes(role);
-  }
+  },
+  isReadonly: state => {
+    return state.readonly;
+  },
 },
 mutations: {
   setLoading(state) {
@@ -27,6 +31,7 @@ mutations: {
     state.data = data;
     state.loading = false;
     state.error = undefined;
+    state.readonly = state.data.roles.includes('readonly');    
   },
   setError(state, error) {
     state.loading = false;

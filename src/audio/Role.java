@@ -28,9 +28,21 @@ public class Role {
 		return roleBits.get(index);
 	}
 
-	public void check(BitSet roleBits) {
+	public void checkHas(BitSet roleBits) {
+		if(roleBits == null) {
+			throw new RuntimeException("could not check role because roleBits not available: " + name);
+		}
 		if(!roleBits.get(index)) {
-			throw new RuntimeException("role not accessible: " + name);
+			throw new RuntimeException("role not included in account: " + name);
+		}
+	}
+	
+	public void checkHasNot(BitSet roleBits) {
+		if(roleBits == null) {
+			throw new RuntimeException("could not check role because roleBits not available: " + name);
+		}
+		if(roleBits.get(index)) {
+			throw new RuntimeException("role included in account: " + name);
 		}
 	}
 

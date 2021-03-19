@@ -65,8 +65,8 @@
         </div>
         <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
         <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;"><v-icon>play_arrow</v-icon> play selection</v-btn>
-        <v-btn @click="onLabelSaveAndNext" small round color="green" :class="{ 'hide': (!hasNextSelection) }" title="save current label and select next label from the list" style="vertical-align: top;"><v-icon>done</v-icon> save and go to next selection</v-btn>
-        <v-btn @click="onLabelSave()" small round color="green" v-show="labelEndTime !== undefined" title="store current label" style="vertical-align: top;"><v-icon>push_pin</v-icon> save</v-btn>
+        <v-btn @click="onLabelSaveAndNext" small round color="green" :class="{ 'hide': (!hasNextSelection || isReadonly) }" title="save current label and select next label from the list" style="vertical-align: top;"><v-icon>done</v-icon> save and go to next selection</v-btn>
+        <v-btn @click="onLabelSave()" small round color="green" v-show="labelEndTime !== undefined  && !isReadonly" title="store current label" style="vertical-align: top;"><v-icon>push_pin</v-icon> save</v-btn>
         <v-btn @click="onLabelDiscard" small round color="red" :class="{ 'hide': (labelStartTime === undefined) }" title="remove current label" style="vertical-align: top;"><v-icon>power_off</v-icon> discard</v-btn>
 
       </div>
@@ -124,7 +124,7 @@
 <script>
 
 import axios from 'axios'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 import audioMeta from './audio-meta'
 import playerSettings from './player-settings'
@@ -178,6 +178,9 @@ computed: {
     playbackRate: state => state.settings.player_playbackRate,
     preservesPitch: state => state.settings.player_preservesPitch,
   }),
+  ...mapGetters({
+    isReadonly: 'identity/isReadonly',    
+  }),  
   mergedLabelNames() {
     var names = this.customLabelNames.slice();
     if(this.label_definitions !== undefined) {

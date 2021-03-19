@@ -40,6 +40,7 @@ public class Samples {
 					sample.checkAndCorrectLabelDublicates();
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
+					e.printStackTrace();
 					log.warn("error in " + path + "   " + e);
 				}
 			}

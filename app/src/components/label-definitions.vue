@@ -9,9 +9,10 @@
             <v-icon>close</v-icon>
           </v-btn>
           <v-toolbar-title>Label Definitions</v-toolbar-title>
+          <span v-if="isReadonly" style="color: #e11111;">readonly</span>
           <v-spacer></v-spacer>
           <v-toolbar-items>
-            <v-btn flat @click="save" v-if="user_label_definitions !== undefined">Save</v-btn>
+            <v-btn flat @click="save" v-if="user_label_definitions !== undefined && !isReadonly">Save</v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <div v-if="savePending">
@@ -21,9 +22,9 @@
           ERROR saving: {{saveError}}
         </div>
         <div v-if="user_label_definitions !== undefined">
-          Changes are not saved until button <b>save</b> is pressed. Button <b>x</b> or <b>Esc</b>-key discards changes.
+          <span v-if="!isReadonly">Changes are not saved until button <b>save</b> is pressed. Button <b>x</b> or <b>Esc</b>-key discards changes.</span>
           <br>
-          <label-definitions-add @addLabelDefinition="addLabelDefinition($event)" :user_label_definitions="user_label_definitions"/>
+          <label-definitions-add @addLabelDefinition="addLabelDefinition($event)" :user_label_definitions="user_label_definitions" v-if="!isReadonly"/>
           <br>
           <v-data-table
             :headers="headers"
@@ -38,7 +39,7 @@
               </v-alert>
             </template>
             <template v-slot:items="props">
-              <td><v-btn icon title="remove label"><v-icon @click="removeLabel" :index="props.item.original_index">delete_forever</v-icon></v-btn></td>
+              <td><v-btn icon title="remove label" v-if="!isReadonly"><v-icon @click="removeLabel" :index="props.item.original_index">delete_forever</v-icon></v-btn></td>
               <td>{{props.item.name}}</td>
               <td>
                 <v-edit-dialog
@@ -71,7 +72,7 @@
 <script>
 
 import axios from 'axios'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 import labelDefinitionsAdd from './label-definitions-add'
 
@@ -98,6 +99,9 @@ computed: {
     label_definitionsLoading: state => state.label_definitions.loading,
     label_definitionsError: state => state.label_definitions.error,
   }),
+  ...mapGetters({
+    isReadonly: 'identity/isReadonly',    
+  }),  
 },  
 methods: {
   ...mapActions({

@@ -1,10 +1,12 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -74,6 +76,10 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 	}
 	
 	public void handlePOST(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		HttpSession session = request.getSession(false);
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		
 		JSONObject jsonReq = new JSONObject(new JSONTokener(baseRequest.getReader()));
 		JSONArray jsonLabelDefinitions = jsonReq.getJSONArray("label_definitions");
 		int jsonLabelDefinitionsLen = jsonLabelDefinitions.length();

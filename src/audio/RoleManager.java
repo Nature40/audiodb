@@ -13,10 +13,15 @@ public class RoleManager {
 
 	private Vec<Role> roles = new Vec<Role>();
 	private AtomicInteger ci = new AtomicInteger(0);
+	
+	public final Role role_create_account;
+	public final Role role_admin;
+	public final Role role_readonly;
 
 	public RoleManager() {
-		addRole("create_account");
-		addRole("admin", "create_account");
+		role_create_account = addRole("create_account");
+		role_admin = addRole("admin", role_create_account);
+		role_readonly = addRole("readonly");
 	}
 
 	public synchronized Role addRole(String roleName) {
@@ -26,6 +31,7 @@ public class RoleManager {
 		return role;
 	}
 
+	@Deprecated
 	public synchronized Role addRole(String roleName, String... roleNames) {
 		int len = roleNames.length;
 		Role[] containedRoles = new Role[len];
@@ -36,6 +42,10 @@ public class RoleManager {
 			}
 			containedRoles[i] = role;
 		}
+		return addRole(roleName, containedRoles);
+	}
+	
+	public synchronized Role addRole(String roleName, Role... containedRoles) {
 		int index = ci.getAndIncrement();
 		Role role = new Role(index, roleName, containedRoles);
 		roles.add(role);

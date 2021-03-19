@@ -3,9 +3,11 @@ package audio.server.api;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.BitSet;
 import java.util.function.Predicate;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,7 +71,12 @@ public class Review_listHandler {
 		sendReview_list(review_list_id, reviewList, response);
 	}
 
-	private void handleRoot_POST(String review_list_id, ReviewList reviewList, Request request, HttpServletResponse response) throws IOException {		
+	private void handleRoot_POST(String review_list_id, ReviewList reviewList, Request request, HttpServletResponse response) throws IOException {
+		HttpSession session = request.getSession(false);
+		Account account = (Account) session.getAttribute("account");
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
 		int jsonActionsLen = jsonActions.length();
@@ -96,8 +103,7 @@ public class Review_listHandler {
 					}						
 					s.mutate(sample -> {
 						int sample_label_index = sample.findLabelIndexOf(entry.label_start, entry.label_end);
-						Label label = sample_label_index < 0 ? new Label(entry.label_start, entry.label_end) : sample.getLabel(sample_label_index);
-						Account account = (Account) request.getSession(false).getAttribute("account");							
+						Label label = sample_label_index < 0 ? new Label(entry.label_start, entry.label_end) : sample.getLabel(sample_label_index);					
 						String reviewer = account.username;
 						long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
 						ReviewedLabel reviewedLabel = new ReviewedLabel(entry.label_name, reviewed, reviewer, timestamp);							

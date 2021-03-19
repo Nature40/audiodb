@@ -5,10 +5,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.function.Predicate;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,13 +35,14 @@ import util.JsonUtil;
 public class SampleHandler {
 	static final Logger log = LogManager.getLogger();
 
-	private final LabelsHandler labelsHandler = new LabelsHandler();
+	private final LabelsHandler labelsHandler;
 	private final SpectrumHandler spectrumHandler;
 
 	private final Broker broker;
 
 	public SampleHandler(Broker broker) {
 		this.broker = broker;
+		labelsHandler = new LabelsHandler(broker);
 		spectrumHandler = new SpectrumHandler(broker);
 	}
 
@@ -90,6 +93,11 @@ public class SampleHandler {
 	}
 	
 	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {
+		HttpSession session = request.getSession(false);
+		Account account = (Account) session.getAttribute("account");
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
 		int jsonActionsLen = jsonActions.length();
@@ -97,8 +105,7 @@ public class SampleHandler {
 			JSONObject jsonAction = jsonActions.getJSONObject(i);
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
-			case "set_locked": {
-				Account account = (Account) request.getSession(false).getAttribute("account");							
+			case "set_locked": {					
 				String username = account.username;
 				long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
 				SampleUserLocked sampleUserLocked = new SampleUserLocked(username, timestamp);

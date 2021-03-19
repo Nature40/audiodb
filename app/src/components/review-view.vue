@@ -35,6 +35,7 @@
     <div v-if="review_list !== undefined && reviewedCount < review_list.entries.length">some entries left</div>
     <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="review_lists_message !== undefined">{{review_lists_message}}</div>
+    <span v-if="isReadonly" style="color: #e11111;">readonly</span>
 
     <div style="display: flex; position: absolute; right: 2px; width: 200px;" >
       <review-statistics-dialog />
@@ -108,11 +109,11 @@
       </div>
 
       <div class="controls" v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)">
-        <div :class="{ 'reviewed-selected': storedReviewed === 'no' }"><v-btn @click="setReviewed('no')" color="red"><v-icon dark>clear</v-icon> NO</v-btn></div>
-        <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
-        <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green"><v-icon dark>done</v-icon> YES</v-btn></div>
+        <div :class="{ 'reviewed-selected': storedReviewed === 'no' }"><v-btn @click="setReviewed('no')" color="red" :disabled="isReadonly"><v-icon dark>clear</v-icon> NO</v-btn></div>
+        <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow" :disabled="isReadonly"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
+        <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green" :disabled="isReadonly"><v-icon dark>done</v-icon> YES</v-btn></div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
-        <review-special-dialog @lock-audio-sample="onLockAudioSample" />        
+        <div><review-special-dialog @lock-audio-sample="onLockAudioSample" v-if="!isReadonly"/></div>
         <div>[Esc]</div>
         <div>[Enter]</div>
         <div>[Space]</div>
@@ -201,6 +202,7 @@ computed: {
     review_statistics: state => state.review_statistics.data,
   }),
   ...mapGetters({
+    isReadonly: 'identity/isReadonly',    
   }),
   label() {
     if(this.labels === undefined || this.review_list_entry === undefined) {
