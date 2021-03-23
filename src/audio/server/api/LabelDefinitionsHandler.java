@@ -78,7 +78,7 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 	public void handlePOST(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		HttpSession session = request.getSession(false);
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		broker.roleManager().role_readOnly.checkHasNot(roleBits);
 		
 		JSONObject jsonReq = new JSONObject(new JSONTokener(baseRequest.getReader()));
 		JSONArray jsonLabelDefinitions = jsonReq.getJSONArray("label_definitions");

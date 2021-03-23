@@ -96,7 +96,7 @@ public class SampleHandler {
 		HttpSession session = request.getSession(false);
 		Account account = (Account) session.getAttribute("account");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		broker.roleManager().role_readOnly.checkHasNot(roleBits);
 		
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");

@@ -68,15 +68,19 @@ public class Review_listHandler {
 	}
 
 	private void handleRoot_GET(String review_list_id, ReviewList reviewList, Request request, HttpServletResponse response) throws IOException {
-		sendReview_list(review_list_id, reviewList, response);
+		HttpSession session = request.getSession(false);
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		boolean reviewedOnly = broker.roleManager().role_reviewedOnly.has(roleBits);
+		sendReview_list(review_list_id, reviewList, response, reviewedOnly);
 	}
 
 	private void handleRoot_POST(String review_list_id, ReviewList reviewList, Request request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		Account account = (Account) session.getAttribute("account");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		broker.roleManager().role_readonly.checkHasNot(roleBits);
-		
+		broker.roleManager().role_readOnly.checkHasNot(roleBits);
+		boolean reviewedOnly = broker.roleManager().role_reviewedOnly.has(roleBits);
+
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
 		int jsonActionsLen = jsonActions.length();
@@ -124,10 +128,10 @@ public class Review_listHandler {
 			}
 		}		
 
-		sendReview_list(review_list_id, reviewList, response);
+		sendReview_list(review_list_id, reviewList, response, reviewedOnly);
 	}
 
-	void sendReview_list(String review_list_id, ReviewList reviewList, HttpServletResponse response) throws IOException {
+	void sendReview_list(String review_list_id, ReviewList reviewList, HttpServletResponse response, boolean reviewedOnly) throws IOException {
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
@@ -138,18 +142,20 @@ public class Review_listHandler {
 		json.key("entries");
 		json.array();
 		reviewList.forEach((ReviewListEntry entry) -> {
-			json.object();
-			json.key("sample_id");
-			json.value(entry.sample_id);
-			json.key("label_start");
-			json.value(entry.label_start);
-			json.key("label_end");
-			json.value(entry.label_end);
-			json.key("label_name");
-			json.value(entry.label_name);
-			json.key("classified");
-			json.value(entry.classified);			
-			json.endObject();
+			if(!reviewedOnly || entry.classified) {
+				json.object();
+				json.key("sample_id");
+				json.value(entry.sample_id);
+				json.key("label_start");
+				json.value(entry.label_start);
+				json.key("label_end");
+				json.value(entry.label_end);
+				json.key("label_name");
+				json.value(entry.label_name);
+				json.key("classified");
+				json.value(entry.classified);			
+				json.endObject();
+			}
 		});
 		json.endArray();
 		json.endObject();

@@ -20,17 +20,20 @@
     <v-toolbar-title class="headline text-uppercase">
       Audio
     </v-toolbar-title>
+    <span v-if="!isReviewedOnly">
     <audio-browser :selected-sample="selectedSample" @select-sample="selectedSample = $event"/> 
     <v-btn icon v-show="samplesPrevious(selectedSample) !== undefined" title="select previous audio sample" @click="selectedSample = samplesPrevious(selectedSample)"><v-icon>skip_previous</v-icon></v-btn>
     <span v-if="selectedSample !== undefined" style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample"><b><v-icon>place</v-icon> {{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
     <v-btn icon v-show="samplesNext(selectedSample) !== undefined" title="select next audio sample" @click="selectedSample = samplesNext(selectedSample)"><v-icon>skip_next</v-icon></v-btn>
-    <span v-if="isReadonly" style="color: #e11111;">readonly</span>
+    </span>
+    <span v-if="isReadOnly" style="color: #e11111; padding-left: 10px;">readOnly</span>
+    <span v-if="isReviewedOnly" style="color: #e11111; padding-left: 10px;">reviewedOnly</span>
     <div style="display: flex; position: absolute; right: 2px;" >
       <identity-dialog />
     </div>
   </v-toolbar>
 
-  <v-content>
+  <v-content v-if="!isReviewedOnly">
     <player :sample="selectedSample" v-if="selectedSample !== undefined" />
     <div v-if="selectedSample === undefined" style="text-align: center;">
       <br>
@@ -60,6 +63,16 @@
       </i>
 
     </div>
+  </v-content>
+
+  <v-content v-if="isReviewedOnly">
+    <br>
+    <br>
+    <h1 style="color: red;">Your account is allowed to access reviewed audio samples only.</h1>
+    <br>
+    So, you can not selected audio semples here.
+    <br>
+    Navigate to the '<b>review</b>'-page by the button on the top left of this page to select reviewed audio samples.
   </v-content>
 </v-app>
 </template>
@@ -100,7 +113,8 @@ computed: {
   ...mapGetters({
     samplesPrevious: 'samples/previous',
     samplesNext: 'samples/next',
-    isReadonly: 'identity/isReadonly',       
+    isReadOnly: 'identity/isReadOnly',       
+    isReviewedOnly: 'identity/isReviewedOnly', 
   }),    
 },
 methods: {

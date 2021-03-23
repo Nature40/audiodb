@@ -62,7 +62,7 @@ public class AccountsHandler extends AbstractHandler {
 	public void handlePOST(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		HttpSession session = request.getSession(false);
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		broker.roleManager().role_readOnly.checkHasNot(roleBits);
 		
 		log.info("accounts");		
 

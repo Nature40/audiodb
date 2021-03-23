@@ -33,10 +33,10 @@
       </v-select>
     </div>
     <div v-if="review_list !== undefined && reviewedCount < review_list.entries.length">some entries left</div>
-    <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length">all entries done in this list</div>
+    <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length && !isReviewedOnly">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="review_lists_message !== undefined">{{review_lists_message}}</div>
-    <span v-if="isReadonly" style="color: #e11111;">readonly</span>
-
+    <span v-if="isReadOnly" style="color: #e11111; padding-left: 10px;">readOnly</span>
+    <span v-if="isReviewedOnly" style="color: #e11111; padding-left: 10px;">reviewedOnly</span>
     <div style="display: flex; position: absolute; right: 2px; width: 200px;" >
       <review-statistics-dialog />
       <identity-dialog />
@@ -73,10 +73,11 @@
                 hide-details
                 height="1"
                 style="margin-top: 0px;"
+                v-if="!isReviewedOnly"
           ></v-switch> 
         </span>         
         <span style="grid-row-start: 1; grid-column-start: 5; margin-left: 50px; background: #f8fff4; color: #499d2a;">
-          Reviewed {{reviewedCount}} of {{review_list === undefined ? NaN : review_list.entries.length}}
+          Reviewed {{reviewedCount}} <span v-if="!isReviewedOnly">of {{review_list === undefined ? NaN : review_list.entries.length}}</span>
         </span>        
       </div>
 
@@ -109,11 +110,11 @@
       </div>
 
       <div class="controls" v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)">
-        <div :class="{ 'reviewed-selected': storedReviewed === 'no' }"><v-btn @click="setReviewed('no')" color="red" :disabled="isReadonly"><v-icon dark>clear</v-icon> NO</v-btn></div>
-        <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow" :disabled="isReadonly"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
-        <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green" :disabled="isReadonly"><v-icon dark>done</v-icon> YES</v-btn></div>
+        <div :class="{ 'reviewed-selected': storedReviewed === 'no' }"><v-btn @click="setReviewed('no')" color="red" :disabled="isReadOnly"><v-icon dark>clear</v-icon> NO</v-btn></div>
+        <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow" :disabled="isReadOnly"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
+        <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green" :disabled="isReadOnly"><v-icon dark>done</v-icon> YES</v-btn></div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
-        <div><review-special-dialog @lock-audio-sample="onLockAudioSample" v-if="!isReadonly"/></div>
+        <div><review-special-dialog @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
         <div>[Esc]</div>
         <div>[Enter]</div>
         <div>[Space]</div>
@@ -202,7 +203,8 @@ computed: {
     review_statistics: state => state.review_statistics.data,
   }),
   ...mapGetters({
-    isReadonly: 'identity/isReadonly',    
+    isReadOnly: 'identity/isReadOnly',   
+    isReviewedOnly: 'identity/isReviewedOnly',  
   }),
   label() {
     if(this.labels === undefined || this.review_list_entry === undefined) {
@@ -293,6 +295,14 @@ computed: {
   },  
 },
 watch: {
+  isReviewedOnly: {
+    immediate: true,
+    handler() {
+      if(this.isReviewedOnly) {
+        this.skip_review_entries = false;
+      }
+    },
+  },
   labels() {
     //this.labelIndex = 0;
   },

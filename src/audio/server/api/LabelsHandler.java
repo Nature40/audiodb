@@ -95,7 +95,7 @@ public class LabelsHandler {
 		HttpSession session = request.getSession(false);
 		Account account = (Account) session.getAttribute("account");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		broker.roleManager().role_readonly.checkHasNot(roleBits);
+		broker.roleManager().role_readOnly.checkHasNot(roleBits);
 		
 		
 		/*Path samplePath = samplesRoot.resolve(sample.id);

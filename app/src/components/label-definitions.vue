@@ -9,10 +9,11 @@
             <v-icon>close</v-icon>
           </v-btn>
           <v-toolbar-title>Label Definitions</v-toolbar-title>
-          <span v-if="isReadonly" style="color: #e11111;">readonly</span>
+          <span v-if="isReadOnly" style="color: #e11111; padding-left: 10px;">readOnly</span>
+          <span v-if="isReviewedOnly" style="color: #e11111; padding-left: 10px;">reviewedOnly</span>
           <v-spacer></v-spacer>
           <v-toolbar-items>
-            <v-btn flat @click="save" v-if="user_label_definitions !== undefined && !isReadonly">Save</v-btn>
+            <v-btn flat @click="save" v-if="user_label_definitions !== undefined && !isReadOnly">Save</v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <div v-if="savePending">
@@ -22,9 +23,9 @@
           ERROR saving: {{saveError}}
         </div>
         <div v-if="user_label_definitions !== undefined">
-          <span v-if="!isReadonly">Changes are not saved until button <b>save</b> is pressed. Button <b>x</b> or <b>Esc</b>-key discards changes.</span>
+          <span v-if="!isReadOnly">Changes are not saved until button <b>save</b> is pressed. Button <b>x</b> or <b>Esc</b>-key discards changes.</span>
           <br>
-          <label-definitions-add @addLabelDefinition="addLabelDefinition($event)" :user_label_definitions="user_label_definitions" v-if="!isReadonly"/>
+          <label-definitions-add @addLabelDefinition="addLabelDefinition($event)" :user_label_definitions="user_label_definitions" v-if="!isReadOnly"/>
           <br>
           <v-data-table
             :headers="headers"
@@ -39,7 +40,7 @@
               </v-alert>
             </template>
             <template v-slot:items="props">
-              <td><v-btn icon title="remove label" v-if="!isReadonly"><v-icon @click="removeLabel" :index="props.item.original_index">delete_forever</v-icon></v-btn></td>
+              <td><v-btn icon title="remove label" v-if="!isReadOnly"><v-icon @click="removeLabel" :index="props.item.original_index">delete_forever</v-icon></v-btn></td>
               <td>{{props.item.name}}</td>
               <td>
                 <v-edit-dialog
@@ -100,7 +101,8 @@ computed: {
     label_definitionsError: state => state.label_definitions.error,
   }),
   ...mapGetters({
-    isReadonly: 'identity/isReadonly',    
+    isReadOnly: 'identity/isReadOnly',
+    isReviewedOnly: 'identity/isReviewedOnly',     
   }),  
 },  
 methods: {

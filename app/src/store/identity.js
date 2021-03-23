@@ -6,7 +6,8 @@ state: {
   data: undefined,
   loading: false,
   error: undefined,
-  readonly: true,
+  readOnly: true,
+  reviewedOnly: false,
 },
 getters: {
   isLoading: state => {
@@ -18,8 +19,11 @@ getters: {
   isRole: (state) => (role) => {
     return state.data === undefined ? false : state.data.roles.includes(role);
   },
-  isReadonly: state => {
-    return state.readonly;
+  isReadOnly: state => {
+    return state.readOnly;
+  },
+  isReviewedOnly: state => {
+    return state.reviewedOnly;
   },
 },
 mutations: {
@@ -31,7 +35,8 @@ mutations: {
     state.data = data;
     state.loading = false;
     state.error = undefined;
-    state.readonly = state.data.roles.includes('readonly');    
+    state.readOnly = state.data.roles.includes('readOnly');    
+    state.reviewedOnly = state.data.roles.includes('reviewedOnly'); 
   },
   setError(state, error) {
     state.loading = false;

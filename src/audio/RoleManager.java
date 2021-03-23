@@ -16,12 +16,14 @@ public class RoleManager {
 	
 	public final Role role_create_account;
 	public final Role role_admin;
-	public final Role role_readonly;
+	public final Role role_readOnly;
+	public final Role role_reviewedOnly;
 
 	public RoleManager() {
 		role_create_account = addRole("create_account");
 		role_admin = addRole("admin", role_create_account);
-		role_readonly = addRole("readonly");
+		role_readOnly = addRole("readOnly");
+		role_reviewedOnly = addRole("reviewedOnly");
 	}
 
 	public synchronized Role addRole(String roleName) {
