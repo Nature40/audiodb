@@ -36,7 +36,7 @@ export default {
     async refresh({commit, rootGetters}) {
       commit('setLoading')
       try {
-          var response =  await rootGetters.apiGET(['PhotoDB'], {params: {locations: true}});
+          var response =  await rootGetters.apiGET(['photodb2'], {params: {locations: true}});
           commit('setData', response.data);
         } catch {
           commit('setError', 'error');

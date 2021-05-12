@@ -73,6 +73,8 @@ dependencies {
 	compile group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
 	
 	compile group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.15.0'
+	
+	compile group: 'com.h2database', name: 'h2', version: '1.4.200'	
 }
 
 sourceSets.main.java.srcDir 'src'

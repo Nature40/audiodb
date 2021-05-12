@@ -59,8 +59,8 @@ export default {
       hasNext: 'photo/hasNext',
     }),
     imageURL() {
-      return this.api('PhotoDB', 'photos', this.photo.id, 'image.jpg');
-      //return this.api('PhotoDB', 'photos', this.photo.id, 'image.jpg') + '?width=1280&height=960';
+      return this.api('photodb2', 'photos', this.photo, 'image.jpg');
+      //return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?width=1280&height=960';
     },
     dateText() {
       var date = this.photoMeta.date;

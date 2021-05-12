@@ -10,6 +10,7 @@
 /log
 /package
 /photo_data
+/photo2_cache
 /review_lists
 /samples
 /src_testing
@@ -20,6 +21,7 @@
 /config.yaml
 /keystore.jks
 /label_definitions.yaml
-
+/photo_cache.mv.db
+/photo_cache.trace.db
 /webcontent/app
 /webcontent/photo

@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import util.collections.array.ReadonlyArray;
+import util.collections.vec.Vec;
 
 public interface ReadonlyList<E> extends List<E> {
 	
@@ -117,5 +118,11 @@ public interface ReadonlyList<E> extends List<E> {
 	
 	public default E last() {
 		return get(size() - 1);
+	}
+	
+	default public Vec<E> copyVec() {
+		@SuppressWarnings("unchecked")
+		E[] elements = (E[]) toArray();
+		return new Vec<E>(elements);		
 	}
 }

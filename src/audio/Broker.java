@@ -10,42 +10,47 @@ import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import photo.PhotoDB;
+import photo2.PhotoDB2;
 import util.yaml.YamlMap;
 
 public class Broker {
 	private static final Logger log = LogManager.getLogger();
-	
+
 	private Config config;
 	private RoleManager roleManager;
 	private AccountManager accountManager;
 	private LabelDefinitions labelDefinitions;
 	private Samples samples;
-	
+
 	private ReviewListManager reviewListManager;
 	private volatile ReviewListManager reviewListManagerVolatile;
 	private Object reviewListManagerLock = new Object();
-	
+
 	private WebAuthn webAuthn;
-	
+
 	private PhotoDB photoDB;
-	
+
+	private PhotoDB2 photodb2;
+	private volatile PhotoDB2 photodb2Volatile;
+	private Object photodb2Lock = new Object();
+
 	public Broker() {
-		samples(); // preload sample metadata
-		reviewListManager();  // preload review_list metadata
+		//samples(); // preload sample metadata
+		//reviewListManager();  // preload review_list metadata
 	}
-	
+
 	public Config config() {
 		return config == null ? loadConfig() : config;
 	}
-	
+
 	private synchronized Config loadConfig() {
 		if(config == null) {
 			File file = new File("config.yaml");
 			if(file.exists()) {
 				try {
-				InputStream in = new FileInputStream(file);
-				YamlMap yamlMap = YamlMap.ofObject(new Yaml().load(in));
-				config = Config.ofYAML(yamlMap);
+					InputStream in = new FileInputStream(file);
+					YamlMap yamlMap = YamlMap.ofObject(new Yaml().load(in));
+					config = Config.ofYAML(yamlMap);
 				} catch(Exception e) {
 					config = Config.DEFAULT;
 					log.error("error in config, set config to default: " + e);
@@ -58,7 +63,7 @@ public class Broker {
 		}
 		return config;
 	}
-	
+
 	public RoleManager roleManager() {
 		return roleManager == null ? loadRoleManager() : roleManager;
 	}
@@ -69,7 +74,7 @@ public class Broker {
 		}
 		return roleManager;
 	}
-	
+
 	public AccountManager accountManager() {
 		return accountManager == null ? loadAccountManager() : accountManager;
 	}
@@ -80,7 +85,7 @@ public class Broker {
 		}
 		return accountManager;
 	}
-	
+
 	public LabelDefinitions labelDefinitions() {
 		return labelDefinitions == null ? loadLabelDefinitions() : labelDefinitions;
 	}
@@ -91,7 +96,7 @@ public class Broker {
 		}
 		return labelDefinitions;
 	}
-	
+
 	public Samples samples() {
 		return samples == null ? loadSamples() : samples;
 	}
@@ -102,7 +107,7 @@ public class Broker {
 		}
 		return samples;
 	}
-	
+
 	public ReviewListManager reviewListManager() {		
 		return reviewListManager != null ? reviewListManager : loadReviewListManager();
 	}
@@ -124,9 +129,9 @@ public class Broker {
 			return r;
 		}
 	}
-	
 
-	
+
+
 	public WebAuthn webAuthn() {
 		return webAuthn == null ? loadWebAuthn() : webAuthn;
 	}
@@ -137,16 +142,36 @@ public class Broker {
 		}
 		return webAuthn;
 	}
-	
+
 	public PhotoDB photoDB() {
 		return photoDB == null ? loadPhotoDB() : photoDB;
 	}
 
 	private synchronized PhotoDB loadPhotoDB() {
 		if(photoDB == null) {
-			photoDB = new PhotoDB();
+			photoDB = new PhotoDB(this);
 		}
 		return photoDB;
+	}	
+
+	public PhotoDB2 photodb2() {		
+		return photodb2 != null ? photodb2 : loadPhotoDB2();
 	}
 
+	private PhotoDB2 loadPhotoDB2() {
+		PhotoDB2 r = photodb2Volatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (photodb2Lock) {
+			r = photodb2Volatile;
+			if(r != null) {
+				return r;
+			}
+			r = new PhotoDB2(this);
+			photodb2Volatile = r;
+			photodb2 = r;
+			return r;
+		}
+	}
 }

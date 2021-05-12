@@ -7,11 +7,11 @@
       </template>
       <template v-slot:option="scope">
         <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
-          {{scope.opt.id}}
+          {{scope.opt}}
         </q-item>
       </template>
       <template v-slot:selected-item="scope">
-        {{scope.opt.id}}
+        {{scope.opt}}
       </template>
 
     </q-select>
@@ -50,7 +50,9 @@ export default {
 
   watch: {
     location() {
-      this.photosQuery({location: this.location.id});
+      if(this.location !== undefined && this.location !== null && this.location !== '') {
+        this.photosQuery({location: this.location});
+      }
     },
   },
 

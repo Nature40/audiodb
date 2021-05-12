@@ -5,11 +5,18 @@
 No photos selected in query.
 </q-page>  
 
-<div style="overflow: auto" class="fit" v-if="photos.length > 0">
-  <span v-for="(photo, index) in photos" :key="photo.id" style="display: inline-block; width: 320px; height: 240px;">
-    <img :src="api('PhotoDB', 'photos', photo.id, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="photo.id"/>
+<!--<div style="overflow: auto" class="fit" v-if="photos.length > 0">
+  <span v-for="(photo, index) in photos" :key="photo" style="display: inline-block; width: 320px; height: 240px;">
+    <img :src="api('photodb2', 'photos', photo, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="photo"/>
   </span>
-</div>
+</div>-->
+
+<q-infinite-scroll style="overflow: auto" class="fit" v-if="photos.length > 0">
+  <span v-for="(photo, index) in photos" :key="photo" style="display: inline-block; width: 320px; height: 240px;">
+    <img :src="api('photodb2', 'photos', photo, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="photo"/>
+  </span>
+</q-infinite-scroll>
+
 
 </div>
   

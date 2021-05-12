@@ -31,7 +31,7 @@ export default {
     async query({commit, rootGetters}, params) {
       commit('setLoading')
       try {
-          var response =  await rootGetters.apiGET(['PhotoDB','photos'], {params});
+          var response =  await rootGetters.apiGET(['photodb2','photos'], {params});
           commit('setData', response.data.photos);
         } catch {
           commit('setError', 'error');

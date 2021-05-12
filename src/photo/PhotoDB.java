@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import audio.Broker;
+
 public class PhotoDB {
 	static final Logger log = LogManager.getLogger();
 
@@ -18,9 +20,9 @@ public class PhotoDB {
 
 	private ConcurrentHashMap<String, Photo> photoMap = new ConcurrentHashMap<String, Photo>();
 	private ConcurrentHashMap<String, LocationPhotoDB> locationPhotoDBMap = new ConcurrentHashMap<String, LocationPhotoDB>();
-
-	public PhotoDB() {
-		refresh();
+	
+	public PhotoDB(Broker broker) {
+		//refresh();
 	}
 
 	public LocationPhotoDB getOrCreate(String locationID) {

@@ -55,6 +55,7 @@ import audio.server.api.SamplesHandler;
 import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
 import photo.api.PhotoDBHandler;
+import photo2.api.PhotoDB2Handler;
 
 public class Webserver {
 	static final Logger log = LogManager.getLogger();
@@ -171,6 +172,7 @@ public class Webserver {
 		//}
 		
 		handlerList.addHandler(createContext("/PhotoDB", true, new PhotoDBHandler(broker)));
+		handlerList.addHandler(createContext("/photodb2", true, new PhotoDB2Handler(broker)));
 		
 		handlerList.addHandler(new NoContentHandler());		
 		server.setHandler(handlerList);
