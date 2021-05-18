@@ -36,7 +36,11 @@ public class ReviewListManager {
 			} else if(sub.toFile().isFile()) {
 				if(sub.getFileName().toString().endsWith(".yaml")) {
 					String id =  prefix + (prefix.isEmpty()? "" : "__") + sub.getFileName().toString().replaceAll(".yaml", "");
+					try {
 					load(sub, id);
+					} catch(Exception e) {
+						log.warn("Error loading " + sub);
+					}
 				}
 			} else {
 				log.warn("unknown entity: " + sub);

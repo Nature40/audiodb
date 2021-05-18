@@ -55,14 +55,15 @@ public class Photos2Handler {
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		String location = Web.getString(request, "location", null);
+		String project = Web.getString(request, "project");
+		String location = Web.getString(request, "location");
 		
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("photos");
 		json.array();		
-		photodb2.foreachId(location, id -> {
+		photodb2.foreachId(project, location, id -> {
 			json.value(id);
 		});		
 		json.endArray();

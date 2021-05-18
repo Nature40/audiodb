@@ -3,6 +3,7 @@ package audio;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import photo2.PhotoConfig;
 import util.collections.ReadonlyList;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -18,8 +19,8 @@ public class Config {
 	public final int http_port;
 	public final int https_port;
 	public final String keystore_path;
-	public final String keystore_password;
-	public final String photo_root_path;
+	public final String keystore_password;	
+	public final PhotoConfig photoConfig;
 	
 	@SuppressWarnings("unchecked")
 	private Config() {
@@ -30,10 +31,10 @@ public class Config {
 		this.https_port = 8000;
 		this.keystore_path = "keystore.jks";
 		this.keystore_password = "";
-		this.photo_root_path = "photo_data";
+		this.photoConfig = PhotoConfig.ofYAML(YamlMap.EMPTY_MAP);
 	}
 	
-	public Config(boolean login, Account default_account, ReadonlyList<JwsConfig> jwsConfigs, int http_port, int https_port, String keystore_path, String keystore_password, String photo_root_path) {
+	public Config(boolean login, Account default_account, ReadonlyList<JwsConfig> jwsConfigs, int http_port, int https_port, String keystore_path, String keystore_password, PhotoConfig photoConfig) {
 		this.login = login;
 		this.default_account = default_account;
 		this.jwsConfigs = jwsConfigs;
@@ -41,7 +42,7 @@ public class Config {
 		this.https_port = https_port;
 		this.keystore_path = keystore_path;
 		this.keystore_password = keystore_password;
-		this.photo_root_path = photo_root_path;
+		this.photoConfig = photoConfig;
 	}
 	
 	public static Config ofYAML(YamlMap yamlMap) {
@@ -51,7 +52,6 @@ public class Config {
 		int https_port = yamlMap.optInt("https_port", DEFAULT.https_port);
 		String keystore_path = yamlMap.optString("keystore_path", DEFAULT.keystore_path);
 		String keystore_password = yamlMap.optString("keystore_password", DEFAULT.keystore_password);
-		String photo_root_path = yamlMap.optString("photo_root_path", DEFAULT.photo_root_path);
 		
 		Vec<JwsConfig> jwsConfigs = new Vec<JwsConfig>();
 		
@@ -67,8 +67,10 @@ public class Config {
 		} catch (Exception e) {
 			log.warn(e);
 		}
-		log.info("photo_root_path: |" + photo_root_path + "|");
-		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port, https_port, keystore_path, keystore_password, photo_root_path);
+		
+		PhotoConfig photoConfig = PhotoConfig.ofYAML(yamlMap.optMap("photo"));
+		
+		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port, https_port, keystore_path, keystore_password, photoConfig);
 	}
 	
 	public boolean enableHttps() {

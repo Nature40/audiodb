@@ -1,7 +1,10 @@
 package util.yaml;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,6 +136,9 @@ public class YamlMap {
 		Object o = getObject(name);
 		if(o instanceof Number) {
 			return (Number) o;
+		}
+		if(o instanceof String) {
+			return Double.parseDouble((String) o);
 		}
 		throw new RuntimeException("element is not a number "+name);
 	}
@@ -312,5 +318,26 @@ public class YamlMap {
 	public <T> T get(String name, Function<String, T> converter) {
 		String s = getString(name);
 		return converter.apply(s);
+	}
+
+	public LocalDateTime getLocalDateTime(String name) {
+		Date date = (Date) getObject(name);
+		LocalDateTime localDateTime = date
+				.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime();	
+		return localDateTime;
+	}
+	
+	public LocalDateTime optLocalDateTime(String name) {
+		Date date = (Date) optObject(name);
+		if(date == null) {
+			return null;
+		}
+		LocalDateTime localDateTime = date
+				.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime();	
+		return localDateTime;
 	}
 }

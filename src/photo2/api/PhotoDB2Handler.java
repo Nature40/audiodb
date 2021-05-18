@@ -69,13 +69,33 @@ public class PhotoDB2Handler extends AbstractHandler {
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		boolean locations = Web.getFlagBoolean(request, "locations");
+		boolean projects = Web.getFlagBoolean(request, "projects");
+		String project = Web.getString(request, "project", null);
 		
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		
-		if(locations) {
-			locationsHandler.writeLocationsJSON(json);	
+		if(projects) {
+			json.key("projects");
+			json.array();
+			photodb.foreachProject(projectConfig -> {
+				json.value(projectConfig.project);
+			});
+			json.endArray();
+		}
+		
+		if(project != null) {
+			if(!photodb.config.projectMap.containsKey(project)) {
+				throw new RuntimeException("project not found");
+			}
+			json.key("project");
+			json.value(project);
+			if(locations) {
+				locationsHandler.writeLocationsJSON(project, json);	
+			}
+		} else if(locations) {
+			throw new RuntimeException("locations needs project parameter");
 		}
 		
 		json.endObject();		

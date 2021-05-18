@@ -157,6 +157,11 @@ public class JsonUtil {
 		json.endArray();
 	}
 
+	public static void write(JSONWriter json, String name, LocalDateTime value) {
+		json.key(name);
+		json.value(value);
+	}
+
 
 
 

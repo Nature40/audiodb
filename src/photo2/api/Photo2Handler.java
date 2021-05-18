@@ -7,6 +7,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -72,6 +75,9 @@ public class Photo2Handler {
 				case "image.jpg":
 					handleImage(photo, curr, next, request, response);
 					break;
+				case "meta.yaml":
+					handleMeta(photo, curr, next, request, response);
+					break;					
 				default:
 					throw new RuntimeException("unknown path");
 				}
@@ -163,7 +169,17 @@ public class Photo2Handler {
 			}
 		}
 	}
-	
+
+	private void handleMeta(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
+		File file = photo.metaPath.toFile();
+		long fileLen = file.length();
+		response.setContentType("application/x-yaml");
+		response.setContentLengthLong(fileLen);
+		try(FileInputStream in = new FileInputStream(file)) {
+			IO.copy(in, response.getOutputStream());
+		}
+	}
+
 	private void writeJPG(BufferedImage dstImage, float quality, HttpServletResponse response) throws IOException {
 		ImageWriter jpgWriter = SpiUtil.JPEG_IMAGE_WRITER_SPI.createWriterInstance();
 		ImageWriteParam jpgWriteParam = jpgWriter.getDefaultWriteParam();
@@ -201,14 +217,46 @@ public class Photo2Handler {
 	}
 
 	private void handleRoot(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
+		boolean writeClassifications = Web.getFlagBoolean(request, "classifications");
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("photo");
 		json.object();
 		JsonUtil.write(json, "id", photo.id);
-		json.endObject();
 		JsonUtil.write(json, "location", photo.location);
-		json.endObject();
+		JsonUtil.write(json, "date", photo.date);
+		if(writeClassifications) {
+			json.key("classifications");
+			json.array();
+			photo.foreachClassification(map -> {
+				json.object();
+				if(map.contains("classification")) {
+					json.key("classification");
+					json.value(map.getString("classification"));
+				}
+				if(map.contains("classificator")) {
+					json.key("classificator");
+					json.value(map.getString("classificator"));
+				}
+				try {
+					if(map.contains("date")) {
+						json.key("date");
+						LocalDateTime localDateTime = map.getLocalDateTime("date");						
+						json.value(localDateTime);
+					}
+				} catch(Exception e) {
+					log.warn(e);
+				}
+				if(map.contains("bbox")) {
+					json.key("bbox");					
+					json.value(map.getList("bbox").asFloatArray());
+				}
+				json.endObject();
+			});
+			json.endArray(); // classifications
+		}
+		json.endObject(); // photo
+		json.endObject(); // json
 	}
 }

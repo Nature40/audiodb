@@ -4,11 +4,16 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.function.Consumer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import util.collections.vec.SyncVec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
-public class ReviewList {	
+public class ReviewList {
+	static final Logger log = LogManager.getLogger();
+	
 	private final Path path;
 	private final SyncVec<ReviewListEntry> entries = new SyncVec<ReviewListEntry>();
 
@@ -44,8 +49,10 @@ public class ReviewList {
 			entries.clearUnsync();
 			YamlMap yamlMap = YamlUtil.readYamlMap(path);			
 			YamlUtil.optListConsumer(yamlMap, "entries", ReviewListEntry::ofYAML, entries::addUnsync);
-		} catch(Exception e) {
+		} catch(RuntimeException e) {
 			entries.clearUnsync();
+			log.warn(e);
+			throw e;
 		} finally {
 			entries.unlockWrite();
 		}

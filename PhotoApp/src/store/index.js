@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 
 import photos from './photos.js'
 import photo from './photo.js'
+import projects from './projects.js'
 import meta from './meta.js'
 
 Vue.use(Vuex)
@@ -14,6 +15,7 @@ export default function (/* { ssrContext } */) {
     modules: {
       photos,
       photo,
+      projects,
       meta
     },
 

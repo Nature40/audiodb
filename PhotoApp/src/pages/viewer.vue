@@ -12,11 +12,15 @@
       <span class="time-text">{{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)">next</q-btn>
     </div>
-    <div style="width: 1024px; height: 768px;">
-      <img :src="imageURL" style="max-width: 1024px; max-height: 768px;"/>
+    <div style="width: 1024px; height: 768px; position: relative;">
+      <img :src="imageURL" style="max-width: 1024px; max-height: 768px;" ref="image"/>
+      <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay"/>
     </div>
     <div>
       <q-btn :disable="!hasPrev" @click="$refs.tagsDialog.show()">tags</q-btn>
+    </div>
+    <div>
+      <div v-for="classification in classifications" :key="classification">{{classification}}</div>
     </div>    
 </q-page>
 
@@ -72,14 +76,53 @@ export default {
         '-' + pad(date.getUTCDate()) +
         ' ' + pad(date.getUTCHours()) +
         ':' + pad(date.getUTCMinutes());
-    }
+    },
+    classifications() {
+      if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.classifications === undefined) {
+        return [];
+      }
+      return this.photoMeta.data.classifications;
+    },
   },
 
   methods: {
     ...mapActions({
       move: 'photo/move',
-    }),  
-  },  
+    }),
+    redrawImageOverlay() {
+      console.log("draw");
+      var image = this.$refs.image;
+      var width = image.width;
+      var height = image.height;
+      var canvas = this.$refs.image_overlay;
+      canvas.width = width;
+      canvas.height = height;
+      console.log(width + "  " + height);
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "rgba(0, 0, 0, 0)";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+      this.classifications.forEach(classification => {
+        if(classification.bbox !== undefined) {
+          console.log(classification.bbox);
+          var xmin = classification.bbox[0] * width;
+          var ymin = classification.bbox[1] * height;
+          var boxwidth = classification.bbox[2] * width;
+          var boxheight = classification.bbox[3] * height;
+          //ctx.fillRect(xmin, ymin, boxwidth, boxheight);
+          ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+        }
+      });
+    },  
+  },
+  
+  watch: {
+    classifications() {
+      this.redrawImageOverlay();
+    },
+  },
 
   async mounted() {
   },

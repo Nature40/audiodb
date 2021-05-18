@@ -106,11 +106,19 @@ public final class Web {
 
 	public  static int getInt(Request request, String name) {
 		String text = request.getParameter(name);
-		if(text==null) {
+		if(text == null) {
 			throw new RuntimeException("parameter not found: "+name);
 		}
 		int v = Integer.parseInt(text);
 		return v;
+	}
+	
+	public static String getString(Request request, String name) {
+		String text = request.getParameter(name);
+		if(text == null) {
+			throw new RuntimeException("parameter not found: "+name);
+		}
+		return text;
 	}
 
 	public  static String getString(Request request, String name, String defaultValue) {
