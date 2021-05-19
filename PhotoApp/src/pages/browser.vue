@@ -21,23 +21,16 @@ No photos selected in query.
   :items="browserRowIndexStart" 
   class="fit" 
   :virtual-scroll-item-size="240" 
-  :virtual-scroll-slice-ratio-before="10"
-  :virtual-scroll-slice-ratio-after="10"
+  :virtual-scroll-slice-ratio-before="1"
+  :virtual-scroll-slice-ratio-after="1"
 >
-  <template v-slot="{ item}">
-    <q-item :key="item" dense style="padding: 0px;">
+  <template v-slot="{item}">
+    <q-item dense style="padding: 0px;" :key="'row_' + getRowKey(item)">
+      <!--{{item}} ==> {{getRowKey(item)}} |||-->
       <template v-for="col in browserColumns">
-        <img :src="api('photodb2', 'photos', photos[item + col], 'image.jpg') + '?width=320&height=240&cached'" :key="item + col" @click="setIndex(item + col);" :class="{selected: item + col === photoIndex}" :alt="item"/>
+        <!--{{photos[item + col]}}-->
+        <img class="thumb" :src="api('photodb2', 'photos', photos[item + col], 'image.jpg') + '?width=320&height=320&cached'" :key="'thumb_' + photos[item + col]" @click="setIndex(item + col);" :class="{selected: item + col === photoIndex}" :alt="photos[item + col]"/>
       </template>
-
-            <!--<img :src="api('photodb2', 'photos', item, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="item"/>
-            <img :src="api('photodb2', 'photos', item, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="item"/>
-            <img :src="api('photodb2', 'photos', item, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="item"/>
-            <img :src="api('photodb2', 'photos', item, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="item"/>
-
-           <img :src="api('photodb2', 'photos', item, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="item"/>
-           <img :src="api('photodb2', 'photos', item, 'image.jpg') + '?width=320&height=240&cached'" @click="setIndex(index);" :class="{selected: index === photoIndex}" :alt="item"/>-->
-
     </q-item>
   </template>
 </q-virtual-scroll>
@@ -98,6 +91,13 @@ export default {
       this.photoSetIndex(index);
       this.$router.push('/viewer');
     },
+    getRowKey(rowIndexStart) {
+      const a = []
+      for (let i = 0; i < this.browserColumnCount; i++) {
+        a.push(i)
+      }
+      return a.map(col => this.photos[rowIndexStart + col]).join();
+    }
   },  
 
   async mounted() {
@@ -109,5 +109,10 @@ export default {
 <style scoped>
 .selected {
   border: 2px dashed rgba(31, 16, 174, 0.7);
+}
+
+.thumb {
+  min-width: 160px;
+  min-height: 160px;
 }
 </style>

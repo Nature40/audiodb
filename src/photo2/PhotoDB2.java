@@ -12,12 +12,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.function.Consumer;
+
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import audio.Broker;
+import photo2.ThumbManager.ThumbTask;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
@@ -26,6 +31,7 @@ public class PhotoDB2 {
 
 	private final Broker broker;
 	public final PhotoConfig config;
+	public final ThumbManager thumbManager;
 
 	private Connection conn;
 
@@ -39,6 +45,7 @@ public class PhotoDB2 {
 	public PhotoDB2(Broker broker) {
 		this.broker = broker;
 		this.config = broker.config().photoConfig;
+		this.thumbManager = new ThumbManager();
 		try {
 			this.conn = DriverManager.getConnection("jdbc:h2:./photo_cache");
 
@@ -64,7 +71,7 @@ public class PhotoDB2 {
 			}
 		}
 
-
+		updateThumbs();
 	}
 
 	private void traverse(PhotoProjectConfig projectConfig, Path root) throws IOException {
@@ -142,6 +149,22 @@ public class PhotoDB2 {
 		}
 	}
 
+	public void foreachId(Consumer<String> consumer) {
+		try {
+			SqlConnector sqlconnector = tlsqlconnector.get();
+			PreparedStatement stmt = sqlconnector.stmt_query_all_ids;
+			stmt = sqlconnector.stmt_query_all_ids;
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				//log.info(id);
+				consumer.accept(id);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void foreachLocation(String project, Consumer<String> consumer) {
 		try {
 			PreparedStatement stmt = conn.prepareStatement("EXPLAIN ANALYZE " + SqlConnector.SQL_QUERY_LOCATIONS);
@@ -162,7 +185,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void foreachProject(Consumer<PhotoProjectConfig> consumer) {
 		config.projectMap.values().forEach(consumer);
 	}
@@ -189,8 +212,8 @@ public class PhotoDB2 {
 	public Photo2 getPhoto2(String id) {
 		try {
 			SqlConnector sqlconnector = tlsqlconnector.get();
-			sqlconnector.stmt_qery_photo.setString(1, id);
-			ResultSet res = sqlconnector.stmt_qery_photo.executeQuery();
+			sqlconnector.stmt_query_photo.setString(1, id);
+			ResultSet res = sqlconnector.stmt_query_photo.executeQuery();
 			if(res.next()) {
 				String id2 = res.getString(1);
 				if(!id.equals(id2)) {
@@ -204,8 +227,6 @@ public class PhotoDB2 {
 				String meta_rel_path = res.getString(3);
 				String image_rel_path = res.getString(4);
 				String location = res.getString(5);
-				Object obj5 = res.getObject(6);
-				log.info(obj5.getClass());
 				LocalDateTime date = res.getTimestamp(6).toLocalDateTime();
 				return new Photo2(id, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date);
 			}
@@ -213,5 +234,41 @@ public class PhotoDB2 {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public void updateThumbs() {
+		new Thread(() -> {
+			foreachId(id -> {
+				try {
+					final int parallelism = ForkJoinPool.commonPool().getParallelism();
+					int maxQueue = parallelism * 2;
+					Photo2 photo = getPhoto2(id);
+					long reqWidth = 320;
+					long reqHeight = 320;
+					String cacheFilename = thumbManager.getCacheFilename(photo, reqWidth, reqHeight);
+					//log.info("id: " + id + " -->  " + cacheFilename);
+					ThumbSqlConnector sqlConn = thumbManager.getSqlConnector();
+					sqlConn.stmt_exist_id.setString(1, cacheFilename);
+					ResultSet res = sqlConn.stmt_exist_id.executeQuery();
+					if(res.next()) {
+						//log.info("true");
+					} else {
+						while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								log.warn(e);
+							}
+						}
+						//log.info(ForkJoinPool.commonPool().getQueuedSubmissionCount());
+						//log.info("start " + parallelism + "  " + ForkJoinPool.commonPool().getPoolSize() + "  " + ForkJoinPool.commonPool().getRunningThreadCount());
+						thumbManager.submitScaled(cacheFilename, photo, reqWidth, reqHeight);					
+						//log.info("done");
+					}
+				} catch (SQLException e) {
+					log.warn(e);
+				}
+			});			
+		}).start();
 	}
 }

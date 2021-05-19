@@ -26,7 +26,7 @@ public class Photo2 {
 		this.imagePath = imagePath;
 		this.location = location;
 		this.date = date;
-		log.info(this);
+		//log.info(this);
 	}
 
 	public void foreachClassification(Consumer<YamlMap> consumer) {

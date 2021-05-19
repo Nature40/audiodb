@@ -20,7 +20,7 @@
       <q-btn :disable="!hasPrev" @click="$refs.tagsDialog.show()">tags</q-btn>
     </div>
     <div>
-      <div v-for="classification in classifications" :key="classification">{{classification}}</div>
+      <div v-for="classification in classifications" :key="JSON.stringify(classification)">{{classification}}</div>
     </div>    
 </q-page>
 

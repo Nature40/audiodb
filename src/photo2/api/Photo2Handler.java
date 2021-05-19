@@ -32,6 +32,7 @@ import com.drew.imaging.ImageProcessingException;
 import audio.Broker;
 import photo2.Photo2;
 import photo2.PhotoDB2;
+import photo2.ThumbManager;
 import util.JsonUtil;
 import util.SpiUtil;
 import util.Web;
@@ -92,9 +93,23 @@ public class Photo2Handler {
 	}
 
 	private void handleImage(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
-		File file = photo.imagePath.toFile();
 		long reqWidth = Web.getInt(request, "width", 0);
 		long reqHeight = Web.getInt(request, "height", 0);
+
+		if(reqWidth <= 0 && reqHeight <= 0) {
+			File file = photo.imagePath.toFile();
+			long fileLen = file.length();
+			response.setContentType("image/jpeg");
+			response.setContentLengthLong(fileLen);
+			try(FileInputStream in = new FileInputStream(file)) {
+				IO.copy(in, response.getOutputStream());
+			}
+		} else {
+			photodb2.thumbManager.getScaled(photo, reqWidth, reqHeight, response);
+		}
+
+		/*File file = photo.imagePath.toFile();
+
 		boolean cached = Web.getFlagBoolean(request, "cached");
 
 		if(reqWidth <= 0 && reqHeight <= 0) {
@@ -145,11 +160,11 @@ public class Photo2Handler {
 					if(calcWidth > 4096 || calcHeight > 4096) {
 						throw new RuntimeException("image too large");
 					}
-					BufferedImage dstImage = scale(bufferedImage, (int) calcWidth, (int) calcHeight);
+					BufferedImage dstImage = ThumbManager.scale(bufferedImage, (int) calcWidth, (int) calcHeight);
 					if(cached) {
-						writeJPG(dstImage, 0.95f, cacheFile);
+						ThumbManager.writeJPG(dstImage, 0.95f, cacheFile);
 					} else {
-						writeJPG(dstImage, 0.95f, response);						
+						ThumbManager.writeJPG(dstImage, 0.95f, response);						
 					}
 				}
 				if(cached) {
@@ -167,7 +182,7 @@ public class Photo2Handler {
 				response.setContentType("text/plain;charset=utf-8");
 				response.getWriter().println("ERROR: " + e.getMessage());
 			}
-		}
+		}*/
 	}
 
 	private void handleMeta(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
@@ -178,43 +193,7 @@ public class Photo2Handler {
 		try(FileInputStream in = new FileInputStream(file)) {
 			IO.copy(in, response.getOutputStream());
 		}
-	}
-
-	private void writeJPG(BufferedImage dstImage, float quality, HttpServletResponse response) throws IOException {
-		ImageWriter jpgWriter = SpiUtil.JPEG_IMAGE_WRITER_SPI.createWriterInstance();
-		ImageWriteParam jpgWriteParam = jpgWriter.getDefaultWriteParam();
-		jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-		jpgWriteParam.setCompressionQuality(quality);
-		ImageOutputStream imageOut = SpiUtil.OUTPUT_STREAM_IMAGE_OUTPUT_STREAM.createOutputStreamInstance(response.getOutputStream());
-		jpgWriter.setOutput(imageOut);
-		jpgWriter.write(null, new IIOImage(dstImage, null, null), jpgWriteParam);		
-	}
-
-	private void writeJPG(BufferedImage dstImage, float quality, File file) throws IOException {
-		ImageWriter jpgWriter = SpiUtil.JPEG_IMAGE_WRITER_SPI.createWriterInstance();
-		ImageWriteParam jpgWriteParam = jpgWriter.getDefaultWriteParam();
-		jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-		jpgWriteParam.setCompressionQuality(quality);
-		try(ImageOutputStream imageOut = ImageIO.createImageOutputStream(file)){
-			jpgWriter.setOutput(imageOut);
-			jpgWriter.write(null, new IIOImage(dstImage, null, null), jpgWriteParam);	
-		}
-	}
-
-	public BufferedImage scale(BufferedImage src, int width, int height) {
-		/*BufferedImage dst = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = dst.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-		//g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);	
-		if(!g.drawImage(src, 0, 0, width, height, null)) {
-			log.warn("image not drawn fully");			
-		}
-		g.dispose();
-		dst.flush();*/
-		//BufferedImage dst = Scalr.resize(src, Method.SPEED, Mode.FIT_EXACT, width, height);
-		BufferedImage dst = Scalr.resize(src, Method.ULTRA_QUALITY, Mode.FIT_EXACT, width, height);
-		return dst;
-	}
+	}	
 
 	private void handleRoot(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
 		boolean writeClassifications = Web.getFlagBoolean(request, "classifications");

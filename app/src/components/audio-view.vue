@@ -14,7 +14,10 @@
         </v-list-tile>     
         <v-list-tile>
           <v-list-tile-title><a href="#/review"><v-icon>arrow_forward</v-icon>review</a></v-list-tile-title>
-        </v-list-tile>           
+        </v-list-tile>
+        <v-list-tile>
+          <v-list-tile-title><a href="../photo"><v-icon>arrow_forward</v-icon>switch to PhotoDB</a></v-list-tile-title>
+        </v-list-tile>                   
       </v-list>
     </v-menu>     
     <v-toolbar-title class="headline text-uppercase">
@@ -61,7 +64,9 @@
         </ul>
         </div>      
       </i>
-
+      <br>
+      <br>
+      <a href="../photo"><v-icon>arrow_forward</v-icon>switch to PhotoDB</a>
     </div>
   </v-content>
 

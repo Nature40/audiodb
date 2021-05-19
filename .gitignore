@@ -23,5 +23,7 @@
 /label_definitions.yaml
 /photo_cache.mv.db
 /photo_cache.trace.db
+/thumb_cache.mv.db
+/thumb_cache.trace.db
 /webcontent/app
 /webcontent/photo
