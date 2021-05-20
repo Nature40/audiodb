@@ -6,7 +6,7 @@
   No photo selected.
 </q-page>
 
-<q-page v-if="photo !== undefined" class="flex flex-center column justify-center">
+<q-page v-if="photo !== undefined" class="fit column items-center">
     <div class="col-auto">
       <q-btn :disable="!hasPrev" @click="move(-1)">prev</q-btn>
       <span class="time-text">{{dateText}}</span>
@@ -16,11 +16,13 @@
       <img :src="imageURL" style="max-width: 1024px; max-height: 768px;" ref="image"/>
       <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay"/>
     </div>
-    <div>
+    <!--<div>
       <q-btn :disable="!hasPrev" @click="$refs.tagsDialog.show()">tags</q-btn>
-    </div>
+    </div>-->
     <div>
-      <div v-for="classification in classifications" :key="JSON.stringify(classification)">{{classification}}</div>
+      <div v-for="classification in classifications" :key="JSON.stringify(classification)">
+        <span v-for="(prop, key) in classification" :key="prop"><b>{{key}}</b>: <span style="margin-right: 15px; color: #111191c4;">{{prop}}</span></span>
+      </div>
     </div>    
 </q-page>
 

@@ -40,6 +40,10 @@
       <div>
         {{photos.length}} photos
       </div>
+      <div v-if="location === ''">
+        No location selected. 
+        <br><q-icon name="info"/> Select a location!
+      </div>
     </div>
 
     <!--<table>
@@ -91,6 +95,13 @@ export default {
     project() {
       if(this.project !== undefined) {
         this.metaQuery({project: this.project});
+      }
+    },
+    locations() {
+      if(this.locations === undefined || this.locations.length === 0) {
+        this.location = '';
+      } else {
+        this.location = this.locations[0];
       }
     },
     location() {

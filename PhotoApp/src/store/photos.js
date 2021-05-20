@@ -28,14 +28,15 @@ export default {
   },
   
   actions: {
-    async query({commit, rootGetters}, params) {
+    async query({commit, rootGetters, dispatch}, params) {
       commit('setLoading')
       try {
-          var response =  await rootGetters.apiGET(['photodb2','photos'], {params});
-          commit('setData', response.data.photos);
-        } catch {
-          commit('setError', 'error');
-        }
+        var response =  await rootGetters.apiGET(['photodb2','photos'], {params});
+        commit('setData', response.data.photos);
+        dispatch('photo/setIndex', 0, { root: true })
+      } catch(e) {
+        commit('setError', 'error');
+      }
     },
   },
 }

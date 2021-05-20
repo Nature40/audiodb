@@ -29,7 +29,7 @@ No photos selected in query.
       <!--{{item}} ==> {{getRowKey(item)}} |||-->
       <template v-for="col in browserColumns">
         <!--{{photos[item + col]}}-->
-        <img class="thumb" :src="api('photodb2', 'photos', photos[item + col], 'image.jpg') + '?width=320&height=320&cached'" :key="'thumb_' + photos[item + col]" @click="setIndex(item + col);" :class="{selected: item + col === photoIndex}" :alt="photos[item + col]"/>
+        <img v-if="item + col < photos.length" class="thumb" :src="api('photodb2', 'photos', photos[item + col], 'image.jpg') + '?width=320&height=320&cached'" :key="'thumb_' + photos[item + col]" @click="setIndex(item + col);" :class="{selected: item + col === photoIndex}" :alt="photos[item + col]"/>
       </template>
     </q-item>
   </template>
