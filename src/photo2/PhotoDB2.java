@@ -265,7 +265,7 @@ public class PhotoDB2 {
 						thumbManager.submitScaled(cacheFilename, photo, reqWidth, reqHeight);					
 						//log.info("done");
 					}
-				} catch (SQLException e) {
+				} catch (Exception e) {
 					log.warn(e);
 				}
 			});			

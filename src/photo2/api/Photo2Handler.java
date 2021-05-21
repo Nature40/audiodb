@@ -1,6 +1,9 @@
 package photo2.api;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -95,8 +98,11 @@ public class Photo2Handler {
 	private void handleImage(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
 		long reqWidth = Web.getInt(request, "width", 0);
 		long reqHeight = Web.getInt(request, "height", 0);
+		double reqGamma = Web.getDouble(request, "gamma", Double.NaN);
 
-		if(reqWidth <= 0 && reqHeight <= 0) {
+		if(reqWidth == 320 && reqHeight == 320) {
+			photodb2.thumbManager.getScaled(photo, reqWidth, reqHeight, response);
+		} else if(reqWidth <= 0 && reqHeight <= 0 && (reqGamma == 1 || !Double.isFinite(reqGamma))) {
 			File file = photo.imagePath.toFile();
 			long fileLen = file.length();
 			response.setContentType("image/jpeg");
@@ -105,84 +111,60 @@ public class Photo2Handler {
 				IO.copy(in, response.getOutputStream());
 			}
 		} else {
-			photodb2.thumbManager.getScaled(photo, reqWidth, reqHeight, response);
-		}
+			BufferedImage bufferedImage = ImageIO.read(photo.imagePath.toFile());
+			if(Double.isFinite(reqGamma)) {
+				WritableRaster raster = bufferedImage.getRaster();
+				DataBufferByte dataBuffer = (DataBufferByte) raster.getDataBuffer();
+				byte[] imageBuffer = dataBuffer.getData();
+				double gammaCorrection = 1d / reqGamma;
+				byte[] lut = new byte[256];
+				for (int i = 0; i <= 255; i++) {
+					long v = Math.round(255d * Math.pow(i / 255d, gammaCorrection));
+					lut[i] =  (byte) v;
+					//log.info(i + " -> " + lut[i] + "   " + v + "   " + Byte.toUnsignedInt(lut[i]));
+				}
+				for (int i = 0; i < imageBuffer.length; i++) {
+					byte v = imageBuffer[i];
+					imageBuffer[i] = lut[((int) v) & 0xff];
+				}
 
-		/*File file = photo.imagePath.toFile();
+			}
+			if(reqWidth > 0 || reqHeight > 0 ) {
+				long imgWidth = bufferedImage.getWidth();
+				long imgHeight = bufferedImage.getHeight();
+				long calcWidth = 0;
+				long calcHeight = 0;
+				if(reqWidth > 0 && reqHeight > 0) {
+					calcWidth = (imgWidth * reqHeight) / imgHeight;
+					calcHeight = (reqWidth * imgHeight) / imgWidth;
 
-		boolean cached = Web.getFlagBoolean(request, "cached");
-
-		if(reqWidth <= 0 && reqHeight <= 0) {
-			long fileLen = file.length();
+					if(calcWidth > reqWidth) {
+						calcWidth = (imgWidth * calcHeight) / imgHeight;
+					}
+					if(calcHeight > reqHeight) {
+						calcHeight = (calcWidth * imgHeight) / imgWidth;
+					}					
+				} else if(reqWidth > 0) {
+					calcWidth = reqWidth;
+					calcHeight = (reqWidth * imgHeight) / imgWidth;
+				} else if(reqHeight > 0) {
+					calcWidth = (imgWidth * reqHeight) / imgHeight;
+					calcHeight = reqHeight;
+				}
+				if(calcWidth <= 0) {
+					calcWidth = 1;
+				}
+				if(calcHeight <= 0) {
+					calcHeight = 1;
+				}
+				if(calcWidth > 4096 || calcHeight > 4096) {
+					throw new RuntimeException("image too large");
+				}
+				bufferedImage = ThumbManager.scale(bufferedImage, (int) calcWidth, (int) calcHeight);						
+			}
 			response.setContentType("image/jpeg");
-			response.setContentLengthLong(fileLen);
-			try(FileInputStream in = new FileInputStream(file)) {
-				IO.copy(in, response.getOutputStream());
-			}
-		} else {
-			try {
-
-				String cacheFilename = photo.id + ".image.width" + reqWidth + ".height" + reqHeight + ".jpg";
-				log.info(cacheFilename);
-
-				File cacheFile = Paths.get(CACHE_PATH.toString(), cacheFilename).toFile();
-
-				if(!cached || !cacheFile.exists()) {
-
-					BufferedImage bufferedImage = ImageIO.read(file);
-					long imgWidth = bufferedImage.getWidth();
-					long imgHeight = bufferedImage.getHeight();
-					long calcWidth = 0;
-					long calcHeight = 0;
-					if(reqWidth > 0 && reqHeight > 0) {
-						calcWidth = (imgWidth * reqHeight) / imgHeight;
-						calcHeight = (reqWidth * imgHeight) / imgWidth;
-
-						if(calcWidth > reqWidth) {
-							calcWidth = (imgWidth * calcHeight) / imgHeight;
-						}
-						if(calcHeight > reqHeight) {
-							calcHeight = (calcWidth * imgHeight) / imgWidth;
-						}					
-					} else if(reqWidth > 0) {
-						calcWidth = reqWidth;
-						calcHeight = (reqWidth * imgHeight) / imgWidth;
-					} else if(reqHeight > 0) {
-						calcWidth = (imgWidth * reqHeight) / imgHeight;
-						calcHeight = reqHeight;
-					}
-					if(calcWidth <= 0) {
-						calcWidth = 1;
-					}
-					if(calcHeight <= 0) {
-						calcHeight = 1;
-					}
-					if(calcWidth > 4096 || calcHeight > 4096) {
-						throw new RuntimeException("image too large");
-					}
-					BufferedImage dstImage = ThumbManager.scale(bufferedImage, (int) calcWidth, (int) calcHeight);
-					if(cached) {
-						ThumbManager.writeJPG(dstImage, 0.95f, cacheFile);
-					} else {
-						ThumbManager.writeJPG(dstImage, 0.95f, response);						
-					}
-				}
-				if(cached) {
-					long cacheFileLen = cacheFile.length();
-					response.setContentType("image/jpeg");
-					response.setContentLengthLong(cacheFileLen);
-					try(FileInputStream in = new FileInputStream(cacheFile)) {
-						IO.copy(in, response.getOutputStream());
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-				log.error(e);
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
-				response.getWriter().println("ERROR: " + e.getMessage());
-			}
-		}*/
+			ThumbManager.writeJPG(bufferedImage, 0.95f, response);
+		}
 	}
 
 	private void handleMeta(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
@@ -230,6 +212,18 @@ public class Photo2Handler {
 				if(map.contains("bbox")) {
 					json.key("bbox");					
 					json.value(map.getList("bbox").asFloatArray());
+				}
+				if(map.contains("conf")) {
+					json.key("conf");
+					json.value(map.getString("conf"));
+				}
+				if(map.contains("uncertainty")) {
+					json.key("uncertainty");
+					json.value(map.getString("uncertainty"));
+				}
+				if(map.contains("expert_name")) {
+					json.key("expert_name");
+					json.value(map.getString("expert_name"));
 				}
 				json.endObject();
 			});

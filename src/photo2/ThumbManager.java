@@ -231,6 +231,21 @@ public class ThumbManager {
 		BufferedImage dst = Scalr.resize(src, Method.ULTRA_QUALITY, Mode.FIT_EXACT, width, height);
 		return dst;
 	}
+	
+	public static BufferedImage scaleFast(BufferedImage src, int width, int height) {
+		/*BufferedImage dst = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = dst.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		//g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);	
+		if(!g.drawImage(src, 0, 0, width, height, null)) {
+			log.warn("image not drawn fully");			
+		}
+		g.dispose();
+		dst.flush();*/
+		BufferedImage dst = Scalr.resize(src, Method.SPEED, Mode.FIT_EXACT, width, height);
+		//BufferedImage dst = Scalr.resize(src, Method.ULTRA_QUALITY, Mode.FIT_EXACT, width, height);
+		return dst;
+	}
 
 	public ThumbSqlConnector getSqlConnector() {
 		return tlsqlconnector.get();
