@@ -15,8 +15,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
-import audio.ReviewedLabel;
-import audio.ReviewedLabel.Reviewed;
+import audio.review.ReviewedLabel;
+import audio.review.ReviewedLabel.Reviewed;
 
 public class ReviewStatisticsHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();

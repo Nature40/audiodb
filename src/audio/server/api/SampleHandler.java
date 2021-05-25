@@ -25,11 +25,11 @@ import org.yaml.snakeyaml.Yaml;
 import audio.Account;
 import audio.Broker;
 import audio.Label;
-import audio.ReviewListEntry;
-import audio.ReviewedLabel;
 import audio.Sample;
 import audio.SampleUserLocked;
-import audio.ReviewedLabel.Reviewed;
+import audio.review.ReviewListEntry;
+import audio.review.ReviewedLabel;
+import audio.review.ReviewedLabel.Reviewed;
 import util.JsonUtil;
 
 public class SampleHandler {

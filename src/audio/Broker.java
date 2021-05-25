@@ -9,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
+import audio.labeling.LabelingListManager;
+import audio.review.ReviewListManager;
 import photo.PhotoDB;
 import photo2.PhotoDB2;
 import util.yaml.YamlMap;
@@ -25,6 +27,10 @@ public class Broker {
 	private ReviewListManager reviewListManager;
 	private volatile ReviewListManager reviewListManagerVolatile;
 	private Object reviewListManagerLock = new Object();
+	
+	private LabelingListManager labelingListManager;
+	private volatile LabelingListManager labelingListManagerVolatile;
+	private Object labelingListManagerLock = new Object();
 
 	private WebAuthn webAuthn;
 
@@ -130,7 +136,27 @@ public class Broker {
 		}
 	}
 
+	public LabelingListManager labelingListManager() {		
+		return labelingListManager != null ? labelingListManager : loadLabelingListManager();
+	}
 
+	private LabelingListManager loadLabelingListManager() {
+		LabelingListManager r = labelingListManagerVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (labelingListManagerLock) {
+			r = labelingListManagerVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new LabelingListManager(Paths.get("labeling_lists"));
+			r.updateLabelingLists(samples());
+			labelingListManagerVolatile = r;
+			labelingListManager = r;
+			return r;
+		}
+	}
 
 	public WebAuthn webAuthn() {
 		return webAuthn == null ? loadWebAuthn() : webAuthn;

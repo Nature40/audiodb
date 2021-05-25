@@ -1,4 +1,4 @@
-package audio;
+package audio.labeling;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,13 +9,17 @@ import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ReviewListManager {
+import audio.Label;
+import audio.Sample;
+import audio.Samples;
+
+public class LabelingListManager {
 	private static final Logger log = LogManager.getLogger();
 
-	ConcurrentSkipListMap<String, ReviewList> reviewListMap = new ConcurrentSkipListMap<>();
+	ConcurrentSkipListMap<String, LabelingList> labelingListMap = new ConcurrentSkipListMap<>();
 	private final Path root;
 
-	public ReviewListManager(Path root) {
+	public LabelingListManager(Path root) {
 		this.root = root;
 		refresh();
 	}
@@ -49,23 +53,23 @@ public class ReviewListManager {
 	}
 
 	private void load(Path path, String id) {		
-		ReviewList reviewList = ReviewList.ofFile(path);
-		reviewListMap.put(id, reviewList);
+		LabelingList labelingList = LabelingList.ofFile(path);
+		labelingListMap.put(id, labelingList);
 	}
 
-	public void forEach(BiConsumer<? super String, ? super ReviewList> action) {
-		reviewListMap.forEach(action);
+	public void forEach(BiConsumer<? super String, ? super LabelingList> action) {
+		labelingListMap.forEach(action);
 	}
 
-	public ReviewList getThrow(String id) {
-		ReviewList reviewList = reviewListMap.get(id);
-		if(reviewList == null) {
-			throw new RuntimeException("review_list not found: " + id);
+	public LabelingList getThrow(String id) {
+		LabelingList labelingList = labelingListMap.get(id);
+		if(labelingList == null) {
+			throw new RuntimeException("labeling_list not found: " + id);
 		}
-		return reviewList;
+		return labelingList;
 	}
 
-	public void updateReviewLists(Samples samples) {
+	public void updateLabelingLists(Samples samples) {
 		forEach((id, reviewList) -> {
 			reviewList.mutate(list -> {
 				list.forEachIndexedUnsync((index, e) -> {
@@ -73,19 +77,19 @@ public class ReviewListManager {
 					if(sample != null) {
 						Label label = sample.findLabel(e.label_start, e.label_end);
 						if(label != null) {
-							if(label.reviewedLabels.find(reviewedLabel -> reviewedLabel.name.equals(e.label_name)) != null) {
-								if(e.classified) {
+							if(!label.userLabels.isEmpty()) {
+								if(e.labeled) {
 									// OK
 								} else {
 									// change
-									ReviewListEntry e2 = e.withClassified(true);
+									LabelingListEntry e2 = e.withLabeled(true);
 									list.setUnsync(index, e2);
 									log.info("updated " + e2);
 								}
 							} else {
-								if(e.classified) {
+								if(e.labeled) {
 									// change
-									ReviewListEntry e2 = e.withClassified(false);
+									LabelingListEntry e2 = e.withLabeled(false);
 									list.setUnsync(index, e2);
 									log.info("updated " + e2);
 								} else {
@@ -99,7 +103,7 @@ public class ReviewListManager {
 						log.warn("sample not found " + e);
 					}					
 				});
-				list.sortUnsync(ReviewListEntry.COMPARATOR);
+				list.sortUnsync(LabelingListEntry.COMPARATOR);
 			});			
 		});		
 	}

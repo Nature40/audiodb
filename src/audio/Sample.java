@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
+import audio.review.ReviewedLabel;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;

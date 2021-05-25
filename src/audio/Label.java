@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 
+import audio.review.ReviewedLabel;
 import util.JsonUtil;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -16,7 +17,7 @@ public class Label {
 	public final double end;
 	public final String comment;
 	public final Vec<GeneratorLabel> generatorLabels;
-	public final Vec<UserLabel> userLabels;
+	public Vec<UserLabel> userLabels;
 	public final Vec<ReviewedLabel> reviewedLabels;
 	
 	public static final Comparator<Label> INTERVAL_COMPARATOR = (a,b) -> {
@@ -155,5 +156,9 @@ public class Label {
 	public String toString() {
 		return "Label [start=" + start + ", end=" + end + ", comment=" + comment + ", generatorLabels="
 				+ generatorLabels + ", userLabels=" + userLabels + ", reviewedLabels=" + reviewedLabels + "]";
+	}
+
+	public synchronized void setUserLabels(Vec<UserLabel> userLabels) {
+		this.userLabels = userLabels.copy();		
 	}
 }

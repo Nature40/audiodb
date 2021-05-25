@@ -15,7 +15,7 @@ import org.json.JSONWriter;
 
 import audio.Broker;
 import audio.GeneratorLabel;
-import audio.ReviewedLabel;
+import audio.review.ReviewedLabel;
 import util.collections.vec.Vec;
 
 public class ReviewStatisticsDetailedHandler extends AbstractHandler {

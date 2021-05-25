@@ -13,18 +13,18 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
-import audio.review.ReviewList;
+import audio.labeling.LabelingList;
 
-public class Review_listsHandler extends AbstractHandler {
+public class Labeling_listsHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
 
-	private final Review_listHandler review_listHandler;
+	private final Labeling_listHandler labeling_listHandler;
 	
 	private final Broker broker;
 
-	public Review_listsHandler(Broker broker) {
+	public Labeling_listsHandler(Broker broker) {
 		this.broker = broker;
-		review_listHandler = new Review_listHandler(broker);
+		labeling_listHandler = new Labeling_listHandler(broker);
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class Review_listsHandler extends AbstractHandler {
 				}			
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
-				review_listHandler.handle(name, next, baseRequest, response);
+				labeling_listHandler.handle(name, next, baseRequest, response);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -55,9 +55,9 @@ public class Review_listsHandler extends AbstractHandler {
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
-		json.key("review_lists");
+		json.key("labeling_lists");
 		json.array();
-		broker.reviewListManager().forEach((String id, ReviewList reviewList) -> {
+		broker.labelingListManager().forEach((String id, LabelingList labelingList) -> {
 			json.object();
 			json.key("id");
 			json.value(id);
