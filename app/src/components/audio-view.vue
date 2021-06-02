@@ -13,8 +13,11 @@
           <v-list-tile-title><a href="#/export"><v-icon>arrow_forward</v-icon>export</a></v-list-tile-title>
         </v-list-tile>     
         <v-list-tile>
-          <v-list-tile-title><a href="#/review"><v-icon>arrow_forward</v-icon>review</a></v-list-tile-title>
+          <v-list-tile-title><a href="#/review"><v-icon>arrow_forward</v-icon>review lists</a></v-list-tile-title>
         </v-list-tile>
+        <v-list-tile>
+        <v-list-tile-title><a href="#/labeling"><v-icon>arrow_forward</v-icon>labeling lists</a></v-list-tile-title>
+        </v-list-tile>        
         <v-list-tile>
           <v-list-tile-title><a href="../photo"><v-icon>arrow_forward</v-icon>switch to PhotoDB</a></v-list-tile-title>
         </v-list-tile>                   
@@ -55,7 +58,7 @@
       <br>      
       <i>
         <div style="text-align: left;">
-        Web application compatibility is tested on up-to-date <b>Mozilla Firefox</b> and <b>Google Chrome</b>.
+        Web application compatibility is tested on up-to-date <b>Mozilla Firefox</b> (and <b>Google Chrome</b>).
         <br>
         <br>
         Limitations on <b>Google Chrome</b>:

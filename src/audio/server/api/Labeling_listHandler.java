@@ -79,6 +79,8 @@ public class Labeling_listHandler {
 	private void handleRoot_POST(String review_list_id, LabelingList labelingList, Request request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		Account account = (Account) session.getAttribute("account");
+		
+		Sample[] responseSample = new Sample[] {null};
 
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
@@ -87,7 +89,7 @@ public class Labeling_listHandler {
 			JSONObject jsonAction = jsonActions.getJSONObject(i);
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
-			case "set_labeling_label": {
+			case "set_labeling": {
 				String req_sample_id = jsonAction.getString("sample_id");
 				double req_label_start = jsonAction.getDouble("label_start");					
 				double req_label_end = jsonAction.getDouble("label_end");
@@ -102,7 +104,7 @@ public class Labeling_listHandler {
 					Sample s = broker.samples().sampleMap.get(entry.sample_id);
 					if(s == null) {
 						throw new RuntimeException("sample not found: " + entry.sample_id);
-					}						
+					}
 					s.mutate(sample -> {
 						int sample_label_index = sample.findLabelIndexOf(entry.label_start, entry.label_end);
 						Label label = sample_label_index < 0 ? new Label(entry.label_start, entry.label_end) : sample.getLabel(sample_label_index);
@@ -124,7 +126,8 @@ public class Labeling_listHandler {
 							sample.addLabel(label);
 						}
 					});					
-					entries.setUnsync(labeling_index, entry.withLabeled(true));				
+					entries.setUnsync(labeling_index, entry.withLabeled(true));
+					responseSample[0] = s;
 				});
 				break;
 			}
@@ -133,13 +136,29 @@ public class Labeling_listHandler {
 			}
 		}		
 
-		sendLabeling_list(review_list_id, labelingList, response);
+		sendLabelingListAndSampleLabels(review_list_id, labelingList, responseSample[0], response);
 	}
-
-	void sendLabeling_list(String labeling_list_id, LabelingList labelingList, HttpServletResponse response) throws IOException {
+	
+	public void sendLabelingListAndSampleLabels(String labeling_list_id, LabelingList labelingList, Sample sample, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
+		writeLabeling_list(labeling_list_id, labelingList, json);
+		if(sample != null) {			
+			writeSampleLabels(sample, json);
+		}
+		json.endObject();
+	}
+
+	public void sendLabeling_list(String labeling_list_id, LabelingList labelingList, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json");
+		JSONWriter json = new JSONWriter(response.getWriter());
+		json.object();
+		writeLabeling_list(labeling_list_id, labelingList, json);
+		json.endObject();
+	}
+	
+	public void writeLabeling_list(String labeling_list_id, LabelingList labelingList, JSONWriter json) {
 		json.key("labeling_list");
 		json.object();
 		json.key("id");
@@ -160,6 +179,14 @@ public class Labeling_listHandler {
 		});
 		json.endArray();
 		json.endObject();
+	}
+	
+	public void writeSampleLabels(Sample sample, JSONWriter json) {
+		json.key("sample_labels");
+		json.object();
+		json.key("sample_id");
+		json.value(sample.id);
+		LabelsHandler.writeLabels(sample, json);
 		json.endObject();
 	}
 }

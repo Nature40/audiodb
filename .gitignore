@@ -21,6 +21,7 @@
 /config.yaml
 /keystore.jks
 /label_definitions.yaml
+/label_definitions.yaml_OLD
 /photo_cache.mv.db
 /photo_cache.trace.db
 /thumb_cache.mv.db

@@ -16,8 +16,11 @@
           <v-list-tile-title><a href="#/export"><v-icon>arrow_forward</v-icon>export</a></v-list-tile-title>
         </v-list-tile> 
         <v-list-tile>
-        <v-list-tile-title><a href="#/review"><v-icon>arrow_forward</v-icon>review</a></v-list-tile-title>
+        <v-list-tile-title><a href="#/review"><v-icon>arrow_forward</v-icon>review lists</a></v-list-tile-title>
         </v-list-tile>      
+        <v-list-tile>
+        <v-list-tile-title><a href="#/labeling"><v-icon>arrow_forward</v-icon>labeling lists</a></v-list-tile-title>
+        </v-list-tile>
       </v-list>
     </v-menu>
     <v-toolbar-title class="headline text-uppercase">

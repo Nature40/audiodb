@@ -15,6 +15,7 @@ import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.json.JSONWriter;
 
 import audio.Account;
 import audio.Broker;
@@ -88,7 +89,12 @@ public class LabelsHandler {
 
 	private void handleRoot_GET(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		sample.getLabels().sort(Label.INTERVAL_COMPARATOR);
-		JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", sample.getLabels(), Label::toJSON));		
+		//JsonUtil.write(response, json -> JsonUtil.writeArray(json, "labels", sample.getLabels(), Label::toJSON));
+		JsonUtil.write(response, json -> writeLabels(sample, json));	
+	}
+	
+	public static void writeLabels(Sample sample, JSONWriter json) {
+		JsonUtil.writeArray(json, "labels", sample.getLabels(), Label::toJSON);
 	}
 
 	private void handleRoot_POST(Sample sample, Request request, HttpServletResponse response) throws IOException {		
