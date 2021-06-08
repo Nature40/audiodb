@@ -103,7 +103,7 @@ public class LabelingListManager {
 						log.warn("sample not found " + e);
 					}					
 				});
-				list.sortUnsync(LabelingListEntry.COMPARATOR);
+				//list.sortUnsync(LabelingListEntry.COMPARATOR);
 			});			
 		});		
 	}

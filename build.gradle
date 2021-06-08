@@ -1,5 +1,5 @@
 plugins { 
-  id "com.github.ben-manes.versions" version "0.33.0" // update check task: dependencyUpdates  https://github.com/ben-manes/gradle-versions-plugin
+  id "com.github.ben-manes.versions" version "0.39.0" // update check task: dependencyUpdates  https://github.com/ben-manes/gradle-versions-plugin
 }
 
 /*
@@ -32,7 +32,7 @@ apply plugin: 'eclipse'
 compileJava.options.encoding = 'UTF-8'
 
 repositories {
-    jcenter()
+    mavenCentral()
     
     maven { // needed for compile group: 'com.github.aelstad', name: 'keccakj', version: '1.1.0'
       url 'https://repository.mulesoft.org/nexus/content/repositories/public'
@@ -40,22 +40,21 @@ repositories {
 }
 
 dependencies {
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.13.3'
-  	compile group: 'com.lmax', name: 'disruptor', version: '3.4.2'
-  	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-  	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.3'  	
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.14.1'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.14.1'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.14.1'
+  	compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j18-impl', version: '2.14.1'
+  	compile group: 'com.lmax', name: 'disruptor', version: '3.4.4'
   	
-	compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.32.v20200930'
-	compile group: 'org.eclipse.jetty', name: 'jetty-security', version: '9.4.32.v20200930'
-	compile group: 'org.eclipse.jetty.http2', name: 'http2-server', version: '9.4.32.v20200930'
-	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '9.4.32.v20200930'
-	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: '9.4.32.v20200930' // ALPN support for Java 8
+	compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '11.0.3'
+	compile group: 'org.eclipse.jetty', name: 'jetty-security', version: '11.0.3'
+	compile group: 'org.eclipse.jetty.http2', name: 'http2-server', version: '11.0.3'
+	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '11.0.3'
+	compile group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: '11.0.3' // ALPN support for Java 8
 	
-	compile group: 'org.json', name: 'json', version: '20200518'
-	compile group: 'org.yaml', name: 'snakeyaml', version: '1.27'
-	compile group: 'com.opencsv', name: 'opencsv', version: '4.6'
+	compile group: 'org.json', name: 'json', version: '20210307'
+	compile group: 'org.yaml', name: 'snakeyaml', version: '1.28'
+	compile group: 'com.opencsv', name: 'opencsv', version: '5.4'
 	
 	compile group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
 	
@@ -67,12 +66,12 @@ dependencies {
 	runtime group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.2'
 	runtime group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.2'
 	
-	compile group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.13.0.RELEASE'
+	compile group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.16.1.RELEASE'
 	
 	compile group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 	compile group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
 	
-	compile group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.15.0'
+	compile group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.16.0'
 	
 	compile group: 'com.h2database', name: 'h2', version: '1.4.200'	
 }
@@ -89,7 +88,7 @@ jar {
 		for(java.io.File file : files(configurations.runtime)) {
 			classPathFiles += "lib/"+file.getName()+" "; 
 		}
-		println("the class path: "+classPathFiles);	
+		//println("the class path: "+classPathFiles);	
 	
         attributes 	'Built-Date': new Date(),
 					'Built-JDK': System.getProperty('java.version'),

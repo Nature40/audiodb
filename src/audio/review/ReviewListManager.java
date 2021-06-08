@@ -103,7 +103,7 @@ public class ReviewListManager {
 						log.warn("sample not found " + e);
 					}					
 				});
-				list.sortUnsync(ReviewListEntry.COMPARATOR);
+				//list.sortUnsync(ReviewListEntry.COMPARATOR);
 			});			
 		});		
 	}

@@ -7,10 +7,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.StreamSupport;
 
-import javax.servlet.ServletException;
-import javax.servlet.SessionCookieConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.SessionCookieConfig;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -95,7 +95,7 @@ public class Webserver {
 		ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
 		alpn.setDefaultProtocol("h2");
 
-		SslContextFactory sslContextFactory = new SslContextFactory.Server();
+		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 		sslContextFactory.setKeyStorePath(keystore_path);
 		sslContextFactory.setKeyStorePassword(keystore_password);
 		sslContextFactory.setCipherComparator(HTTP2Cipher.COMPARATOR);

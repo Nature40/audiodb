@@ -128,8 +128,7 @@ public class WebAuthn {
 		ServerProperty serverProperty = new ServerProperty(origin, rpId, challenge, tokenBindingId);
 		boolean userVerificationRequired = true;
 		boolean userPresenceRequired = true;
-		List<String> expectedExtensionIds = Collections.emptyList();
-		return new AuthenticationParameters(serverProperty, authenticator, userVerificationRequired, userPresenceRequired, expectedExtensionIds);
+		return new AuthenticationParameters(serverProperty, authenticator, userVerificationRequired, userPresenceRequired);
 	}
 
 	public AuthenticationData validateAuthention(JSONObject jsonReq, AuthenticationRequest authenticationRequest, AuthenticationParameters authenticationParameters) throws JSONException, IOException {

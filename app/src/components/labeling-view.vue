@@ -266,7 +266,7 @@ computed: {
     if(this.labeling_list === undefined) {
       return NaN;
     }
-    return this.labeling_list.entries.reduce((acc, entry) => entry.classified ? acc + 1 : acc, 0);
+    return this.labeling_list.entries.reduce((acc, entry) => entry.labeled ? acc + 1 : acc, 0);
   },
   audioCurrentTimePos() {
     if(this.audioCurrentTime === undefined || this.label === undefined) {
@@ -489,7 +489,7 @@ methods: {
       if(this.skip_labeled_entries) {
         while(this.labeling_list_pos > -1) {
           this.labeling_list_pos--;
-          if(this.labeling_list_pos > -1 && !this.labeling_list.entries[this.labeling_list_pos].classified) {
+          if(this.labeling_list_pos > -1 && !this.labeling_list.entries[this.labeling_list_pos].labeled) {
             break;
           }
         }
@@ -505,7 +505,7 @@ methods: {
       if(this.skip_labeled_entries) {
         while(this.labeling_list_pos < this.labeling_list.entries.length) {
           this.labeling_list_pos++;
-          if(this.labeling_list_pos < this.labeling_list.entries.length && !this.labeling_list.entries[this.labeling_list_pos].classified) {
+          if(this.labeling_list_pos < this.labeling_list.entries.length && !this.labeling_list.entries[this.labeling_list_pos].labeled) {
             break;
           }
         }
