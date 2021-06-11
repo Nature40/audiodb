@@ -788,6 +788,18 @@ public class Vec<T> implements List<T> {
 		}		
 		return null;
 	}
+	
+	public T findLast(Predicate<? super T> predicate) {
+		int len = size;
+		T[] data = items;
+		for(int i  = len - 1; i >= 0; i--) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return e;
+			}
+		}		
+		return null;
+	}
 
 	@Override
 	public T set(int index, T e) {

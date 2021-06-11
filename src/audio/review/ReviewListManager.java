@@ -41,7 +41,7 @@ public class ReviewListManager {
 				if(sub.getFileName().toString().endsWith(".yaml")) {
 					String id =  prefix + (prefix.isEmpty()? "" : "__") + sub.getFileName().toString().replaceAll(".yaml", "");
 					try {
-					load(sub, id);
+						load(sub, id);
 					} catch(Exception e) {
 						log.warn("Error loading " + sub);
 					}
@@ -77,19 +77,27 @@ public class ReviewListManager {
 					if(sample != null) {
 						Label label = sample.findLabel(e.label_start, e.label_end);
 						if(label != null) {
-							if(label.reviewedLabels.find(reviewedLabel -> reviewedLabel.name.equals(e.label_name)) != null) {
+							ReviewedLabel reviewedLabel = label.reviewedLabels.findLast(rl -> rl.name.equals(e.label_name));
+							if(reviewedLabel != null) {
 								if(e.classified) {
-									// OK
+									if(reviewedLabel.reviewed == e.latest_review) {
+										// OK
+									} else {
+										// change
+										ReviewListEntry e2 = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
+										list.setUnsync(index, e2);
+										log.info("updated " + e2);
+									}
 								} else {
 									// change
-									ReviewListEntry e2 = e.withClassified(true);
+									ReviewListEntry e2 = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
 									list.setUnsync(index, e2);
 									log.info("updated " + e2);
 								}
 							} else {
 								if(e.classified) {
 									// change
-									ReviewListEntry e2 = e.withClassified(false);
+									ReviewListEntry e2 = e.withClassifiedAndReviewed(false, null);
 									list.setUnsync(index, e2);
 									log.info("updated " + e2);
 								} else {
@@ -101,6 +109,10 @@ public class ReviewListManager {
 						}
 					} else {
 						log.warn("sample not found " + e);
+						// change
+						ReviewListEntry e2 = e.withMissingSample(true);
+						list.setUnsync(index, e2);
+						log.info("updated " + e2);
 					}					
 				});
 				//list.sortUnsync(ReviewListEntry.COMPARATOR);

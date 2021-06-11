@@ -4,7 +4,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.function.Predicate;
 
+import audio.review.ReviewedLabel.Reviewed;
 import util.yaml.YamlMap;
+import util.yaml.YamlUtil;
 
 public class ReviewListEntry {
 	
@@ -13,6 +15,8 @@ public class ReviewListEntry {
 	public final double label_end;
 	public final String label_name;
 	public final boolean classified;
+	public final Reviewed latest_review; // nullable
+	public final boolean missing_sample;
 	
 	public static final Comparator<ReviewListEntry> COMPARATOR = (a,b) -> {
 		int c = a.sample_id.compareTo(b.sample_id);
@@ -27,23 +31,37 @@ public class ReviewListEntry {
 		if(c != 0) {
 			return c;
 		}
-		return Boolean.compare(a.classified, b.classified);
+		c = Boolean.compare(a.classified, b.classified);
+		if(c != 0) {
+			return c;
+		}
+		if(a.latest_review == null) {
+			return b.latest_review == null ? 0 : 1;
+		} else {
+			return b.latest_review == null ? -1 : a.latest_review.compareTo(b.latest_review);
+		}
 	};
 	
 	public static Predicate<ReviewListEntry> getKeyFunc(String sample_id, String label_name, double label_start, double label_end) {
 		return e -> e.sample_id.equals(sample_id) && e.label_name.equals(label_name) && e.isInterval(label_start, label_end);
 	}
 	
-	public ReviewListEntry(String sample_id, double label_start, double label_end, String label_name, boolean classified) {
+	public ReviewListEntry(String sample_id, double label_start, double label_end, String label_name, boolean classified, Reviewed latest_review, boolean missing_sample) {
 		this.sample_id = sample_id;
 		this.label_start = label_start;
 		this.label_end = label_end;
 		this.label_name = label_name;
 		this.classified = classified;
+		this.latest_review = latest_review;
+		this.missing_sample = missing_sample;
 	}
 	
-	public ReviewListEntry withClassified(boolean classified) {
-		return new ReviewListEntry(sample_id, label_start, label_end, label_name, classified);
+	public ReviewListEntry withClassifiedAndReviewed(boolean classified, Reviewed latest_review) {
+		return new ReviewListEntry(sample_id, label_start, label_end, label_name, classified, latest_review, missing_sample);
+	}
+	
+	public ReviewListEntry withMissingSample(boolean missing_sample) {
+		return new ReviewListEntry(sample_id, label_start, label_end, label_name, classified, latest_review, missing_sample);
 	}
 	
 	public LinkedHashMap<String, Object> toMap() {
@@ -55,6 +73,9 @@ public class ReviewListEntry {
 		if(classified) {
 			map.put("classified", true);	
 		}
+		if(latest_review != null) {
+			YamlUtil.put(map, "latest_review", latest_review.toString());
+		}
 		return map;
 	}
 
@@ -64,7 +85,9 @@ public class ReviewListEntry {
 		double end = yamlMap.contains("label_end") ? yamlMap.getDouble("label_end") : yamlMap.getDouble("sample_end"); // check for old version names sample_end
 		String label_name = yamlMap.getString("label_name");
 		boolean classified = yamlMap.optBoolean("classified", false);
-		return new ReviewListEntry(sample_id, start, end, label_name, classified);
+		Reviewed latest_review = yamlMap.opt("latest_review", Reviewed::parse);
+		boolean missing_sample = false;
+		return new ReviewListEntry(sample_id, start, end, label_name, classified, latest_review, missing_sample);
 	}
 	
 	public boolean isInterval(double start, double end) {
@@ -73,7 +96,8 @@ public class ReviewListEntry {
 
 	@Override
 	public String toString() {
-		return "ReviewListEntry [" + sample_id + ", " + label_start + " - " + label_end
-				+ ", " + label_name + ", " + classified + "]";
+		return "ReviewListEntry [sample_id=" + sample_id + ", label_start=" + label_start + ", label_end=" + label_end
+				+ ", label_name=" + label_name + ", classified=" + classified + ", latest_review=" + latest_review
+				+ "]";
 	}
 }

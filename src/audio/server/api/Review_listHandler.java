@@ -119,7 +119,7 @@ public class Review_listHandler {
 							sample.addLabel(label);
 						}
 					});					
-					entries.setUnsync(label_index, entry.withClassified(true));				
+					entries.setUnsync(label_index, entry.withClassifiedAndReviewed(true, reviewed));				
 				});
 				break;
 			}
@@ -142,7 +142,7 @@ public class Review_listHandler {
 		json.key("entries");
 		json.array();
 		reviewList.forEach((ReviewListEntry entry) -> {
-			if(!reviewedOnly || entry.classified) {
+			if((!entry.missing_sample) && (!reviewedOnly || entry.classified)) {
 				json.object();
 				json.key("sample_id");
 				json.value(entry.sample_id);
@@ -153,7 +153,11 @@ public class Review_listHandler {
 				json.key("label_name");
 				json.value(entry.label_name);
 				json.key("classified");
-				json.value(entry.classified);			
+				json.value(entry.classified);
+				if(entry.latest_review != null) {
+					json.key("latest_review");
+					json.value(entry.latest_review.toString());
+				}
 				json.endObject();
 			}
 		});

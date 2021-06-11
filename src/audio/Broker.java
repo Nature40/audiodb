@@ -39,6 +39,10 @@ public class Broker {
 	private PhotoDB2 photodb2;
 	private volatile PhotoDB2 photodb2Volatile;
 	private Object photodb2Lock = new Object();
+	
+	private SampleManager sampleManager;
+	private volatile SampleManager sampleManagerVolatile;
+	private Object sampleManagerLock = new Object();
 
 	public Broker() {
 		//samples(); // preload sample metadata
@@ -197,6 +201,27 @@ public class Broker {
 			r = new PhotoDB2(this);
 			photodb2Volatile = r;
 			photodb2 = r;
+			return r;
+		}
+	}
+	
+	public SampleManager sampleManager() {		
+		return sampleManager != null ? sampleManager : loadSampleManager();
+	}
+
+	private SampleManager loadSampleManager() {
+		SampleManager r = sampleManagerVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (sampleManagerLock) {
+			r = sampleManagerVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new SampleManager(this);
+			sampleManagerVolatile = r;
+			sampleManager = r;
 			return r;
 		}
 	}

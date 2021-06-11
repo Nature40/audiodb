@@ -24,10 +24,12 @@
       <v-select v-model="selected_review_list" :items="review_lists" label="Review list" solo item-text="id">
         <template v-slot:item="props">
           <span  style="white-space: nowrap;">
-            <span v-show="review_open_counts[props.item.id] !== undefined">{{props.item.id}}, {{review_open_counts[props.item.id]}} left </span>
-            <span v-show="review_open_counts[props.item.id] === undefined" style="color: grey;">{{props.item.id}} </span>
+            <span v-show="review_list_open_counts[props.item.id] !== undefined">{{props.item.id}}, {{review_list_open_counts[props.item.id]}} <span v-show="review_list_unsure_counts[props.item.id] !== undefined"> ({{(review_list_open_counts[props.item.id] + review_list_unsure_counts[props.item.id])}})</span> left </span>
+            <span v-show="review_list_open_counts[props.item.id] === undefined" style="color: grey;">{{props.item.id}} </span>
             <span v-if="review_yes_counts[props.item.id] !== undefined" :class="{'confirmed-low': review_yes_counts[props.item.id] < 50, 'confirmed-done': review_yes_counts[props.item.id] >= 50}"> ({{review_yes_counts[props.item.id]}} confirmed)</span>
             <span v-else class="confirmed-low"> (no confirmed)</span>
+            <span v-if="review_unsure_counts[props.item.id] !== undefined"> ({{review_unsure_counts[props.item.id]}} unsure)</span>
+            <span v-if="review_no_counts[props.item.id] !== undefined"> ({{review_no_counts[props.item.id]}} disapproved)</span>
           </span>
         </template>
       </v-select>
@@ -65,16 +67,20 @@
           <v-btn @click="moveNextReviewListEntry"><v-icon>fast_forward</v-icon></v-btn>
           [Arrow Right]
         </span>
-        <span style="grid-row-start: 1; grid-column-start: 4; margin-left: 50px; margin-top: 0px;">
+        <span style="grid-row-start: 1; grid-column-start: 4; margin-left: 50px; margin-top: 10px;">
           <v-switch
                 v-model="skip_review_entries"
-                label="show unreviewed entries only"
+                label="unreviewed only"
                 color="success"
                 hide-details
                 height="1"
                 style="margin-top: 0px;"
                 v-if="!isReviewedOnly"
           ></v-switch> 
+          <v-checkbox v-show="skip_review_entries"
+            v-model="skip_not_review_unsure_entries"
+            label="including unsure"
+          ></v-checkbox>
         </span>         
         <span style="grid-row-start: 1; grid-column-start: 5; margin-left: 50px; background: #f8fff4; color: #499d2a;">
           Reviewed {{reviewedCount}} <span v-if="!isReviewedOnly">of {{review_list === undefined ? NaN : review_list.entries.length}}</span>
@@ -189,6 +195,7 @@ data () {
     review_list_message: 'init',
     review_list_pos: undefined,
     skip_review_entries: true,
+    skip_not_review_unsure_entries: true,
     postReviewMessage: 'init',
     postReviewSending: false,
     postReviewError: false,
@@ -287,12 +294,30 @@ computed: {
     }
     return this.review_statistics.reviewed_yes_counts;
   },
-  review_open_counts() {
+  review_unsure_counts() {
     if(this.review_statistics === undefined) {
       return {};
     }
-    return this.review_statistics.open_counts;
-  },  
+    return this.review_statistics.reviewed_unsure_counts;
+  },
+  review_no_counts() {
+    if(this.review_statistics === undefined) {
+      return {};
+    }
+    return this.review_statistics.reviewed_no_counts;
+  },
+  review_list_open_counts() {
+    if(this.review_statistics === undefined) {
+      return {};
+    }
+    return this.review_statistics.review_list_open_counts;
+  },
+  review_list_unsure_counts() {
+    if(this.review_statistics === undefined) {
+      return {};
+    }
+    return this.review_statistics.review_list_unsure_counts;
+  },     
 },
 watch: {
   isReviewedOnly: {
@@ -486,12 +511,21 @@ methods: {
   movePrevReviewListEntry() {
     if(this.review_list !== undefined) {
       if(this.skip_review_entries) {
-        while(this.review_list_pos > -1) {
-          this.review_list_pos--;
-          if(this.review_list_pos > -1 && !this.review_list.entries[this.review_list_pos].classified) {
-            break;
+        if(this.skip_not_review_unsure_entries) {
+          while(this.review_list_pos > -1) {
+            this.review_list_pos--;
+            if(this.review_list_pos > -1 && ((!this.review_list.entries[this.review_list_pos].classified) || (this.review_list.entries[this.review_list_pos].latest_review === 'unsure'))) {
+              break;
+            }
           }
-        }
+        } else {
+          while(this.review_list_pos > -1) {
+            this.review_list_pos--;
+            if(this.review_list_pos > -1 && (!this.review_list.entries[this.review_list_pos].classified)) {
+              break;
+            }
+            }
+          }
       } else {
         if(this.review_list_pos > -1) {
           this.review_list_pos--;
@@ -502,11 +536,20 @@ methods: {
   moveNextReviewListEntry() {
     if(this.review_list !== undefined) {
       if(this.skip_review_entries) {
-        while(this.review_list_pos < this.review_list.entries.length) {
-          this.review_list_pos++;
-          if(this.review_list_pos < this.review_list.entries.length && !this.review_list.entries[this.review_list_pos].classified) {
-            break;
+        if(this.skip_not_review_unsure_entries) {
+          while(this.review_list_pos < this.review_list.entries.length) {
+            this.review_list_pos++;
+            if(this.review_list_pos < this.review_list.entries.length && ((!this.review_list.entries[this.review_list_pos].classified) || (this.review_list.entries[this.review_list_pos].latest_review === 'unsure'))) {
+              break;
+            }
           }
+        } else {
+          while(this.review_list_pos < this.review_list.entries.length) {
+            this.review_list_pos++;
+            if(this.review_list_pos < this.review_list.entries.length && !this.review_list.entries[this.review_list_pos].classified) {
+              break;
+            }
+          }          
         }
       } else {
         if(this.review_list_pos < this.review_list.entries.length) {

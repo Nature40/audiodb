@@ -47,7 +47,6 @@ public class Samples {
 		} catch (IOException e) {
 			log.warn(e);
 		}
-
 	}
 
 	public Sample getThrow(String id) {

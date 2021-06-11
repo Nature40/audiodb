@@ -319,6 +319,14 @@ public class YamlMap {
 		String s = getString(name);
 		return converter.apply(s);
 	}
+	
+	public <T> T opt(String name, Function<String, T> converter) {
+		String s = optString(name);
+		if(s == null) {
+			return null;
+		}
+		return converter.apply(s);
+	}
 
 	public LocalDateTime getLocalDateTime(String name) {
 		Date date = (Date) getObject(name);
