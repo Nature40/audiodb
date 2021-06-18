@@ -12,7 +12,7 @@ Vue.use(Router)
 
 export default new Router({
   routes: [
-    { path: '/audio', component: audioView },
+    { path: '/audio', component: audioView , props: (route) => ({ routerSample: route.query.sample })},
     { path: '/account', component: accountView },
     { path: '/export', component: exportView },
     //{ path: '/classification', component: classificationView },

@@ -27,10 +27,10 @@
       Audio
     </v-toolbar-title>
     <span v-if="!isReviewedOnly">
-    <audio-browser :selected-sample="selectedSample" @select-sample="selectedSample = $event"/> 
-    <v-btn icon v-show="samplesPrevious(selectedSample) !== undefined" title="select previous audio sample" @click="selectedSample = samplesPrevious(selectedSample)"><v-icon>skip_previous</v-icon></v-btn>
+    <audio-browser :selected-sample="selectedSample" @select-sample="selectedSample = $event; updateRoute();"/> 
+    <v-btn icon v-show="samplesPrevious(selectedSample) !== undefined" title="select previous audio sample" @click="selectedSample = samplesPrevious(selectedSample); updateRoute();"><v-icon>skip_previous</v-icon></v-btn>
     <span v-if="selectedSample !== undefined" style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample"><b><v-icon>place</v-icon> {{selectedSample.location}} </b> <span><v-icon>date_range</v-icon> {{toDate(selectedSample.datetime)}} </span> <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(selectedSample.datetime)}}</span></span>
-    <v-btn icon v-show="samplesNext(selectedSample) !== undefined" title="select next audio sample" @click="selectedSample = samplesNext(selectedSample)"><v-icon>skip_next</v-icon></v-btn>
+    <v-btn icon v-show="samplesNext(selectedSample) !== undefined" title="select next audio sample" @click="selectedSample = samplesNext(selectedSample); updateRoute();"><v-icon>skip_next</v-icon></v-btn>
     </span>
     <span v-if="isReadOnly" style="color: #e11111; padding-left: 10px;">readOnly</span>
     <span v-if="isReviewedOnly" style="color: #e11111; padding-left: 10px;">reviewedOnly</span>
@@ -108,6 +108,7 @@ components: {
   identityDialog,
   audioBrowser
 },
+props: ['routerSample'],
 data () {
   return {
     selectedSample: undefined,
@@ -117,10 +118,12 @@ computed: {
   ...mapState({
     apiBase: state => state.apiBase,
     identity: state => state.identity.data,
+    samples: state => state.samples.data,
   }),
   ...mapGetters({
     samplesPrevious: 'samples/previous',
     samplesNext: 'samples/next',
+    findById: 'samples/findById',
     isReadOnly: 'identity/isReadOnly',       
     isReviewedOnly: 'identity/isReviewedOnly', 
   }),    
@@ -140,7 +143,34 @@ methods: {
     const minute = date.getMinutes().toString().padStart(2,'0');
     const second = date.getSeconds().toString().padStart(2,'0');
     return `${hour}:${minute}:${second}`;
+  },
+  moveToRoute() {
+    if(this.routerSample !== undefined && this.samples.length > 0 && (this.selectedSample === undefined || this.selectedSample.id !== this.routerSample)) {
+      console.log("move to route " + this.routerSample);
+      this.selectedSample = this.findById(this.routerSample);
+      this.updateRoute();
+    }
+  },
+  updateRoute() {
+    this.$nextTick(() => {
+      if(this.selectedSample === undefined) {
+        this.$router.push({ path: 'audio' })
+      } else {
+        this.$router.push({ path: 'audio', query: { sample: this.selectedSample.id } })      
+      }
+    });
   },  
+},
+watch: {
+  routerSample: {
+    immediate: true,
+    handler() {
+      this.moveToRoute();
+    },
+  },
+  samples() {
+    this.moveToRoute();
+  },
 },
 mounted() {
   this.identityInit();

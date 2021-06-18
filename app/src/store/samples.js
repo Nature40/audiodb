@@ -37,6 +37,9 @@ getters: {
     }
     return state.data[index + 1];
   },
+  findById: state => id => {
+    return state.data.find(s => s.id === id);
+  },
 },
 mutations: {
   setLoading(state) {

@@ -14,11 +14,14 @@
         </v-list-tile> 
         <v-list-tile>
           <v-list-tile-title><a href="#/export"><v-icon>arrow_forward</v-icon>export</a></v-list-tile-title>
-        </v-list-tile>               
+        </v-list-tile>
+        <v-list-tile>
+          <v-list-tile-title><a href="#/review"><v-icon>arrow_forward</v-icon>review lists</a></v-list-tile-title>
+        </v-list-tile>                       
       </v-list>
     </v-menu> 
     <v-toolbar-title class="headline text-uppercase">
-      <span style="color: red;">(! Work in progress !)</span> Labeling list:  
+      Labeling list:  
     </v-toolbar-title> 
     <div style="margin-left: 10px;" v-if="labeling_lists_message === undefined">
       <v-select v-model="selected_labeling_list" :items="labeling_lists" label="Labeling list" solo item-text="id">
@@ -122,7 +125,7 @@
           </multiselect>
         </div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
-        <div><review-special-dialog @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
+        <div><review-special-dialog  :sampleId="labeling_list_entry_sample_id" @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
         <div>[Esc]</div>
         <div>[Tab]</div>
         <div></div>

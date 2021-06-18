@@ -14,7 +14,10 @@
         </v-list-tile> 
         <v-list-tile>
           <v-list-tile-title><a href="#/export"><v-icon>arrow_forward</v-icon>export</a></v-list-tile-title>
-        </v-list-tile>               
+        </v-list-tile>
+        <v-list-tile>
+        <v-list-tile-title><a href="#/labeling"><v-icon>arrow_forward</v-icon>labeling lists</a></v-list-tile-title>
+        </v-list-tile>                        
       </v-list>
     </v-menu> 
     <v-toolbar-title class="headline text-uppercase">
@@ -34,7 +37,6 @@
         </template>
       </v-select>
     </div>
-    <div v-if="review_list !== undefined && reviewedCount < review_list.entries.length">some entries left</div>
     <div v-if="review_list !== undefined && reviewedCount === review_list.entries.length && !isReviewedOnly">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="review_lists_message !== undefined">{{review_lists_message}}</div>
     <span v-if="isReadOnly" style="color: #e11111; padding-left: 10px;">readOnly</span>
@@ -84,7 +86,35 @@
         </span>         
         <span style="grid-row-start: 1; grid-column-start: 5; margin-left: 50px; background: #f8fff4; color: #499d2a;">
           Reviewed {{reviewedCount}} <span v-if="!isReviewedOnly">of {{review_list === undefined ? NaN : review_list.entries.length}}</span>
-        </span>        
+        </span>
+
+
+
+        <span :class="{hidden: review_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 6;">
+          <v-menu 
+            transition="scale-transition" 
+            :close-on-content-click="false" 
+            ref="jumpMenu"
+          >
+            <template v-slot:activator="{on}">
+              <v-btn v-on="on" title="Move to specific position in the entry list. If specified position is not selectable, next valid position is targeted.">Jump to <v-icon style="padding-left: 5px;">arrow_right_alt</v-icon></v-btn>
+            </template>
+            <v-list>
+                <v-text-field
+                  v-model="jumpText" 
+                  :append-outer-icon="jumpTextValid ? 'arrow_right_alt' : ''"
+                  box
+                  label="Jump to entry number"
+                  type="text"
+                  @click:append-outer="onJump"
+                                @keydown.stop=""
+              @keyup.stop=""
+              @keypress.stop="" 
+              @keypress.enter="onJump"
+                />
+            </v-list>        
+          </v-menu>
+        </span>                
       </div>
 
       <div>
@@ -120,7 +150,7 @@
         <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow" :disabled="isReadOnly"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
         <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green" :disabled="isReadOnly"><v-icon dark>done</v-icon> YES</v-btn></div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
-        <div><review-special-dialog @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
+        <div><review-special-dialog :sampleId="review_list_entry_sample_id" @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
         <div>[Esc]</div>
         <div>[Enter]</div>
         <div>[Space]</div>
@@ -201,6 +231,7 @@ data () {
     postReviewError: false,
     audioCurrentTime: undefined,
     audioColumnsPerSecond: undefined,
+    jumpText: undefined,
   }
 },
 computed: {
@@ -317,7 +348,16 @@ computed: {
       return {};
     }
     return this.review_statistics.review_list_unsure_counts;
-  },     
+  },
+  jumpTextValid() {
+    return this.jumpText !== undefined 
+      && this.jumpText !== null 
+      && this.jumpText.length !== 0 
+      && this.jumpText == Number.parseInt(this.jumpText)
+      && this.review_list !== undefined 
+      && Number.parseInt(this.jumpText) > 0
+      && Number.parseInt(this.jumpText) <= this.review_list.entries.length;
+  }     
 },
 watch: {
   isReviewedOnly: {
@@ -558,6 +598,33 @@ methods: {
       }
     }    
   },
+  jumpToReviewListEntry(targetIndex) {
+    if(this.review_list !== undefined) {
+      if(this.skip_review_entries) {
+        if(this.skip_not_review_unsure_entries) {
+          while(targetIndex <= this.review_list.entries.length) {
+            if(targetIndex < this.review_list.entries.length && ((!this.review_list.entries[targetIndex].classified) || (this.review_list.entries[targetIndex].latest_review === 'unsure'))) {
+              break;
+            }
+            targetIndex++;
+          }
+          this.review_list_pos = targetIndex;
+        } else {
+          while(targetIndex <= this.review_list.entries.length) {
+            if(targetIndex < this.review_list.entries.length && !this.review_list.entries[targetIndex].classified) {
+              break;
+            }
+            targetIndex++;
+          }
+          this.review_list_pos = targetIndex;          
+        }
+      } else {
+        if(targetIndex <= this.review_list.entries.length) {
+          this.review_list_pos = targetIndex;
+        }
+      }
+    }    
+  },
   toDate(date) {
     const year = yearFormat.format(date);
     const month = monthFormat.format(date);
@@ -626,7 +693,14 @@ methods: {
     .catch(() => {
       this.labels = undefined;
     });
-  }        
+  },
+  onJump() {
+    if(this.jumpTextValid) {
+      var targetIndex = Number.parseInt(this.jumpText) - 1;
+      this.jumpToReviewListEntry(targetIndex);
+      this.$refs.jumpMenu.save();
+    }
+  },        
 },
 mounted() {
   this.animationFrameCallback = this.animationFrame.bind(this);

@@ -72,34 +72,41 @@ public class ReviewListManager {
 	public void updateReviewLists(Samples samples) {
 		forEach((id, reviewList) -> {
 			reviewList.mutate(list -> {
+				int[] sampleNotFoundCount = new int[] {0};
 				list.forEachIndexedUnsync((index, e) -> {
 					Sample sample = samples.getSample(e.sample_id);
 					if(sample != null) {
+						if(e.missing_sample) {
+							e = e.withMissingSample(false);
+							list.setUnsync(index, e);
+							log.info("updated " + e);
+						}
 						Label label = sample.findLabel(e.label_start, e.label_end);
 						if(label != null) {
-							ReviewedLabel reviewedLabel = label.reviewedLabels.findLast(rl -> rl.name.equals(e.label_name));
+							ReviewListEntry e1 = e;
+							ReviewedLabel reviewedLabel = label.reviewedLabels.findLast(rl -> rl.name.equals(e1.label_name));
 							if(reviewedLabel != null) {
 								if(e.classified) {
 									if(reviewedLabel.reviewed == e.latest_review) {
 										// OK
 									} else {
 										// change
-										ReviewListEntry e2 = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
-										list.setUnsync(index, e2);
-										log.info("updated " + e2);
+										e = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
+										list.setUnsync(index, e);
+										log.info("updated " + e);
 									}
 								} else {
 									// change
-									ReviewListEntry e2 = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
-									list.setUnsync(index, e2);
-									log.info("updated " + e2);
+									e = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
+									list.setUnsync(index, e);
+									log.info("updated " + e);
 								}
 							} else {
 								if(e.classified) {
 									// change
-									ReviewListEntry e2 = e.withClassifiedAndReviewed(false, null);
-									list.setUnsync(index, e2);
-									log.info("updated " + e2);
+									e = e.withClassifiedAndReviewed(false, null);
+									list.setUnsync(index, e);
+									log.info("updated " + e);
 								} else {
 									// OK
 								}
@@ -108,14 +115,24 @@ public class ReviewListManager {
 							log.warn("label not found" + e);
 						}
 					} else {
-						log.warn("sample not found " + e);
+						sampleNotFoundCount[0]++;
+						if(sampleNotFoundCount[0] <= 3) {
+							log.warn("sample not found " + e);
+						}
 						// change
-						ReviewListEntry e2 = e.withMissingSample(true);
-						list.setUnsync(index, e2);
-						log.info("updated " + e2);
+						if(!e.missing_sample) {
+							e = e.withMissingSample(true);
+							list.setUnsync(index, e);
+							if(sampleNotFoundCount[0] <= 3) {
+								log.info("updated " + e);
+							}
+						}
 					}					
 				});
 				//list.sortUnsync(ReviewListEntry.COMPARATOR);
+				if(sampleNotFoundCount[0] > 0) {
+					log.info(sampleNotFoundCount[0] + " samples not found for " + id);
+				}
 			});			
 		});		
 	}
