@@ -25,7 +25,7 @@
           <v-slider
             v-model="user_threshold"
             :min="0"
-            :max="20"
+            :max="21"
             :step="0.1"            
           ></v-slider>
         </v-flex>
@@ -89,6 +89,42 @@
         </v-flex>
       </v-layout>
 
+      <v-divider></v-divider>
+
+      <v-layout row>
+        <b><v-checkbox v-model="user_overwriteSamplingRate" label="Overwrite sampling rate" hide-details /></b>
+      </v-layout>
+
+      <v-layout row v-show="user_overwriteSamplingRate">
+        <v-flex shrink style="width: 100px">
+          low bandwidth
+        </v-flex>
+
+        <v-flex shrink style="width: 200px">
+          <v-slider
+            v-model="user_samplingRate"
+            :min="4000"
+            :max="312500"
+            :step="1"            
+          ></v-slider>
+        </v-flex>
+
+        <v-flex shrink style="width: 100px">
+          high bandwidth
+        </v-flex>
+
+        <v-flex shrink style="width: 100px">
+          <v-text-field
+            v-model="user_samplingRate"
+            class="mt-0"
+            hide-details
+            single-line
+            type="number"
+          ></v-text-field>
+        </v-flex>
+
+      </v-layout>      
+
     </v-card-text>
 
 
@@ -119,6 +155,8 @@ data: () => ({
   user_threshold: undefined,
   user_playbackRate: undefined,
   user_preservesPitch: true,
+  user_overwriteSamplingRate: false,
+  user_samplingRate: undefined,
 }),
 computed: {
   ...mapState({
@@ -127,6 +165,8 @@ computed: {
     threshold_default: state => state.settings.player_spectrum_threshold_default,
     playbackRate: state => state.settings.player_playbackRate,
     preservesPitch: state => state.settings.player_preservesPitch,
+    overwriteSamplingRate: state => state.settings.player_overwriteSamplingRate,
+    samplingRate: state => state.settings.player_samplingRate,
   }),
 },  
 methods: {
@@ -135,6 +175,8 @@ methods: {
     settings.player_spectrum_threshold = this.user_threshold;
     settings.player_playbackRate = this.user_playbackRate;
     settings.player_preservesPitch = this.user_preservesPitch;
+    settings.player_overwriteSamplingRate = this.user_overwriteSamplingRate;
+    settings.player_samplingRate = this.user_samplingRate;
     this.$store.commit('settings/set', settings);
     this.dialog = false;
   }
@@ -159,6 +201,18 @@ watch: {
     immediate: true,
     handler() {
       this.user_preservesPitch = this.preservesPitch;
+    }
+  },
+  overwriteSamplingRate: {
+    immediate: true,
+    handler() {
+      this.user_overwriteSamplingRate = this.overwriteSamplingRate;
+    }
+  },
+  samplingRate: {
+    immediate: true,
+    handler() {
+      this.user_samplingRate = this.samplingRate;
     }
   },
   dialog() {

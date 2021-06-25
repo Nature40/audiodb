@@ -15,6 +15,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Account;
+import audio.AudioProjectConfig;
 import audio.Broker;
 
 public class IdentityHandler extends AbstractHandler {
@@ -43,6 +44,20 @@ public class IdentityHandler extends AbstractHandler {
 		json.value(account.username);
 		json.key("roles");
 		json.value(roleNames);
-		json.endObject();
+		json.key("audio_config");
+		json.object();
+		AudioProjectConfig config = broker.config().audioConfig;
+		json.key("player_spectrum_threshold");
+		json.value(config.player_spectrum_threshold);
+		json.key("player_playbackRate");
+		json.value(config.player_playbackRate);
+		json.key("player_preservesPitch");
+		json.value(config.player_preservesPitch);
+		json.key("player_overwriteSamplingRate");
+		json.value(config.player_overwriteSamplingRate);
+		json.key("player_samplingRate");
+		json.value(config.player_samplingRate);
+		json.endObject(); // audio_config
+		json.endObject(); // full JSON
 	}
 }

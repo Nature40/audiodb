@@ -54,6 +54,8 @@ actions: {
     axios.get(rootState.apiBase + 'identity')
     .then(function(response) {
       commit('setData', response.data);
+      response.data.audio_config.player_spectrum_threshold_default = response.data.audio_config.player_spectrum_threshold;
+      commit('settings/set', response.data.audio_config, { root: true });
     })
     .catch(function(error) {
       commit('setError', error);

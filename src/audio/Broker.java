@@ -113,7 +113,7 @@ public class Broker {
 
 	private synchronized Samples loadSamples() {
 		if(samples == null) {
-			samples = new Samples();
+			samples = new Samples(this);
 		}
 		return samples;
 	}

@@ -74,7 +74,7 @@ public class SampleProcessor {
 	}
 
 	public void loadData(int additionalSpace, double startSecond, double endSecond) {
-		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {				
+		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {			
 			AudioFormat audioFormat = in.getFormat();
 			//log.info("Format: " + audioFormat);
 			//log.info("FrameLength: " + in.getFrameLength());

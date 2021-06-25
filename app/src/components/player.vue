@@ -4,7 +4,7 @@
     {{sendMessage}}
   </div>
   <div style="position: absolute; left: 100px;">
-    {{currentTimeAudio.toFixed(3)}} / {{duration.toFixed(3)}} 
+    {{(currentTimeAudio / audioTimeFactor).toFixed(3)}} / {{(duration / audioTimeFactor).toFixed(3)}} 
   </div>
   <div style="position: absolute; right: 0px;">
     <audio-meta :sample="sample"/>
@@ -25,7 +25,7 @@
   </div>
   <v-layout text-xs-center wrap>
     <v-flex xs12 mb-5 >
-      <audio id="player" :src="apiBase + 'samples/'+ sample.id + '/data'" type="audio/wav" controls preload="auto">
+      <audio id="player" :src="audioUrl" type="audio/wav" controls preload="auto">
       </audio>
       <br>
       <div style="display: inline-block; ">
@@ -61,7 +61,7 @@
         <div style="position: relative; display: inline-block; vertical-align: top;">
           <v-btn small round color="primary" class="hide" >start label</v-btn>
           <v-btn @click="onLabelStart" small round color="primary" v-show="labelStartTime === undefined" title="create new label that starts at current audio position" style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_takeoff</v-icon> start label</v-btn>
-          <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || labelStartTime === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_land</v-icon> end label</v-btn>
+          <v-btn @click="onLabelEnd" :disabled="labelStartTime === undefined || currentTimeAudio === undefined || (labelStartTime * this.audioTimeFactor) === currentTimeAudio" small round color="primary" v-show="labelStartTime !== undefined && labelEndTime === undefined" title="end current label at current audio position"  style="position: absolute; top: 0px; left: 0px;"><v-icon>flight_land</v-icon> end label</v-btn>
         </div>
         <v-text-field v-model="labelComment" placeholder="comment" class="input-comment" :class="{ 'hide': (labelEndTime === undefined) }" style="vertical-align: top;"></v-text-field>        
         <v-btn @click="onLabelPlay" small round color="primary" :class="{ 'hide': (labelEndTime === undefined) }" title="play just current selection" style="vertical-align: top;"><v-icon>play_arrow</v-icon> play selection</v-btn>
@@ -124,6 +124,7 @@
 <script>
 
 import axios from 'axios'
+import YAML from 'yaml'
 import { mapState, mapGetters, mapActions } from 'vuex'
 
 import audioMeta from './audio-meta'
@@ -169,6 +170,7 @@ data: () => ({
   playSection: false,
   selectedLabelEntry: undefined,
   selectedLabelEntryIndex: -1,
+  meta: undefined,
 }),
 computed: {
   ...mapState({
@@ -177,6 +179,8 @@ computed: {
     threshold: state => state.settings.player_spectrum_threshold,
     playbackRate: state => state.settings.player_playbackRate,
     preservesPitch: state => state.settings.player_preservesPitch,
+    overwriteSamplingRate: state => state.settings.player_overwriteSamplingRate,
+    samplingRate: state => state.settings.player_samplingRate,
   }),
   ...mapGetters({
     isReadOnly: 'identity/isReadOnly',    
@@ -194,12 +198,26 @@ computed: {
   spectrumUrl() {
     return this.apiBase + 'samples/' + this.sample.id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold;
   },
+  audioUrl() {
+    if(this.overwriteSamplingRate && this.samplingRate !== undefined) {
+      return this.apiBase + 'samples/' + this.sample.id + '/data' + '?overwrite_sampling_rate=' + this.samplingRate;
+    } else {
+      return this.apiBase + 'samples/' + this.sample.id + '/data';      
+    }
+  },
   hasNextSelection() {
     if(this.selectedLabelEntryIndex < 0) {
       return false;
     }
     return this.labels !== undefined && this.selectedLabelEntryIndex + 1 < this.labels.length;
   },
+  audioTimeFactor() {
+    if(!this.overwriteSamplingRate || this.samplingRate === undefined || this.meta === undefined || this.meta.SampleRate === undefined) {
+      return 1;
+    }
+    console.log(this.meta.SampleRate);
+    return this.meta.SampleRate / this.samplingRate;
+  }
 },  
 methods: {
   ...mapActions({
@@ -222,10 +240,10 @@ methods: {
     }
   },
   onLabelStart() {
-    this.labelStartTime = this.currentTimeAudio;
+    this.labelStartTime = (this.currentTimeAudio / this.audioTimeFactor);
   },
   onLabelEnd() {    
-    this.labelEndTime = this.currentTimeAudio;
+    this.labelEndTime = (this.currentTimeAudio / this.audioTimeFactor);
     this.audio.pause();
   },
   onLabelDiscard() {
@@ -262,7 +280,7 @@ methods: {
   },
   onLabelPlay() {
     this.audio.pause();
-    this.currentTimeUser = this.labelStartTime;
+    this.currentTimeUser = (this.labelStartTime * this.audioTimeFactor);
     this.audio.play();
     this.playSection = true;
   },
@@ -328,6 +346,18 @@ methods: {
       this.labels = [];
     });
   },
+  refeshMeta() {
+    this.meta = undefined;
+    axios.get(this.apiBase + 'samples' + '/' + this.sample.id + '/' + 'meta')
+    .then(response => {
+      var data = response.data;
+      var parsed = YAML.parse(data);
+      this.meta = parsed.meta;
+    })
+    .catch(() => {
+      this.meta = undefined;
+    });
+  },
   onLabelRemove(index) {
     //this.labels.splice(index, 1);
     this.postRemoveLabel(this.labels[index]);
@@ -370,10 +400,10 @@ methods: {
       return;
     }
     if(this.playSection && this.labelEndTime !== undefined) {
-      if(this.labelEndTime <= currentTime) {
+      if((this.labelEndTime * this.audioTimeFactor) <= currentTime) {
         this.audio.pause();
         this.playSection = false;
-        currentTime = this.labelEndTime;
+        currentTime = (this.labelEndTime * this.audioTimeFactor);
         this.audio.currentTime = currentTime;
       }
     }
@@ -403,8 +433,8 @@ methods: {
     this.ctx.drawImage(this.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
 
     if(this.labelStartTime !== undefined) {
-      var labelXStart = canvasNowColumn - (currentTime - this.labelStartTime)*columnsPerSecond;
-      var endTime = this.labelEndTime === undefined ? currentTime : this.labelEndTime;
+      var labelXStart = canvasNowColumn - (currentTime - (this.labelStartTime * this.audioTimeFactor))*columnsPerSecond;
+      var endTime = this.labelEndTime === undefined ? currentTime : (this.labelEndTime * this.audioTimeFactor);
       var labelXEnd = canvasNowColumn - (currentTime - endTime)*columnsPerSecond; 
       this.ctx.fillStyle = "rgba(255,255,0,0.5)";
       this.ctx.fillRect(labelXStart, 0, labelXEnd - labelXStart, this.canvasHeight);
@@ -415,8 +445,8 @@ methods: {
     this.ctx.beginPath();
     for (let i = 0; i < this.labels.length; i++) {
       let label = this.labels[i];
-      let xStart = canvasNowColumn - (currentTime - label.start)*columnsPerSecond;
-      let xEnd = canvasNowColumn - (currentTime - label.end)*columnsPerSecond;
+      let xStart = canvasNowColumn - (currentTime - (label.start * this.audioTimeFactor)) * columnsPerSecond;
+      let xEnd = canvasNowColumn - (currentTime - (label.end * this.audioTimeFactor)) * columnsPerSecond;
       //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
       this.ctx.moveTo(xStart, this.canvasHeight - 3);
       this.ctx.lineTo(xEnd, this.canvasHeight - 3);
@@ -427,7 +457,7 @@ methods: {
     this.ctx.beginPath();
     for (let i = 0; i < this.labels.length; i++) {
       let label = this.labels[i];
-      let x = canvasNowColumn - (currentTime - label.end)*columnsPerSecond;
+      let x = canvasNowColumn - (currentTime - (label.end * this.audioTimeFactor)) * columnsPerSecond;
       let y = this.canvasHeight - 10;
       //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
       this.ctx.moveTo(x, y);
@@ -442,7 +472,7 @@ methods: {
     this.ctx.beginPath();
     for (let i = 0; i < this.labels.length; i++) {
       let label = this.labels[i];
-      let x = canvasNowColumn - (currentTime - label.start)*columnsPerSecond;
+      let x = canvasNowColumn - (currentTime - (label.start * this.audioTimeFactor)) * columnsPerSecond;
       let y = this.canvasHeight - 10;
       //console.log("range " + xStart + "  " + xEnd + JSON.stringify(label) +" OK "); 
       this.ctx.moveTo(x, y);
@@ -476,7 +506,7 @@ methods: {
     }
   },
   onSelectLabelEntry(label, index) {
-    this.currentTimeUser = label.start;
+    this.currentTimeUser = label.start * this.audioTimeFactor;
     if(this.selectedLabelEntry === label) {
       this.selectedLabelEntry = undefined;
       this.selectedLabelEntryIndex = -1;
@@ -502,15 +532,19 @@ watch: {
       //console.log("set currentTimeUser " + this.currentTimeUser);
     }
   },
-  sample() {
-    this.sendMessage = undefined;
-    this.sendMessageError = undefined;
-    this.labelStartTime = undefined;
-    this.labelEndTime = undefined;
-    this.labelComment = "";
-    this.selectedLabelEntry = undefined;
-    this.selectedLabelEntryIndex = -1;
-    this.refreshLabels();
+  sample: {
+    immediate: true,
+    handler() {
+      this.sendMessage = undefined;
+      this.sendMessageError = undefined;
+      this.labelStartTime = undefined;
+      this.labelEndTime = undefined;
+      this.labelComment = "";
+      this.selectedLabelEntry = undefined;
+      this.selectedLabelEntryIndex = -1;
+      this.refreshLabels();
+      this.refeshMeta();
+    }   
   },
   playbackRate() {
     this.audio.playbackRate = this.playbackRate;
@@ -598,7 +632,7 @@ mounted() {
       if(refPlayer.labelStartTime === undefined) {
         refPlayer.onLabelStart();
       } else if(refPlayer.labelStartTime !== undefined && refPlayer.labelEndTime === undefined) {
-        if(refPlayer.labelStartTime !== refPlayer.currentTimeAudio) {
+        if((refPlayer.labelStartTime * this.audioTimeFactor) !== refPlayer.currentTimeAudio) {
           refPlayer.onLabelEnd();
         }
       } else if(refPlayer.labelStartTime !== undefined && refPlayer.labelEndTime !== undefined && !refPlayer.selectLabel) {

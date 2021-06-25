@@ -92,7 +92,7 @@ methods: {
         this.meta = undefined;
       });
     }
-  }
+  },
 },
 watch: {
   sample() {

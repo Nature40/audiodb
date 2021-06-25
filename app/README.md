@@ -31,6 +31,9 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 ### download google fonts and icons
 
 ```
+
+cd src
+
 npm install get-google-fonts
 
 node

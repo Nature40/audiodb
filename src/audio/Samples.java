@@ -16,21 +16,23 @@ import audio.server.Webserver;
 public class Samples {
 	static final Logger log = LogManager.getLogger();
 
-	public Map<String, Sample> sampleMap;
+	private final Path root_path;
+	
+	public Map<String, Sample> sampleMap;	
 
-	public Samples() {
+	public Samples(Broker broker) {
+		this.root_path = broker.config().audioConfig.root_path;
 		sampleMap = new ConcurrentSkipListMap<String, Sample>();
 		rescan();
 	}
 
 	public void rescan() {
 		try {
-			Path root = Paths.get("data");
 			sampleMap.clear();
-			ArrayList<Path> paths = Webserver.getAudioPaths(root, null);
+			ArrayList<Path> paths = Webserver.getAudioPaths(root_path, null);
 			for(Path path:paths) {
 				try {
-					String id = root.relativize(path).toString();
+					String id = root_path.relativize(path).toString();
 					log.info("read " + id);
 					id = id.replaceAll("/", "__");
 					id = id.replaceAll("\\\\", "__");

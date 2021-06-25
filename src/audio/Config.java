@@ -19,7 +19,9 @@ public class Config {
 	public final int http_port;
 	public final int https_port;
 	public final String keystore_path;
-	public final String keystore_password;	
+	public final String keystore_password;
+	//public final AudioConfig audioConfig;
+	public final AudioProjectConfig audioConfig;
 	public final PhotoConfig photoConfig;
 	
 	@SuppressWarnings("unchecked")
@@ -31,10 +33,12 @@ public class Config {
 		this.https_port = 8000;
 		this.keystore_path = "keystore.jks";
 		this.keystore_password = "";
+		//this.audioConfig = AudioConfig.ofYAML(YamlMap.EMPTY_MAP);
+		this.audioConfig = AudioProjectConfig.DEFAULT;
 		this.photoConfig = PhotoConfig.ofYAML(YamlMap.EMPTY_MAP);
 	}
 	
-	public Config(boolean login, Account default_account, ReadonlyList<JwsConfig> jwsConfigs, int http_port, int https_port, String keystore_path, String keystore_password, PhotoConfig photoConfig) {
+	public Config(boolean login, Account default_account, ReadonlyList<JwsConfig> jwsConfigs, int http_port, int https_port, String keystore_path, String keystore_password, AudioProjectConfig audioConfig, PhotoConfig photoConfig) {
 		this.login = login;
 		this.default_account = default_account;
 		this.jwsConfigs = jwsConfigs;
@@ -42,6 +46,7 @@ public class Config {
 		this.https_port = https_port;
 		this.keystore_path = keystore_path;
 		this.keystore_password = keystore_password;
+		this.audioConfig = audioConfig;
 		this.photoConfig = photoConfig;
 	}
 	
@@ -68,13 +73,14 @@ public class Config {
 			log.warn(e);
 		}
 		
+		//AudioConfig audioConfig = AudioConfig.ofYAML(yamlMap.optMap("audio"));
+		AudioProjectConfig audioConfig = new AudioProjectConfig(new AudioProjectConfig.Builder(yamlMap.optMap("audio")));
 		PhotoConfig photoConfig = PhotoConfig.ofYAML(yamlMap.optMap("photo"));
 		
-		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port, https_port, keystore_path, keystore_password, photoConfig);
+		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port, https_port, keystore_path, keystore_password, audioConfig, photoConfig);
 	}
 	
 	public boolean enableHttps() {
 		return !keystore_password.isEmpty();
 	}
-
 }

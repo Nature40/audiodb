@@ -20,7 +20,7 @@ import util.yaml.YamlUtil;
 public class SampleManager {
 	static final Logger log = LogManager.getLogger();
 
-	private final Path root_path = Paths.get("data");
+	private final Path root_path;
 
 	private final Broker broker;
 
@@ -28,7 +28,8 @@ public class SampleManager {
 	private final TlSampleManagerConnector tlSampleManagerConnector;	
 
 	public SampleManager(Broker broker) {
-		this.broker = broker;		
+		this.broker = broker;
+		this.root_path = broker.config().audioConfig.root_path;
 		try {
 			conn = DriverManager.getConnection("jdbc:h2:./sample_cache");
 			tlSampleManagerConnector = new TlSampleManagerConnector(conn);
