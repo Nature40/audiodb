@@ -28,7 +28,12 @@ public class SpectrumHandler {
 
 	public void handle(Sample sample, Request request, HttpServletResponse response) throws IOException {
 			int n = 1024;
+			//int n = 2048;
+			//int n = 512;
+			
 			int step = 256;
+			//int step = 512;
+			//int step = 1024;
 
 			int cutoff = Web.getInt(request, "cutoff", 320);
 			if(cutoff > n/2) {

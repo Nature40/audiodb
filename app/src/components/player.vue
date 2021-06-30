@@ -527,7 +527,7 @@ methods: {
 watch: {
   currentTimeUser() {
     if(this.currentTimeUser !== this.currentTimeAudio) {
-      console.log("user change " + this.currentTimeUser + "   " + this.duration);
+      //console.log("user change " + this.currentTimeUser + "   " + this.duration);
       this.audio.currentTime = this.currentTimeUser;
       //console.log("set currentTimeUser " + this.currentTimeUser);
     }
@@ -596,7 +596,7 @@ mounted() {
     }, true
   );
   this.audio.addEventListener("timeupdate", () => {
-    console.log("timeupdate");
+    //console.log("timeupdate");
     this.requestRender(); 
     }, true
   );

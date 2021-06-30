@@ -47,7 +47,7 @@
     </div>
   </v-toolbar>
 
-  <v-content>
+  <v-content v-resize="onResize" id="layoutElement">
 
   <v-layout align-center justify-start column fill-height v-if="selected_review_list !== undefined">
 
@@ -114,15 +114,19 @@
                 />
             </v-list>        
           </v-menu>
+        </span>
+
+        <span style="grid-row-start: 1; grid-column-start: 7;">
+          <player-settings />
         </span>                
       </div>
 
       <div>
         <span style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample">
           <span v-if="sampleMeta !== undefined">
-            <b><v-icon>place</v-icon> {{sampleMeta.location}} </b> 
-            <span><v-icon>date_range</v-icon> {{toDate(sampleMeta.datetime)}} </span> 
-            <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(sampleMeta.datetime)}}</span>
+            <b><v-icon>place</v-icon> {{sampleMeta.location === undefined ? '-' : sampleMeta.location}} </b> 
+            <span><v-icon>date_range</v-icon> {{sampleMeta.datetime === undefined ? '-' : toDate(sampleMeta.datetime)}} </span> 
+            <span style="color: grey;"><v-icon>access_time</v-icon> {{sampleMeta.datetime === undefined ? '-' : toTime(sampleMeta.datetime)}}</span>
           </span>
           <!--<span v-if="review_list_entry_sample_id !== undefined">-->
             <span v-else-if="review_list_entry_sample_id !== undefined">
@@ -136,9 +140,9 @@
       </div>  
 
       <div v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)" style="position: relative;">
-        <audio ref="audio" :src="apiBase + 'samples/'+ review_list_entry_sample_id + '/data'" type="audio/wav" preload="auto" />
+        <audio ref="audio" :src="audioUrl" type="audio/wav" preload="auto" />
         <div class="audio-position" :style="audioPositionStyle"></div>        
-        <img ref="spectrogram" :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined" style="z-index: 0;"/>
+        <img ref="spectrogram" :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined" @mousedown="onSpectrogramMouseDown" style="z-index: 0;"  :style="{ 'max-width': spectrogramMaxWidth + 'px' }"/>
       </div>
 
       <div v-if="review_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)" class="review-label">
@@ -149,11 +153,13 @@
         <div :class="{ 'reviewed-selected': storedReviewed === 'no' }"><v-btn @click="setReviewed('no')" color="red" :disabled="isReadOnly"><v-icon dark>clear</v-icon> NO</v-btn></div>
         <div :class="{ 'reviewed-selected': storedReviewed === 'unsure' }"><v-btn @click="setReviewed('unsure')" color="yellow" :disabled="isReadOnly"><v-icon dark>code</v-icon> UNSURE</v-btn></div> 
         <div :class="{ 'reviewed-selected': storedReviewed === 'yes' }"><v-btn @click="setReviewed('yes')" color="green" :disabled="isReadOnly"><v-icon dark>done</v-icon> YES</v-btn></div>
+        <div><v-btn @click="stopAudio()" icon title="stop audio"><v-icon dark>stop</v-icon></v-btn></div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
         <div><review-special-dialog :sampleId="review_list_entry_sample_id" @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
         <div>[Esc]</div>
         <div>[Enter]</div>
         <div>[Space]</div>
+        <div>[End]</div>        
         <div>[Tab]</div>
         <div class="sending" :class="{hidden: !postReviewSending}">{{postReviewMessage}}</div>    
         <div class="sending-error" :class="{hidden: !postReviewError}">{{postReviewMessage}}</div> 
@@ -167,7 +173,7 @@
         <template v-for="g in generated_labels">
           <div class="generated-labels-cell" :key="JSON.stringify(g)+1">{{g.generator}}</div>
           <div class="generated-labels-cell" :key="JSON.stringify(g)+2">{{g.model_version}}</div>
-          <div class="generated-labels-cell generated-labels-cell-reliability" :key="JSON.stringify(g)+4">{{Math.round(g.reliability * 100)}}</div>
+          <div class="generated-labels-cell generated-labels-cell-reliability" :key="JSON.stringify(g)+4">{{g.reliability === undefined ? '' : Math.round(g.reliability * 100)}}</div>
         </template>      
       </div>
 
@@ -193,6 +199,7 @@ import YAML from 'yaml'
 import identityDialog from './identity-dialog'
 import reviewSpecialDialog from './review-special-dialog'
 import reviewStatisticsDialog from './review-statistics-dialog'
+import playerSettings from './player-settings'
 
 
 function equals_tolerant(a, b) {
@@ -210,6 +217,7 @@ components: {
   identityDialog,
   reviewSpecialDialog,
   reviewStatisticsDialog,
+  playerSettings,
 },
 data () {
   return {
@@ -232,6 +240,7 @@ data () {
     audioCurrentTime: undefined,
     audioColumnsPerSecond: undefined,
     jumpText: undefined,
+    layoutWidth: 1024,
   }
 },
 computed: {
@@ -239,6 +248,8 @@ computed: {
     apiBase: state => state.apiBase,
     threshold: state => state.settings.player_spectrum_threshold,   
     review_statistics: state => state.review_statistics.data,
+    overwriteSamplingRate: state => state.settings.player_overwriteSamplingRate,
+    samplingRate: state => state.settings.player_samplingRate,    
   }),
   ...mapGetters({
     isReadOnly: 'identity/isReadOnly',   
@@ -357,7 +368,24 @@ computed: {
       && this.review_list !== undefined 
       && Number.parseInt(this.jumpText) > 0
       && Number.parseInt(this.jumpText) <= this.review_list.entries.length;
-  }     
+  },
+  spectrogramMaxWidth() {
+    return this.layoutWidth - 32;
+  },
+  audioUrl() {
+    if(this.overwriteSamplingRate && this.samplingRate !== undefined) {
+      return this.apiBase + 'samples/' + this.review_list_entry_sample_id + '/data' + '?overwrite_sampling_rate=' + this.samplingRate;
+    } else {
+      return this.apiBase + 'samples/' + this.review_list_entry_sample_id + '/data';      
+    }
+  },
+  audioTimeFactor() {
+    if(!this.overwriteSamplingRate || this.samplingRate === undefined || this.sampleMeta === undefined || this.sampleMeta.SampleRate === undefined) {
+      return 1;
+    }
+    console.log(this.sampleMeta.SampleRate);
+    return this.sampleMeta.SampleRate / this.samplingRate;
+  }    
 },
 watch: {
   isReviewedOnly: {
@@ -401,7 +429,10 @@ watch: {
   },
   review_list_entry_sample_id() {
     this.refresh_sample();
-  }
+  },
+  spectrogramMaxWidth() {
+    this.updateSpectrogramMaxWidthStyle();
+  },
 },
 methods: {
   ...mapActions({
@@ -417,6 +448,7 @@ methods: {
     } catch {
       this.review_lists_message = 'error loading review_lists';
     }
+    this.updateLayoutSize();
   },
   movePrevLabel() {
     if(this.labels !== undefined && this.labelIndex !== undefined) {
@@ -458,22 +490,34 @@ methods: {
       }
     }
   },
-  replayAudio() {
+  replayAudio(startPos) {
     requestAnimationFrame(() => {
-    if(this.$refs.audio === undefined) {
-      console.log("no audio");
-    }
-    console.log(this.$refs.audio.src);
-    this.$refs.audio.pause();
-    if(this.label !== undefined) {
-      this.$refs.audio.currentTime = this.label.start;
-      this.$refs.audio.play();
-      this.requestAnimationFrame();
-    } else {
-      console.log("label undefined");
-    }
+      if(this.$refs.audio === undefined) {
+        console.log("no audio");
+        return;
+      }
+      //console.log(this.$refs.audio.src);
+      this.$refs.audio.pause();
+      if(this.label !== undefined) {
+        let currentTime = startPos === undefined ? (this.label.start * this.audioTimeFactor) : startPos;
+        //console.log(currentTime);
+        this.$refs.audio.currentTime = currentTime;
+        this.$refs.audio.play();
+        this.requestAnimationFrame();
+      } else {
+        console.log("label undefined");
+      }
     });
   },
+  stopAudio() {
+    requestAnimationFrame(() => {
+      if(this.$refs.audio === undefined) {
+        console.log("no audio");
+        return;
+      }
+      this.$refs.audio.pause();
+    });
+  },  
   requestAnimationFrame() {
     if(this.animationFrameID === undefined) {
       this.animationFrameID = requestAnimationFrame(this.animationFrameCallback);
@@ -482,13 +526,17 @@ methods: {
   animationFrame() {
     this.animationFrameID = undefined;
     this.audioCurrentTime = undefined;
-    this.audioColumnsPerSecond = undefined; 
+    //this.audioColumnsPerSecond = undefined; 
     if(this.label !== undefined && !this.$refs.audio.paused) {
-      if(this.$refs.audio.currentTime < this.label.end) {
+      if(this.$refs.audio.currentTime < (this.label.end * this.audioTimeFactor)) {
         //console.log(this.$refs.audio.currentTime);
         this.audioCurrentTime = this.$refs.audio.currentTime;
         if(this.$refs.spectrogram !== undefined && this.$refs.spectrogram.naturalWidth > 0) {
-          this.audioColumnsPerSecond = this.$refs.spectrogram.naturalWidth / (this.label.end - this.label.start);
+          let spectrogramWidth = this.$refs.spectrogram.naturalWidth;
+          if(spectrogramWidth > this.spectrogramMaxWidth) {
+            spectrogramWidth = this.spectrogramMaxWidth;
+          }
+          this.audioColumnsPerSecond =  spectrogramWidth / (this.label.end - this.label.start) / this.audioTimeFactor;
         }
         this.requestAnimationFrame();
       } else {
@@ -503,6 +551,10 @@ methods: {
         e.preventDefault();
         this.replayAudio();
         break;
+      case 'End':
+        e.preventDefault();
+        this.stopAudio();
+        break;        
       case 'Escape':
         e.preventDefault();
         this.setReviewed('no');
@@ -672,7 +724,7 @@ methods: {
       var parsed = YAML.parse(data);
       console.log(parsed);
       this.sampleMeta = parsed.meta;
-      this.sampleMeta.datetime = new Date(this.sampleMeta.timestamp * 1000);
+      this.sampleMeta.datetime = this.sampleMeta.timestamp === undefined ? undefined : new Date(this.sampleMeta.timestamp * 1000);
     })
     .catch(() => {
       this.sampleMeta = undefined;
@@ -700,7 +752,34 @@ methods: {
       this.jumpToReviewListEntry(targetIndex);
       this.$refs.jumpMenu.save();
     }
-  },        
+  },
+  onResize() {
+    console.log("resize");
+    this.updateLayoutSize();
+  },
+  updateLayoutSize() {
+    let layoutElement = document.getElementById("layoutElement");
+    if(layoutElement === undefined) {
+      this.layoutWidth = 1024;
+    } else {
+      let clientWidth = layoutElement.clientWidth;
+      this.layoutWidth = clientWidth < 256 ? 256 : clientWidth;
+    }
+    this.updateSpectrogramMaxWidthStyle();
+  },
+  updateSpectrogramMaxWidthStyle() {
+    if(this.$refs.spectrogram !== undefined) {
+      this.$refs.spectrogram.style.maxWidth = this.spectrogramMaxWidth + 'px';
+    }
+  },
+  onSpectrogramMouseDown(e) {
+    let rect = this.$refs.spectrogram.getBoundingClientRect();
+    let xPos = e.clientX - rect.left;
+    //console.log("MouseDown " + xPos);
+    let startPos = xPos / this.audioColumnsPerSecond;
+    //console.log("MouseDown " + xPos);
+    this.replayAudio(startPos);
+  }       
 },
 mounted() {
   this.animationFrameCallback = this.animationFrame.bind(this);
@@ -723,7 +802,7 @@ mounted() {
 
 .controls {
   display: grid;
-  grid-template-columns: auto auto auto auto auto;
+  grid-template-columns: auto auto auto auto auto auto;
   justify-items: center;
   align-items: center;
 }
