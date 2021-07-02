@@ -10,9 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.json.JSONWriter;
 
 import audio.Broker;
-import photo.LocationPhotoDB;
-import photo.Photo;
-import photo.PhotoDB;
+
 import photo2.PhotoDB2;
 import util.Web;
 import util.collections.vec.Vec;

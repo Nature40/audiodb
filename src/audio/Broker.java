@@ -11,7 +11,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import audio.labeling.LabelingListManager;
 import audio.review.ReviewListManager;
-import photo.PhotoDB;
 import photo2.PhotoDB2;
 import util.yaml.YamlMap;
 
@@ -33,8 +32,6 @@ public class Broker {
 	private Object labelingListManagerLock = new Object();
 
 	private WebAuthn webAuthn;
-
-	private PhotoDB photoDB;
 
 	private PhotoDB2 photodb2;
 	private volatile PhotoDB2 photodb2Volatile;
@@ -172,17 +169,6 @@ public class Broker {
 		}
 		return webAuthn;
 	}
-
-	public PhotoDB photoDB() {
-		return photoDB == null ? loadPhotoDB() : photoDB;
-	}
-
-	private synchronized PhotoDB loadPhotoDB() {
-		if(photoDB == null) {
-			photoDB = new PhotoDB(this);
-		}
-		return photoDB;
-	}	
 
 	public PhotoDB2 photodb2() {		
 		return photodb2 != null ? photodb2 : loadPhotoDB2();

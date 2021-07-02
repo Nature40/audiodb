@@ -55,7 +55,6 @@ import audio.server.api.Review_listsHandler;
 import audio.server.api.SamplesHandler;
 import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
-import photo.api.PhotoDBHandler;
 import photo2.api.PhotoDB2Handler;
 
 public class Webserver {
@@ -173,7 +172,6 @@ public class Webserver {
 		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
 		//}
 		
-		handlerList.addHandler(createContext("/PhotoDB", true, new PhotoDBHandler(broker)));
 		handlerList.addHandler(createContext("/photodb2", true, new PhotoDB2Handler(broker)));
 		
 		handlerList.addHandler(new NoContentHandler());		

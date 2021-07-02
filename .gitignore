@@ -7,12 +7,14 @@
 /data_old
 /data_old2
 /data_old3
+/data_bats
 /labeling_lists
 /log
 /package
 /photo_data
 /photo2_cache
 /review_lists
+/review_lists_bats
 /samples
 /src_testing
 
@@ -20,6 +22,7 @@
 /.project
 /accounts.yaml
 /config.yaml
+/config_bats.yaml
 /keystore.jks
 /label_definitions.yaml
 /label_definitions.yaml_OLD

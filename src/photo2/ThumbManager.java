@@ -117,8 +117,13 @@ public class ThumbManager {
 				sqlconnector.stmt_insert_file.execute();
 				inStream.close();
 			} catch(Exception e) {
-				log.warn(e);
-				throw new RuntimeException(e);
+				if(photo.imagePath.toFile().exists()) {
+					log.warn(e + "  " + photo.imagePath);
+					throw new RuntimeException(e);	
+				} else {
+					log.warn("missing image file: " + photo.imagePath);
+					throw new RuntimeException("missing image file: " + photo.imagePath);	
+				}				
 			} finally {
 				taskMap.remove(cacheFilename);
 			}

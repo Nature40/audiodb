@@ -7,15 +7,16 @@
 </q-page>
 
 <q-page v-if="photo !== undefined" class="column wrap  items-center ">
-    <div class="col-auto">
+    <div>
       <q-btn :disable="!hasPrev" @click="move(-1)">prev</q-btn>
       <span class="time-text">{{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)">next</q-btn>      
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
-      <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage"/>
+      <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
       <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay"/>
       <q-spinner-gears color="primary" size="4em" v-show="imageLoading" style="position: absolute; top: 0px; right: 0px;"/>
+      <span v-show="!imageLoading && imageError" style="color: red;">ERROR loading image.</span>
     </div>
     <div class="row" style="padding-bottom: 10px;">
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
@@ -37,7 +38,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="entry in classifications" :key="JSON.stringify(entry)" style="margin-right: 15px; color: #111191c4;">
+          <tr v-for="(entry, index) in classifications" 
+          :key="JSON.stringify(entry)" 
+          style="margin-right: 15px; color: #111191c4;" 
+          :style="{'background-color': index === selectedClassificationIndex ? 'rgba(26, 176, 26, 0.57)' : 'rgba(196, 196, 196, 0.57)'}"
+          @click="selectedClassificationIndex = index;">
             <td><b>{{entry.classification}}</b></td>
             <td>{{entry.classificator}}</td>
             <td>{{entry.expert_name}}</td>
@@ -81,6 +86,8 @@ export default {
     maxImageWidth: 640,
     maxImageHeight: 480,
     imageLoading: false,
+    imageError: false,
+    selectedClassificationIndex: undefined,
   }),  
 
   computed: {
@@ -156,22 +163,44 @@ export default {
         ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
         ctx.lineWidth = 3;
         ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-        this.classifications.forEach(classification => {
+        this.classifications.forEach((classification, index) => {
           if(classification.bbox !== undefined) {
-            console.log(classification.bbox);
+            //console.log(classification.bbox);
             var xmin = classification.bbox[0] * width;
             var ymin = classification.bbox[1] * height;
             var boxwidth = classification.bbox[2] * width;
             var boxheight = classification.bbox[3] * height;
-            //ctx.fillRect(xmin, ymin, boxwidth, boxheight);
+            if(index !== this.selectedClassificationIndex) {
+             ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+            }
             ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
           }
         });
+        if(this.selectedClassificationIndex !== undefined) {
+          let classification = this.classifications[this.selectedClassificationIndex];
+          if(classification.bbox !== undefined) {
+            //console.log(classification.bbox);
+            var xmin = classification.bbox[0] * width;
+            var ymin = classification.bbox[1] * height;
+            var boxwidth = classification.bbox[2] * width;
+            var boxheight = classification.bbox[3] * height;
+            ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
+            ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+          }
+        }
       }
     },
     onLoadImage() {
       this.imageLoading = false;
+      this.imageError = false;
       console.log("loaded");
+      this.redrawImageOverlay();
+      this.updateMaxImageDimensions();
+    },
+    onErrorImage() {
+      this.imageLoading = false;
+      this.imageError = true;
+      console.log("error");
       this.redrawImageOverlay();
       this.updateMaxImageDimensions();
     },
@@ -191,12 +220,20 @@ export default {
   
   watch: {
     classifications() {
+      if(this.classifications !== undefined && this.classifications.length > 0) {
+        this.selectedClassificationIndex = 0;
+      } else {
+        this.selectedClassificationIndex = undefined;
+      }
+      this.redrawImageOverlay();
+    },
+    selectedClassificationIndex() {
       this.redrawImageOverlay();
     },
     imageURL() {
       this.imageLoading = true;
       this.redrawImageOverlay();
-    }
+    },
   },
 
   async mounted() {

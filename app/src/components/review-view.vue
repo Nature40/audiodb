@@ -247,9 +247,11 @@ computed: {
   ...mapState({
     apiBase: state => state.apiBase,
     threshold: state => state.settings.player_spectrum_threshold,   
-    review_statistics: state => state.review_statistics.data,
+    playbackRate: state => state.settings.player_playbackRate,
+    preservesPitch: state => state.settings.player_preservesPitch,
     overwriteSamplingRate: state => state.settings.player_overwriteSamplingRate,
     samplingRate: state => state.settings.player_samplingRate,    
+    review_statistics: state => state.review_statistics.data,    
   }),
   ...mapGetters({
     isReadOnly: 'identity/isReadOnly',   
@@ -309,7 +311,7 @@ computed: {
     if(this.audioCurrentTime === undefined || this.label === undefined) {
       return undefined;
     }
-    return this.audioCurrentTime - this.label.start;
+    return this.audioCurrentTime - (this.label.start * this.audioTimeFactor);
   },
   audioSpectrogramCurrentTimePos() {
     if(this.audioCurrentTimePos === undefined || this.audioColumnsPerSecond === undefined) {
@@ -433,6 +435,15 @@ watch: {
   spectrogramMaxWidth() {
     this.updateSpectrogramMaxWidthStyle();
   },
+  playbackRate() {
+    this.$refs.audio.playbackRate = this.playbackRate;
+    this.$refs.audio.defaultPlaybackRate = this.playbackRate;    
+  },
+  preservesPitch() {
+    this.$refs.audio.preservesPitch = this.preservesPitch;
+    this.$refs.audio.mozPreservesPitch = this.preservesPitch;
+    this.$refs.audio.webkitPreservesPitch  = this.preservesPitch;
+  },  
 },
 methods: {
   ...mapActions({
@@ -776,7 +787,7 @@ methods: {
     let rect = this.$refs.spectrogram.getBoundingClientRect();
     let xPos = e.clientX - rect.left;
     //console.log("MouseDown " + xPos);
-    let startPos = xPos / this.audioColumnsPerSecond;
+    let startPos = (this.label.start * this.audioTimeFactor) + (xPos / this.audioColumnsPerSecond);
     //console.log("MouseDown " + xPos);
     this.replayAudio(startPos);
   }       
