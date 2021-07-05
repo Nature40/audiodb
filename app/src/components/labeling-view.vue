@@ -27,7 +27,6 @@
       <v-select v-model="selected_labeling_list" :items="labeling_lists" label="Labeling list" solo item-text="id">
       </v-select>
     </div>
-    <div v-if="labeling_list !== undefined && labeledCount < labeling_list.entries.length">some entries left</div>
     <div v-if="labeling_list !== undefined && labeledCount === labeling_list.entries.length && !isReviewedOnly">all entries done in this list</div>
     <div style="margin-left: 10px;" v-if="labeling_lists_message !== undefined">{{labeling_lists_message}}</div>
     <span v-if="isReadOnly" style="color: #e11111; padding-left: 10px;">readOnly</span>
@@ -37,7 +36,7 @@
     </div>
   </v-toolbar>
 
-  <v-content>
+  <v-content v-resize="onResize" id="layoutElement">
 
   <v-layout align-center justify-start column fill-height v-if="selected_labeling_list !== undefined">
 
@@ -46,19 +45,24 @@
           [Arrow Left]
           <v-btn @click="movePrevLabelingListEntry"><v-icon>fast_rewind</v-icon></v-btn>
         </span>
+
         <span :class="{hidden: !labeling_list_pos_pre_start}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>Start of list reached</b>
         </span>
+
         <span :class="{hidden: (labeling_list_pos_pre_start || labeling_list_pos_past_end)}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>Position {{labeling_list_pos === undefined ? 0 : (labeling_list_pos + 1)}} of {{labeling_list === undefined ? 0 : labeling_list.entries.length}}</b>
-        </span>        
+        </span>
+
         <span :class="{hidden: !labeling_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>End of list reached</b>
         </span>
+
         <span :class="{hidden: labeling_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 3;">
           <v-btn @click="moveNextLabelingListEntry"><v-icon>fast_forward</v-icon></v-btn>
           [Arrow Right]
         </span>
+
         <span style="grid-row-start: 1; grid-column-start: 4; margin-left: 50px; margin-top: 0px;">
           <v-switch
                 v-model="skip_labeled_entries"
@@ -69,18 +73,49 @@
                 style="margin-top: 0px;"
                 v-if="!isReviewedOnly"
           ></v-switch> 
-        </span>         
+        </span>
+
         <span style="grid-row-start: 1; grid-column-start: 5; margin-left: 50px; background: #f8fff4; color: #499d2a;">
           Labeled {{labeledCount}} <span v-if="!isReviewedOnly">of {{labeling_list === undefined ? NaN : labeling_list.entries.length}}</span>
-        </span>        
+        </span>
+
+        <span :class="{hidden: labeling_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 6;">
+          <v-menu 
+            transition="scale-transition" 
+            :close-on-content-click="false" 
+            ref="jumpMenu"
+          >
+            <template v-slot:activator="{on}">
+              <v-btn v-on="on" title="Move to specific position in the entry list. If specified position is not selectable, next valid position is targeted.">Jump to <v-icon style="padding-left: 5px;">arrow_right_alt</v-icon></v-btn>
+            </template>
+            <v-list>
+                <v-text-field
+                  v-model="jumpText" 
+                  :append-outer-icon="jumpTextValid ? 'arrow_right_alt' : ''"
+                  box
+                  label="Jump to entry number"
+                  type="text"
+                  @click:append-outer="onJump"
+                                @keydown.stop=""
+              @keyup.stop=""
+              @keypress.stop="" 
+              @keypress.enter="onJump"
+                />
+            </v-list>        
+          </v-menu>
+        </span>
+
+        <span style="grid-row-start: 1; grid-column-start: 7;">
+          <player-settings />
+        </span>         
       </div>
 
       <div>
         <span style="font-size: 1.5em; background-color: #0000000a; padding: 2px;" title="currently selected audio sample">
           <span v-if="sampleMeta !== undefined">
-            <b><v-icon>place</v-icon> {{sampleMeta.location}} </b> 
-            <span><v-icon>date_range</v-icon> {{toDate(sampleMeta.datetime)}} </span> 
-            <span style="color: grey;"><v-icon>access_time</v-icon> {{toTime(sampleMeta.datetime)}}</span>
+            <b><v-icon>place</v-icon> {{sampleMeta.location === undefined ? '-' : sampleMeta.location}} </b> 
+            <span><v-icon>date_range</v-icon> {{sampleMeta.datetime === undefined ? '-' : toDate(sampleMeta.datetime)}} </span> 
+            <span style="color: grey;"><v-icon>access_time</v-icon> {{sampleMeta.datetime === undefined ? '-' : toTime(sampleMeta.datetime)}}</span>
           </span>
           <!--<span v-if="labeling_list_entry_sample_id !== undefined">-->
             <span v-else-if="labeling_list_entry_sample_id !== undefined">
@@ -94,9 +129,9 @@
       </div>  
 
       <div v-if="labeling_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)" style="position: relative;">
-        <audio ref="audio" :src="apiBase + 'samples/'+ labeling_list_entry_sample_id + '/data'" type="audio/wav" preload="auto" />
+        <audio ref="audio" :src="audioUrl" type="audio/wav" preload="auto" />
         <div class="audio-position" :style="audioPositionStyle"></div>        
-        <img ref="spectrogram" :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined" style="z-index: 0;"/>
+        <img ref="spectrogram" :src="spectrogramUrl" class="spectrogram" draggable="false" v-if="spectrogramUrl !== undefined" @mousedown="onSpectrogramMouseDown" style="z-index: 0;"  :style="{ 'max-width': spectrogramMaxWidth + 'px' }"/>
       </div>
 
       <div v-if="labeling_list_entry_sample_id !== undefined && (sampleMeta === undefined || sampleMeta.sample_locked === undefined)" class="labeling-label">
@@ -125,9 +160,11 @@
           </multiselect>
         </div>
         <div><v-btn @click="replayAudio()" icon title="replay audio"><v-icon dark>replay</v-icon></v-btn></div>
+        <div><v-btn @click="stopAudio()" icon title="stop audio"><v-icon dark>stop</v-icon></v-btn></div>        
         <div><review-special-dialog  :sampleId="labeling_list_entry_sample_id" @lock-audio-sample="onLockAudioSample" v-if="!isReadOnly"/></div>
         <div>[Esc]</div>
         <div>[Tab]</div>
+        <div>[End]</div>
         <div></div>
         <div class="sending" :class="{hidden: !postLabelingSending}">{{postLabelingMessage}}</div>    
         <div class="sending-error" :class="{hidden: !postLabelingError}">{{postLabelingMessage}}</div> 
@@ -180,6 +217,7 @@ import YAML from 'yaml'
 
 import identityDialog from './identity-dialog'
 import reviewSpecialDialog from './review-special-dialog'
+import playerSettings from './player-settings'
 
 function equals_tolerant(a, b) {
 	return (a - 0.001) < b && b < (a + 0.001);
@@ -195,6 +233,7 @@ name: 'labeling-view',
 components: {
   identityDialog,
   reviewSpecialDialog,
+  playerSettings,  
 },
 data () {
   return {
@@ -216,12 +255,18 @@ data () {
     audioCurrentTime: undefined,
     audioColumnsPerSecond: undefined,
     selectedLabelDefinitions: undefined,
+    jumpText: undefined,    
+    layoutWidth: 1024,    
   }
 },
 computed: {
   ...mapState({
     apiBase: state => state.apiBase,
     threshold: state => state.settings.player_spectrum_threshold,
+    playbackRate: state => state.settings.player_playbackRate,
+    preservesPitch: state => state.settings.player_preservesPitch,
+    overwriteSamplingRate: state => state.settings.player_overwriteSamplingRate,
+    samplingRate: state => state.settings.player_samplingRate,        
     label_definitions: state => state.label_definitions === undefined ? undefined : state.label_definitions.data,   
   }),
   ...mapGetters({
@@ -275,7 +320,7 @@ computed: {
     if(this.audioCurrentTime === undefined || this.label === undefined) {
       return undefined;
     }
-    return this.audioCurrentTime - this.label.start;
+    return this.audioCurrentTime - (this.label.start * this.audioTimeFactor);
   },
   audioSpectrogramCurrentTimePos() {
     if(this.audioCurrentTimePos === undefined || this.audioColumnsPerSecond === undefined) {
@@ -307,7 +352,33 @@ computed: {
   },
   userLabelsStored() {
     return JSON.stringify(this.userLabels) === JSON.stringify(this.selectedUserLabels);
-  }
+  },
+  jumpTextValid() {
+    return this.jumpText !== undefined 
+      && this.jumpText !== null 
+      && this.jumpText.length !== 0 
+      && this.jumpText == Number.parseInt(this.jumpText)
+      && this.labeling_list !== undefined 
+      && Number.parseInt(this.jumpText) > 0
+      && Number.parseInt(this.jumpText) <= this.labeling_list.entries.length;
+  },  
+  spectrogramMaxWidth() {
+    return this.layoutWidth - 32;
+  },  
+  audioUrl() {
+    if(this.overwriteSamplingRate && this.samplingRate !== undefined) {
+      return this.apiBase + 'samples/' + this.labeling_list_entry_sample_id+ '/data' + '?overwrite_sampling_rate=' + this.samplingRate;
+    } else {
+      return this.apiBase + 'samples/' + this.labeling_list_entry_sample_id + '/data';      
+    }
+  },
+  audioTimeFactor() {
+    if(!this.overwriteSamplingRate || this.samplingRate === undefined || this.sampleMeta === undefined || this.sampleMeta.SampleRate === undefined) {
+      return 1;
+    }
+    console.log(this.sampleMeta.SampleRate);
+    return this.sampleMeta.SampleRate / this.samplingRate;
+  },    
 },
 watch: {
   isLabeledOnly: {
@@ -330,9 +401,9 @@ watch: {
     });
   },
   label() {
-    /*if(this.label !== undefined) {
+    if(this.label !== undefined) {
       this.replayAudio();
-    }*/
+    }
   },
   async selected_labeling_list() {
     if(this.selected_labeling_list !== undefined) {
@@ -377,22 +448,36 @@ methods: {
       this.labeling_lists_message = 'error loading labeling_lists';
     }
   },
-  replayAudio() {
-    requestAnimationFrame(() => {
-    if(this.$refs.audio === undefined) {
-      console.log("no audio");
-    }
-    console.log(this.$refs.audio.src);
-    this.$refs.audio.pause();
-    if(this.label !== undefined) {
-      this.$refs.audio.currentTime = this.label.start;
-      this.$refs.audio.play();
-      this.requestAnimationFrame();
-    } else {
-      console.log("label undefined");
-    }
-    });
+  replayAudio(startPos) {
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        if(this.$refs.audio === undefined) {
+          console.log("no audio");
+          return;
+        }
+        //console.log(this.$refs.audio.src);
+        this.$refs.audio.pause();
+        if(this.label !== undefined) {
+          let currentTime = startPos === undefined ? (this.label.start * this.audioTimeFactor) : startPos;
+          //console.log(currentTime);
+          this.$refs.audio.currentTime = currentTime;
+          this.$refs.audio.play();
+          this.requestAnimationFrame();
+        } else {
+          console.log("label undefined");
+        }
+      });
+    }, 250);
   },
+  stopAudio() {
+    requestAnimationFrame(() => {
+      if(this.$refs.audio === undefined) {
+        console.log("no audio");
+        return;
+      }
+      this.$refs.audio.pause();
+    });
+  },   
   requestAnimationFrame() {
     if(this.animationFrameID === undefined) {
       this.animationFrameID = requestAnimationFrame(this.animationFrameCallback);
@@ -401,13 +486,17 @@ methods: {
   animationFrame() {
     this.animationFrameID = undefined;
     this.audioCurrentTime = undefined;
-    this.audioColumnsPerSecond = undefined; 
+    //this.audioColumnsPerSecond = undefined; 
     if(this.label !== undefined && !this.$refs.audio.paused) {
-      if(this.$refs.audio.currentTime < this.label.end) {
+      if(this.$refs.audio.currentTime < (this.label.end * this.audioTimeFactor)) {
         //console.log(this.$refs.audio.currentTime);
         this.audioCurrentTime = this.$refs.audio.currentTime;
         if(this.$refs.spectrogram !== undefined && this.$refs.spectrogram.naturalWidth > 0) {
-          this.audioColumnsPerSecond = this.$refs.spectrogram.naturalWidth / (this.label.end - this.label.start);
+          let spectrogramWidth = this.$refs.spectrogram.naturalWidth;
+          if(spectrogramWidth > this.spectrogramMaxWidth) {
+            spectrogramWidth = this.spectrogramMaxWidth;
+          }
+          this.audioColumnsPerSecond =  spectrogramWidth / (this.label.end - this.label.start) / this.audioTimeFactor;
         }
         this.requestAnimationFrame();
       } else {
@@ -422,6 +511,10 @@ methods: {
         e.preventDefault();
         this.replayAudio();
         break;
+      case 'End':
+        e.preventDefault();
+        this.stopAudio();
+        break;         
       case 'ArrowLeft':
         e.preventDefault();
         this.movePrevLabelingListEntry();
@@ -519,6 +612,32 @@ methods: {
       }
     }    
   },
+  jumpToLabelingListEntry(targetIndex) {
+    requestAnimationFrame(() => {
+      if(this.$refs.audio !== undefined) {
+        this.$refs.audio.pause();
+      }
+      requestAnimationFrame(() => {      
+        if(this.labeling_list !== undefined) {
+          if(this.skip_labeled_entries) {
+              while(targetIndex <= this.labeling_list.entries.length) {
+                if(targetIndex < this.labeling_list.entries.length && !this.labeling_list.entries[targetIndex].labeled) {
+                  break;
+                }
+                targetIndex++;
+              }
+              this.labeling_list_pos = targetIndex;          
+          } else {
+            if(targetIndex <= this.labeling_list.entries.length) {
+              this.labeling_list_pos = targetIndex;
+            } else {
+              this.labeling_list_pos = this.labeling_list.entries.length;
+            }
+          }
+        }
+      });
+    });        
+  },    
   toDate(date) {
     const year = yearFormat.format(date);
     const month = monthFormat.format(date);
@@ -566,7 +685,7 @@ methods: {
       var parsed = YAML.parse(data);
       console.log(parsed);
       this.sampleMeta = parsed.meta;
-      this.sampleMeta.datetime = new Date(this.sampleMeta.timestamp * 1000);
+      this.sampleMeta.datetime = this.sampleMeta.timestamp === undefined ? undefined : new Date(this.sampleMeta.timestamp * 1000);
     })
     .catch(() => {
       this.sampleMeta = undefined;
@@ -580,7 +699,41 @@ methods: {
     .catch(() => {
       this.labels = undefined;
     });
-  }        
+  },
+  onJump() {
+    if(this.jumpTextValid) {
+      var targetIndex = Number.parseInt(this.jumpText) - 1;
+      this.jumpToLabelingListEntry(targetIndex);
+      this.$refs.jumpMenu.save();
+    }
+  },  
+  onResize() {
+    console.log("resize");
+    this.updateLayoutSize();
+  },
+  updateLayoutSize() {
+    let layoutElement = document.getElementById("layoutElement");
+    if(layoutElement === undefined) {
+      this.layoutWidth = 1024;
+    } else {
+      let clientWidth = layoutElement.clientWidth;
+      this.layoutWidth = clientWidth < 256 ? 256 : clientWidth;
+    }
+    this.updateSpectrogramMaxWidthStyle();
+  },
+  updateSpectrogramMaxWidthStyle() {
+    if(this.$refs.spectrogram !== undefined) {
+      this.$refs.spectrogram.style.maxWidth = this.spectrogramMaxWidth + 'px';
+    }
+  },
+  onSpectrogramMouseDown(e) {
+    let rect = this.$refs.spectrogram.getBoundingClientRect();
+    let xPos = e.clientX - rect.left;
+    //console.log("MouseDown " + xPos);
+    let startPos = (this.label.start * this.audioTimeFactor) + (xPos / this.audioColumnsPerSecond);
+    //console.log("MouseDown " + xPos);
+    this.replayAudio(startPos);
+  },                 
 },
 mounted() {
   this.animationFrameCallback = this.animationFrame.bind(this);
@@ -604,7 +757,7 @@ mounted() {
 
 .controls {
   display: grid;
-  grid-template-columns: auto auto auto;
+  grid-template-columns: auto auto auto auto;
   justify-items: center;
   align-items: center;
 }

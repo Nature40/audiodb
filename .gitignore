@@ -8,13 +8,16 @@
 /data_old2
 /data_old3
 /data_bats
+/data_birds
 /labeling_lists
+/labeling_lists_birds
 /log
 /package
 /photo_data
 /photo2_cache
 /review_lists
 /review_lists_bats
+/review_lists_birds
 /samples
 /src_testing
 

@@ -58,7 +58,7 @@
       <br>      
       <i>
         <div style="text-align: left;">
-        Web application compatibility is tested on up-to-date <b>Mozilla Firefox</b> (and <b>Google Chrome</b>).
+        Web application compatibility is tested on up-to-date <b>Mozilla Firefox</b>.
         <br>
         <br>
         Limitations on <b>Google Chrome</b>:

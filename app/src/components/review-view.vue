@@ -56,19 +56,24 @@
           [Arrow Left]
           <v-btn @click="movePrevReviewListEntry"><v-icon>fast_rewind</v-icon></v-btn>
         </span>
+        
         <span :class="{hidden: !review_list_pos_pre_start}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>Start of list reached</b>
         </span>
+        
         <span :class="{hidden: (review_list_pos_pre_start || review_list_pos_past_end)}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>Position {{review_list_pos === undefined ? 0 : (review_list_pos + 1)}} of {{review_list === undefined ? 0 : review_list.entries.length}}</b>
         </span>        
+        
         <span :class="{hidden: !review_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 2;">
           <b>End of list reached</b>
         </span>
+        
         <span :class="{hidden: review_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 3;">
           <v-btn @click="moveNextReviewListEntry"><v-icon>fast_forward</v-icon></v-btn>
           [Arrow Right]
         </span>
+        
         <span style="grid-row-start: 1; grid-column-start: 4; margin-left: 50px; margin-top: 10px;">
           <v-switch
                 v-model="skip_review_entries"
@@ -87,9 +92,7 @@
         <span style="grid-row-start: 1; grid-column-start: 5; margin-left: 50px; background: #f8fff4; color: #499d2a;">
           Reviewed {{reviewedCount}} <span v-if="!isReviewedOnly">of {{review_list === undefined ? NaN : review_list.entries.length}}</span>
         </span>
-
-
-
+        
         <span :class="{hidden: review_list_pos_past_end}" style="grid-row-start: 1; grid-column-start: 6;">
           <v-menu 
             transition="scale-transition" 
@@ -387,7 +390,7 @@ computed: {
     }
     console.log(this.sampleMeta.SampleRate);
     return this.sampleMeta.SampleRate / this.samplingRate;
-  }    
+  },   
 },
 watch: {
   isReviewedOnly: {
@@ -502,23 +505,25 @@ methods: {
     }
   },
   replayAudio(startPos) {
-    requestAnimationFrame(() => {
-      if(this.$refs.audio === undefined) {
-        console.log("no audio");
-        return;
-      }
-      //console.log(this.$refs.audio.src);
-      this.$refs.audio.pause();
-      if(this.label !== undefined) {
-        let currentTime = startPos === undefined ? (this.label.start * this.audioTimeFactor) : startPos;
-        //console.log(currentTime);
-        this.$refs.audio.currentTime = currentTime;
-        this.$refs.audio.play();
-        this.requestAnimationFrame();
-      } else {
-        console.log("label undefined");
-      }
-    });
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        if(this.$refs.audio === undefined) {
+          console.log("no audio");
+          return;
+        }
+        //console.log(this.$refs.audio.src);
+        this.$refs.audio.pause();
+        if(this.label !== undefined) {
+          let currentTime = startPos === undefined ? (this.label.start * this.audioTimeFactor) : startPos;
+          //console.log(currentTime);
+          this.$refs.audio.currentTime = currentTime;
+          this.$refs.audio.play();
+          this.requestAnimationFrame();
+        } else {
+          console.log("label undefined");
+        }
+      });
+    }, 250);
   },
   stopAudio() {
     requestAnimationFrame(() => {
@@ -612,81 +617,102 @@ methods: {
     }
   },
   movePrevReviewListEntry() {
-    if(this.review_list !== undefined) {
-      if(this.skip_review_entries) {
-        if(this.skip_not_review_unsure_entries) {
-          while(this.review_list_pos > -1) {
-            this.review_list_pos--;
-            if(this.review_list_pos > -1 && ((!this.review_list.entries[this.review_list_pos].classified) || (this.review_list.entries[this.review_list_pos].latest_review === 'unsure'))) {
-              break;
-            }
-          }
-        } else {
-          while(this.review_list_pos > -1) {
-            this.review_list_pos--;
-            if(this.review_list_pos > -1 && (!this.review_list.entries[this.review_list_pos].classified)) {
-              break;
-            }
-            }
-          }
-      } else {
-        if(this.review_list_pos > -1) {
-          this.review_list_pos--;
-        }
+    requestAnimationFrame(() => {
+      if(this.$refs.audio !== undefined) {
+        this.$refs.audio.pause();
       }
-    }
+      requestAnimationFrame(() => { 
+        if(this.review_list !== undefined) {
+          if(this.skip_review_entries) {
+            if(this.skip_not_review_unsure_entries) {
+              while(this.review_list_pos > -1) {
+                this.review_list_pos--;
+                if(this.review_list_pos > -1 && ((!this.review_list.entries[this.review_list_pos].classified) || (this.review_list.entries[this.review_list_pos].latest_review === 'unsure'))) {
+                  break;
+                }
+              }
+            } else {
+              while(this.review_list_pos > -1) {
+                this.review_list_pos--;
+                if(this.review_list_pos > -1 && (!this.review_list.entries[this.review_list_pos].classified)) {
+                  break;
+                }
+                }
+              }
+          } else {
+            if(this.review_list_pos > -1) {
+              this.review_list_pos--;
+            }
+          }
+        }
+      });
+    });  
   }, 
   moveNextReviewListEntry() {
-    if(this.review_list !== undefined) {
-      if(this.skip_review_entries) {
-        if(this.skip_not_review_unsure_entries) {
-          while(this.review_list_pos < this.review_list.entries.length) {
-            this.review_list_pos++;
-            if(this.review_list_pos < this.review_list.entries.length && ((!this.review_list.entries[this.review_list_pos].classified) || (this.review_list.entries[this.review_list_pos].latest_review === 'unsure'))) {
-              break;
+    requestAnimationFrame(() => {
+      if(this.$refs.audio !== undefined) {
+        this.$refs.audio.pause();
+      }
+      requestAnimationFrame(() => {    
+        if(this.review_list !== undefined) {
+          if(this.skip_review_entries) {
+            if(this.skip_not_review_unsure_entries) {
+              while(this.review_list_pos < this.review_list.entries.length) {
+                this.review_list_pos++;
+                if(this.review_list_pos < this.review_list.entries.length && ((!this.review_list.entries[this.review_list_pos].classified) || (this.review_list.entries[this.review_list_pos].latest_review === 'unsure'))) {
+                  break;
+                }
+              }
+            } else {
+              while(this.review_list_pos < this.review_list.entries.length) {
+                this.review_list_pos++;
+                if(this.review_list_pos < this.review_list.entries.length && !this.review_list.entries[this.review_list_pos].classified) {
+                  break;
+                }
+              }          
+            }
+          } else {
+            if(this.review_list_pos < this.review_list.entries.length) {
+              this.review_list_pos++;
             }
           }
-        } else {
-          while(this.review_list_pos < this.review_list.entries.length) {
-            this.review_list_pos++;
-            if(this.review_list_pos < this.review_list.entries.length && !this.review_list.entries[this.review_list_pos].classified) {
-              break;
-            }
-          }          
         }
-      } else {
-        if(this.review_list_pos < this.review_list.entries.length) {
-          this.review_list_pos++;
-        }
-      }
-    }    
+      });
+    });         
   },
   jumpToReviewListEntry(targetIndex) {
-    if(this.review_list !== undefined) {
-      if(this.skip_review_entries) {
-        if(this.skip_not_review_unsure_entries) {
-          while(targetIndex <= this.review_list.entries.length) {
-            if(targetIndex < this.review_list.entries.length && ((!this.review_list.entries[targetIndex].classified) || (this.review_list.entries[targetIndex].latest_review === 'unsure'))) {
-              break;
-            }
-            targetIndex++;
-          }
-          this.review_list_pos = targetIndex;
-        } else {
-          while(targetIndex <= this.review_list.entries.length) {
-            if(targetIndex < this.review_list.entries.length && !this.review_list.entries[targetIndex].classified) {
-              break;
-            }
-            targetIndex++;
-          }
-          this.review_list_pos = targetIndex;          
-        }
-      } else {
-        if(targetIndex <= this.review_list.entries.length) {
-          this.review_list_pos = targetIndex;
-        }
+    requestAnimationFrame(() => {
+      if(this.$refs.audio !== undefined) {
+        this.$refs.audio.pause();
       }
-    }    
+      requestAnimationFrame(() => {      
+        if(this.review_list !== undefined) {
+          if(this.skip_review_entries) {
+            if(this.skip_not_review_unsure_entries) {
+              while(targetIndex <= this.review_list.entries.length) {
+                if(targetIndex < this.review_list.entries.length && ((!this.review_list.entries[targetIndex].classified) || (this.review_list.entries[targetIndex].latest_review === 'unsure'))) {
+                  break;
+                }
+                targetIndex++;
+              }
+              this.review_list_pos = targetIndex;
+            } else {
+              while(targetIndex <= this.review_list.entries.length) {
+                if(targetIndex < this.review_list.entries.length && !this.review_list.entries[targetIndex].classified) {
+                  break;
+                }
+                targetIndex++;
+              }
+              this.review_list_pos = targetIndex;          
+            }
+          } else {
+            if(targetIndex <= this.review_list.entries.length) {
+              this.review_list_pos = targetIndex;
+            }
+          }
+        }
+      });
+    });        
   },
   toDate(date) {
     const year = yearFormat.format(date);
@@ -790,7 +816,7 @@ methods: {
     let startPos = (this.label.start * this.audioTimeFactor) + (xPos / this.audioColumnsPerSecond);
     //console.log("MouseDown " + xPos);
     this.replayAudio(startPos);
-  }       
+  },       
 },
 mounted() {
   this.animationFrameCallback = this.animationFrame.bind(this);
