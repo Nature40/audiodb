@@ -15,17 +15,40 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Representer;
+import org.yaml.snakeyaml.resolver.Resolver;
 
 import util.collections.ReadonlyList;
 import util.collections.vec.SyncVec;
 import util.collections.vec.Vec;
 
 public class YamlUtil {
+	private static final Logger log = LogManager.getLogger();
+
+	private static class CleanResolver extends Resolver {
+		@Override
+		protected void addImplicitResolvers() {
+			addImplicitResolver(Tag.BOOL, BOOL, "yYnNtTfFoO");
+			addImplicitResolver(Tag.INT, INT, "-+0123456789");
+			addImplicitResolver(Tag.FLOAT, FLOAT, "-+0123456789.");
+			addImplicitResolver(Tag.MERGE, MERGE, "<");
+			addImplicitResolver(Tag.NULL, NULL, "~nN\0");
+			addImplicitResolver(Tag.NULL, EMPTY, null);
+			//addImplicitResolver(Tag.TIMESTAMP, TIMESTAMP, "0123456789"); // do not parse timestamps			
+		}
+	}
 
 	public static YamlMap readYamlMap(Path path) {
-		try(InputStream in = new FileInputStream(path.toFile())) {
-			YamlMap yamlMap = YamlMap.ofObject(new Yaml().load(in));
+		try(InputStream in = new FileInputStream(path.toFile())) {			
+			Yaml yaml = new Yaml(new Constructor(), new Representer(), new DumperOptions(), new LoaderOptions(), new CleanResolver());
+			YamlMap yamlMap = YamlMap.ofObject(yaml.load(in));
 			return yamlMap;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -71,7 +94,7 @@ public class YamlUtil {
 	public static void put(Map<String, Object> map, String name, long value) {
 		map.put(name, value);
 	}
-	
+
 	public static void put(Map<String, Object> map, String name, String value) {
 		map.put(name, value);
 	}
@@ -104,7 +127,7 @@ public class YamlUtil {
 		}		
 		return vec;
 	}
-	
+
 	public static <T> SyncVec<T> optSyncVec(YamlMap yamlMap, String name, Function<YamlMap, T> parser) {
 		SyncVec<T> vec = new SyncVec<T>();
 		List<YamlMap> data = yamlMap.optList(name).asMaps();		
@@ -116,7 +139,7 @@ public class YamlUtil {
 		}		
 		return vec;
 	}
-	
+
 	public static <T> void optListConsumer(YamlMap yamlMap, String name, Function<YamlMap, T> parser, Consumer<T> action) {
 		List<YamlMap> data = yamlMap.optList(name).asMaps();		
 		for(YamlMap v:data) {

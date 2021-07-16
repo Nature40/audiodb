@@ -32,7 +32,7 @@ export default {
     setIndex({commit, rootState, dispatch}, index) {
       var photo = rootState.photos.data[index];
       commit('setIndexAndPhoto', {index, photo});
-      dispatch('meta/query');
+      dispatch('meta/refresh');
     },
     move({state, rootState, dispatch}, relative) {
       var index = state.index + relative;

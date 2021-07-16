@@ -31,6 +31,8 @@
 /label_definitions.yaml_OLD
 /photo_cache.mv.db
 /photo_cache.trace.db
+/photo_class.csv
+/photo_classification_definitions.csv
 /thumb_cache.mv.db
 /thumb_cache.trace.db
 /webcontent/app

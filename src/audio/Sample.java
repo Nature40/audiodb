@@ -68,8 +68,8 @@ public class Sample {
 	}
 
 	public synchronized void writeToFile() {		
-		YamlUtil.putList(yamlMap.getRootMap(), "Labels", labels, Label::toMap);		
-		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getRootMap());
+		YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
+		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
 	}
 
 	public synchronized File getAudioFile() {
@@ -174,9 +174,9 @@ public class Sample {
 	public synchronized void setSampleUserLocked(SampleUserLocked sampleUserLocked) {
 		this.sampleUserLocked = sampleUserLocked;
 		if(sampleUserLocked != null) {
-			yamlMap.getRootMap().put("sample_locked", sampleUserLocked.toMap());
+			yamlMap.getInternalMap().put("sample_locked", sampleUserLocked.toMap());
 		} else {
-			yamlMap.getRootMap().remove("sample_locked");
+			yamlMap.getInternalMap().remove("sample_locked");
 		}
 		writeToFile();
 	}

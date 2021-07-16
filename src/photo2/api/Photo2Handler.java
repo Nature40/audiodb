@@ -2,42 +2,44 @@ package photo2.api;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
+import java.time.ZoneOffset;
+import java.util.function.Predicate;
 
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
-import org.imgscalr.Scalr;
-import org.imgscalr.Scalr.Method;
-import org.imgscalr.Scalr.Mode;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.json.JSONWriter;
 
 import com.drew.imaging.ImageProcessingException;
 
+import audio.Account;
 import audio.Broker;
+import audio.Label;
+import audio.Sample;
+import audio.review.ReviewListEntry;
+import audio.review.ReviewedLabel;
+import audio.review.ReviewedLabel.Reviewed;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import photo2.Photo2;
 import photo2.PhotoDB2;
 import photo2.ThumbManager;
 import util.JsonUtil;
-import util.SpiUtil;
 import util.Web;
 
 public class Photo2Handler {
@@ -175,10 +177,65 @@ public class Photo2Handler {
 		try(FileInputStream in = new FileInputStream(file)) {
 			IO.copy(in, response.getOutputStream());
 		}
-	}	
+	}
 
-	private void handleRoot(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
-		boolean writeClassifications = Web.getFlagBoolean(request, "classifications");
+	private void handleRoot(Photo2 photo, Request request, HttpServletResponse response) throws ImageProcessingException, IOException {
+		switch(request.getMethod()) {
+		case "GET":
+			handleRoot_GET(photo, request, response);
+			break;
+		case "POST":
+			handleRoot_POST(photo, request, response);
+			break;
+		default:
+			throw new RuntimeException("no call");
+		}
+	}
+
+
+	private static float[] jsonToBbox(JSONObject json, String name) {
+		JSONArray jsonArray = json.optJSONArray(name);
+		if(jsonArray == null) {
+			return null;
+		}
+		if(jsonArray.length() != 4) {
+			throw new RuntimeException("no bbox");
+		}
+		float[] bbox = new float[4];
+		for (int i = 0; i < 4; i++) {
+			bbox[i] = Float.parseFloat(jsonArray.get(i).toString());
+		}
+		return bbox;
+	}
+
+	private void handleRoot_POST(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
+		HttpSession session = request.getSession(false);
+		Account account = (Account) session.getAttribute("account");		
+		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
+		JSONArray jsonActions = jsonReq.getJSONArray("actions");
+		int jsonActionsLen = jsonActions.length();
+		for (int i = 0; i < jsonActionsLen; i++) {
+			JSONObject jsonAction = jsonActions.getJSONObject(i);
+			String actionName = jsonAction.getString("action");
+			switch(actionName) {
+			case "set_classification": {
+				float[] bbox = jsonToBbox(jsonAction, "bbox");
+				String classification = jsonAction.getString("classification");
+				String classificator = "Expert";
+				String identity = account.username;
+				String date = LocalDateTime.now().toString();
+				photo.setClassification(bbox, classification, classificator, identity, date);
+				break;
+			}
+			default:
+				throw new RuntimeException("unknown action:" + actionName);
+			}
+		}
+	}
+
+	private void handleRoot_GET(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
+		//boolean writeClassifications = Web.getFlagBoolean(request, "classifications");
+		boolean writeDetections = Web.getFlagBoolean(request, "detections");
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
@@ -187,7 +244,54 @@ public class Photo2Handler {
 		JsonUtil.write(json, "id", photo.id);
 		JsonUtil.write(json, "location", photo.location);
 		JsonUtil.write(json, "date", photo.date);
-		if(writeClassifications) {
+		if(writeDetections) {
+			json.key("detections");
+			json.array(); // detections
+			photo.foreachDetection(map -> {
+				json.object();  // detection
+				if(map.contains("bbox")) {
+					json.key("bbox");					
+					json.value(map.getList("bbox").asFloatArray());
+				}
+				json.key("classifications");
+				json.array(); // classifications
+				map.optList("classifications").asMaps().forEach(cmap -> {
+					json.object();  // classification
+					if(cmap.contains("classification")) {
+						json.key("classification");
+						json.value(cmap.getString("classification"));
+					}
+					if(cmap.contains("classificator")) {
+						json.key("classificator");
+						json.value(cmap.getString("classificator"));
+					}
+					if(cmap.contains("identity")) {
+						json.key("identity");
+						json.value(cmap.getString("identity"));
+					}
+					try {
+						if(cmap.contains("date")) {
+							LocalDateTime localDateTime = cmap.getLocalDateTime("date");	
+							json.key("date");	
+							json.value(localDateTime);
+						}
+					} catch(Exception e) {
+						e.printStackTrace();
+						log.warn(e);
+					}
+					if(cmap.contains("conf")) {
+						json.key("conf");
+						json.value(cmap.getString("conf"));
+					}						
+					json.endObject(); // classification
+				});
+				json.endArray(); // classifications	
+
+				json.endObject();  // detection
+			});
+			json.endArray(); // detections
+		}
+		/*if(writeClassifications) {
 			json.key("classifications");
 			json.array();
 			photo.foreachClassification(map -> {
@@ -228,7 +332,7 @@ public class Photo2Handler {
 				json.endObject();
 			});
 			json.endArray(); // classifications
-		}
+		}*/
 		json.endObject(); // photo
 		json.endObject(); // json
 	}

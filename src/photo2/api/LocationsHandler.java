@@ -2,18 +2,14 @@ package photo2.api;
 
 import java.io.IOException;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONWriter;
 
 import audio.Broker;
-
+import jakarta.servlet.http.HttpServletResponse;
 import photo2.PhotoDB2;
-import util.Web;
-import util.collections.vec.Vec;
 
 public class LocationsHandler {
 	private static final Logger log = LogManager.getLogger();

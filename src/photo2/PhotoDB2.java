@@ -1,9 +1,9 @@
 package photo2;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,6 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 
@@ -18,7 +20,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import audio.Broker;
+import de.siegmar.fastcsv.reader.CloseableIterator;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRow;
 import util.Timer;
+import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
@@ -30,6 +37,8 @@ public class PhotoDB2 {
 	public final ThumbManager thumbManager;
 
 	private Connection conn;
+
+	private Map<String, Vec<ClassificationDefinition>> classificationDefinitionsMap;
 
 	ThreadLocal<SqlConnector> tlsqlconnector = new ThreadLocal<SqlConnector>() {
 		@Override
@@ -44,6 +53,8 @@ public class PhotoDB2 {
 		this.thumbManager = new ThumbManager();
 		try {
 			this.conn = DriverManager.getConnection("jdbc:h2:./photo_cache");
+			//log.info("transaction isolation level: " + this.conn.getTransactionIsolation());
+			//log.info("auto-commit mode: " + this.conn.getAutoCommit());
 			Statement stmt = conn.createStatement();
 
 			/*ResultSet res = conn.getMetaData().getTables(null, null, "PHOTO", null);
@@ -85,6 +96,8 @@ public class PhotoDB2 {
 			log.info(Timer.stop("traverse"));
 		}
 
+		readDefinitions();
+
 		updateThumbs();
 	}
 
@@ -120,7 +133,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private static String metaRelPathToID(String meta_rel_path) {
 		String id = meta_rel_path.replaceAll("/", "__");
 		id = id.replaceAll("\\\\", "__");
@@ -135,61 +148,65 @@ public class PhotoDB2 {
 			if(path.toFile().isDirectory()) {
 				traverse(projectConfig, path, stats);
 			} else if(path.toFile().isFile()) {
-				if(path.getFileName().toString().endsWith(".yaml")) {
-					String meta_rel_path = projectConfig.root_path.relativize(path).toString();
-					String id = metaRelPathToID(meta_rel_path);
-					long last_modified = path.toFile().lastModified();
-					if(!this.isUpToDate(id, last_modified)) {
+				try {
+					if(path.getFileName().toString().endsWith(".yaml")) {
+						String meta_rel_path = projectConfig.root_path.relativize(path).toString();
+						String id = metaRelPathToID(meta_rel_path);
+						long last_modified = path.toFile().lastModified();
+						if(!this.isUpToDate(id, last_modified)) {
 
 
-						YamlMap yamlMap = YamlUtil.readYamlMap(path);
-						if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
-							String image_file = yamlMap.getString("file");
-							String location = yamlMap.getString("location");
-							LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
-							//log.info(path);
-							try {
-								String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
-								//log.info("read " + meta_rel_path);
-								//log.info("read+" + id);
+							YamlMap yamlMap = YamlUtil.readYamlMap(path);
+							if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
+								String image_file = yamlMap.getString("file");
+								String location = yamlMap.getString("location");
+								LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
+								//log.info(path);
+								try {
+									String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
+									//log.info("read " + meta_rel_path);
+									//log.info("read+" + id);
 
-								if(this.contains(id)) {
-									sqlconnector.stmt_update_photo.setString(1, projectConfig.project);
-									sqlconnector.stmt_update_photo.setString(2, meta_rel_path);
-									sqlconnector.stmt_update_photo.setString(3, image_rel_path);
-									sqlconnector.stmt_update_photo.setString(4, location);
-									sqlconnector.stmt_update_photo.setObject(5, date);
-									sqlconnector.stmt_update_photo.setLong(6, last_modified);
-									sqlconnector.stmt_update_photo.setString(7, id);
-									sqlconnector.stmt_update_photo.executeUpdate();
-									stats[1]++;
-								} else {
-									sqlconnector.stmt_insert_file.setString(1, id);
-									sqlconnector.stmt_insert_file.setString(2, projectConfig.project);
-									sqlconnector.stmt_insert_file.setString(3, meta_rel_path);
-									sqlconnector.stmt_insert_file.setString(4, image_rel_path);
-									sqlconnector.stmt_insert_file.setString(5, location);
-									sqlconnector.stmt_insert_file.setObject(6, date);
-									sqlconnector.stmt_insert_file.setLong(7, last_modified);
-									sqlconnector.stmt_insert_file.executeUpdate();
-									stats[0]++;
+									if(this.contains(id)) {
+										sqlconnector.stmt_update_photo.setString(1, projectConfig.project);
+										sqlconnector.stmt_update_photo.setString(2, meta_rel_path);
+										sqlconnector.stmt_update_photo.setString(3, image_rel_path);
+										sqlconnector.stmt_update_photo.setString(4, location);
+										sqlconnector.stmt_update_photo.setObject(5, date);
+										sqlconnector.stmt_update_photo.setLong(6, last_modified);
+										sqlconnector.stmt_update_photo.setString(7, id);
+										sqlconnector.stmt_update_photo.executeUpdate();
+										stats[1]++;
+									} else {
+										sqlconnector.stmt_insert_file.setString(1, id);
+										sqlconnector.stmt_insert_file.setString(2, projectConfig.project);
+										sqlconnector.stmt_insert_file.setString(3, meta_rel_path);
+										sqlconnector.stmt_insert_file.setString(4, image_rel_path);
+										sqlconnector.stmt_insert_file.setString(5, location);
+										sqlconnector.stmt_insert_file.setObject(6, date);
+										sqlconnector.stmt_insert_file.setLong(7, last_modified);
+										sqlconnector.stmt_insert_file.executeUpdate();
+										stats[0]++;
+									}
+								} catch (SQLException e) {
+									log.warn(e);
 								}
-							} catch (SQLException e) {
-								log.warn(e);
+
+							} else {
+								log.warn("no valid PhotoSens yaml  " + path);
 							}
 
-						} else {
-							log.warn("no valid PhotoSens yaml  " + path);
 						}
-
 					}
+				} catch(Exception e) {
+					log.warn(e);
 				}
 			} else {
 				log.warn("unknown entity: " + path);
 			}
 		}
 	}
-	
+
 	public synchronized void close() {
 		if(conn != null) {
 			try {
@@ -255,6 +272,13 @@ public class PhotoDB2 {
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	public void foreachClassificationDefinition(String project, Consumer<ClassificationDefinition> consumer) {
+		Vec<ClassificationDefinition> vec = classificationDefinitionsMap.get(project);
+		if(vec != null) {
+			vec.forEach(consumer);
 		}
 	}
 
@@ -359,5 +383,44 @@ public class PhotoDB2 {
 				}
 			});			
 		}).start();
+	}
+
+	public void readDefinitions() {
+		HashMap<String, Vec<ClassificationDefinition>> map = new HashMap<String, Vec<ClassificationDefinition>>();
+		for(PhotoProjectConfig pc: config.projectMap.values()) {
+			if(pc.classification_definition_csv != null) {
+				try (CsvReader csv = CsvReader.builder().commentStrategy(CommentStrategy.SKIP).build(pc.classification_definition_csv, Charset.forName("UTF-8"))) {
+					try(CloseableIterator<CsvRow> it = csv.iterator()) {
+						if(it.hasNext()) {
+							CsvRow header = it.next();
+							HashMap<String, Integer> headerMap = new HashMap<String, Integer>();
+
+							for(int i = 0; i < header.getFieldCount(); i++) {
+								headerMap.putIfAbsent(header.getField(i), i);
+							}
+
+							int iName = headerMap.get("name");
+							int iDescription = headerMap.getOrDefault("description", -1);
+
+							Vec<ClassificationDefinition> vec = new Vec<ClassificationDefinition>();
+
+							while(it.hasNext()) {
+								CsvRow row = it.next();
+								int rowLen = row.getFieldCount();
+								String name = row.getField(iName);
+								String description = iDescription < 0 || rowLen <= iDescription  ? "" : row.getField(iDescription);
+								ClassificationDefinition classificationDefinition = new ClassificationDefinition(name, description);
+								vec.add(classificationDefinition);
+							}
+							map.put(pc.project, vec);
+						}
+					}
+					csv.forEach(System.out::println);
+				} catch(Exception e) {
+					log.warn("error in read classification_definition_csv: " + e);
+				}
+			}
+		}
+		classificationDefinitionsMap = map;
 	}
 }

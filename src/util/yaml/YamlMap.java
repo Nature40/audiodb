@@ -299,7 +299,7 @@ public class YamlMap {
 		return map.toString();
 	}
 
-	public Map<String, Object> getRootMap() {
+	public Map<String, Object> getInternalMap() {
 		return map;
 	}
 
@@ -319,7 +319,7 @@ public class YamlMap {
 		String s = getString(name);
 		return converter.apply(s);
 	}
-	
+
 	public <T> T opt(String name, Function<String, T> converter) {
 		String s = optString(name);
 		if(s == null) {
@@ -329,14 +329,18 @@ public class YamlMap {
 	}
 
 	public LocalDateTime getLocalDateTime(String name) {
-		Date date = (Date) getObject(name);
-		LocalDateTime localDateTime = date
-				.toInstant()
-				.atZone(ZoneId.systemDefault())
-				.toLocalDateTime();	
-		return localDateTime;
+		Object o = getObject(name);
+		if(o instanceof Date) {
+			Date date = (Date) o; 
+			LocalDateTime localDateTime = date
+					.toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDateTime();	
+			return localDateTime;
+		}
+		return LocalDateTime.parse(o.toString());
 	}
-	
+
 	public LocalDateTime optLocalDateTime(String name) {
 		Date date = (Date) optObject(name);
 		if(date == null) {

@@ -279,7 +279,7 @@ public class SampleHandler {
 		yamlMapSample.put("audio_file_name", sample.getAudioFileName());
 		yamlMapSample.put("audio_file_size", sample.getAudioFile().length());
 
-		yamlMap.put("meta", sample.getMetaMap().getRootMap());
+		yamlMap.put("meta", sample.getMetaMap().getInternalMap());
 
 		new Yaml().dump(yamlMap, response.getWriter());
 

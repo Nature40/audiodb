@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import util.collections.ReadonlyList;
 import util.collections.array.ReadonlyArray;
+import util.collections.vec.Vec;
 
 public class YamlList {
 	
@@ -25,24 +26,24 @@ public class YamlList {
 		this.list = list;
 	}
 	
-	public List<YamlMap> asMaps() {
-		ArrayList<YamlMap> result = new ArrayList<YamlMap>(list.size());
+	public Vec<YamlMap> asMaps() {
+		Vec<YamlMap> vec = new Vec<YamlMap>(list.size());
 		for(Object e:list) {
 			if(e instanceof Map) {
-				result.add(new YamlMap((Map<String, Object>) e));
+				vec.add(new YamlMap((Map<String, Object>) e));
 			} else {
 				throw new RuntimeException("element is no map "+e);
 			}
 		}
-		return result;
+		return vec;
 	}
 	
-	public List<String> asStrings() {
-		ArrayList<String> result = new ArrayList<String>(list.size());
+	public Vec<String> asStrings() {
+		Vec<String> vec = new Vec<String>(list.size());
 		for(Object e:list) {
-			result.add(e.toString());
+			vec.add(e.toString());
 		}
-		return result;
+		return vec;
 	}
 	
 	public String[] asStringArray() {
@@ -85,5 +86,9 @@ public class YamlList {
 			i++;
 		}
 		return ReadonlyList.of(a);
+	}
+
+	public List<Object> getInternalList() {
+		return list;		
 	}
 }

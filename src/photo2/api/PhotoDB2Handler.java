@@ -13,6 +13,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
+import photo2.ClassificationDefinition;
 import photo2.PhotoDB2;
 import util.Web;
 
@@ -68,9 +69,10 @@ public class PhotoDB2Handler extends AbstractHandler {
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		boolean locations = Web.getFlagBoolean(request, "locations");
 		boolean projects = Web.getFlagBoolean(request, "projects");
 		String project = Web.getString(request, "project", null);
+		boolean locations = Web.getFlagBoolean(request, "locations");
+		boolean classification_definitions = Web.getFlagBoolean(request, "classification_definitions");		
 		
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
@@ -93,6 +95,12 @@ public class PhotoDB2Handler extends AbstractHandler {
 			json.value(project);
 			if(locations) {
 				locationsHandler.writeLocationsJSON(project, json);	
+			}
+			if(classification_definitions) {				
+				json.key("classification_definitions");
+				json.array();				
+				photodb.foreachClassificationDefinition(project, ClassificationDefinition.toJsonConsumer(json));
+				json.endArray();
 			}
 		} else if(locations) {
 			throw new RuntimeException("locations needs project parameter");

@@ -7,10 +7,12 @@
 </q-page>
 
 <q-page v-if="photo !== undefined" class="column wrap  items-center ">
-    <div>
-      <q-btn :disable="!hasPrev" @click="move(-1)">prev</q-btn>
-      <span class="time-text">{{dateText}}</span>
-      <q-btn :disable="!hasNext" @click="move(+1)">next</q-btn>      
+    <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;">
+      Selected image <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
+      <span class="time-text">{{locationText}} | {{dateText}}</span>
+      <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
+      <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
+      <q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>      
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
@@ -18,37 +20,67 @@
       <q-spinner-gears color="primary" size="4em" v-show="imageLoading" style="position: absolute; top: 0px; right: 0px;"/>
       <span v-show="!imageLoading && imageError" style="color: red;">ERROR loading image.</span>
     </div>
-    <div class="row" style="padding-bottom: 10px;">
-      <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
-      <q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>
+    <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;" v-if="detections !== undefined && detections.length > 1 && selectedDetectionIndex !== undefined">
+      Selected detection
+      <q-btn :disable="!hasPrevDetection" @click="movePrevDetection" icon="arrow_left" :style="hasPrevDetection ? {} : {color: 'grey'}" title="Move to previous detection within this image."></q-btn>
+      <span>{{selectedDetectionIndex + 1}}</span>
+      <q-btn :disable="!hasNextDetection" @click="moveNextDetection" icon="arrow_right" :style="hasNextDetection ? {} : {color: 'grey'}" title="Move to next detection within this image,"></q-btn>
+      of 
+      {{detections.length}}
     </div>
-    <!--<div>
-      <q-btn :disable="!hasPrev" @click="$refs.tagsDialog.show()">tags</q-btn>
-    </div>-->
-    <div>
+    <div class="row"  style="padding-bottom: 5px;">
+      <q-select
+        filled
+        v-model="selectedClassification" 
+        use-input
+        hide-selected
+        fill-input
+        input-debounce="0"
+        label="Classification"
+        :options="classification_definitions_list_filtered" 
+        @filter="classificationSelectionFilterFn"
+        style="min-width: 200px;"
+        :options-dense="true" 
+        option-label="name"
+      >
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+            <q-item-section>
+              <q-item-label>{{scope.opt.name}} {{scope.opt.description !== '' ? ' - ' + scope.opt.description : ''}}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
+        <template v-slot:no-option>
+          <q-item>
+            <q-item-section class="text-grey">
+              No results
+            </q-item-section>
+          </q-item>
+        </template>        
+      </q-select>
+      <q-btn icon="where_to_vote" title="Store selected classification." round @click="onStoreClassification" />
+    </div>
+    <div v-if="selectedDetection !== undefined">
       <table class="blueTable">
         <thead>
           <tr>
-            <th>Classification</th>
-            <th>Classificator</th>
-            <th>Identity</th>
-            <th>Reliability</th>            
-            <th>Date</th>
-            <th>Bbox</th>
+            <th>classification</th>
+            <th>conf</th>
+            <th>classificator</th>
+            <th>identity</th>
+            <th>date</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(entry, index) in classifications" 
+          <tr v-for="(entry) in selectedDetection.classifications" 
           :key="JSON.stringify(entry)" 
           style="margin-right: 15px; color: #111191c4;" 
-          :style="{'background-color': index === selectedClassificationIndex ? 'rgba(26, 176, 26, 0.57)' : 'rgba(196, 196, 196, 0.57)'}"
-          @click="selectedClassificationIndex = index;">
+          :style="{'background-color': 'rgba(196, 196, 196, 0.57)'}">
             <td><b>{{entry.classification}}</b></td>
+            <td>{{entry.conf}}</td>
             <td>{{entry.classificator}}</td>
-            <td>{{entry.expert_name}}</td>
-            <td>{{entry.conf === undefined ? entry.uncertainty : entry.conf}}</td>            
+            <td>{{entry.identity}}</td>            
             <td>{{entry.date}}</td>
-            <td>{{entry.bbox}}</td>
           </tr>
         </tbody>
       </table>
@@ -87,19 +119,26 @@ export default {
     maxImageHeight: 480,
     imageLoading: false,
     imageError: false,
-    selectedClassificationIndex: undefined,
+    selectedDetectionIndex: undefined,
+    selectedClassification: undefined,
+    classification_definitions_list_filtered: [],
   }),  
 
   computed: {
     ...mapState({
       photo: state => state.photo.photo,
       photoMeta: state => state.photo.meta,
+      classification_definitions: state => state.meta?.data?.classification_definitions,
     }),     
     ...mapGetters({
       api: 'api',
       hasPrev: 'photo/hasPrev',
       hasNext: 'photo/hasNext',
+      apiPOST: 'apiPOST',      
     }),
+    classification_definitions_list() {
+      return this.classification_definitions === undefined ? [] : this.classification_definitions;
+    },
     imageURL() {
       //return this.api('photodb2', 'photos', this.photo, 'image.jpg');
       //return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?width=1024&height=768';
@@ -121,28 +160,47 @@ export default {
         }
       }
     },
+    locationText() {
+      if(this.photoMeta === undefined || this.photoMeta.data === undefined) {
+        return '---';
+      }
+      return this.photoMeta.data.location;
+    },
     dateText() {
-      var date = this.photoMeta.date;
-      if(date === undefined) {
+      if(this.photoMeta === undefined || this.photoMeta.date === undefined) {
         return "0000-00-00 00:00";
       }
+      var date = this.photoMeta.date;     
       return date.getUTCFullYear() +
         '-' + pad(date.getUTCMonth() + 1) +
         '-' + pad(date.getUTCDate()) +
         ' ' + pad(date.getUTCHours()) +
         ':' + pad(date.getUTCMinutes());
     },
-    classifications() {
-      if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.classifications === undefined) {
+    detections() {
+      if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.detections === undefined) {
         return [];
       }
-      return this.photoMeta.data.classifications;
-    },    
+      return this.photoMeta.data.detections;
+    },
+    selectedDetection() {
+      if(this.detections === undefined || this.selectedDetectionIndex === undefined || this.selectedDetectionIndex >= this.detections.length || this.selectedDetectionIndex < 0) {
+        return undefined;
+      }
+      return this.detections[this.selectedDetectionIndex];
+    },
+    hasPrevDetection() {
+      return this.detections !== undefined && this.detections.length > 0 && this.selectedDetectionIndex !== undefined && this.selectedDetectionIndex > 0;
+    },
+    hasNextDetection() {
+      return this.detections !== undefined && this.detections.length > 0 && this.selectedDetectionIndex !== undefined && this.selectedDetectionIndex < this.detections.length - 1;
+    },           
   },
 
   methods: {
     ...mapActions({
       move: 'photo/move',
+      photoMetaRefresh: 'photo/meta/refresh',
     }),
     redrawImageOverlay() {
       //console.log("draw");      
@@ -163,27 +221,27 @@ export default {
         ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
         ctx.lineWidth = 3;
         ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-        this.classifications.forEach((classification, index) => {
-          if(classification.bbox !== undefined) {
-            //console.log(classification.bbox);
-            var xmin = classification.bbox[0] * width;
-            var ymin = classification.bbox[1] * height;
-            var boxwidth = classification.bbox[2] * width;
-            var boxheight = classification.bbox[3] * height;
-            if(index !== this.selectedClassificationIndex) {
+        this.detections.forEach((detection, index) => {
+          if(detection.bbox !== undefined) {
+            //console.log(detection.bbox);
+            var xmin = detection.bbox[0] * width;
+            var ymin = detection.bbox[1] * height;
+            var boxwidth = detection.bbox[2] * width;
+            var boxheight = detection.bbox[3] * height;
+            if(index !== this.selectedDetectionIndex) {
              ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
             }
-            ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+            //ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
           }
         });
-        if(this.selectedClassificationIndex !== undefined) {
-          let classification = this.classifications[this.selectedClassificationIndex];
-          if(classification.bbox !== undefined) {
-            //console.log(classification.bbox);
-            var xmin = classification.bbox[0] * width;
-            var ymin = classification.bbox[1] * height;
-            var boxwidth = classification.bbox[2] * width;
-            var boxheight = classification.bbox[3] * height;
+        if(this.selectedDetectionIndex !== undefined) {
+          let detection = this.detections[this.selectedDetectionIndex];
+          if(detection.bbox !== undefined) {
+            //console.log(detection.bbox);
+            var xmin = detection.bbox[0] * width;
+            var ymin = detection.bbox[1] * height;
+            var boxwidth = detection.bbox[2] * width;
+            var boxheight = detection.bbox[3] * height;
             ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
             ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
           }
@@ -215,19 +273,58 @@ export default {
       if(this.maxImageHeight < 240) {
         this.maxImageHeight = 240;
       }
-    }  
+    },
+    classificationSelectionFilterFn(val, update) {
+      update(() => {
+          if (val === '') {
+            this.classification_definitions_list_filtered = this.classification_definitions_list;
+          } else {
+            const needle = val.toLowerCase();
+            this.classification_definitions_list_filtered = this.classification_definitions_list.filter(v => v.name.toLowerCase().indexOf(needle) > -1);
+          }
+        }, ref => {
+          if (val !== '' && ref.options.length > 0) {
+            ref.setOptionIndex(-1)
+            ref.moveOptionSelection(1, true)
+          }
+      });
+    },
+    async onStoreClassification() {
+      if(this.photo !== undefined && this.selectedClassification !== undefined) {
+        var action = {action: "set_classification", classification: this.selectedClassification.name};
+        if(this.selectedDetection !== undefined && this.selectedDetection.bbox !== undefined) {
+          action.bbox = this.selectedDetection.bbox;
+        }
+        var content = {actions: [action]}; 
+        try {
+          var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
+        } finally {
+          this.photoMetaRefresh();
+        }
+      }
+    },
+    movePrevDetection() {
+      if(this.hasPrevDetection) {
+        this.selectedDetectionIndex--;
+      }
+    },
+    moveNextDetection() {
+      if(this.hasNextDetection) {
+        this.selectedDetectionIndex++;
+      }
+    },      
   },
   
   watch: {
-    classifications() {
-      if(this.classifications !== undefined && this.classifications.length > 0) {
-        this.selectedClassificationIndex = 0;
+    detections() {
+      if(this.detections !== undefined && this.detections.length > 0) {
+        this.selectedDetectionIndex = 0;
       } else {
-        this.selectedClassificationIndex = undefined;
+        this.selectedDetectionIndex = undefined;
       }
       this.redrawImageOverlay();
     },
-    selectedClassificationIndex() {
+    selectedDetectionIndex() {
       this.redrawImageOverlay();
     },
     imageURL() {

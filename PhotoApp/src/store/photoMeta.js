@@ -33,12 +33,10 @@ export default {
   },
   
   actions: {
-    async query({rootState, commit, rootGetters}, params) {
+    async refresh({rootState, commit, rootGetters}) {
       commit('setLoading')
-      if(params === undefined) {
-        params = {};
-      }
-      params.classifications = true;
+      var params = {};
+      params.detections = true;
       try {
           var response =  await rootGetters.apiGET(['photodb2','photos', rootState.photo.photo], {params});
           commit('setData', response.data.photo);
