@@ -24,6 +24,7 @@ import de.siegmar.fastcsv.reader.CloseableIterator;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.CsvRow;
+import photo2.api.PhotoMeta;
 import util.Timer;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -134,6 +135,8 @@ public class PhotoDB2 {
 		}
 	}
 
+
+
 	private static String metaRelPathToID(String meta_rel_path) {
 		String id = meta_rel_path.replaceAll("/", "__");
 		id = id.replaceAll("\\\\", "__");
@@ -143,66 +146,101 @@ public class PhotoDB2 {
 
 	private void traverse(PhotoProjectConfig projectConfig, Path root, int[] stats) throws IOException {
 		log.info("traverse " + root);
-		SqlConnector sqlconnector = tlsqlconnector.get();
+
 		for(Path path:Files.newDirectoryStream(root)) {
 			if(path.toFile().isDirectory()) {
 				traverse(projectConfig, path, stats);
 			} else if(path.toFile().isFile()) {
 				try {
 					if(path.getFileName().toString().endsWith(".yaml")) {
-						String meta_rel_path = projectConfig.root_path.relativize(path).toString();
-						String id = metaRelPathToID(meta_rel_path);
-						long last_modified = path.toFile().lastModified();
-						if(!this.isUpToDate(id, last_modified)) {
-
-
-							YamlMap yamlMap = YamlUtil.readYamlMap(path);
-							if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
-								String image_file = yamlMap.getString("file");
-								String location = yamlMap.getString("location");
-								LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
-								//log.info(path);
-								try {
-									String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
-									//log.info("read " + meta_rel_path);
-									//log.info("read+" + id);
-
-									if(this.contains(id)) {
-										sqlconnector.stmt_update_photo.setString(1, projectConfig.project);
-										sqlconnector.stmt_update_photo.setString(2, meta_rel_path);
-										sqlconnector.stmt_update_photo.setString(3, image_rel_path);
-										sqlconnector.stmt_update_photo.setString(4, location);
-										sqlconnector.stmt_update_photo.setObject(5, date);
-										sqlconnector.stmt_update_photo.setLong(6, last_modified);
-										sqlconnector.stmt_update_photo.setString(7, id);
-										sqlconnector.stmt_update_photo.executeUpdate();
-										stats[1]++;
-									} else {
-										sqlconnector.stmt_insert_file.setString(1, id);
-										sqlconnector.stmt_insert_file.setString(2, projectConfig.project);
-										sqlconnector.stmt_insert_file.setString(3, meta_rel_path);
-										sqlconnector.stmt_insert_file.setString(4, image_rel_path);
-										sqlconnector.stmt_insert_file.setString(5, location);
-										sqlconnector.stmt_insert_file.setObject(6, date);
-										sqlconnector.stmt_insert_file.setLong(7, last_modified);
-										sqlconnector.stmt_insert_file.executeUpdate();
-										stats[0]++;
-									}
-								} catch (SQLException e) {
-									log.warn(e);
-								}
-
-							} else {
-								log.warn("no valid PhotoSens yaml  " + path);
-							}
-
-						}
+						refreshPhotoDBentry(projectConfig, root, path, stats);
 					}
 				} catch(Exception e) {
 					log.warn(e);
 				}
 			} else {
 				log.warn("unknown entity: " + path);
+			}
+		}
+	}
+
+	public void refreshPhotoDBentry(Photo2 photo, int[] stats) {
+		refreshPhotoDBentry(photo.projectConfig, photo.projectConfig.root_path, photo.metaPath, stats);
+	}
+
+	public void refreshPhotoDBentry(PhotoProjectConfig projectConfig, Path root, Path metaPath, int[] stats) {
+		if(metaPath.toFile().exists()) {
+			log.info("refresh " + metaPath);
+			String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
+			String id = metaRelPathToID(meta_rel_path);
+			long last_modified = metaPath.toFile().lastModified();
+			if(!this.isUpToDate(id, last_modified)) {
+
+
+				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
+				if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
+					String image_file = yamlMap.getString("file");
+					String location = yamlMap.getString("location");
+					LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
+
+					PhotoMeta photoMeta = new PhotoMeta(yamlMap);
+					boolean locked = photoMeta.isClassifiedAsPerson();
+					
+					log.info("refresh " + metaPath + "  locked " + locked);
+
+					//log.info(path);
+					try {
+						String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
+						//log.info("read " + meta_rel_path);
+						//log.info("read+" + id);	
+
+						if(this.contains(id)) {
+							SqlConnector sqlconnector = tlsqlconnector.get();
+							sqlconnector.stmt_update_photo.setString(1, projectConfig.project);
+							sqlconnector.stmt_update_photo.setString(2, meta_rel_path);
+							sqlconnector.stmt_update_photo.setString(3, image_rel_path);
+							sqlconnector.stmt_update_photo.setString(4, location);
+							sqlconnector.stmt_update_photo.setObject(5, date);
+							sqlconnector.stmt_update_photo.setLong(6, last_modified);
+							sqlconnector.stmt_update_photo.setBoolean(7, locked);
+							sqlconnector.stmt_update_photo.setString(8, id);
+							sqlconnector.stmt_update_photo.executeUpdate();
+							if(stats != null) {
+								stats[1]++;
+							}
+						} else {
+							SqlConnector sqlconnector = tlsqlconnector.get();
+							sqlconnector.stmt_insert_file.setString(1, id);
+							sqlconnector.stmt_insert_file.setString(2, projectConfig.project);
+							sqlconnector.stmt_insert_file.setString(3, meta_rel_path);
+							sqlconnector.stmt_insert_file.setString(4, image_rel_path);
+							sqlconnector.stmt_insert_file.setString(5, location);
+							sqlconnector.stmt_insert_file.setObject(6, date);
+							sqlconnector.stmt_insert_file.setLong(7, last_modified);
+							sqlconnector.stmt_insert_file.setBoolean(8, locked);
+							sqlconnector.stmt_insert_file.executeUpdate();
+							if(stats != null) {
+								stats[0]++;
+							}
+						}
+					} catch (SQLException e) {
+						log.warn(e);
+					}
+				} else {
+					log.warn("no valid PhotoSens yaml  " + metaPath);
+				}
+			}	
+		} else {
+			try {
+				String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
+				String id = metaRelPathToID(meta_rel_path);
+				SqlConnector sqlconnector = tlsqlconnector.get();
+				log.info("remove from DB " + metaPath);
+				sqlconnector.stmt_delete_photo.setString(1, id);
+				sqlconnector.stmt_delete_photo.executeUpdate();
+
+			} catch (SQLException e) {
+				log.warn(e);
 			}
 		}
 	}
@@ -340,7 +378,10 @@ public class PhotoDB2 {
 				String image_rel_path = res.getString(4);
 				String location = res.getString(5);
 				LocalDateTime date = res.getTimestamp(6).toLocalDateTime();
-				return new Photo2(id, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date);
+				long last_modified = res.getLong(7);
+				boolean locked = res.getBoolean(8);
+				log.info("locked " + locked + "  " + meta_rel_path);
+				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date, last_modified, locked);
 			}
 			return null;
 		} catch (SQLException e) {

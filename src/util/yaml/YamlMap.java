@@ -342,14 +342,18 @@ public class YamlMap {
 	}
 
 	public LocalDateTime optLocalDateTime(String name) {
-		Date date = (Date) optObject(name);
-		if(date == null) {
+		Object o = optObject(name);
+		if(o == null) {
 			return null;
 		}
-		LocalDateTime localDateTime = date
-				.toInstant()
-				.atZone(ZoneId.systemDefault())
-				.toLocalDateTime();	
-		return localDateTime;
+		if(o instanceof Date) {
+			Date date = (Date) o; 
+			LocalDateTime localDateTime = date
+					.toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDateTime();	
+			return localDateTime;
+		}
+		return LocalDateTime.parse(o.toString());
 	}
 }

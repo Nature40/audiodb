@@ -15,19 +15,20 @@ public class SqlConnector {
 			"IMAGE_PATH VARCHAR(255), " +
 			"LOCATION VARCHAR(255), " +
 			"DATE SMALLDATETIME, " +
-			"LAST_MODIFIED INT8 " +
+			"LAST_MODIFIED INT8, " +
+			"LOCKED BOOLEAN " +
 			")";
 
 	public static final String SQL_INSERT_FILE = "INSERT INTO PHOTO " +
-			"(ID, PROJECT, META_PATH, IMAGE_PATH, LOCATION, DATE, LAST_MODIFIED) " +
+			"(ID, PROJECT, META_PATH, IMAGE_PATH, LOCATION, DATE, LAST_MODIFIED, LOCKED) " +
 			"VALUES " +
-			"(?, ?, ?, ?, ?, ?, ?)";
+			"(?, ?, ?, ?, ?, ?, ?, ?)";
 	public final PreparedStatement stmt_insert_file;
 
 	public static final String SQL_QUERY_ID_EXIST = "SELECT count(ID) FROM PHOTO WHERE ID = ?";
 	public final PreparedStatement stmt_query_id_exist;
 
-	public static final String SQL_QUERY_PHOTO = "SELECT ID, PROJECT, META_PATH, IMAGE_PATH, LOCATION, DATE, LAST_MODIFIED FROM PHOTO WHERE ID = ?";
+	public static final String SQL_QUERY_PHOTO = "SELECT ID, PROJECT, META_PATH, IMAGE_PATH, LOCATION, DATE, LAST_MODIFIED, LOCKED FROM PHOTO WHERE ID = ?";
 	public final PreparedStatement stmt_query_photo;
 
 	public static final String SQL_QUERY_LOCATIONS = "SELECT DISTINCT LOCATION FROM PHOTO WHERE PROJECT = ?";
@@ -51,7 +52,7 @@ public class SqlConnector {
 	public static final String SQL_DELETE_PHOTO = "DELETE FROM PHOTO WHERE ID = ?";
 	public final PreparedStatement stmt_delete_photo;
 	
-	private static final String SQL_UPDATE_PHOTO = "UPDATE PHOTO SET PROJECT = ?, META_PATH = ?, IMAGE_PATH = ?, LOCATION = ?, DATE = ?, LAST_MODIFIED = ? WHERE ID = ?";
+	private static final String SQL_UPDATE_PHOTO = "UPDATE PHOTO SET PROJECT = ?, META_PATH = ?, IMAGE_PATH = ?, LOCATION = ?, DATE = ?, LAST_MODIFIED = ?, LOCKED = ? WHERE ID = ?";
 	public final PreparedStatement stmt_update_photo;
 
 	public SqlConnector(Connection conn) {

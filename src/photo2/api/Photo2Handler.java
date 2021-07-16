@@ -7,12 +7,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.function.Predicate;
 
 import javax.imageio.ImageIO;
 
@@ -29,11 +26,6 @@ import com.drew.imaging.ImageProcessingException;
 
 import audio.Account;
 import audio.Broker;
-import audio.Label;
-import audio.Sample;
-import audio.review.ReviewListEntry;
-import audio.review.ReviewedLabel;
-import audio.review.ReviewedLabel.Reviewed;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import photo2.Photo2;
@@ -67,7 +59,14 @@ public class Photo2Handler {
 				response.setContentType("text/plain;charset=utf-8");
 				response.getWriter().println("ERROR: photo not found");
 				return;
-			}			
+			}
+			log.info("photo locked " + photo.locked);
+			if(photo.locked) {
+				response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+				response.setContentType("text/plain;charset=utf-8");
+				response.getWriter().println("ERROR: photo access forbidden");
+				return;
+			}
 			if(target.equals("/")) {
 				handleRoot(photo, request, response);
 			} else {
@@ -214,21 +213,29 @@ public class Photo2Handler {
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
 		int jsonActionsLen = jsonActions.length();
-		for (int i = 0; i < jsonActionsLen; i++) {
-			JSONObject jsonAction = jsonActions.getJSONObject(i);
-			String actionName = jsonAction.getString("action");
-			switch(actionName) {
-			case "set_classification": {
-				float[] bbox = jsonToBbox(jsonAction, "bbox");
-				String classification = jsonAction.getString("classification");
-				String classificator = "Expert";
-				String identity = account.username;
-				String date = LocalDateTime.now().toString();
-				photo.setClassification(bbox, classification, classificator, identity, date);
-				break;
+		boolean refreshDBphotoEntry = false;
+		try {
+			for (int i = 0; i < jsonActionsLen; i++) {
+				JSONObject jsonAction = jsonActions.getJSONObject(i);
+				String actionName = jsonAction.getString("action");
+				switch(actionName) {
+				case "set_classification": {
+					refreshDBphotoEntry = true;
+					float[] bbox = jsonToBbox(jsonAction, "bbox");
+					String classification = jsonAction.getString("classification");
+					String classificator = "Expert";
+					String identity = account.username;
+					String date = LocalDateTime.now().toString();
+					photo.setClassification(bbox, classification, classificator, identity, date);
+					break;
+				}
+				default:
+					throw new RuntimeException("unknown action:" + actionName);
+				}
 			}
-			default:
-				throw new RuntimeException("unknown action:" + actionName);
+		} finally {
+			if(refreshDBphotoEntry) {
+				photodb2.refreshPhotoDBentry(photo, null);
 			}
 		}
 	}

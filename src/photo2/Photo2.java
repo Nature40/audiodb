@@ -2,17 +2,13 @@ package photo2;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.yaml.snakeyaml.resolver.Resolver;
 
-import audio.Label;
 import photo2.api.PhotoMeta;
-import util.collections.vec.Vec;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
@@ -21,17 +17,23 @@ public class Photo2 {
 	static final Logger log = LogManager.getLogger();
 
 	public final String id;
+	public final PhotoProjectConfig projectConfig;
 	public final Path metaPath;
 	public final Path imagePath;
 	public final String location;
 	public final LocalDateTime date;
+	public final long last_modified;
+	public final boolean locked;
 
-	public Photo2(String id, Path metaPath, Path imagePath, String location, LocalDateTime date) {
+	public Photo2(String id, PhotoProjectConfig projectConfig, Path metaPath, Path imagePath, String location, LocalDateTime date, long last_modified, boolean locked) {
 		this.id = id;
+		this.projectConfig = projectConfig;
 		this.metaPath = metaPath;
 		this.imagePath = imagePath;
 		this.location = location;
 		this.date = date;
+		this.last_modified = last_modified;
+		this.locked = locked;
 		//log.info(this);
 	}
 
@@ -52,12 +54,6 @@ public class Photo2 {
 		return yamlMap;
 	}
 
-	@Override
-	public String toString() {
-		return "Photo2 [id=" + id + ", metaPath=" + metaPath + ", imagePath=" + imagePath + ", location=" + location
-				+ ", date=" + date + "]";
-	}
-
 	private void writeMeta(Map<String, Object> map) {
 		YamlUtil.writeSafeYamlMap(metaPath, map);
 	}
@@ -66,5 +62,11 @@ public class Photo2 {
 		PhotoMeta photoMeta = new PhotoMeta(getMeta());
 		photoMeta.setClassification(bbox, classification, classificator, identity, date);
 		writeMeta(photoMeta.metaMap.getInternalMap());
+	}
+
+	@Override
+	public String toString() {
+		return "Photo2 [id=" + id + ", metaPath=" + metaPath + ", imagePath=" + imagePath + ", location=" + location
+				+ ", date=" + date + ", last_modified=" + last_modified + ", locked=" + locked + "]";
 	}
 }

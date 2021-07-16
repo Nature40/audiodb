@@ -1,12 +1,18 @@
 package photo2.api;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import util.collections.vec.Vec;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;
 
 public class PhotoMeta {
+	static final Logger log = LogManager.getLogger();
+	
 	public final YamlMap metaMap;
 
 	public PhotoMeta(YamlMap metaMap) {
@@ -92,5 +98,24 @@ public class PhotoMeta {
 			detections.add(detection);
 		}
 		detection.classifications.add(cMap);
+	}
+	
+	public LinkedHashSet<String> getClassifications() {
+		LinkedHashSet<String> classificationSet = new LinkedHashSet<String>();
+		for(Detection detection : getDetections()) {
+			for(LinkedHashMap<String, Object> c : detection.classifications) {
+				Object classification = c.get("classification");
+				if(classification != null) {
+					classificationSet.add(classification.toString());
+				}
+			}
+		}
+		log.info(classificationSet);
+		return classificationSet;
+	}
+	
+	public boolean isClassifiedAsPerson() {
+		log.info(getClassifications().contains("person"));
+		return getClassifications().contains("person");
 	}
 }
