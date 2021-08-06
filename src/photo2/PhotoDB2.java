@@ -24,6 +24,7 @@ import de.siegmar.fastcsv.reader.CloseableIterator;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.CsvRow;
+import photo2.SqlConnector.SQL;
 import photo2.api.PhotoMeta;
 import util.Timer;
 import util.collections.vec.Vec;
@@ -36,6 +37,7 @@ public class PhotoDB2 {
 	private final Broker broker;
 	public final PhotoConfig config;
 	public final ThumbManager thumbManager;
+	public final ReviewListManager reviewListManager;
 
 	private Connection conn;
 
@@ -46,12 +48,12 @@ public class PhotoDB2 {
 		public SqlConnector initialValue() {
 			return new SqlConnector(conn);
 		}		
-	};
+	};	
 
 	public PhotoDB2(Broker broker) {
 		this.broker = broker;
 		this.config = broker.config().photoConfig;
-		this.thumbManager = new ThumbManager();
+		this.thumbManager = new ThumbManager(this);
 		try {
 			this.conn = DriverManager.getConnection("jdbc:h2:./photo_cache");
 			//log.info("transaction isolation level: " + this.conn.getTransactionIsolation());
@@ -99,7 +101,11 @@ public class PhotoDB2 {
 
 		readDefinitions();
 
+		
 		updateThumbs();
+		
+		this.reviewListManager = new ReviewListManager(this);
+		reviewListManager.init();
 	}
 
 	private void scanRemoved() throws IOException {
@@ -115,16 +121,22 @@ public class PhotoDB2 {
 
 				PhotoProjectConfig projectConfig = config.projectMap.get(project);
 				if(projectConfig == null) {
-					throw new RuntimeException("no config for project");
-				}
-
-				Path meta_path = projectConfig.root_path.resolve(meta_rel_path);
-				//log.info("check " + meta_path);
-				if(!meta_path.toFile().exists()) {
-					log.info("remove from DB " + meta_path);
-					sqlconnector.stmt_delete_photo.setString(1, id);
-					sqlconnector.stmt_delete_photo.executeUpdate();
-					removeCount++;
+					log.info("no config for project, remove meta data");					
+					try {
+						sqlconnector.stmt_delete_project.setString(1, project);
+						sqlconnector.stmt_delete_project.executeUpdate();
+					} catch (SQLException e) {
+						log.warn(e);
+					}
+				} else {
+					Path meta_path = projectConfig.root_path.resolve(meta_rel_path);
+					//log.info("check " + meta_path);
+					if(!meta_path.toFile().exists()) {
+						log.info("remove from DB " + meta_path);
+						sqlconnector.stmt_delete_photo.setString(1, id);
+						sqlconnector.stmt_delete_photo.executeUpdate();
+						removeCount++;
+					}
 				}
 			}
 			if(removeCount > 0) {
@@ -133,14 +145,16 @@ public class PhotoDB2 {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+		thumbManager.clean();
 	}
 
 
 
-	private static String metaRelPathToID(String meta_rel_path) {
+	public static String metaRelPathToID(String project, String meta_rel_path) {
 		String id = meta_rel_path.replaceAll("/", "__");
 		id = id.replaceAll("\\\\", "__");
 		id = id.replaceAll(".yaml", "");
+		id = project + "__" + id;
 		return id;
 	}
 
@@ -169,13 +183,12 @@ public class PhotoDB2 {
 	}
 
 	public void refreshPhotoDBentry(PhotoProjectConfig projectConfig, Path root, Path metaPath, int[] stats) {
-		if(metaPath.toFile().exists()) {
-			log.info("refresh " + metaPath);
-			String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
-			String id = metaRelPathToID(meta_rel_path);
+		String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
+		String id = metaRelPathToID(projectConfig.project, meta_rel_path);
+		if(metaPath.toFile().exists()) {			
 			long last_modified = metaPath.toFile().lastModified();
 			if(!this.isUpToDate(id, last_modified)) {
-
+				log.info("refresh " + metaPath);
 
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
@@ -185,7 +198,7 @@ public class PhotoDB2 {
 
 					PhotoMeta photoMeta = new PhotoMeta(yamlMap);
 					boolean locked = photoMeta.isClassifiedAsPerson();
-					
+
 					log.info("refresh " + metaPath + "  locked " + locked);
 
 					//log.info(path);
@@ -232,8 +245,6 @@ public class PhotoDB2 {
 			}	
 		} else {
 			try {
-				String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
-				String id = metaRelPathToID(meta_rel_path);
 				SqlConnector sqlconnector = tlsqlconnector.get();
 				log.info("remove from DB " + metaPath);
 				sqlconnector.stmt_delete_photo.setString(1, id);
@@ -273,6 +284,51 @@ public class PhotoDB2 {
 				consumer.accept(id);
 			}
 		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	@FunctionalInterface
+	public interface ReviewListConsumer {
+		void accept(String id, String name);
+	}
+	
+	public void foreachReviewListByProject(String project, ReviewListConsumer consumer) {
+		try {
+			SqlConnector sqlConnector = getSqlConnector();
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_BY_PROJECT);
+			stmt.setString(1, project);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				String name = res.getString(2);
+				consumer.accept(id, name);				
+			}
+		} catch (SQLException e) {
+			log.warn(e);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	@FunctionalInterface
+	public interface ReviewListEntryConsumer {
+		void accept(int pos, String photo, String name);
+	}
+	
+	public void foreachReviewListEntryById(String reviewListId, ReviewListEntryConsumer consumer) {
+		try {
+			SqlConnector sqlConnector = getSqlConnector();
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_ENTRY_BY_ID);
+			stmt.setString(1, reviewListId);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				int pos = res.getInt(1);
+				String photo = res.getString(2);
+				String name = res.getString(3);
+				consumer.accept(pos, photo, name);				
+			}
+		} catch (SQLException e) {
+			log.warn(e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -391,14 +447,13 @@ public class PhotoDB2 {
 
 	public void updateThumbs() {
 		new Thread(() -> {
-			foreachId(id -> {
+			foreachId(photo_id -> {
 				try {
 					final int parallelism = ForkJoinPool.commonPool().getParallelism();
-					int maxQueue = parallelism * 2;
-					Photo2 photo = getPhoto2(id);
+					int maxQueue = parallelism * 2;					
 					long reqWidth = 320;
 					long reqHeight = 320;
-					String cacheFilename = thumbManager.getCacheFilename(photo, reqWidth, reqHeight);
+					String cacheFilename = thumbManager.getCacheFilename(photo_id, reqWidth, reqHeight);
 					//log.info("id: " + id + " -->  " + cacheFilename);
 					ThumbSqlConnector sqlConn = thumbManager.getSqlConnector();
 					sqlConn.stmt_exist_id.setString(1, cacheFilename);
@@ -406,6 +461,7 @@ public class PhotoDB2 {
 					if(res.next()) {
 						//log.info("true");
 					} else {
+						Photo2 photo = getPhoto2(photo_id);
 						log.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
 						while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
 							try {
@@ -463,5 +519,9 @@ public class PhotoDB2 {
 			}
 		}
 		classificationDefinitionsMap = map;
+	}
+
+	public SqlConnector getSqlConnector() {
+		return tlsqlconnector.get();		
 	}
 }

@@ -40,11 +40,6 @@ public class Photo2Handler {
 	private final Broker broker;
 	private final PhotoDB2 photodb2;
 
-	private static final Path CACHE_PATH = Paths.get("photo2_cache");
-	static {
-		CACHE_PATH.toFile().mkdirs();
-	}
-
 	public Photo2Handler(Broker broker) {
 		this.broker = broker;
 		this.photodb2 = broker.photodb2();

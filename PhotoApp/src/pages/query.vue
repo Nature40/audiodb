@@ -4,7 +4,7 @@
     <div v-if="projects === undefined">
       loading projects
     </div>
-    <q-select v-else rounded outlined bottom-slots v-model="project" :options="projects" label="Project" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+    <q-select v-else rounded outlined bottom-slots v-model="selectedProject" :options="projects" label="Project" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
       <template v-slot:prepend>
         <q-icon name="menu_book" />
       </template>
@@ -24,7 +24,23 @@
       loading project...
     </div>
     <div class="column items-center">
-      <q-select rounded outlined bottom-slots v-model="location" :options="locations" label="Location" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+
+      <q-btn-toggle
+        v-model="selectedQueryMode"
+        push
+        glossy
+        toggle-color="primary"
+        :options="[
+          {label: 'Query', value: 'query', icon: 'manage_search'},
+          {label: 'Review List', value: 'review_list', icon: 'assignment'},
+        ]"
+      />
+    </div>
+    
+    <hr style="min-width: 500px;">
+    
+    <div class="column items-center" v-if="selectedQueryMode === 'query'">
+      <q-select rounded outlined bottom-slots v-model="selectedLocation" :options="locations" label="Location" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
         <template v-slot:prepend>
           <q-icon name="location_on" />
         </template>
@@ -37,20 +53,28 @@
           {{scope.opt}}
         </template>
       </q-select>
-      <div>
-        {{photos.length}} photos
-      </div>
-      <div v-if="location === ''">
+      <div v-if="selectedLocation === ''">
         No location selected. 
         <br><q-icon name="info"/> Select a location!
       </div>
     </div>
+    
+    <div class="column items-center" v-if="selectedQueryMode === 'review_list'">
+      <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" option-label="name" label="Review List" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+        <template v-slot:prepend>
+          <q-icon name="rule" />
+        </template>
+      </q-select>
+      <div v-if="review_lists === undefined || review_lists === null || review_lists.length === 0">
+        No review_list found.
+      </div>
+    </div>
 
-    <!--<table>
-      <tr v-for="(photo, index) in photos" :key="photo.id" @click="setIndex(index);" :class="{selected: index === photoIndex}">
-        <td>{{photo.id}}</td>
-      </tr>
-    </table>-->
+    <hr style="min-width: 500px;">
+
+    <div class="column items-center">
+      {{photos.length}} photos
+    </div>    
 
   </q-page>
 </template>
@@ -63,17 +87,21 @@ export default {
 
   data: () => ({
     photosMessage: 'init',
-    project: undefined,
-    location: "",
+    selectedProject: undefined,
+    selectedLocation: '',
+    selectedQueryMode: 'query',
+    selectedReviewList: undefined,
   }),  
 
   computed: {
     ...mapState({
+      project: state => state.project,
       photos: state => state.photos.data,
       photoIndex: state => state.photo.index,
       projects: state => state.projects?.data?.projects,
       meta: state => state.meta?.data,
       locations: state => state.meta?.data?.locations,
+      review_lists: state => state.meta?.data?.review_lists,
     }),    
     ...mapGetters({
       api: 'api',
@@ -85,30 +113,30 @@ export default {
     projects() {
       console.log(this.projects);
       if(this.projects === undefined || this.projects.length === 0) {
-        this.project = undefined; 
+        this.selectedProject = undefined; 
       } else {
-        if(this.project === undefined) {
-          this.project = this.projects[0];
+        if(this.selectedProject === undefined) {
+          this.selectedProject = this.projects[0];
         }
       }
     },
-    project() {
-      if(this.project !== undefined) {
-        this.metaQuery({project: this.project});
-      }
+    selectedProject() {
+      this.$store.dispatch('setProject', this.selectedProject);
+       this.sendQuery();
     },
     locations() {
       if(this.locations === undefined || this.locations.length === 0) {
-        this.location = '';
+        this.selectedLocation = '';
       } else {
-        this.location = this.locations[0];
+        this.selectedLocation = this.locations[0];
       }
     },
-    location() {
-      if(this.location !== undefined && this.location !== null && this.location !== '') {
-        this.photosQuery({project: this.project, location: this.location});
-      }
+    selectedLocation() {
+      this.sendQuery();
     },
+    selectedReviewList() {
+      this.sendQuery();
+    },    
   },
 
   methods: {
@@ -121,10 +149,21 @@ export default {
       this.photoSetIndex(index);
       this.$router.push('/viewer');
     },
+    sendQuery() {
+      if(this.selectedQueryMode === 'query') {
+        if(this.selectedLocation !== undefined && this.selectedLocation !== null && this.selectedLocation !== '') {
+          this.photosQuery({project: this.project, location: this.selectedLocation});
+        }
+      } else if(this.selectedQueryMode === 'review_list') {
+        if(this.selectedReviewList !== undefined) {
+          this.photosQuery({project: this.project, review_list: this.selectedReviewList.id});
+        }
+      }
+    },    
   },
 
   async mounted() {
-    this.$store.dispatch('projects/init');
+    this.$store.dispatch('projects/init');    
   },
 }
 </script>

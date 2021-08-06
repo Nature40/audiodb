@@ -12,7 +12,11 @@
         />
 
         <q-toolbar-title>
-          PhotoApp
+          PhotoApp  
+          <span class="text-blue-1 q-pa-xl">
+            <span v-if="project === undefined">no project selected</span>
+            <span v-else><span class="text-blue-10">Project:</span> {{project}}</span> 
+          </span>
         </q-toolbar-title>
 
         <div>v0.1</div>
@@ -47,6 +51,8 @@
 
 <script>
 
+import {mapState} from 'vuex'
+
 export default {
   name: 'MainLayout',
   components: { },
@@ -55,6 +61,11 @@ export default {
       leftDrawerOpen: true,
     }
   },
+  computed: {
+    ...mapState({
+      project: state => state.project,
+    }),
+  },   
   mounted () {
   },
 }

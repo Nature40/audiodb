@@ -21,6 +21,10 @@ export default function (/* { ssrContext } */) {
 
     strict: process.env.DEBUGGING,
 
+    state: () => ({
+      project: undefined,
+    }),
+
     getters: {
       api: (state) => (...parts) => {
         var path = parts.join('/');
@@ -39,6 +43,19 @@ export default function (/* { ssrContext } */) {
         return Vue.prototype.$axios.post(path, data, config);
       },
     },
+
+    mutations: {
+      setProject_internal(state, project) {
+        state.project = project;
+      },
+    },
+    
+    actions: {
+      setProject({commit, state, dispatch}, project) {
+        commit('setProject_internal', project);
+        dispatch('meta/query', {project: state.project});  
+      },
+    },    
   });
 
   return Store;

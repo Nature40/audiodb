@@ -40,6 +40,7 @@ export default {
       }
       params.locations = true;
       params.classification_definitions = true;
+      params.review_lists = true;
       try {
         var response =  await rootGetters.apiGET(['photodb2'], {params});
           commit('setData', response.data);

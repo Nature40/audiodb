@@ -7,8 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -31,10 +33,14 @@ import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
 
+import audio.Broker;
 import util.SpiUtil;
+import util.Timer;
 
 public class ThumbManager {
 	static final Logger log = LogManager.getLogger();
+
+	private final PhotoDB2 photodb2;
 
 	private Connection conn;
 
@@ -113,7 +119,8 @@ public class ThumbManager {
 				ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
 				outStream.close();				
 				sqlconnector.stmt_insert_file.setString(1, cacheFilename);
-				sqlconnector.stmt_insert_file.setBlob(2, inStream);
+				sqlconnector.stmt_insert_file.setString(2, photo.id);
+				sqlconnector.stmt_insert_file.setBlob(3, inStream);
 				sqlconnector.stmt_insert_file.execute();
 				inStream.close();
 			} catch(Exception e) {
@@ -130,7 +137,8 @@ public class ThumbManager {
 		}
 	}
 
-	public ThumbManager() {
+	public ThumbManager(PhotoDB2 photoDB2) {
+		this.photodb2 = photoDB2;
 		try {
 			this.conn = DriverManager.getConnection("jdbc:h2:./thumb_cache");
 
@@ -141,7 +149,8 @@ public class ThumbManager {
 				stmt.executeUpdate("DROP TABLE THUMB");
 				stmt.executeUpdate("CREATE TABLE THUMB (ID VARCHAR(255) PRIMARY KEY, FILE BLOB)");*/
 			} else {
-				stmt.executeUpdate("CREATE TABLE THUMB (ID VARCHAR(255) PRIMARY KEY, FILE BLOB)");
+				stmt.executeUpdate(ThumbSqlConnector.SQL_CREATE_THUMB_TABLE);
+				stmt.executeUpdate("CREATE INDEX IF NOT EXISTS IDX_PHOTO ON THUMB (PHOTO)");
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -150,13 +159,13 @@ public class ThumbManager {
 
 	}
 
-	public String getCacheFilename(Photo2 photo, long reqWidth, long reqHeight) {
-		String cacheFilename = photo.id + ".image.width" + reqWidth + ".height" + reqHeight + ".jpg";
+	public String getCacheFilename(String photo_id, long reqWidth, long reqHeight) {
+		String cacheFilename = photo_id + ".image.width" + reqWidth + ".height" + reqHeight + ".jpg";
 		return cacheFilename;
 	}
 
 	public void getScaled(Photo2 photo, long reqWidth, long reqHeight, HttpServletResponse response) {
-		String cacheFilename = getCacheFilename(photo, reqWidth, reqHeight);
+		String cacheFilename = getCacheFilename(photo.id, reqWidth, reqHeight);
 		getScaled(cacheFilename, photo, reqWidth, reqHeight, response);
 	}
 
@@ -236,7 +245,7 @@ public class ThumbManager {
 		BufferedImage dst = Scalr.resize(src, Method.ULTRA_QUALITY, Mode.FIT_EXACT, width, height);
 		return dst;
 	}
-	
+
 	public static BufferedImage scaleFast(BufferedImage src, int width, int height) {
 		/*BufferedImage dst = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		Graphics2D g = dst.createGraphics();
@@ -275,6 +284,32 @@ public class ThumbManager {
 			return fjt;
 		});
 		return task;
+	}
+
+	public void clean() {
+		Timer.start("scanRemoved thumbs");
+		try {
+			ThumbSqlConnector sqlconnector = tlsqlconnector.get();
+
+			PreparedStatement stmt = sqlconnector.stmt_query_photo_ids;
+			ResultSet res = stmt.executeQuery();
+			int removeCount = 0;
+			while(res.next()) {
+				String photo_id = res.getString(1);
+				if(!photodb2.contains(photo_id)) {
+					sqlconnector.stmt_delete_thumb_by_photo_id.setString(1, photo_id);
+					sqlconnector.stmt_delete_thumb_by_photo_id.executeUpdate();
+					removeCount++;
+				}			
+			}
+			if(removeCount > 0) {
+				log.info("Removed thumbs from DB " + removeCount + " rows.");	
+			}			
+		} catch (SQLException e) {
+			log.warn(e);
+		} finally {
+			log.info(Timer.stop("scanRemoved thumbs"));
+		}
 	}
 
 }

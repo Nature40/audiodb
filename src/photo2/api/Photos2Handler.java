@@ -16,10 +16,10 @@ import util.collections.vec.Vec;
 
 public class Photos2Handler {
 	private static final Logger log = LogManager.getLogger();
-	
+
 	private final Broker broker;
 	private final PhotoDB2 photodb2;
-	
+
 	private final Photo2Handler photo2Handler;
 
 	public Photos2Handler(Broker broker) {
@@ -52,18 +52,33 @@ public class Photos2Handler {
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		String project = Web.getString(request, "project");
-		String location = Web.getString(request, "location");
-		
-		response.setContentType("application/json");
-		JSONWriter json = new JSONWriter(response.getWriter());
-		json.object();
-		json.key("photos");
-		json.array();		
-		photodb2.foreachId(project, location, id -> {
-			json.value(id);
-		});		
-		json.endArray();
-		json.endObject();
+		if(Web.has(request, "review_list")) {
+			String review_list = Web.getString(request, "review_list");
+			
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("photos");
+			json.array();		
+			photodb2.foreachReviewListEntryById(review_list, (int pos, String photo, String name) -> {
+				json.value(photo);
+			});		
+			json.endArray();
+			json.endObject();			
+		} else {
+			String project = Web.getString(request, "project");
+			String location = Web.getString(request, "location");
+
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("photos");
+			json.array();		
+			photodb2.foreachId(project, location, id -> {
+				json.value(id);
+			});		
+			json.endArray();
+			json.endObject();
+		}
 	}
 }
