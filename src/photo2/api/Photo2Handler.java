@@ -48,20 +48,19 @@ public class Photo2Handler {
 	public void handle(String id, String target, Request request, HttpServletResponse response) throws IOException {
 		request.setHandled(true);		
 		try {
-			Photo2 photo = photodb2.getPhoto2(id);
+			Photo2 photo = photodb2.getPhoto2NotLocked(id);
 			if(photo == null) {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 				response.setContentType("text/plain;charset=utf-8");
 				response.getWriter().println("ERROR: photo not found");
 				return;
 			}
-			log.info("photo locked " + photo.locked);
-			if(photo.locked) {
+			/*if(photo.locked) {
 				response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 				response.setContentType("text/plain;charset=utf-8");
 				response.getWriter().println("ERROR: photo access forbidden");
 				return;
-			}
+			}*/
 			if(target.equals("/")) {
 				handleRoot(photo, request, response);
 			} else {

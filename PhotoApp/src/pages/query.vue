@@ -120,9 +120,9 @@ export default {
         }
       }
     },
-    selectedProject() {
-      this.$store.dispatch('setProject', this.selectedProject);
-       this.sendQuery();
+    async selectedProject() {
+      await this.$store.dispatch('setProject', this.selectedProject);
+      this.$nextTick(() => this.sendQuery());
     },
     locations() {
       if(this.locations === undefined || this.locations.length === 0) {
@@ -132,11 +132,21 @@ export default {
       }
     },
     selectedLocation() {
-      this.sendQuery();
+      this.$nextTick(() => this.sendQuery());
     },
     selectedReviewList() {
-      this.sendQuery();
-    },    
+      this.$nextTick(() => this.sendQuery());
+    },
+    selectedQueryMode() {
+      this.$nextTick(() => this.sendQuery());
+    },
+    review_lists() {
+      if(this.review_lists === undefined || this.review_lists.length === 0) {
+        this.selectedReviewList = undefined;
+      } else {
+        this.selectedReviewList = this.review_lists[0];
+      }
+    },   
   },
 
   methods: {
@@ -151,12 +161,16 @@ export default {
     },
     sendQuery() {
       if(this.selectedQueryMode === 'query') {
-        if(this.selectedLocation !== undefined && this.selectedLocation !== null && this.selectedLocation !== '') {
-          this.photosQuery({project: this.project, location: this.selectedLocation});
+        if(this.selectedProject !== undefined && this.selectedLocation !== undefined && this.selectedLocation !== null && this.selectedLocation !== '') {
+          this.photosQuery({project: this.selectedProject, location: this.selectedLocation});
+        } else {
+          this.photosQuery();
         }
       } else if(this.selectedQueryMode === 'review_list') {
-        if(this.selectedReviewList !== undefined) {
-          this.photosQuery({project: this.project, review_list: this.selectedReviewList.id});
+        if(this.selectedProject !== undefined && this.selectedReviewList !== undefined && this.selectedReviewList !== null) {
+          this.photosQuery({project: this.selectedProject, review_list: this.selectedReviewList.id});
+        } else {
+          this.photosQuery();
         }
       }
     },    

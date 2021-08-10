@@ -128,7 +128,7 @@ public class ReviewListManager {
 				String photoPath = cellPath.get(csvRow);
 				String photoId = PhotoDB2.metaRelPathToID(projectConfig.project, photoPath);
 				insStmt.setString(1, reviewListId);
-				insStmt.setInt(2, pos);
+				insStmt.setInt(2, (pos + 1)); // 1 based index
 				insStmt.setString(3, photoId);
 				insStmt.setString(4, "name");
 				insStmt.executeUpdate();

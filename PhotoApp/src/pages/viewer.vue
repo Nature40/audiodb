@@ -58,7 +58,7 @@
           </q-item>
         </template>        
       </q-select>
-      <q-btn icon="where_to_vote" title="Store selected classification." round @click="onStoreClassification" />
+      <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification" />
     </div>
     <div v-if="selectedDetection !== undefined">
       <table class="blueTable">
@@ -136,8 +136,24 @@ export default {
       hasNext: 'photo/hasNext',
       apiPOST: 'apiPOST',      
     }),
-    classification_definitions_list() {
+    classification_definitions_list_server() {      
       return this.classification_definitions === undefined ? [] : this.classification_definitions;
+    },
+    classification_definitions_list() {
+      if(this.classificationsInImage.length === 0) {      
+        return this.classification_definitions_list_server;
+      }
+      let cs = new Set();
+      this.classification_definitions_list_server.forEach(df => {
+        cs.add(df.name);
+      });
+      let a = this.classification_definitions_list_server.slice();
+      this.classificationsInImage.forEach(c => {
+        if(!cs.has(c)) {
+          a.push({name: c});
+        }
+      });
+      return a;      
     },
     imageURL() {
       //return this.api('photodb2', 'photos', this.photo, 'image.jpg');
@@ -189,6 +205,32 @@ export default {
       }
       return this.detections[this.selectedDetectionIndex];
     },
+    presetClassification() {
+      if(this.selectedDetection === undefined) {
+        return undefined;
+      }
+      let classifications = this.selectedDetection.classifications;
+      if(classifications === undefined || classifications.length < 1) {
+        return undefined;
+      }
+      return classifications[classifications.length - 1].classification;
+    },
+    classificationsInImage() {
+      if(this.detections === undefined) {
+        return [];
+      }
+      let cs = new Set();
+      this.detections.forEach(d => {
+        if(d.classifications !== undefined) {
+          d.classifications.forEach(c => {
+            if(c.classification !== undefined) {
+              cs.add(c.classification);
+            }
+          });
+        }
+      });
+      return [...cs];
+    },
     hasPrevDetection() {
       return this.detections !== undefined && this.detections.length > 0 && this.selectedDetectionIndex !== undefined && this.selectedDetectionIndex > 0;
     },
@@ -235,7 +277,7 @@ export default {
           }
         });
         if(this.selectedDetectionIndex !== undefined) {
-          let detection = this.detections[this.selectedDetectionIndex];
+          let detection = this.selectedDetection;
           if(detection.bbox !== undefined) {
             //console.log(detection.bbox);
             var xmin = detection.bbox[0] * width;
@@ -289,7 +331,7 @@ export default {
           }
       });
     },
-    async onStoreClassification() {
+    async onSubmitClassification() {
       if(this.photo !== undefined && this.selectedClassification !== undefined) {
         var action = {action: "set_classification", classification: this.selectedClassification.name};
         if(this.selectedDetection !== undefined && this.selectedDetection.bbox !== undefined) {
@@ -298,6 +340,11 @@ export default {
         var content = {actions: [action]}; 
         try {
           var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
+          if(this.hasNextDetection) {
+            this.moveNextDetection();
+          } else if(this.hasNext){
+            this.move(+1);
+          }
         } finally {
           this.photoMetaRefresh();
         }
@@ -324,8 +371,17 @@ export default {
       }
       this.redrawImageOverlay();
     },
-    selectedDetectionIndex() {
+    selectedDetection() {
       this.redrawImageOverlay();
+      if(this.presetClassification === undefined) {
+        this.selectedClassification = undefined;
+      }
+      //let dfs = this.classification_definitions_list_filtered;
+      let dfs = this.classification_definitions_list;
+      let df = dfs.find(df => {
+        return df.name === this.presetClassification;
+      });
+      this.selectedClassification = df;
     },
     imageURL() {
       this.imageLoading = true;

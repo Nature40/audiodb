@@ -110,12 +110,12 @@ public class PhotoMeta {
 				}
 			}
 		}
-		log.info(classificationSet);
+		//log.info(classificationSet);
 		return classificationSet;
 	}
 	
 	public boolean isClassifiedAsPerson() {
-		log.info(getClassifications().contains("person"));
+		//log.info(getClassifications().contains("person"));
 		return getClassifications().contains("person");
 	}
 }

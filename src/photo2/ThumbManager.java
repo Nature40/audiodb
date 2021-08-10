@@ -69,7 +69,7 @@ public class ThumbManager {
 		@Override
 		public void run() {
 			try {
-				log.info(cacheFilename);
+				//log.info(cacheFilename);
 				ThumbSqlConnector sqlconnector = tlsqlconnector.get();				
 				try {
 					sqlconnector.stmt_query_file.setString(1, cacheFilename);

@@ -35,15 +35,19 @@ export default {
   actions: {
     async refresh({rootState, commit, rootGetters}) {
       commit('setLoading')
-      var params = {};
-      params.detections = true;
-      try {
-          var response =  await rootGetters.apiGET(['photodb2','photos', rootState.photo.photo], {params});
-          commit('setData', response.data.photo);
+      commit('setData', []);
+      if(rootState.photo.photo !== undefined) {
+        var params = {};
+        params.detections = true;
+        console.log(rootState.photo.photo);
+        try {
+            var response =  await rootGetters.apiGET(['photodb2','photos', rootState.photo.photo], {params});
+            commit('setData', response.data.photo);
         } catch(e) {
           console.log(e);
           commit('setError', 'error');
         }
+      }
     },
   },
 }

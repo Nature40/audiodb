@@ -30,8 +30,10 @@ export default {
   actions: {
     async query({commit, rootGetters, dispatch}, params) {
       commit('setLoading')
+      commit('setData', []);
+      dispatch('photo/setIndex', 0, { root: true })
       try {
-        var response =  await rootGetters.apiGET(['photodb2','photos'], {params});
+        var response = await rootGetters.apiGET(['photodb2','photos'], {params});
         commit('setData', response.data.photos);
         dispatch('photo/setIndex', 0, { root: true })
       } catch(e) {

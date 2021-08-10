@@ -17,6 +17,7 @@ import org.json.JSONWriter;
 
 import audio.Broker;
 import photo2.ClassificationDefinition;
+import photo2.Photo2;
 import photo2.PhotoDB2;
 import photo2.SqlConnector;
 import photo2.SqlConnector.SQL;
@@ -24,7 +25,7 @@ import util.Web;
 
 public class PhotoDB2Handler extends AbstractHandler {
 	private static final Logger log = LogManager.getLogger();
-	
+
 	private final Broker broker;
 	private final PhotoDB2 photodb;
 	private final Photos2Handler photos2Handler;
@@ -40,7 +41,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		baseRequest.setHandled(true);		
-		
+
 		try {
 			baseRequest.setHandled(true);
 			if(target.equals("/")) {
@@ -79,11 +80,11 @@ public class PhotoDB2Handler extends AbstractHandler {
 		boolean locations = Web.getFlagBoolean(request, "locations");
 		boolean classification_definitions = Web.getFlagBoolean(request, "classification_definitions");
 		boolean review_lists = Web.getFlagBoolean(request, "review_lists");	
-		
+
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
-		
+
 		if(projects) {
 			json.key("projects");
 			json.array();
@@ -92,7 +93,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 			});
 			json.endArray();
 		}
-		
+
 		if(project != null) {
 			if(!photodb.config.projectMap.containsKey(project)) {
 				throw new RuntimeException("project not found");
@@ -108,6 +109,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 				photodb.foreachClassificationDefinition(project, ClassificationDefinition.toJsonConsumer(json));
 				json.endArray();
 			}
+
 			if(review_lists) {
 				json.key("review_lists");
 				json.array();
@@ -124,7 +126,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 		} else if(locations) {
 			throw new RuntimeException("locations needs project parameter");
 		}
-		
+
 		json.endObject();		
 	}
 }

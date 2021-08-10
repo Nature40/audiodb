@@ -188,7 +188,7 @@ public class PhotoDB2 {
 		if(metaPath.toFile().exists()) {			
 			long last_modified = metaPath.toFile().lastModified();
 			if(!this.isUpToDate(id, last_modified)) {
-				log.info("refresh " + metaPath);
+				//log.info("refresh " + metaPath);
 
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
@@ -199,7 +199,7 @@ public class PhotoDB2 {
 					PhotoMeta photoMeta = new PhotoMeta(yamlMap);
 					boolean locked = photoMeta.isClassifiedAsPerson();
 
-					log.info("refresh " + metaPath + "  locked " + locked);
+					//log.info("refresh " + metaPath + "  locked " + locked);
 
 					//log.info(path);
 					try {
@@ -415,7 +415,7 @@ public class PhotoDB2 {
 		}
 	}
 
-	public Photo2 getPhoto2(String id) {
+	public Photo2 getPhoto2NotLocked(String id) {
 		try {
 			SqlConnector sqlconnector = tlsqlconnector.get();
 			sqlconnector.stmt_query_photo.setString(1, id);
@@ -436,7 +436,10 @@ public class PhotoDB2 {
 				LocalDateTime date = res.getTimestamp(6).toLocalDateTime();
 				long last_modified = res.getLong(7);
 				boolean locked = res.getBoolean(8);
-				log.info("locked " + locked + "  " + meta_rel_path);
+				if(locked) {
+					return null;
+				}
+				//log.info("locked " + locked + "  " + meta_rel_path);
 				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date, last_modified, locked);
 			}
 			return null;
@@ -461,7 +464,7 @@ public class PhotoDB2 {
 					if(res.next()) {
 						//log.info("true");
 					} else {
-						Photo2 photo = getPhoto2(photo_id);
+						Photo2 photo = getPhoto2NotLocked(photo_id);
 						log.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
 						while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
 							try {

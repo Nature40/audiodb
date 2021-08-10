@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.Collections;
 
 import jakarta.servlet.ServletInputStream;
 
@@ -112,11 +113,18 @@ public final class Web {
 		int v = Integer.parseInt(text);
 		return v;
 	}
-	
+
+	private static final boolean DEBUG = true;
+	//private static final boolean DEBUG = false;
+
 	public static String getString(Request request, String name) {
 		String text = request.getParameter(name);
 		if(text == null) {
-			throw new RuntimeException("parameter not found: "+name);
+			if(DEBUG) {
+				throw new RuntimeException("parameter not found: " + name + " of " + Collections.list(request.getParameterNames()));				
+			} else {
+				throw new RuntimeException("parameter not found: "+name);
+			}
 		}
 		return text;
 	}
@@ -179,7 +187,7 @@ public final class Web {
 		log.warn("value unknown return default: "+text);
 		return defaultValue;
 	}
-	
+
 	public static boolean getFlagBoolean(Request request, String name) {
 		String text = request.getParameter(name);
 		if(text==null) {
@@ -291,7 +299,7 @@ public final class Web {
 	public static String requestContentToString(Request request) throws IOException {
 		return new String(readAllBytes(request.getInputStream(),request.getContentLength()), StandardCharsets.UTF_8);
 	}
-	
+
 	public static JSONObject requestContentToJSON(Request request) throws IOException {
 		return new JSONObject(requestContentToString(request));
 	}

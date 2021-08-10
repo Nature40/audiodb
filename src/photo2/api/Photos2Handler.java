@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.json.JSONWriter;
 
 import audio.Broker;
+import photo2.Photo2;
 import photo2.PhotoDB2;
 import util.Web;
 import util.collections.vec.Vec;
@@ -18,13 +19,13 @@ public class Photos2Handler {
 	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
-	private final PhotoDB2 photodb2;
+	private final PhotoDB2 photodb;
 
 	private final Photo2Handler photo2Handler;
 
 	public Photos2Handler(Broker broker) {
 		this.broker = broker;
-		this.photodb2 = broker.photodb2();
+		this.photodb = broker.photodb2();
 		this.photo2Handler = new Photo2Handler(broker);
 	}
 
@@ -54,18 +55,18 @@ public class Photos2Handler {
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		if(Web.has(request, "review_list")) {
 			String review_list = Web.getString(request, "review_list");
-			
+
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("photos");
 			json.array();		
-			photodb2.foreachReviewListEntryById(review_list, (int pos, String photo, String name) -> {
-				json.value(photo);
+			photodb.foreachReviewListEntryById(review_list, (int pos, String photoId, String name) -> {
+				json.value(photoId);
 			});		
 			json.endArray();
 			json.endObject();			
-		} else {
+		} else if(Web.has(request, "project")) {
 			String project = Web.getString(request, "project");
 			String location = Web.getString(request, "location");
 
@@ -74,9 +75,17 @@ public class Photos2Handler {
 			json.object();
 			json.key("photos");
 			json.array();		
-			photodb2.foreachId(project, location, id -> {
+			photodb.foreachId(project, location, id -> {
 				json.value(id);
 			});		
+			json.endArray();
+			json.endObject();
+		} else {
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("photos");
+			json.array();	
 			json.endArray();
 			json.endObject();
 		}
