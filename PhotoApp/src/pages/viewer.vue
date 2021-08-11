@@ -16,11 +16,11 @@
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
-      <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay"/>
+      <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay" @mousedown="onMouseDownImage" @mousemove="onMouseMoveImage" @mouseup="onMouseUpImage" @mouseenter="onMouseEnterImage" @mouseleave="onMouseLeaveImage"/>
       <q-spinner-gears color="primary" size="4em" v-show="imageLoading" style="position: absolute; top: 0px; right: 0px;"/>
       <span v-show="!imageLoading && imageError" style="color: red;">ERROR loading image.</span>
     </div>
-    <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;" v-if="detections !== undefined && detections.length > 1 && selectedDetectionIndex !== undefined">
+    <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;" v-if="detections !== undefined && detections.length > 1 && selectedDetectionIndex !== undefined && userBox === undefined">
       Selected detection
       <q-btn :disable="!hasPrevDetection" @click="movePrevDetection" icon="arrow_left" :style="hasPrevDetection ? {} : {color: 'grey'}" title="Move to previous detection within this image."></q-btn>
       <span>{{selectedDetectionIndex + 1}}</span>
@@ -59,8 +59,9 @@
         </template>        
       </q-select>
       <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification" />
+      <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn></span>
     </div>
-    <div v-if="selectedDetection !== undefined">
+    <div v-if="userBox === undefined && selectedDetection !== undefined">
       <table class="blueTable">
         <thead>
           <tr>
@@ -122,6 +123,7 @@ export default {
     selectedDetectionIndex: undefined,
     selectedClassification: undefined,
     classification_definitions_list_filtered: [],
+    userBox: undefined,
   }),  
 
   computed: {
@@ -266,27 +268,43 @@ export default {
         this.detections.forEach((detection, index) => {
           if(detection.bbox !== undefined) {
             //console.log(detection.bbox);
-            var xmin = detection.bbox[0] * width;
-            var ymin = detection.bbox[1] * height;
-            var boxwidth = detection.bbox[2] * width;
-            var boxheight = detection.bbox[3] * height;
-            if(index !== this.selectedDetectionIndex) {
+            let xmin = detection.bbox[0] * width;
+            let ymin = detection.bbox[1] * height;
+            let boxwidth = detection.bbox[2] * width;
+            let boxheight = detection.bbox[3] * height;
+            if(this.userBox !== undefined || index !== this.selectedDetectionIndex) {
              ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
             }
             //ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
           }
         });
-        if(this.selectedDetectionIndex !== undefined) {
+        if(this.userBox === undefined && this.selectedDetectionIndex !== undefined) {
           let detection = this.selectedDetection;
           if(detection.bbox !== undefined) {
             //console.log(detection.bbox);
-            var xmin = detection.bbox[0] * width;
-            var ymin = detection.bbox[1] * height;
-            var boxwidth = detection.bbox[2] * width;
-            var boxheight = detection.bbox[3] * height;
+            let xmin = detection.bbox[0] * width;
+            let ymin = detection.bbox[1] * height;
+            let boxwidth = detection.bbox[2] * width;
+            let boxheight = detection.bbox[3] * height;
             ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
             ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
           }
+        }
+        if(this.userBox !== undefined) {
+          let xmin = this.userBox[0] * width;
+          let ymin = this.userBox[1] * height;
+          let boxwidth = this.userBox[2] * width;
+          let boxheight = this.userBox[3] * height;
+          if(boxwidth > -5 && boxwidth < 5) {
+            boxwidth = 5;
+          }
+          if(boxheight > -5 && boxheight < 5) {
+            boxheight = 5;
+          }
+          ctx.setLineDash([6]);
+          ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
+          console.log("draw at: " + xmin + " " + ymin + "               " + width + "   " + height);
+          ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
         }
       }
     },
@@ -334,12 +352,15 @@ export default {
     async onSubmitClassification() {
       if(this.photo !== undefined && this.selectedClassification !== undefined) {
         var action = {action: "set_classification", classification: this.selectedClassification.name};
-        if(this.selectedDetection !== undefined && this.selectedDetection.bbox !== undefined) {
+        if(this.userBox !== undefined) {
+          action.bbox = this.userBox;
+        } else if(this.selectedDetection !== undefined && this.selectedDetection.bbox !== undefined) {
           action.bbox = this.selectedDetection.bbox;
         }
         var content = {actions: [action]}; 
         try {
           var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
+          this.userBox = undefined;
           if(this.hasNextDetection) {
             this.moveNextDetection();
           } else if(this.hasNext){
@@ -353,13 +374,67 @@ export default {
     movePrevDetection() {
       if(this.hasPrevDetection) {
         this.selectedDetectionIndex--;
+        this.userBox = undefined;
       }
     },
     moveNextDetection() {
       if(this.hasNextDetection) {
         this.selectedDetectionIndex++;
+        this.userBox = undefined;
       }
-    },      
+    },
+    onMouseDownImage(e) {
+      console.log('onMouseDownImage');
+      if(e.buttons === 1)  { // left mouse button
+        let image = this.$refs.image;
+        if(image === undefined) {
+          return;
+        }
+        let width = image.width;
+        let height = image.height;
+        let x = e.offsetX / width;
+        let y = e.offsetY / height;
+        console.log("click at: " + e.offsetX + " " + e.offsetY + "   " + x + " " + y + "               " + width + "   " + height);
+        this.userBox = [x, y, 0, 0];
+        this.redrawImageOverlay();
+      }
+      console.log(e);
+    },
+    onMouseMoveImage(e) {
+      if(e.buttons === 1)  { // left mouse button
+        if(this.userBox !== undefined) {
+          console.log('onMouseMoveImage');
+          let image = this.$refs.image;
+          if(image === undefined) {
+            return;
+          }
+          let width = image.width;
+          let height = image.height;
+          let px = this.userBox[0];
+          let py = this.userBox[1];
+          let mx = e.offsetX / width;
+          //let my = (height - e.offsetY) / height;
+          let my = e.offsetY / height;
+          this.userBox = [px, py, (mx - px), (my - py)];
+          this.redrawImageOverlay();
+        }
+      }
+    },
+    onMouseUpImage() {
+      if(this.userBox !== undefined) {
+      console.log('onMouseUpImage');
+        if(this.userBox[2] === 0 || this.userBox[3] === 0) {
+          this.userBox = undefined;
+          this.redrawImageOverlay();
+        }
+      }
+    },
+    onMouseEnterImage() {
+      console.log('onMouseEnterImage');
+    },
+    onMouseLeaveImage() {
+      console.log('onMouseLeaveImage');
+    },          
   },
   
   watch: {
@@ -372,6 +447,7 @@ export default {
       this.redrawImageOverlay();
     },
     selectedDetection() {
+      this.userBox = undefined;
       this.redrawImageOverlay();
       if(this.presetClassification === undefined) {
         this.selectedClassification = undefined;
@@ -385,6 +461,9 @@ export default {
     },
     imageURL() {
       this.imageLoading = true;
+      this.redrawImageOverlay();
+    },
+    userBox() {
       this.redrawImageOverlay();
     },
   },
