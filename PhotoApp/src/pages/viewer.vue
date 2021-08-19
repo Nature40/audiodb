@@ -29,7 +29,17 @@
       {{detections.length}}
     </div>
     <div class="row"  style="padding-bottom: 5px;">
-      <q-select
+      <q-btn-toggle
+        v-model="classificationSelectMode" 
+        push
+        glossy
+        toggle-color="primary"
+        :options="[
+          {label: 'From List', value: 'list', attrs: {title: 'Select classification from predefined list of classifications.'}},
+          {label: 'Custom', value: 'custom', attrs: {title: 'Type custom classification. Use only if classifications from the list of classifications are not suitable.'}},
+        ]"
+      />
+      <q-select v-if="classificationSelectMode === 'list'"
         filled
         v-model="selectedClassification" 
         use-input
@@ -42,6 +52,8 @@
         style="min-width: 200px;"
         :options-dense="true" 
         option-label="name"
+        dense
+        title="Select classification from predefined list of classifications."
       >
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
@@ -58,6 +70,17 @@
           </q-item>
         </template>        
       </q-select>
+      <q-input 
+        v-if="classificationSelectMode === 'custom'" 
+        filled 
+        v-model="customClassificationText" 
+        label="Custom Classification" 
+        stack-label 
+        dense 
+        style="min-width: 200px;"
+        placeholder="name"
+        title="Type custom classification. Use only if classifications from the list of classifications are not suitable." 
+      />
       <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification" />
       <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn></span>
     </div>
@@ -124,6 +147,8 @@ export default {
     selectedClassification: undefined,
     classification_definitions_list_filtered: [],
     userBox: undefined,
+    classificationSelectMode: 'list',
+    customClassificationText: undefined,
   }),  
 
   computed: {
@@ -350,8 +375,13 @@ export default {
       });
     },
     async onSubmitClassification() {
-      if(this.photo !== undefined && this.selectedClassification !== undefined) {
-        var action = {action: "set_classification", classification: this.selectedClassification.name};
+      if(this.photo !== undefined && ((this.classificationSelectMode === 'list' && this.selectedClassification !== undefined) || (this.classificationSelectMode === 'custom' && this.customClassificationText !== undefined && this.customClassificationText !== null && this.customClassificationText !== ''))) {
+        var action = {action: "set_classification"};
+        if(this.classificationSelectMode === 'list') {
+          action.classification = this.selectedClassification.name;
+        } else if(this.classificationSelectMode === 'custom') {
+          action.classification = this.customClassificationText;
+        }
         if(this.userBox !== undefined) {
           action.bbox = this.userBox;
         } else if(this.selectedDetection !== undefined && this.selectedDetection.bbox !== undefined) {

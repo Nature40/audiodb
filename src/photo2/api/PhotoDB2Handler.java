@@ -30,12 +30,14 @@ public class PhotoDB2Handler extends AbstractHandler {
 	private final PhotoDB2 photodb;
 	private final Photos2Handler photos2Handler;
 	private final LocationsHandler locationsHandler;
+	private final ReviewListsHandler reviewListsHandler;
 
 	public PhotoDB2Handler(Broker broker) {
 		this.broker = broker;
 		this.photodb = broker.photodb2();
 		this.photos2Handler = new Photos2Handler(broker);
 		this.locationsHandler = new LocationsHandler(broker);
+		this.reviewListsHandler = new ReviewListsHandler(broker);
 	}
 
 	@Override
@@ -59,7 +61,10 @@ public class PhotoDB2Handler extends AbstractHandler {
 					break;
 				case "locations":
 					locationsHandler.handle(next, baseRequest, response);					
-					break;					
+					break;
+				case "review_lists":
+					reviewListsHandler.handle(next, baseRequest, response);					
+					break;						
 				default:
 					throw new RuntimeException("unknown url");
 				}

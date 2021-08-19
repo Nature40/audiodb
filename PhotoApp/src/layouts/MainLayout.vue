@@ -19,7 +19,7 @@
           </span>
         </q-toolbar-title>
 
-        <div>v0.1</div>
+        <div>v1.0</div>
       </q-toolbar>
     </q-header>
 

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import javax.imageio.ImageIO;
 
@@ -200,6 +201,8 @@ public class Photo2Handler {
 		}
 		return bbox;
 	}
+	
+	private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
 	private void handleRoot_POST(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
 		HttpSession session = request.getSession(false);
@@ -219,7 +222,7 @@ public class Photo2Handler {
 					String classification = jsonAction.getString("classification");
 					String classificator = "Expert";
 					String identity = account.username;
-					String date = LocalDateTime.now().toString();
+					String date = LocalDateTime.now().format(ISO_DATE_TIME);
 					photo.setClassification(bbox, classification, classificator, identity, date);
 					break;
 				}

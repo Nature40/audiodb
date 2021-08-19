@@ -64,11 +64,15 @@
         <template v-slot:prepend>
           <q-icon name="rule" />
         </template>
+        <template v-slot:after>
+          <q-btn push color="grey-7" round icon="add" @click="$refs.createReviewListDialog.show()" />
+          <create-review-list-dialog ref="createReviewListDialog"/>
+        </template>
       </q-select>
       <div v-if="review_lists === undefined || review_lists === null || review_lists.length === 0">
         No review_list found.
       </div>
-    </div>
+    </div>    
 
     <hr style="min-width: 500px;">
 
@@ -82,8 +86,14 @@
 <script>
 import {mapState, mapGetters, mapActions} from 'vuex'
 
+import createReviewListDialog from '../components/create-review-list-dialog'
+
 export default {
   name: 'query',
+
+  components: {
+    createReviewListDialog,
+  },  
 
   data: () => ({
     photosMessage: 'init',
