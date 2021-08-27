@@ -1,5 +1,6 @@
 package util;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -11,6 +12,10 @@ public class AudioTimeUtil {
 	public static LocalDateTime ofAudiotime(long timestamp) {
 		LocalDateTime datetime = UNIX_EPOCH.plusSeconds(timestamp);	
 		return datetime;
+	}
+	
+	public static long toAudiotime(LocalDateTime localDateTime) {
+		return Duration.between(UNIX_EPOCH, localDateTime).toSeconds();
 	}
 	
 	public static String toTextMinutes(LocalDateTime localDateTime) {
