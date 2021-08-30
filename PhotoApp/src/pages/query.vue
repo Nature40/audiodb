@@ -66,7 +66,7 @@
         </template>
         <template v-slot:after>
           <q-btn push color="grey-7" round icon="add" @click="$refs.createReviewListDialog.show()" />
-          <create-review-list-dialog ref="createReviewListDialog"/>
+          <create-review-list-dialog ref="createReviewListDialog" @closed="refreshProjectMeta"/>
         </template>
       </q-select>
       <div v-if="review_lists === undefined || review_lists === null || review_lists.length === 0">
@@ -131,8 +131,7 @@ export default {
       }
     },
     async selectedProject() {
-      await this.$store.dispatch('setProject', this.selectedProject);
-      this.$nextTick(() => this.sendQuery());
+      this.refreshProjectMeta();
     },
     locations() {
       if(this.locations === undefined || this.locations.length === 0) {
@@ -183,6 +182,10 @@ export default {
           this.photosQuery();
         }
       }
+    },
+    async refreshProjectMeta() {
+      await this.$store.dispatch('setProject', this.selectedProject);
+      this.$nextTick(() => this.sendQuery());
     },    
   },
 

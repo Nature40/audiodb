@@ -171,6 +171,7 @@ public class PhotoDB2 {
 					}
 				} catch(Exception e) {
 					log.warn(e);
+					e.printStackTrace();
 				}
 			} else {
 				log.warn("unknown entity: " + path);
@@ -271,8 +272,11 @@ public class PhotoDB2 {
 	public void foreachId(String project, String location, Consumer<String> consumer) {
 		try {
 			SqlConnector sqlconnector = tlsqlconnector.get();
-			PreparedStatement stmt = sqlconnector.stmt_query_ids;
-			if(location != null) {
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = sqlconnector.stmt_query_ids;
+				stmt.setString(1, project);
+			} else {
 				stmt = sqlconnector.stmt_query_ids_with_location;
 				stmt.setString(1, project);
 				stmt.setString(2, location);

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -37,16 +38,21 @@ public class Command_create_yaml implements Command {
 		traverseFolder(folder.toPath());
 	}
 
-	private void traverseFolder(Path folder) {
+	private long traverseFolder(Path folder) {
+		LocalDateTime start = LocalDateTime.now();
+		long counter = 0;
 		log.info("traverse " + folder);
 		try {
 			DirectoryStream<Path> dirStream = Files.newDirectoryStream(folder);
 			for(Path path: dirStream) {
 				File file = path.toFile();
 				if(file.isDirectory()) {
-					traverseFolder(path);
+					counter += traverseFolder(path);
 				} else if(file.isFile()) {
-					traverseFile(file);
+					boolean ret = traverseFile(file);
+					if(ret) {
+						counter++;
+					}
 				} else {
 					log.warn("unknown entry");
 				}
@@ -54,17 +60,28 @@ public class Command_create_yaml implements Command {
 		} catch (Exception e) {
 			log.warn(e);
 		}
+		LocalDateTime end = LocalDateTime.now();
+		Duration duration = Duration.between(start, end);
+		if(counter > 0) {			
+			Duration durationPerFile = duration.dividedBy(counter);
+			log.info("traversed " + folder + "  " + counter + " files  in " + duration + "     " + durationPerFile + " per file");
+		} else {
+			log.info("traversed " + folder + "  " + counter + " files  in " + duration);
+		}
+		
+		return counter;
 	}
 
-	private void traverseFile(File file) {
+	private boolean traverseFile(File file) {
 		String path = file.getPath();
 		if(path.endsWith(".wav") || path.endsWith(".WAV")) {
 			String yamlPath = path + ".yaml";
 			File yamlFile = new File(yamlPath);
 			if(!yamlFile.exists()) {
-				createYaml(file, yamlFile.toPath());
+				return createYaml(file, yamlFile.toPath());
 			}
-		}		
+		}
+		return false;		
 	}
 
 	private final static DateTimeFormatter AUDIO_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
@@ -74,7 +91,7 @@ public class Command_create_yaml implements Command {
 	private final static int AUDIOMOTH_LEN = AUDIOMOTH.length();
 	private final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-	private void createYaml(File file, Path yamlPath) {
+	private boolean createYaml(File file, Path yamlPath) {
 		try {
 			Riff riff = new Riff(file);
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
@@ -129,8 +146,10 @@ public class Command_create_yaml implements Command {
 			logList.add(logO);
 			m.put("log", logList);
 			YamlUtil.writeSafeYamlMap(yamlPath, m);
+			return true;
 		} catch (Exception e) {
 			log.warn(e);
+			return false;
 		}
 	}
 }

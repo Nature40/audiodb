@@ -2,6 +2,7 @@ package util.yaml;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -328,6 +329,8 @@ public class YamlMap {
 		return converter.apply(s);
 	}
 
+	private final static DateTimeFormatter ISO_MOD_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
 	public LocalDateTime getLocalDateTime(String name) {
 		Object o = getObject(name);
 		if(o instanceof Date) {
@@ -338,7 +341,15 @@ public class YamlMap {
 					.toLocalDateTime();	
 			return localDateTime;
 		}
-		return LocalDateTime.parse(o.toString());
+		try {
+			return LocalDateTime.parse(o.toString());
+		} catch (Exception e1) {
+			try {
+				return LocalDateTime.parse(name, ISO_MOD_FORMATTER);
+			} catch (Exception e2) {
+				throw e1;
+			}
+		}
 	}
 
 	public LocalDateTime optLocalDateTime(String name) {
@@ -354,6 +365,15 @@ public class YamlMap {
 					.toLocalDateTime();	
 			return localDateTime;
 		}
-		return LocalDateTime.parse(o.toString());
+		String dateText = o.toString();
+		try {
+			return LocalDateTime.parse(dateText);
+		} catch (Exception e1) {
+			try {
+				return LocalDateTime.parse(dateText, ISO_MOD_FORMATTER);
+			} catch (Exception e2) {
+				throw e1;
+			}
+		}
 	}
 }

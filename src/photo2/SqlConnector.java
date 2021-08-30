@@ -32,6 +32,9 @@ public class SqlConnector {
 
 	public static final String SQL_QUERY_PHOTO = "SELECT ID, PROJECT, META_PATH, IMAGE_PATH, LOCATION, DATE, LAST_MODIFIED, LOCKED FROM PHOTO WHERE ID = ?";
 	public final PreparedStatement stmt_query_photo;
+	
+	public static final String SQL_QUERY_PHOTOS_BY_PROJECT = "SELECT ID, PROJECT, META_PATH, IMAGE_PATH, LOCATION, DATE, LAST_MODIFIED, LOCKED FROM PHOTO WHERE PROJECT = ? AND NOT LOCKED";
+	public final PreparedStatement stmt_query_photos_by_project;
 
 	public static final String SQL_QUERY_LOCATIONS = "SELECT DISTINCT LOCATION FROM PHOTO WHERE PROJECT = ?";
 	public final PreparedStatement stmt_qery_locations;
@@ -42,7 +45,7 @@ public class SqlConnector {
 	public static final String SQL_QUERY_ALL_IDS = "SELECT ID FROM PHOTO";
 	public final PreparedStatement stmt_query_all_ids;
 
-	public static final String SQL_QUERY_IDS_IDS_NOT_LOCKED_WITH_LOCATION = "SELECT ID FROM PHOTO WHERE PROJECT = ? AND LOCATION = ? AND NOT LOCKED";
+	public static final String SQL_QUERY_IDS_NOT_LOCKED_WITH_LOCATION = "SELECT ID FROM PHOTO WHERE PROJECT = ? AND LOCATION = ? AND NOT LOCKED";
 	public final PreparedStatement stmt_query_ids_with_location;	
 
 	public static final String SQL_QUERY_PHOTO_IS_UP_TO_DATE = "SELECT EXISTS (SELECT * FROM PHOTO WHERE ID = ? AND LAST_MODIFIED = ?)";
@@ -143,10 +146,11 @@ public class SqlConnector {
 			stmt_insert_file = conn.prepareStatement(SQL_INSERT_FILE);
 			stmt_query_id_exist = conn.prepareStatement(SQL_QUERY_ID_EXIST);
 			stmt_query_photo = conn.prepareStatement(SQL_QUERY_PHOTO);
+			stmt_query_photos_by_project = conn.prepareStatement(SQL_QUERY_PHOTOS_BY_PROJECT);
 			stmt_qery_locations = conn.prepareStatement(SQL_QUERY_LOCATIONS);
 			stmt_query_ids = conn.prepareStatement(SQL_QUERY_IDS_NOT_LOCKED);
 			stmt_query_all_ids = conn.prepareStatement(SQL_QUERY_ALL_IDS);
-			stmt_query_ids_with_location = conn.prepareStatement(SQL_QUERY_IDS_IDS_NOT_LOCKED_WITH_LOCATION);
+			stmt_query_ids_with_location = conn.prepareStatement(SQL_QUERY_IDS_NOT_LOCKED_WITH_LOCATION);
 			stmt_query_photo_is_up_to_date = conn.prepareStatement(SQL_QUERY_PHOTO_IS_UP_TO_DATE);
 			stmt_query_all_meta_path = conn.prepareStatement(SQL_QUERY_ALL_META_PATH);
 			stmt_delete_photo = conn.prepareStatement(SQL_DELETE_PHOTO);

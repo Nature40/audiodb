@@ -37,11 +37,11 @@ public class Photo2 {
 		//log.info(this);
 	}
 
-	public void foreachClassification(Consumer<YamlMap> consumer) {
+	/*public void foreachClassification(Consumer<YamlMap> consumer) {
 		YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 		YamlList list = yamlMap.optList("classifications");
 		list.asMaps().forEach(consumer);
-	}
+	}*/
 
 	public void foreachDetection(Consumer<YamlMap> consumer) {
 		YamlMap yamlMap = getMeta();

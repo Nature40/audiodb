@@ -73,6 +73,14 @@ export default {
     }),    
   },
 
+  watch: {
+    shown() {
+      if(!this.shown) {
+        this.$emit('closed');
+      }
+    },
+  },
+
   methods: {
     ...mapActions({
     }),
