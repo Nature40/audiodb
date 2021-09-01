@@ -3,17 +3,19 @@ package audio;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import audio.SampleManagerConnector.SQL;
 import audio.SampleManagerConnector.TlSampleManagerConnector;
+import util.Timer;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
@@ -36,64 +38,123 @@ public class SampleManager {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
-		rescan();
+		tlSampleManagerConnector.get().init();
+		rescan();	
 	}
 
-	private void clear() {
-		tlSampleManagerConnector.get().initClear();
+	public static String metaRelPathToID(String project, String meta_rel_path) {
+		String id = meta_rel_path.replaceAll("/", "__");
+		id = id.replaceAll("\\\\", "__");
+		id = id.replaceAll(".yaml", "");
+		//id = project + "__" + id;
+		return id;
 	}
-	
-	private void insertSample(SampleManager projectConfig, Path path, Path root) {
-		YamlMap yamlMap = YamlUtil.readYamlMap(path);
-		if(yamlMap.contains("AudioSens") && yamlMap.getString("AudioSens").equals("v1.0")) {
-			String image_file = yamlMap.getString("file");
-			String location = yamlMap.getString("location");
-			LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
-			String project = yamlMap.getString("project");
-			//log.info(path);
-			try {
-				String meta_rel_path = projectConfig.root_path.relativize(path).toString();
-				String sample_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
-				log.info("read " + meta_rel_path);							
-				String id = meta_rel_path.replaceAll("/", "__");
-				id = id.replaceAll("\\\\", "__");
-				id = id.replaceAll(".yaml", "");
-				tlSampleManagerConnector.get().insert(id, project, meta_rel_path, sample_rel_path, location, date);							
-			} catch (Exception e) {
-				log.warn(e);
+
+	private void traverse(AudioProjectConfig projectConfig, Path root, int[] stats) throws IOException {
+		log.info("traverse " + root);
+		try {
+			for(Path path:Files.newDirectoryStream(root)) {
+				if(path.toFile().isDirectory()) {
+					traverse(projectConfig, path, stats);
+				} else if(path.toFile().isFile()) {
+					try {
+						if(path.getFileName().toString().endsWith(".yaml")) {
+							refreshSampleEntry(projectConfig, root, path, stats);
+						}
+					} catch(Exception e) {
+						log.warn(e);
+						e.printStackTrace();
+					}
+				} else {
+					log.warn("unknown entity: " + path);
+				}
 			}
-
-		} else {
-			log.warn("no valid AudioSens yaml  " + path);
+		} catch(Exception e) {
+			log.warn("error in " + root + "   " + e);
 		}
 	}
 
-	private void traverse(SampleManager projectConfig, Path root) throws IOException {
-		for(Path path:Files.newDirectoryStream(root)) {
-			if(path.toFile().isDirectory()) {
-				traverse(projectConfig, path);
-			} else if(path.toFile().isFile()) {
-				if(path.getFileName().toString().endsWith(".yaml")) {
-					insertSample(projectConfig, path, root);
-				}
+	public boolean isUpToDate(String id, long last_modified) {
+		try {
+			SampleManagerConnector sqlconnector = tlSampleManagerConnector.get();
+			PreparedStatement stmt = sqlconnector.getStatement(SQL.QUERY_IS_UP_TO_DATE);
+			stmt.setString(1, id);
+			stmt.setLong(2, last_modified);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				return res.getBoolean(1);
 			} else {
-				log.warn("unknown entity: " + path);
+				throw new RuntimeException("sql error");
 			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public boolean existSample(String id) {
+		return tlSampleManagerConnector.get().exist(id);
+	}
+
+	private void refreshSampleEntry(AudioProjectConfig projectConfig, Path root, Path metaPath, int[] stats) {
+		SampleManagerConnector sqlconnector = tlSampleManagerConnector.get();
+		String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
+		String id = metaRelPathToID(projectConfig.project, meta_rel_path);
+		if(metaPath.toFile().exists()) {
+			sqlconnector.insertTraverse(id);
+			long last_modified = metaPath.toFile().lastModified();
+			if(!this.isUpToDate(id, last_modified)) {
+				//log.info("update sample " + id);
+				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
+				if(yamlMap.contains("AudioSens") /*&& yamlMap.getString("AudioSens").equals("v1.0")*/) {
+					String sample_file = yamlMap.getString("file");
+					String location = yamlMap.optString("location", null);
+					long timestamp = yamlMap.optLong("timestamp", 0);
+					String sample_rel_path = projectConfig.root_path.relativize(root.resolve(sample_file)).toString(); 
+					boolean locked = false; // TODO
+					if(sqlconnector.exist(id)) {
+						log.info("update sample " + id);
+						sqlconnector.update(id, projectConfig.project, meta_rel_path, sample_rel_path, location, timestamp, last_modified, locked);
+						if(stats != null) {
+							stats[1]++;
+						}
+					} else {							
+						sqlconnector.insert(id, projectConfig.project, meta_rel_path, sample_rel_path, location, timestamp, last_modified, locked);
+						if(stats != null) {
+							stats[0]++;
+						}
+					}
+				} else {
+					log.warn("no valid AudioSens yaml  " + metaPath);
+					sqlconnector.deleteSample(id);
+				}
+			}	
+		} else {
+			log.info("remove from DB " + metaPath);				
+			sqlconnector.deleteSample(id);			
 		}
 	}
 
 	public void rescan() {
+		Timer.start("traverse");
 		try {
-			clear();
-			traverse(this, root_path);
+			tlSampleManagerConnector.get().initClearTraverseTable();
+			AudioProjectConfig projectConfig = broker.config().audioConfig;
+			int[] stats = new int[] {0, 0};
+			traverse(projectConfig, projectConfig.root_path, stats);
+			if(stats[0] > 0 || stats[1] > 0) {
+				log.info(stats[0] + " rows inserted, " + stats[1] + " rows updated");
+			}
+			tlSampleManagerConnector.get().deleteTraverseMissing();
 		} catch (IOException e) {
-			log.warn(e);
+			log.error(e);
+		} finally {
+			log.info(Timer.stop("traverse"));
 		}
 	}
 
 	public void forEach(Consumer<Sample2> consumer) {
-		tlSampleManagerConnector.get().forEach((String id, String project, String meta_rel_path, String sample_rel_path, String location, LocalDateTime date) -> {
-			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, date);
+		tlSampleManagerConnector.get().forEach((String id, String project, String meta_rel_path, String sample_rel_path, String location, long timestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp);
 			consumer.accept(sample);
 		});
 	}

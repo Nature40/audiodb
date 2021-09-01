@@ -35,7 +35,6 @@ No photos selected in query.
   </template>
 </q-virtual-scroll>
 
-
 </div>
   
 </template>

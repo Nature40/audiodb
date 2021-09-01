@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -92,67 +93,65 @@ public class ReviewListsHandler {
 			JSONObject jsonAction = jsonActions.getJSONObject(i);
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
-			case "create_review_list": {				
+			case "create_review_list": {
+				log.info("create_review_list");
 				HashMap<String, Integer> occurringSpecies = new HashMap<String, Integer>();				
 				//String username = account.username;
 				long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();				
 				SqlConnector sqlConnector = photodb.getSqlConnector();
 				String project = Web.getString(request, "project");		
-				//String reviewListId;
-				String reviewListPrefix;
-				try {
-					//reviewListId = "temp__" + username + "__" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
-					//reviewListId = "tmp" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
-					reviewListPrefix = "tmp" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
-				} catch (NoSuchAlgorithmException e1) {
-					throw new RuntimeException(e1);
-				}
+				//String reviewListId = "temp__" + username + "__" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
+				//String reviewListId = "tmp" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
+				String reviewListPrefix = "tmp" + Math.abs(ThreadLocalRandom.current().nextLong());
 
 				PreparedStatement insStmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_ENTRY);
 				photodb.foreachId(project, null, photoId -> {
 					Photo2 photo = photodb.getPhoto2NotLocked(photoId);
-					HashSet<String> localOccurringSpecies = new HashSet<String>();
-					photo.foreachDetection(map -> {
-						map.optList("classifications").asMaps().forEach(cmap -> {
-							if(cmap.contains("classification")) {
-								localOccurringSpecies.add(cmap.getString("classification"));
-							}							
+					if(photo != null) {
+						//log.info("process " + photoId);
+						HashSet<String> localOccurringSpecies = new HashSet<String>();
+						photo.foreachDetection(map -> {
+							map.optList("classifications").asMaps().forEach(cmap -> {
+								if(cmap.contains("classification")) {
+									localOccurringSpecies.add(cmap.getString("classification"));
+								}							
+							});
 						});
-					});
 
-					for(String species : localOccurringSpecies) {
-						if(excludeSpecies.contains(species)) {
-							continue;
-						}
-						try {
-							String reviewListId = reviewListPrefix + "__" + species;
-							Integer pos = occurringSpecies.get(species);
-							if(pos == null) {
-								try {
-									PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
-									stmt.setString(1, reviewListId);
-									stmt.setString(2, project);
-									stmt.setString(3, species);
-									stmt.setLong(4, timestamp);
-									stmt.executeUpdate();
-								} catch (SQLException e) {
-									throw new RuntimeException(e);
-								}
-								pos = 0;
+						for(String species : localOccurringSpecies) {
+							if(excludeSpecies.contains(species)) {
+								continue;
 							}
-							pos++; // 1 based index
-							occurringSpecies.put(species, pos);
-							insStmt.setString(1, reviewListId);
-							insStmt.setInt(2, pos);
-							insStmt.setString(3, photoId);
-							insStmt.setString(4, species);
-							insStmt.executeUpdate();
-						} catch (SQLException e) {
-							throw new RuntimeException(e);
-						}	
+							try {
+								String reviewListId = reviewListPrefix + "__" + species;
+								Integer pos = occurringSpecies.get(species);
+								if(pos == null) {
+									try {
+										PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
+										stmt.setString(1, reviewListId);
+										stmt.setString(2, project);
+										stmt.setString(3, species);
+										stmt.setLong(4, timestamp);
+										stmt.executeUpdate();
+									} catch (SQLException e) {
+										throw new RuntimeException(e);
+									}
+									pos = 0;
+								}
+								pos++; // 1 based index
+								occurringSpecies.put(species, pos);
+								insStmt.setString(1, reviewListId);
+								insStmt.setInt(2, pos);
+								insStmt.setString(3, photoId);
+								insStmt.setString(4, species);
+								insStmt.executeUpdate();
+							} catch (SQLException e) {
+								throw new RuntimeException(e);
+							}	
+						}
 					}
-
 				});
+				log.info("create_review_list done.");
 				break;
 			}
 			default:

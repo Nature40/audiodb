@@ -44,6 +44,9 @@ public class SqlConnector {
 
 	public static final String SQL_QUERY_ALL_IDS = "SELECT ID FROM PHOTO";
 	public final PreparedStatement stmt_query_all_ids;
+	
+	public static final String SQL_QUERY_ALL_IDS_NOT_LOCKED = "SELECT ID FROM PHOTO WHERE NOT LOCKED";
+	public final PreparedStatement stmt_query_all_ids_not_locked;
 
 	public static final String SQL_QUERY_IDS_NOT_LOCKED_WITH_LOCATION = "SELECT ID FROM PHOTO WHERE PROJECT = ? AND LOCATION = ? AND NOT LOCKED";
 	public final PreparedStatement stmt_query_ids_with_location;	
@@ -150,6 +153,7 @@ public class SqlConnector {
 			stmt_qery_locations = conn.prepareStatement(SQL_QUERY_LOCATIONS);
 			stmt_query_ids = conn.prepareStatement(SQL_QUERY_IDS_NOT_LOCKED);
 			stmt_query_all_ids = conn.prepareStatement(SQL_QUERY_ALL_IDS);
+			stmt_query_all_ids_not_locked = conn.prepareStatement(SQL_QUERY_ALL_IDS_NOT_LOCKED);
 			stmt_query_ids_with_location = conn.prepareStatement(SQL_QUERY_IDS_NOT_LOCKED_WITH_LOCATION);
 			stmt_query_photo_is_up_to_date = conn.prepareStatement(SQL_QUERY_PHOTO_IS_UP_TO_DATE);
 			stmt_query_all_meta_path = conn.prepareStatement(SQL_QUERY_ALL_META_PATH);

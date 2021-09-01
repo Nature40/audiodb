@@ -2,7 +2,6 @@ package audio;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -42,7 +41,7 @@ public class Samples {
 					sample.checkAndCorrectLabelDublicates();
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 					log.warn("error in " + path + "   " + e);
 				}
 			}

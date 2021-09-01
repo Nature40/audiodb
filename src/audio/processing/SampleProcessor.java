@@ -116,8 +116,6 @@ public class SampleProcessor {
 				throw new RuntimeException("invalid interval: " + start +  " " + end + "   " + dataLength);
 			}
 
-
-
 			int readStart = start < 0 ? 0 : start;
 			int readEnd = end >= frameLength ? frameLength - 1 : end;
 			int readLen = readEnd - readStart + 1;

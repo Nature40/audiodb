@@ -101,9 +101,9 @@ public class PhotoDB2 {
 
 		readDefinitions();
 
-		
+
 		updateThumbs();
-		
+
 		this.reviewListManager = new ReviewListManager(this);
 		reviewListManager.init();
 	}
@@ -160,22 +160,25 @@ public class PhotoDB2 {
 
 	private void traverse(PhotoProjectConfig projectConfig, Path root, int[] stats) throws IOException {
 		log.info("traverse " + root);
-
-		for(Path path:Files.newDirectoryStream(root)) {
-			if(path.toFile().isDirectory()) {
-				traverse(projectConfig, path, stats);
-			} else if(path.toFile().isFile()) {
-				try {
-					if(path.getFileName().toString().endsWith(".yaml")) {
-						refreshPhotoDBentry(projectConfig, root, path, stats);
+		try {
+			for(Path path:Files.newDirectoryStream(root)) {
+				if(path.toFile().isDirectory()) {
+					traverse(projectConfig, path, stats);
+				} else if(path.toFile().isFile()) {
+					try {
+						if(path.getFileName().toString().endsWith(".yaml")) {
+							refreshPhotoDBentry(projectConfig, root, path, stats);
+						}
+					} catch(Exception e) {
+						log.warn(e);
+						e.printStackTrace();
 					}
-				} catch(Exception e) {
-					log.warn(e);
-					e.printStackTrace();
+				} else {
+					log.warn("unknown entity: " + path);
 				}
-			} else {
-				log.warn("unknown entity: " + path);
 			}
+		} catch(Exception e) {
+			log.warn("error in " + root + "   " + e);
 		}
 	}
 
@@ -192,7 +195,7 @@ public class PhotoDB2 {
 				//log.info("refresh " + metaPath);
 
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
-				if(yamlMap.contains("PhotoSens") && yamlMap.getString("PhotoSens").equals("v1.0")) {
+				if(yamlMap.contains("PhotoSens") /*&& yamlMap.getString("PhotoSens").equals("v1.0")*/) {
 					String image_file = yamlMap.getString("file");
 					String location = yamlMap.getString("location");
 					LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
@@ -291,12 +294,12 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@FunctionalInterface
 	public interface ReviewListConsumer {
 		void accept(String id, String name);
 	}
-	
+
 	public void foreachReviewListByProject(String project, ReviewListConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
@@ -313,12 +316,12 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@FunctionalInterface
 	public interface ReviewListEntryConsumer {
 		void accept(int pos, String photo, String name);
 	}
-	
+
 	public void foreachReviewListEntryById(String reviewListId, ReviewListEntryConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
@@ -341,6 +344,21 @@ public class PhotoDB2 {
 		try {
 			SqlConnector sqlconnector = tlsqlconnector.get();
 			PreparedStatement stmt = sqlconnector.stmt_query_all_ids;
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				//log.info(id);
+				consumer.accept(id);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void foreachIdNotLocked(Consumer<String> consumer) {
+		try {
+			SqlConnector sqlconnector = tlsqlconnector.get();
+			PreparedStatement stmt = sqlconnector.stmt_query_all_ids_not_locked;
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
@@ -454,7 +472,7 @@ public class PhotoDB2 {
 
 	public void updateThumbs() {
 		new Thread(() -> {
-			foreachId(photo_id -> {
+			foreachIdNotLocked(photo_id -> {
 				try {
 					final int parallelism = ForkJoinPool.commonPool().getParallelism();
 					int maxQueue = parallelism * 2;					
@@ -469,21 +487,24 @@ public class PhotoDB2 {
 						//log.info("true");
 					} else {
 						Photo2 photo = getPhoto2NotLocked(photo_id);
-						log.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
-						while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
-							try {
-								Thread.sleep(100);
-							} catch (InterruptedException e) {
-								log.warn(e);
+						if(photo != null) {
+							log.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
+							while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
+								try {
+									Thread.sleep(100);
+								} catch (InterruptedException e) {
+									log.warn(e);
+								}
 							}
+							//log.info(ForkJoinPool.commonPool().getQueuedSubmissionCount());
+							//log.info("start " + parallelism + "  " + ForkJoinPool.commonPool().getPoolSize() + "  " + ForkJoinPool.commonPool().getRunningThreadCount());
+							thumbManager.submitScaled(cacheFilename, photo, reqWidth, reqHeight);					
+							//log.info("done");
 						}
-						//log.info(ForkJoinPool.commonPool().getQueuedSubmissionCount());
-						//log.info("start " + parallelism + "  " + ForkJoinPool.commonPool().getPoolSize() + "  " + ForkJoinPool.commonPool().getRunningThreadCount());
-						thumbManager.submitScaled(cacheFilename, photo, reqWidth, reqHeight);					
-						//log.info("done");
 					}
 				} catch (Exception e) {
 					log.warn(e);
+					e.printStackTrace();
 				}
 			});			
 		}).start();

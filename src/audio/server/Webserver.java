@@ -52,6 +52,7 @@ import audio.server.api.QueryHandler;
 import audio.server.api.ReviewStatisticsDetailedHandler;
 import audio.server.api.ReviewStatisticsHandler;
 import audio.server.api.Review_listsHandler;
+import audio.server.api.Samples2Handler;
 import audio.server.api.SamplesHandler;
 import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
@@ -82,9 +83,6 @@ public class Webserver {
 		httpsConfiguration.setSecurePort(https_port);
 		return httpsConfiguration;
 	}
-
-
-
 
 	private static ServerConnector createHttpsConnector(Server server, int https_port, String keystore_path, String keystore_password) {
 		HttpConfiguration httpsConfiguration = createHttpsConfiguration(https_port);
@@ -122,8 +120,6 @@ public class Webserver {
 
 		log.info("starting server");
 
-
-
 		Server server = new Server();
 		if(config.enableHttps()) {
 			ServerConnector httpConnector = createHttpConnector(server, config.http_port);
@@ -155,6 +151,7 @@ public class Webserver {
 		handlerList.addHandler(new AccessHandler(broker));
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
+		handlerList.addHandler(createContext("/samples2", true, new Samples2Handler(broker)));
 		handlerList.addHandler(createContext("/review_lists", true, new Review_listsHandler(broker)));
 		handlerList.addHandler(createContext("/review_statistics", true, new ReviewStatisticsHandler(broker)));
 		handlerList.addHandler(createContext("/review_statistics_detailed", true, new ReviewStatisticsDetailedHandler(broker)));
@@ -171,9 +168,9 @@ public class Webserver {
 		//if(broker.config().login) {
 		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
 		//}
-		
+
 		handlerList.addHandler(createContext("/photodb2", true, new PhotoDB2Handler(broker)));
-		
+
 		handlerList.addHandler(new NoContentHandler());		
 		server.setHandler(handlerList);
 		//SessionHandler sessionHandler = new SessionHandler();
@@ -258,16 +255,20 @@ public class Webserver {
 		if(collector == null) {
 			collector = new ArrayList<Path>();
 		}
-		for(Path path:Files.newDirectoryStream(root)) {
-			if(path.toFile().isDirectory()) {
-				getAudioPaths(path, collector);
-			} else if(path.toFile().isFile()) {
-				if(path.getFileName().toString().endsWith(".yaml")) {
-					collector.add(path);
+		try {
+			for(Path path:Files.newDirectoryStream(root)) {
+				if(path.toFile().isDirectory()) {
+					getAudioPaths(path, collector);
+				} else if(path.toFile().isFile()) {
+					if(path.getFileName().toString().endsWith(".yaml")) {
+						collector.add(path);
+					}
+				} else {
+					log.warn("unknown entity: " + path);
 				}
-			} else {
-				log.warn("unknown entity: " + path);
 			}
+		} catch(Exception e) {
+			log.warn("error in " + root + "   " + e);
 		}
 		return collector;
 	}

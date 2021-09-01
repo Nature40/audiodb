@@ -272,66 +272,68 @@ export default {
       photoMetaRefresh: 'photo/meta/refresh',
     }),
     redrawImageOverlay() {
-      //console.log("draw");      
-      var image = this.$refs.image;
-      if(image === undefined) {
-        return;
-      }
-      var width = image.width;
-      var height = image.height;
-      var canvas = this.$refs.image_overlay;
-      canvas.width = width;
-      canvas.height = height;
-      //console.log(width + "  " + height);
-      var ctx = canvas.getContext("2d");
-      ctx.fillStyle = "rgba(0, 0, 0, 0)";
-      ctx.fillRect(0, 0, width, height);
-      if(!this.imageLoading) {
-        ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-        this.detections.forEach((detection, index) => {
-          if(detection.bbox !== undefined) {
-            //console.log(detection.bbox);
-            let xmin = detection.bbox[0] * width;
-            let ymin = detection.bbox[1] * height;
-            let boxwidth = detection.bbox[2] * width;
-            let boxheight = detection.bbox[3] * height;
-            if(this.userBox !== undefined || index !== this.selectedDetectionIndex) {
-             ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+      this.$nextTick(() => {
+        //console.log("draw");      
+        var image = this.$refs.image;
+        if(image === undefined) {
+          return;
+        }
+        var width = image.width;
+        var height = image.height;
+        var canvas = this.$refs.image_overlay;
+        canvas.width = width;
+        canvas.height = height;
+        //console.log(width + "  " + height);
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "rgba(0, 0, 0, 0)";
+        ctx.fillRect(0, 0, width, height);
+        if(!this.imageLoading) {
+          ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+          this.detections.forEach((detection, index) => {
+            if(detection.bbox !== undefined) {
+              //console.log(detection.bbox);
+              let xmin = detection.bbox[0] * width;
+              let ymin = detection.bbox[1] * height;
+              let boxwidth = detection.bbox[2] * width;
+              let boxheight = detection.bbox[3] * height;
+              if(this.userBox !== undefined || index !== this.selectedDetectionIndex) {
+              ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+              }
+              //ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
             }
-            //ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+          });
+          if(this.userBox === undefined && this.selectedDetectionIndex !== undefined) {
+            let detection = this.selectedDetection;
+            if(detection.bbox !== undefined) {
+              //console.log(detection.bbox);
+              let xmin = detection.bbox[0] * width;
+              let ymin = detection.bbox[1] * height;
+              let boxwidth = detection.bbox[2] * width;
+              let boxheight = detection.bbox[3] * height;
+              ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
+              ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+            }
           }
-        });
-        if(this.userBox === undefined && this.selectedDetectionIndex !== undefined) {
-          let detection = this.selectedDetection;
-          if(detection.bbox !== undefined) {
-            //console.log(detection.bbox);
-            let xmin = detection.bbox[0] * width;
-            let ymin = detection.bbox[1] * height;
-            let boxwidth = detection.bbox[2] * width;
-            let boxheight = detection.bbox[3] * height;
-            ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
+          if(this.userBox !== undefined) {
+            let xmin = this.userBox[0] * width;
+            let ymin = this.userBox[1] * height;
+            let boxwidth = this.userBox[2] * width;
+            let boxheight = this.userBox[3] * height;
+            if(boxwidth > -5 && boxwidth < 5) {
+              boxwidth = 5;
+            }
+            if(boxheight > -5 && boxheight < 5) {
+              boxheight = 5;
+            }
+            ctx.setLineDash([6]);
+            ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
+            console.log("draw at: " + xmin + " " + ymin + "               " + width + "   " + height);
             ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
           }
         }
-        if(this.userBox !== undefined) {
-          let xmin = this.userBox[0] * width;
-          let ymin = this.userBox[1] * height;
-          let boxwidth = this.userBox[2] * width;
-          let boxheight = this.userBox[3] * height;
-          if(boxwidth > -5 && boxwidth < 5) {
-            boxwidth = 5;
-          }
-          if(boxheight > -5 && boxheight < 5) {
-            boxheight = 5;
-          }
-          ctx.setLineDash([6]);
-          ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
-          console.log("draw at: " + xmin + " " + ymin + "               " + width + "   " + height);
-          ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
-        }
-      }
+      });
     },
     onLoadImage() {
       this.imageLoading = false;
@@ -496,9 +498,24 @@ export default {
     userBox() {
       this.redrawImageOverlay();
     },
+    photo() {
+      this.redrawImageOverlay();
+    },
+    photoMeta() {
+      this.redrawImageOverlay();
+    },
   },
 
   async mounted() {
+    this.redrawImageOverlay();
+  },
+
+  activated() {
+    this.redrawImageOverlay();
+  },
+
+  deactivated() {
+    this.redrawImageOverlay();
   },
 }
 </script>

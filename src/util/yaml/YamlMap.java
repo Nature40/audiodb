@@ -17,10 +17,14 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import util.collections.ReadonlyList;
 
 public class YamlMap {
-
+	static final Logger log = LogManager.getLogger();
+	
 	public static final YamlMap EMPTY_MAP = new YamlMap(new HashMap<>());
 
 	private Map<String, Object> map;
@@ -341,11 +345,12 @@ public class YamlMap {
 					.toLocalDateTime();	
 			return localDateTime;
 		}
+		String dateText = o.toString();
 		try {
-			return LocalDateTime.parse(o.toString());
+			return LocalDateTime.parse(dateText);
 		} catch (Exception e1) {
 			try {
-				return LocalDateTime.parse(name, ISO_MOD_FORMATTER);
+				return LocalDateTime.parse(dateText, ISO_MOD_FORMATTER);
 			} catch (Exception e2) {
 				throw e1;
 			}

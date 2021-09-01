@@ -33,6 +33,8 @@
 /photo_cache.trace.db
 /photo_class.csv
 /photo_classification_definitions.csv
+/sample_cache.mv.db
+/sample_cache.trace.db
 /thumb_cache.mv.db
 /thumb_cache.trace.db
 /webcontent/app

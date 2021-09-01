@@ -1,15 +1,9 @@
 package audio;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import util.yaml.YamlList;
-import util.yaml.YamlMap;
-import util.yaml.YamlUtil;
 
 public class Sample2 {
 	static final Logger log = LogManager.getLogger();
@@ -19,27 +13,26 @@ public class Sample2 {
 	public final Path metaPath;
 	public final Path samplePath;
 	public final String location;
-	public final LocalDateTime date;
+	public final long timestamp;
 
-	public Sample2(String id, String project, Path metaPath, Path samplePath, String location, LocalDateTime date) {
+	public Sample2(String id, String project, Path metaPath, Path samplePath, String location, long timestamp) {
 		this.id = id;
 		this.project = project;
 		this.metaPath = metaPath;
 		this.samplePath = samplePath;
 		this.location = location;
-		this.date = date;
-		//log.info(this);
+		this.timestamp = timestamp;
+	}
+	
+	public Sample getSample() {
+		return new Sample(id, metaPath);
 	}
 
-	public void foreachClassification(Consumer<YamlMap> consumer) {
-		YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
-		YamlList list = yamlMap.optList("classifications");
-		list.asMaps().forEach(consumer);
+	public boolean hasLocation() {
+		return location != null;
 	}
 
-	@Override
-	public String toString() {
-		return "Sample2 [id=" + id + ", metaPath=" + metaPath + ", samplePath=" + samplePath + ", location=" + location
-				+ ", date=" + date + "]";
+	public boolean hasTimestamp() {
+		return timestamp > 0;
 	}
 }
