@@ -44,6 +44,8 @@ public class SpectrumHandler {
 
 		double start = Web.getDouble(request, "start", Double.NaN);
 		double end = Web.getDouble(request, "end", Double.NaN);
+		
+		//log.info("start " + start + "  end " + end);
 
 		int max_width = Web.getInt(request, "max_width", 0);
 

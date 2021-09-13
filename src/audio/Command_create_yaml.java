@@ -1,7 +1,6 @@
 package audio;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,11 +67,11 @@ public class Command_create_yaml implements Command {
 		} else {
 			log.info("traversed " + folder + "  " + counter + " files  in " + duration);
 		}
-		
+
 		return counter;
 	}
 
-	private boolean traverseFile(File file) {
+	protected boolean traverseFile(File file) {
 		String path = file.getPath();
 		if(path.endsWith(".wav") || path.endsWith(".WAV")) {
 			String yamlPath = path + ".yaml";
@@ -91,7 +90,7 @@ public class Command_create_yaml implements Command {
 	private final static int AUDIOMOTH_LEN = AUDIOMOTH.length();
 	private final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-	private boolean createYaml(File file, Path yamlPath) {
+	protected boolean createYaml(File file, Path yamlPath) {
 		try {
 			Riff riff = new Riff(file);
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
@@ -138,6 +137,12 @@ public class Command_create_yaml implements Command {
 			}				
 			if(riff.samples > 0) {
 				m.put("Samples", riff.samples);
+			}
+			if(riff.samples > 0 && riff.sample_rate > 0) {
+				double duration = ((double) riff.samples) / ((double) riff.sample_rate);
+				if(Double.isFinite(duration) && duration > 0) {
+					m.put("Duration", duration);
+				}
 			}
 			Vec<Object> logList = new Vec<Object>();
 			LinkedHashMap<String, Object> logO = new LinkedHashMap<String, Object>();

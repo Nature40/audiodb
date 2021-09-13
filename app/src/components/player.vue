@@ -196,7 +196,7 @@ computed: {
     return this.labelDefinitionsDialogOpen;
   },
   spectrumUrl() {
-    return this.apiBase + 'samples/' + this.sample.id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold;
+    return this.apiBase + 'samples/' + this.sample.id + '/spectrum' + '?cutoff=' + this.canvasHeight + "&threshold=" + this.threshold + "&max_width=16384";
   },
   audioUrl() {
     if(this.overwriteSamplingRate && this.samplingRate !== undefined) {

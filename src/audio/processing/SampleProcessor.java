@@ -110,7 +110,11 @@ public class SampleProcessor {
 			
 			this.dataLength = end - start + 1;
 
-			int MAX_SAMPLES = 10_000_000;
+			int MAX_SAMPLES = 512 * 1024 * 1024;
+			
+			if(dataLength > MAX_SAMPLES) {
+				throw new RuntimeException("interval is too large: " + dataLength + "    max allowed " + MAX_SAMPLES);
+			}
 			
 			if(start > Integer.MAX_VALUE - MAX_SAMPLES || end > start + MAX_SAMPLES) {
 				throw new RuntimeException("invalid interval: " + start +  " " + end + "   " + dataLength);

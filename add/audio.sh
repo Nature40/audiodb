@@ -1,1 +1,1 @@
-exec java -Djava.awt.headless=true -XX:-UsePerfData -Djava.io.tmpdir=/var/tmp -Xmx512m -classpath 'audio.jar:lib/*' audio.Terminal "$@"
+exec java -Djava.awt.headless=true -XX:-UsePerfData -Djava.io.tmpdir=/var/tmp -Xmx2g -classpath 'audio.jar:lib/*' audio.Terminal "$@"
