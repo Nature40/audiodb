@@ -131,6 +131,7 @@ public class ReviewListManager {
 				insStmt.setInt(2, (pos + 1)); // 1 based index
 				insStmt.setString(3, photoId);
 				insStmt.setString(4, "name");
+				insStmt.setFloat(5, 0f);
 				insStmt.executeUpdate();
 			});
 		}

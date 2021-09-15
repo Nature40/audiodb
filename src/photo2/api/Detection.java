@@ -1,21 +1,20 @@
 package photo2.api;
 
-import java.util.LinkedHashMap;
-
 import util.collections.vec.Vec;
+import util.yaml.YamlMap;
 
 public class Detection {
 
 	public final float[] bbox; // nullable
-	public final Vec<LinkedHashMap<String, Object>> classifications; // not null, possibly empty
+	public final Vec<YamlMap> classifications; // not null, possibly empty
 
-	public Detection(float[] bbox, Vec<LinkedHashMap<String, Object>> classifications) {
+	public Detection(float[] bbox, Vec<YamlMap> classifications) {
 		this.bbox = bbox;
 		this.classifications = classifications;
 	}
 	
 	public Detection(float[] bbox) {
-		this(bbox, new Vec<LinkedHashMap<String, Object>>());
+		this(bbox, new Vec<YamlMap>());
 	}
 	
 	public boolean isDetection(float[] bbox) {

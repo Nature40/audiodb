@@ -2,6 +2,7 @@ package photo2.api;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,14 +42,14 @@ public class PhotoMeta {
 			YamlList detections = metaMap.getList("detections");
 			for(YamlMap m : detections.asMaps()) {
 				float[] bbox = m.contains("bbox") ? m.getList("bbox").asFloatArray() : null;
-				Vec<LinkedHashMap<String, Object>> classifications = new Vec<LinkedHashMap<String, Object>>();
+				Vec<YamlMap> classifications = new Vec<YamlMap>();
 				if(m.contains("classifications")) {
 					for(YamlMap c : m.getList("classifications").asMaps()) {
 						LinkedHashMap<String, Object> cm = new LinkedHashMap<String, Object>();
 						c.getInternalMap().forEach((k,v) -> {
 							cm.put(k, v);
 						});
-						classifications.add(cm);
+						classifications.add(new YamlMap(cm));
 					}
 				}
 				Detection detection = new Detection(bbox, classifications);
@@ -66,7 +67,11 @@ public class PhotoMeta {
 				m.put("bbox", detection.bbox);
 			}
 			if(!detection.classifications.isEmpty()) {
-				m.put("classifications", detection.classifications);
+				Vec<Map<String, Object>> cs = new Vec<Map<String, Object>>();
+				detection.classifications.forEach(c -> {
+					cs.add(c.getInternalMap());
+				});
+				m.put("classifications", cs);
 			}
 			list.add(m);
 		}
@@ -97,14 +102,14 @@ public class PhotoMeta {
 			detection = new Detection(bbox);
 			detections.add(detection);
 		}
-		detection.classifications.add(cMap);
+		detection.classifications.add(new YamlMap(cMap));
 	}
 	
 	public LinkedHashSet<String> getClassifications() {
 		LinkedHashSet<String> classificationSet = new LinkedHashSet<String>();
 		for(Detection detection : getDetections()) {
-			for(LinkedHashMap<String, Object> c : detection.classifications) {
-				Object classification = c.get("classification");
+			for(YamlMap c : detection.classifications) {
+				Object classification = c.optString("classification");
 				if(classification != null) {
 					classificationSet.add(classification.toString());
 				}

@@ -65,8 +65,6 @@ public class SpectrumHandler {
 		image.writePngCompressed(response.getOutputStream());
 	}
 
-
-
 	private ImageRGBA render2(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold) {
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);

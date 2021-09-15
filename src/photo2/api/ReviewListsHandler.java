@@ -1,15 +1,16 @@
 package photo2.api;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.LogManager;
@@ -27,7 +28,10 @@ import photo2.Photo2;
 import photo2.PhotoDB2;
 import photo2.SqlConnector;
 import photo2.SqlConnector.SQL;
+import photo2.api.ReviewListsHandler.CollectorEntry;
 import util.Web;
+import util.collections.vec.Vec;
+import util.yaml.YamlMap;
 
 public class ReviewListsHandler {
 	private static final Logger log = LogManager.getLogger();
@@ -73,10 +77,10 @@ public class ReviewListsHandler {
 		}
 	}
 
-	private static HashSet<String> excludeSpecies = new HashSet<String>();
+	/*private static HashSet<String> excludeSpecies = new HashSet<String>();
 	static {
 		excludeSpecies.add("animal");	
-	}
+	}*/
 
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
 
@@ -108,7 +112,46 @@ public class ReviewListsHandler {
 				photodb.foreachId(project, null, photoId -> {
 					Photo2 photo = photodb.getPhoto2NotLocked(photoId);
 					if(photo != null) {
-						//log.info("process " + photoId);
+						PhotoMeta photoMeta = new PhotoMeta(photo.getMeta());
+						Vec<Detection> detections = photoMeta.getDetections();
+						Map<String, CollectorEntry> collectorMap = new HashMap<String, CollectorEntry>();
+						detections.forEach(detection -> {							
+							collectClassifications(detection, collectorMap);					
+						});
+						for(CollectorEntry collectorEntry : collectorMap.values()) {
+							try {
+								String species = collectorEntry.classification;
+								String reviewListId = reviewListPrefix + "__" + species;
+								float ranking = collectorEntry.ranking;
+								Integer pos = occurringSpecies.get(species);
+								if(pos == null) {
+									try {
+										PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
+										stmt.setString(1, reviewListId);
+										stmt.setString(2, project);
+										stmt.setString(3, species);
+										stmt.setLong(4, timestamp);
+										stmt.executeUpdate();
+									} catch (SQLException e) {
+										throw new RuntimeException(e);
+									}
+									pos = 0;
+								}
+								pos++; // 1 based index
+								occurringSpecies.put(species, pos);
+								insStmt.setString(1, reviewListId);
+								insStmt.setInt(2, pos);
+								insStmt.setString(3, photoId);
+								insStmt.setString(4, species);
+								insStmt.setFloat(5, ranking);
+								insStmt.executeUpdate();
+							} catch (SQLException e) {
+								throw new RuntimeException(e);
+							}								
+						}
+
+
+						/*//log.info("process " + photoId);
 						HashSet<String> localOccurringSpecies = new HashSet<String>();
 						photo.foreachDetection(map -> {
 							map.optList("classifications").asMaps().forEach(cmap -> {
@@ -148,9 +191,62 @@ public class ReviewListsHandler {
 							} catch (SQLException e) {
 								throw new RuntimeException(e);
 							}	
-						}
+						}*/
 					}
 				});
+
+				for(String species : occurringSpecies.keySet()) {
+					String reviewListId = reviewListPrefix + "__" + species;
+					String reviewListIdOrdered = reviewListPrefix + "__" + species + "__" + "ordered";					
+					try {
+						PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
+						stmt.setString(1, reviewListIdOrdered);
+						stmt.setString(2, project);
+						stmt.setString(3, species);
+						stmt.setLong(4, timestamp);
+						stmt.executeUpdate();
+					} catch (SQLException e) {
+						throw new RuntimeException(e);
+					}
+					try {
+						PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_ENTRY_BY_ID_ORDER_BY_RANKING);
+						stmt.setString(1, reviewListId);
+						ResultSet res = stmt.executeQuery();
+						int pos = 0;
+						while(res.next()) {
+							String photoId = res.getString(1);
+							String name = res.getString(2);
+							float ranking = res.getFloat(3);							
+
+							pos++; // 1 based index
+							insStmt.setString(1, reviewListIdOrdered);
+							insStmt.setInt(2, pos);
+							insStmt.setString(3, photoId);
+							insStmt.setString(4, name);
+							insStmt.setFloat(5, ranking);
+							insStmt.executeUpdate();
+						}
+					} catch (SQLException e) {
+						throw new RuntimeException(e);
+					}
+
+					try {
+						PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY_BY_ID);
+						stmt.setString(1, reviewListId);
+						stmt.executeUpdate();
+					} catch (SQLException e) {
+						throw new RuntimeException(e);
+					}
+
+					try {
+						PreparedStatement stmt1 = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_BY_ID);
+						stmt1.setString(1, reviewListId);
+						stmt1.executeUpdate();
+					} catch (SQLException e) {
+						throw new RuntimeException(e);
+					}
+				}
+
 				log.info("create_review_list done.");
 				break;
 			}
@@ -164,5 +260,54 @@ public class ReviewListsHandler {
 		json.key("result");
 		json.value("OK");
 		json.endObject();
+	}
+
+	static class CollectorEntry {
+		public String classification;
+		public float ranking;
+
+		public CollectorEntry(String classification, float ranking) {
+			this.classification = classification;
+			this.ranking = ranking;
+		}
+	}
+
+	private static void collectClassifications(Detection detection, Map<String, CollectorEntry> collectorMap) {
+		Vec<YamlMap> classifications = detection.classifications;
+		if(classifications.isEmpty()) {
+			return;
+		}
+		YamlMap megaDetectorClassification = classifications.findLast(classificationEntry -> {
+			String classificator = classificationEntry.optString("classificator");
+			return "MegaDetector".equals(classificator);
+		});
+		if(megaDetectorClassification == null) {
+			return;
+		}
+		YamlMap netClassification = classifications.findLast(classificationEntry -> {
+			String classificator = classificationEntry.optString("classificator");
+			return "EfficientNetB3".equals(classificator);
+		});
+		if(netClassification == null) {
+			return;
+		}
+		float megaDetectorConf = megaDetectorClassification.optFloat("conf");
+		if(!Float.isFinite(megaDetectorConf) || megaDetectorConf < 0.8f) {
+			return;
+		}
+		String netClass = netClassification.optString("classification");
+		if(netClass == null) {
+			return;
+		}
+		float netConf = netClassification.optFloat("conf");
+		if(!Float.isFinite(netConf) || netConf < 0.8f) {
+			return;
+		}
+		float ranking = netConf;
+		CollectorEntry collectorEntry = collectorMap.get(netClass);
+		if(collectorEntry == null || ranking > collectorEntry.ranking) {
+			collectorEntry = new CollectorEntry(netClass, ranking);
+			collectorMap.put(netClass, collectorEntry);
+		}
 	}
 }

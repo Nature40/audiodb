@@ -12,7 +12,8 @@
       <span class="time-text">{{locationText}} | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
-      <q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>      
+      <q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>
+      <q-checkbox size="xs" v-model="hideIncorrectBoxes" val="xs" label="hide incorrect boxes" />      
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
@@ -149,6 +150,7 @@ export default {
     userBox: undefined,
     classificationSelectMode: 'list',
     customClassificationText: undefined,
+    hideIncorrectBoxes: true,
   }),  
 
   computed: {
@@ -224,7 +226,20 @@ export default {
       if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.detections === undefined) {
         return [];
       }
-      return this.photoMeta.data.detections;
+      if(this.hideIncorrectBoxes) {
+        return this.photoMeta.data.detections.filter(detection => {
+          let classifications = detection.classifications;
+          if(classifications === undefined || classifications.length < 1) {
+            return true;
+          } else {
+            let classification = classifications[classifications.length - 1].classification;
+            console.log(classification);
+            return classification !== 'incorrect box';
+          }          
+        });
+      } else {
+        return this.photoMeta.data.detections;
+      }
     },
     selectedDetection() {
       if(this.detections === undefined || this.selectedDetectionIndex === undefined || this.selectedDetectionIndex >= this.detections.length || this.selectedDetectionIndex < 0) {
