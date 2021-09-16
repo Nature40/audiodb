@@ -11,7 +11,7 @@
       <q-toolbar>
         <q-icon name="note_add" style="font-size: 2em;" class="text-grey-7"/>
         <q-toolbar-title>
-          Create review list
+          Create review lists
         </q-toolbar-title>
         <q-space />
 
@@ -32,16 +32,28 @@
 
     <q-footer class="bg-white text-black">
       <q-separator />
-      <q-toolbar inset>        
+      <q-toolbar inset>
+        <span v-if="loading"><q-spinner-gears color="primary" size="2em"/> {{loading}}</span>  
+        <span v-if="loadingError"> {{loadingError}}</span>       
         <q-space />
-        <q-btn flat label="Create" class="text-teal" @click="onSubmitCreateReviewList" />
-        <q-btn flat label="Cancel" v-close-popup />
+        <q-btn flat label="Create" class="text-teal" @click="onSubmitCreateReviewList" :disabled="loading" />
+        <q-btn flat label="Cancel" v-close-popup :disabled="loading" />
       </q-toolbar>
     </q-footer>
 
     <q-page-container>
       <q-page padding>
-        TODO
+        Prefilter
+        <span class="row">
+        <q-input outlined v-model="prefilter_classificator" label="Prefilter classificator" stack-label dense />
+        <q-input outlined v-model="prefilter_threshold" label="Prefilter confidence threshold" stack-label dense type="number" />
+        </span>
+        <hr>
+        Classification
+        <span class="row">
+        <q-input outlined v-model="classification_classificator" label="Classification classificator" stack-label dense />
+        <q-input outlined v-model="classification_threshold" label="Classification confidence threshold" stack-label dense  type="number" />
+        </span>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -62,6 +74,12 @@ export default {
   data: () => ({
     shown: false,
     maximized: true,
+    prefilter_classificator: 'MegaDetector',
+    prefilter_threshold: 0.8,
+    classification_classificator: 'EfficientNetB3',
+    classification_threshold: 0.8,
+    loading: undefined,
+    loadingError: undefined,
   }),  
 
   computed: {
@@ -89,12 +107,22 @@ export default {
     }, 
     async onSubmitCreateReviewList() {
       var action = {action: "create_review_list"};
+      action.prefilter_classificator = this.prefilter_classificator;
+      action.prefilter_threshold = this.prefilter_threshold;
+      action.classification_classificator = this.classification_classificator;
+      action.classification_threshold = this.classification_threshold;
       var content = {actions: [action]}; 
-      let params = {project: this.project};
+      let params = {project: this.project};     
       try {
+        this.loading = "Processing";
+        this.loadingError = undefined;
         var response = await this.apiPOST(['photodb2', 'review_lists'], content, {params});
+        this.loading = undefined;
+        this.loadingError = undefined;
         this.shown = false;
       } catch {
+        this.loading = undefined;
+        this.loadingError = 'Proccessing error';
         console.log("error");
       }
     },             

@@ -60,7 +60,7 @@
     </div>
     
     <div class="column items-center" v-if="selectedQueryMode === 'review_list'">
-      <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" option-label="name" label="Review List" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+      <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" option-label="name" label="Review List" dense options-dense options-selected-class="text-deep-blue" style="min-width: 400px;">
         <template v-slot:prepend>
           <q-icon name="rule" />
         </template>
