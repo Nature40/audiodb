@@ -8,10 +8,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +26,7 @@ import photo2.Photo2;
 import photo2.PhotoDB2;
 import photo2.SqlConnector;
 import photo2.SqlConnector.SQL;
-import photo2.api.ReviewListsHandler.CollectorEntry;
+import util.JsonUtil;
 import util.Web;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -82,7 +79,7 @@ public class ReviewListsHandler {
 	static {
 		excludeSpecies.add("animal");	
 	}*/
-	
+
 	private AtomicInteger reviewListIdPrefixCounter = new AtomicInteger();
 
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
@@ -101,10 +98,12 @@ public class ReviewListsHandler {
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
 			case "create_review_list": {
+				String setName_ = jsonAction.optString("set_name", null);
 				String filterClassificator = jsonAction.getString("prefilter_classificator");
 				float filterConf = jsonAction.getFloat("prefilter_threshold");
 				String classClassificator = jsonAction.getString("classification_classificator");
 				float classConf = jsonAction.getFloat("classification_threshold");
+				boolean sortedByRanking = jsonAction.optBoolean("sorted_by_ranking", false);
 				log.info("create_review_list");
 				HashMap<String, Integer> occurringSpecies = new HashMap<String, Integer>();				
 				//String username = account.username;
@@ -114,9 +113,23 @@ public class ReviewListsHandler {
 				//String reviewListId = "temp__" + username + "__" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
 				//String reviewListId = "tmp" + Math.abs(SecureRandom.getInstanceStrong().nextLong());
 				//String reviewListPrefix = "tmp" + Math.abs(ThreadLocalRandom.current().nextLong());
-				int cnt = reviewListIdPrefixCounter.incrementAndGet();
-				String reviewListPrefix = "tmp" + "_" + cnt + "__";
-				String reviewListPrefixName = cnt + " - ";
+				int cnt = reviewListIdPrefixCounter.incrementAndGet();				
+				if(setName_ == null || setName_.isBlank()) {
+					setName_ = ""+cnt;
+				}
+				final String setName = setName_;				
+				String setId = project + "__" + setName;
+				
+				
+				try {
+					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_SET);
+					stmt.setString(1, setId);
+					stmt.setString(2, project);
+					stmt.setString(3, setName);
+					stmt.executeUpdate();
+				} catch (SQLException e) {
+					throw new RuntimeException(e);
+				}
 
 				PreparedStatement insStmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_ENTRY);
 				photodb.foreachId(project, null, photoId -> {
@@ -131,8 +144,8 @@ public class ReviewListsHandler {
 						for(CollectorEntry collectorEntry : collectorMap.values()) {
 							try {
 								String species = collectorEntry.classification;
-								String reviewListId = reviewListPrefix + species;
-								String reviewListName = reviewListPrefixName + species;
+								String reviewListId = setId + "__" + species;
+								String reviewListName = species;
 								float ranking = collectorEntry.ranking;
 								Integer pos = occurringSpecies.get(species);
 								if(pos == null) {
@@ -140,8 +153,9 @@ public class ReviewListsHandler {
 										PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
 										stmt.setString(1, reviewListId);
 										stmt.setString(2, project);
-										stmt.setString(3, reviewListName);
-										stmt.setLong(4, timestamp);
+										stmt.setString(3, setId);
+										stmt.setString(4, reviewListName);
+										stmt.setLong(5, timestamp);
 										stmt.executeUpdate();
 									} catch (SQLException e) {
 										throw new RuntimeException(e);
@@ -160,108 +174,61 @@ public class ReviewListsHandler {
 								throw new RuntimeException(e);
 							}								
 						}
-
-
-						/*//log.info("process " + photoId);
-						HashSet<String> localOccurringSpecies = new HashSet<String>();
-						photo.foreachDetection(map -> {
-							map.optList("classifications").asMaps().forEach(cmap -> {
-								if(cmap.contains("classification")) {
-									localOccurringSpecies.add(cmap.getString("classification"));
-								}							
-							});
-						});
-
-						for(String species : localOccurringSpecies) {
-							if(excludeSpecies.contains(species)) {
-								continue;
-							}
-							try {
-								String reviewListId = reviewListPrefix + "__" + species;
-								Integer pos = occurringSpecies.get(species);
-								if(pos == null) {
-									try {
-										PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
-										stmt.setString(1, reviewListId);
-										stmt.setString(2, project);
-										stmt.setString(3, species);
-										stmt.setLong(4, timestamp);
-										stmt.executeUpdate();
-									} catch (SQLException e) {
-										throw new RuntimeException(e);
-									}
-									pos = 0;
-								}
-								pos++; // 1 based index
-								occurringSpecies.put(species, pos);
-								insStmt.setString(1, reviewListId);
-								insStmt.setInt(2, pos);
-								insStmt.setString(3, photoId);
-								insStmt.setString(4, species);
-								insStmt.executeUpdate();
-							} catch (SQLException e) {
-								throw new RuntimeException(e);
-							}	
-						}*/
 					}
 				});
 
-				for(String species : occurringSpecies.keySet()) {
-					String reviewListId = reviewListPrefix + species;
-					String reviewListName = reviewListPrefixName + species;
-					String reviewListIdOrdered = reviewListId + "__" + "ordered";
-					String reviewListIdOrderedName = reviewListName;
-					
-					try {
-						PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
-						stmt.setString(1, reviewListIdOrdered);
-						stmt.setString(2, project);
-						stmt.setString(3, reviewListIdOrderedName);
-						stmt.setLong(4, timestamp);
-						stmt.executeUpdate();
-					} catch (SQLException e) {
-						throw new RuntimeException(e);
-					}
-					try {
-						PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_ENTRY_BY_ID_ORDER_BY_RANKING);
-						stmt.setString(1, reviewListId);
-						ResultSet res = stmt.executeQuery();
-						int pos = 0;
-						while(res.next()) {
-							String photoId = res.getString(1);
-							String name = res.getString(2);
-							float ranking = res.getFloat(3);							
+				if(sortedByRanking) {
+					for(String species : occurringSpecies.keySet()) {
+						String reviewListId = setId + "__" + species;
+						String reviewListName = species;
+						String reviewListIdOrdered = reviewListId + "__" + "ordered";
+						String reviewListIdOrderedName = reviewListName;
 
-							pos++; // 1 based index
-							insStmt.setString(1, reviewListIdOrdered);
-							insStmt.setInt(2, pos);
-							insStmt.setString(3, photoId);
-							insStmt.setString(4, name);
-							insStmt.setFloat(5, ranking);
-							insStmt.executeUpdate();
+						try {
+							PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
+							stmt.setString(1, reviewListIdOrdered);
+							stmt.setString(2, project);
+							stmt.setString(3, setId);
+							stmt.setString(4, reviewListIdOrderedName);
+							stmt.setLong(5, timestamp);
+							stmt.executeUpdate();
+						} catch (SQLException e) {
+							throw new RuntimeException(e);
 						}
-					} catch (SQLException e) {
-						throw new RuntimeException(e);
-					}
+						try {
+							PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_ENTRY_BY_ID_ORDER_BY_RANKING);
+							stmt.setString(1, reviewListId);
+							ResultSet res = stmt.executeQuery();
+							int pos = 0;
+							while(res.next()) {
+								String photoId = res.getString(1);
+								String name = res.getString(2);
+								float ranking = res.getFloat(3);							
 
-					try {
-						PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY_BY_ID);
-						stmt.setString(1, reviewListId);
-						stmt.executeUpdate();
-					} catch (SQLException e) {
-						throw new RuntimeException(e);
-					}
-
-					try {
-						PreparedStatement stmt1 = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_BY_ID);
-						stmt1.setString(1, reviewListId);
-						stmt1.executeUpdate();
-					} catch (SQLException e) {
-						throw new RuntimeException(e);
+								pos++; // 1 based index
+								insStmt.setString(1, reviewListIdOrdered);
+								insStmt.setInt(2, pos);
+								insStmt.setString(3, photoId);
+								insStmt.setString(4, name);
+								insStmt.setFloat(5, ranking);
+								insStmt.executeUpdate();
+							}
+						} catch (SQLException e) {
+							throw new RuntimeException(e);
+						}						
+						photodb.deleteReviewList(reviewListId);						
 					}
 				}
 
 				log.info("create_review_list done.");
+				break;
+			}
+			case "remove_review_list": {
+				String[] sets = JsonUtil.optStrings(jsonAction, "sets");
+				for(String setId : sets) {
+					log.info("remove set " + setId);
+					photodb.deleteReviewListSet(setId);
+				}
 				break;
 			}
 			default:

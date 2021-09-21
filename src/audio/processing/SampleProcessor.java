@@ -126,7 +126,9 @@ public class SampleProcessor {
 
 			int off = start < 0 ? -start : 0;
 
-			byte[] fullBytes = new byte[(int) ((dataLength + additionalSpace) * 2)];
+			int fullBytesLen = (int) ((dataLength + additionalSpace) * 2);
+			log.info("allocate data array for spectrum: " + fullBytesLen);
+			byte[] fullBytes = new byte[fullBytesLen];
 			if(readStart > 0) {
 				in.skip(readStart * 2);
 			}

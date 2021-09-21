@@ -25,7 +25,12 @@ public class ReviewListManager {
 	public void init() {
 		try {
 			SqlConnector sqlConnector = photodb.getSqlConnector();
-			ResultSet res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST", null);
+			ResultSet res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST_SET", null);
+			if(!res.next()) {
+				log.info("CREATE TABLE REVIEW_LIST_SET");
+				sqlConnector.getStatement(SQL.CREATE_TABLE_REVIEW_LIST_SET).executeUpdate();
+			}
+			res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST", null);
 			if(!res.next()) {
 				log.info("CREATE TABLE REVIEW_LIST");
 				sqlConnector.getStatement(SQL.CREATE_TABLE_REVIEW_LIST).executeUpdate();
@@ -47,6 +52,7 @@ public class ReviewListManager {
 			SqlConnector sqlConnector = photodb.getSqlConnector();
 			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY).executeUpdate();
 			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST).executeUpdate();
+			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_SET).executeUpdate();			
 			photodb.foreachProject(projectConfig -> {
 				refreshProject(projectConfig);
 			});
@@ -58,13 +64,26 @@ public class ReviewListManager {
 	public void refreshProject(PhotoProjectConfig projectConfig) {
 		try {
 			SqlConnector sqlConnector = photodb.getSqlConnector();
-			PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY_BY_PROJECT);
-			stmt.setString(1, projectConfig.project);
-			stmt.executeUpdate();
-			stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_BY_PROJECT);
-			stmt.setString(1, projectConfig.project);
-			stmt.executeUpdate();
+			try {
+				PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY_BY_PROJECT);
+				stmt.setString(1, projectConfig.project);
+				stmt.executeUpdate();
+				stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_BY_PROJECT);
+				stmt.setString(1, projectConfig.project);
+				stmt.executeUpdate();
+			} catch (SQLException e) {
+				throw new RuntimeException(e);
+			}
 			if(projectConfig.review_list_path != null) {
+				try {
+					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_SET);
+					stmt.setString(1, projectConfig.project + "__" + "file");
+					stmt.setString(2, projectConfig.project);
+					stmt.setString(3, "file");
+					stmt.executeUpdate();
+				} catch (SQLException e) {
+					throw new RuntimeException(e);
+				}
 				traverse(projectConfig, projectConfig.review_list_path);
 			}
 		} catch (Exception e) {
@@ -106,19 +125,14 @@ public class ReviewListManager {
 		long last_modified = path.toFile().lastModified();
 		SqlConnector sqlConnector = photodb.getSqlConnector();
 
-		PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY_BY_ID);
-		stmt.setString(1, reviewListId);
-		stmt.executeUpdate();
+		photodb.deleteReviewList(reviewListId);
 
-		stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_BY_ID);
-		stmt.setString(1, reviewListId);
-		stmt.executeUpdate();
-
-		stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
+		PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
 		stmt.setString(1, reviewListId);
 		stmt.setString(2, projectConfig.project);
-		stmt.setString(3, name);
-		stmt.setLong(4, last_modified);
+		stmt.setString(3, projectConfig.project + "__" + "file");
+		stmt.setString(4, name);
+		stmt.setLong(5, last_modified);
 		stmt.executeUpdate();
 
 		PreparedStatement insStmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_ENTRY);

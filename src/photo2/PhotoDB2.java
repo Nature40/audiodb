@@ -294,10 +294,32 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	@FunctionalInterface
+	public interface ReviewListSetConsumer {
+		void accept(String id, String name);
+	}
 
 	@FunctionalInterface
 	public interface ReviewListConsumer {
-		void accept(String id, String name);
+		void accept(String id, String set, String name);
+	}
+	
+	public void foreachReviewListSetByProject(String project, ReviewListSetConsumer consumer) {
+		try {
+			SqlConnector sqlConnector = getSqlConnector();
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_SET_BY_PROJECT);
+			stmt.setString(1, project);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				String name = res.getString(2);
+				consumer.accept(id, name);				
+			}
+		} catch (SQLException e) {
+			log.warn(e);
+			throw new RuntimeException(e);
+		}
 	}
 
 	public void foreachReviewListByProject(String project, ReviewListConsumer consumer) {
@@ -308,8 +330,27 @@ public class PhotoDB2 {
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
-				String name = res.getString(2);
-				consumer.accept(id, name);				
+				String set = res.getString(2);
+				String name = res.getString(3);
+				consumer.accept(id, set, name);				
+			}
+		} catch (SQLException e) {
+			log.warn(e);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void foreachReviewListBySet(String set, ReviewListConsumer consumer) {
+		try {
+			SqlConnector sqlConnector = getSqlConnector();
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_BY_SET);
+			stmt.setString(1, set);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				String setName = res.getString(2);
+				String name = res.getString(3);
+				consumer.accept(id, setName, name);				
 			}
 		} catch (SQLException e) {
 			log.warn(e);
@@ -325,7 +366,7 @@ public class PhotoDB2 {
 	public void foreachReviewListEntryById(String reviewListId, ReviewListEntryConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
-			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_ENTRY_BY_ID);
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_ENTRY_BY_REVIEW_LIST);
 			stmt.setString(1, reviewListId);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
@@ -551,5 +592,40 @@ public class PhotoDB2 {
 
 	public SqlConnector getSqlConnector() {
 		return tlsqlconnector.get();		
+	}
+	
+	public void deleteReviewList(String reviewListId) {
+		SqlConnector sqlConnector = getSqlConnector();
+		try {
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY_BY_REVIEW_LIST);
+			stmt.setString(1, reviewListId);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+
+		try {
+			PreparedStatement stmt1 = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_BY_ID);
+			stmt1.setString(1, reviewListId);
+			stmt1.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void deleteReviewListSet(String setId) {
+		SqlConnector sqlConnector = getSqlConnector();
+		try {
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_SET_BY_ID);
+			stmt.setString(1, setId);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+
+		foreachReviewListBySet(setId, (id, setName, name) -> {
+			log.info("remove in set " + setId + "  list " + id);
+			deleteReviewList(id);
+		});
 	}
 }

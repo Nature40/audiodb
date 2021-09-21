@@ -1,13 +1,6 @@
 package photo2.api;
 
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,11 +9,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import photo2.ClassificationDefinition;
-import photo2.Photo2;
 import photo2.PhotoDB2;
-import photo2.SqlConnector;
-import photo2.SqlConnector.SQL;
 import util.Web;
 
 public class PhotoDB2Handler extends AbstractHandler {
@@ -114,14 +107,30 @@ public class PhotoDB2Handler extends AbstractHandler {
 				photodb.foreachClassificationDefinition(project, ClassificationDefinition.toJsonConsumer(json));
 				json.endArray();
 			}
-
 			if(review_lists) {
-				json.key("review_lists");
+				json.key("review_list_sets");
 				json.array();
-				photodb.foreachReviewListByProject(project, (id, name) -> {
+				photodb.foreachReviewListSetByProject(project, (id, name) -> {
 					json.object();
 					json.key("id");
 					json.value(id);
+					json.key("project");
+					json.value(project);
+					json.key("name");
+					json.value(name);
+					json.endObject();
+				});
+				json.endArray();
+				json.key("review_lists");
+				json.array();
+				photodb.foreachReviewListByProject(project, (id, set, name) -> {
+					json.object();
+					json.key("id");
+					json.value(id);
+					json.key("project");
+					json.value(project);
+					json.key("set");
+					json.value(set);
 					json.key("name");
 					json.value(name);
 					json.endObject();

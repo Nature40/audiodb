@@ -60,15 +60,30 @@
     </div>
     
     <div class="column items-center" v-if="selectedQueryMode === 'review_list'">
-      <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" option-label="name" label="Review List" dense options-dense options-selected-class="text-deep-blue" style="min-width: 400px;">
+      <div class="row">
+      <q-select rounded outlined bottom-slots v-model="selectedReviewListSet" :options="review_list_sets" option-label="name" label="Review list set" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+        <template v-slot:prepend>
+          <q-icon name="folder" />
+        </template>
+      </q-select>      
+      <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" label="Review list" dense options-dense options-selected-class="text-deep-blue" style="min-width: 400px;">
         <template v-slot:prepend>
           <q-icon name="rule" />
         </template>
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+            {{scope.opt.name}}
+          </q-item>
+        </template>
+        <template v-slot:selected-item="scope">
+          {{scope.opt.name}}
+        </template>        
         <template v-slot:after>
-          <q-btn push color="grey-7" round icon="add" @click="$refs.createReviewListDialog.show()" />
-          <create-review-list-dialog ref="createReviewListDialog" @closed="refreshProjectMeta"/>
+          <q-btn push color="grey-7" round icon="edit_note" @click="$refs.manageReviewListSetsDialog.show()" />
+          <manage-review-list-sets-dialog ref="manageReviewListSetsDialog" @closed="refreshProjectMeta" @refresh="refreshProjectMeta"/>          
         </template>
       </q-select>
+      </div>
       <div v-if="review_lists === undefined || review_lists === null || review_lists.length === 0">
         No review_list found.
       </div>
@@ -77,7 +92,7 @@
     <hr style="min-width: 500px;">
 
     <div class="column items-center">
-      {{photos.length}} photos
+      {{photos.length}} photos selected.
     </div>    
 
   </q-page>
@@ -86,13 +101,13 @@
 <script>
 import {mapState, mapGetters, mapActions} from 'vuex'
 
-import createReviewListDialog from '../components/create-review-list-dialog'
+import manageReviewListSetsDialog from '../components/manage-review-list-sets-dialog'
 
 export default {
   name: 'query',
 
   components: {
-    createReviewListDialog,
+    manageReviewListSetsDialog,
   },  
 
   data: () => ({
@@ -100,6 +115,7 @@ export default {
     selectedProject: undefined,
     selectedLocation: '',
     selectedQueryMode: 'query',
+    selectedReviewListSet: undefined,
     selectedReviewList: undefined,
   }),  
 
@@ -111,12 +127,22 @@ export default {
       projects: state => state.projects?.data?.projects,
       meta: state => state.meta?.data,
       locations: state => state.meta?.data?.locations,
-      review_lists: state => state.meta?.data?.review_lists,
+      review_lists_unfiltered: state => state.meta?.data?.review_lists,
+      review_list_sets: state => state.meta?.data?.review_list_sets,
     }),    
     ...mapGetters({
       api: 'api',
       apiGET: 'apiGET',
     }),
+    review_lists() {
+      if(this.review_lists_unfiltered === undefined) {
+        return [];
+      }
+      if(this.selectedReviewListSet === undefined) {
+        return this.review_lists_unfiltered;
+      }
+      return this.review_lists_unfiltered.filter(entry => entry.set === this.selectedReviewListSet.id);
+    },
   },
 
   watch: {
@@ -155,7 +181,14 @@ export default {
       } else {
         this.selectedReviewList = this.review_lists[0];
       }
-    },   
+    },
+    review_list_sets() {
+      if(this.review_list_sets === undefined || this.review_list_sets.length === 0) {
+        this.selectedReviewListSet = undefined;
+      } else {
+        this.selectedReviewListSet = this.review_list_sets[0];
+      }
+    },         
   },
 
   methods: {
