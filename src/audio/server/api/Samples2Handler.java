@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.Web;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,25 +62,106 @@ public class Samples2Handler extends AbstractHandler {
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
-		json.key("samples");
-		json.array();
 
-		broker.sampleManager().forEach(sample -> {
-			json.object();
-			json.key("id");
-			json.value(sample.id);
-			if(sample.hasLocation()) {
-				json.key("location");
-				json.value(sample.location);
-			}
-			if(sample.hasTimestamp()) {
-				json.key("timestamp");
-				json.value(sample.timestamp);
-			}
-			json.endObject();
-		});
 
-		json.endArray();
+		String location = request.getParameter("location");
+		int limit = Web.getInt(request, "limit", Integer.MAX_VALUE);
+		int offset = Web.getInt(request, "offset", 0);
+		boolean flagCount = Web.getFlagBoolean(request, "count");
+		boolean flagSamples = Web.getFlagBoolean(request, "samples");
+
+		if(location == null) {
+			if(flagCount) {
+				json.key("count");
+				int count = broker.sampleManager().tlSampleManagerConnector.get().count();
+				json.value(count);
+			}
+			if(flagSamples) {
+				if(limit == Integer.MAX_VALUE && offset == 0) {
+					json.key("samples");
+					json.array();
+					broker.sampleManager().forEach(sample -> {
+						json.object();
+						json.key("id");
+						json.value(sample.id);
+						if(sample.hasLocation()) {
+							json.key("location");
+							json.value(sample.location);
+						}
+						if(sample.hasTimestamp()) {
+							json.key("timestamp");
+							json.value(sample.timestamp);
+						}
+						json.endObject();
+					});
+					json.endArray();
+				} else {
+					json.key("samples");
+					json.array();
+					broker.sampleManager().forEachPaged(sample -> {					
+						json.object();
+						json.key("id");
+						json.value(sample.id);
+						if(sample.hasLocation()) {
+							json.key("location");
+							json.value(sample.location);
+						}
+						if(sample.hasTimestamp()) {
+							json.key("timestamp");
+							json.value(sample.timestamp);
+						}
+						json.endObject();
+					}, limit, offset);
+					json.endArray();
+				}
+			}
+		} else {
+			if(flagCount) {
+				json.key("count");
+				int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
+				json.value(count);
+			}
+			if(flagSamples) {
+				if(limit == Integer.MAX_VALUE && offset == 0) {
+				json.key("samples");
+				json.array();
+				broker.sampleManager().forEachAtLocation(location, sample -> {
+					json.object();
+					json.key("id");
+					json.value(sample.id);
+					if(sample.hasLocation()) {
+						json.key("location");
+						json.value(sample.location);
+					}
+					if(sample.hasTimestamp()) {
+						json.key("timestamp");
+						json.value(sample.timestamp);
+					}
+					json.endObject();
+				});
+				json.endArray();
+				} else {
+					json.key("samples");
+					json.array();
+					broker.sampleManager().forEachPagedAtLocation(location, sample -> {
+						json.object();
+						json.key("id");
+						json.value(sample.id);
+						if(sample.hasLocation()) {
+							json.key("location");
+							json.value(sample.location);
+						}
+						if(sample.hasTimestamp()) {
+							json.key("timestamp");
+							json.value(sample.timestamp);
+						}
+						json.endObject();
+					}, limit, offset);
+					json.endArray();
+				}
+			}
+		}
+
 		json.endObject();
 	}
 }

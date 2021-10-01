@@ -48,6 +48,7 @@ import audio.server.api.Labeling_listsHandler;
 import audio.server.api.LoginHandler;
 import audio.server.api.LoginWebAuthnHandler;
 import audio.server.api.LogoutHandler;
+import audio.server.api.ProjectsHandler;
 import audio.server.api.QueryHandler;
 import audio.server.api.ReviewStatisticsDetailedHandler;
 import audio.server.api.ReviewStatisticsHandler;
@@ -149,6 +150,7 @@ public class Webserver {
 		//}
 		handlerList.addHandler(new JwsHandler(broker));
 		handlerList.addHandler(new AccessHandler(broker));
+		handlerList.addHandler(createContext("/projects", true, new ProjectsHandler(broker)));
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/samples2", true, new Samples2Handler(broker)));

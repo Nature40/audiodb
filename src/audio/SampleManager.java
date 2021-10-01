@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import audio.DeviceInventory.Entry;
 import audio.SampleManagerConnector.SQL;
 import audio.SampleManagerConnector.TlSampleManagerConnector;
 import util.Timer;
@@ -27,11 +28,13 @@ public class SampleManager {
 	private final Broker broker;
 
 	private final Connection conn;
-	private final TlSampleManagerConnector tlSampleManagerConnector;	
+	public final TlSampleManagerConnector tlSampleManagerConnector;	
+	public final DeviceInventory deviceInventory;
 
 	public SampleManager(Broker broker) {
 		this.broker = broker;
 		this.root_path = broker.config().audioConfig.root_path;
+		this.deviceInventory = new DeviceInventory(broker.config().audioConfig.device_inventory_file);
 		try {
 			conn = DriverManager.getConnection("jdbc:h2:./sample_cache");
 			tlSampleManagerConnector = new TlSampleManagerConnector(conn);
@@ -107,7 +110,18 @@ public class SampleManager {
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("AudioSens") /*&& yamlMap.getString("AudioSens").equals("v1.0")*/) {
 					String sample_file = yamlMap.getString("file");
-					String location = yamlMap.optString("location", null);
+					String location = null;
+					String device_id = yamlMap.optString("device_id", null);
+					if(device_id != null) {
+						Entry entry = deviceInventory.getLast(device_id);
+						if(entry != null && entry.location != null && !entry.location.isBlank()) {
+							location = entry.location;
+						}
+					}
+					if(location == null) {
+						location = yamlMap.optString("location", null);
+					}
+
 					long timestamp = yamlMap.optLong("timestamp", 0);
 					String sample_rel_path = projectConfig.root_path.relativize(root.resolve(sample_file)).toString(); 
 					boolean locked = false; // TODO
@@ -157,5 +171,26 @@ public class SampleManager {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp);
 			consumer.accept(sample);
 		});
+	}
+	
+	public void forEachPaged(Consumer<Sample2> consumer, int limit, int offset) {
+		tlSampleManagerConnector.get().forEachPaged((String id, String project, String meta_rel_path, String sample_rel_path, String location, long timestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp);
+			consumer.accept(sample);
+		}, limit, offset);
+	}
+	
+	public void forEachAtLocation(String location, Consumer<Sample2> consumer) {
+		tlSampleManagerConnector.get().forEachAtLocation(location, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long timestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, timestamp);
+			consumer.accept(sample);
+		});
+	}
+	
+	public void forEachPagedAtLocation(String location, Consumer<Sample2> consumer, int limit, int offset) {
+		tlSampleManagerConnector.get().forEachPagedAtLocation(location, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long timestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, timestamp);
+			consumer.accept(sample);
+		}, limit, offset);
 	}
 }
