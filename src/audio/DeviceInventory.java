@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import photo2.CsvTable;
 import photo2.CsvTable.CsvCell;
+import util.AudioTimeUtil;
 
 public class DeviceInventory {
 	private static final Logger log = LogManager.getLogger();
@@ -20,15 +21,27 @@ public class DeviceInventory {
 	public static class Entry {
 		public final String device; // not null
 		public final String location;
+		public final long start;
+		public final long end;
 
-		public Entry(String device, String location) {
+		public Entry(String device, String location, long start, long end) {
 			this.device = device;
 			this.location = location;
+			this.start = start;
+			this.end = end;
+		}
+		
+		public boolean contains(long timestamp) {
+			return start <= timestamp && timestamp <= end; 		
 		}
 
 		@Override
 		public String toString() {
-			return "Entry [device=" + device + ", location=" + location + "]";
+			return "Entry [device=" + device + ", location=" + location + ", start=" + AudioTimeUtil.toString(start) + ", end=" + AudioTimeUtil.toString(end) + "]";
+		}
+
+		public boolean isInfinite() {
+			return start == Long.MIN_VALUE && end == Long.MAX_VALUE;
 		}
 	}
 
@@ -40,6 +53,7 @@ public class DeviceInventory {
 	}
 
 	private void insert(Entry entry) {
+		log.info("insert " + entry);
 		String key = entry.device;
 		Object o = deviceMap.get(key);
 		if(o == null) {
@@ -75,10 +89,16 @@ public class DeviceInventory {
 		try(CsvTable csvTable = new CsvTable(deviceInventoryPath)) {
 			CsvCell cellDevice = csvTable.getCell("device");
 			CsvCell cellLocation = csvTable.getCell("location");	
+			CsvCell cellStart = csvTable.getCell("start");
+			CsvCell cellEnd = csvTable.getCell("end");
 			csvTable.forEach(csvRow -> {
 				String device = cellDevice.get(csvRow);
 				String location = cellLocation.get(csvRow);
-				Entry entry = new Entry(device, location);
+				String startText = cellStart.get(csvRow);
+				String endText = cellEnd.get(csvRow);
+				long start = AudioTimeUtil.toAudiotimeStart(startText);
+				long end = AudioTimeUtil.toAudiotimeEnd(endText);
+				Entry entry = new Entry(device, location, start, end);				
 				insert(entry);
 			});
 		} catch(Exception e) {
@@ -87,17 +107,49 @@ public class DeviceInventory {
 		forEach(entry -> log.info(entry));
 	}
 
-	public Entry getLast(String device) {
+	public Entry getLast(String device, long timestamp) {
 		Entry entry = null;
 		Object o = deviceMap.get(device);
 		if(o == null) {
 			// nothing
 		} else if(o instanceof Entry) {
-			entry = (Entry) o;
+			Entry e = (Entry) o;
+			if(e.contains(timestamp)) {
+				entry = e;
+			}
 		} else {
-			Entry[] v = (Entry[]) o;
-			for(Entry e : v) {
-				entry = e;	
+			Entry[] entries = (Entry[]) o;
+			int entriesLen = entries.length;
+			for(int i = entriesLen - 1; i >= 0; i--) {
+				Entry e = entries[i];
+				if(e.contains(timestamp)) {
+					entry = e;
+					break;
+				}
+			}
+		}
+		return entry;
+	}
+	
+	public Entry getLastInfinite(String device) {
+		Entry entry = null;
+		Object o = deviceMap.get(device);
+		if(o == null) {
+			// nothing
+		} else if(o instanceof Entry) {
+			Entry e = (Entry) o;
+			if(e.isInfinite()) {
+				entry = e;
+			}
+		} else {
+			Entry[] entries = (Entry[]) o;
+			int entriesLen = entries.length;
+			for(int i = entriesLen - 1; i >= 0; i--) {
+				Entry e = entries[i];
+				if(e.isInfinite()) {
+					entry = e;
+					break;
+				}
 			}
 		}
 		return entry;

@@ -38,6 +38,7 @@
 /thumb_cache.mv.db
 /thumb_cache.trace.db
 /webcontent/app
+/webcontent/audio
 /webcontent/photo
 photo_data_n1
 photo_data_n2
@@ -45,3 +46,4 @@ review_lists_n1
 .Rproj.user
 AudioMoth_Zuordnung_2021-08.csv
 AudioMoth_Zuordnung_2021-08.ods
+AudioMoth_Zuordnung_2021-08_test.csv

@@ -15,7 +15,7 @@ import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
-public class Sample {
+public class Sample implements GeneralSample {
 	static final Logger log = LogManager.getLogger();
 
 	public final String id;

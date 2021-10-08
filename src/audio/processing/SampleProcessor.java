@@ -15,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jtransforms.fft.FloatFFT_1D;
 
-import audio.Sample;
+import audio.GeneralSample;
 
 public class SampleProcessor {
 	static final Logger log = LogManager.getLogger();
@@ -24,7 +24,7 @@ public class SampleProcessor {
 	public static final int n2 = n / 2;
 	public static final int step = 256;
 
-	private final Sample sample;
+	private final GeneralSample sample;
 	public short[] data;
 	public int dataLength;
 	public double sampleRate;
@@ -37,7 +37,7 @@ public class SampleProcessor {
 	private double sampleRateN2;
 	private double binFactor;
 
-	public SampleProcessor(Sample sample) {
+	public SampleProcessor(GeneralSample sample) {
 		this.sample = sample;
 	}
 
@@ -70,10 +70,21 @@ public class SampleProcessor {
 	}
 
 	public void loadData(int additionalSpace) {
-		loadData(additionalSpace, Double.NaN, Double.NaN);
+		int start = 0;
+		int end = getFrameLength() - 1;
+		loadData(0, start, end);
 	}
 
-	public void loadData(int additionalSpace, double startSecond, double endSecond) {
+	public int getFrameLength() {
+		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {	
+			int frameLength = (int) in.getFrameLength();			
+			return frameLength;
+		} catch (UnsupportedAudioFileException | IOException e) {
+			throw new RuntimeException(e);
+		}		
+	}
+
+	public void loadData(int additionalSpace, int start, int end) {
 		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {			
 			AudioFormat audioFormat = in.getFormat();
 			//log.info("Format: " + audioFormat);
@@ -101,21 +112,18 @@ public class SampleProcessor {
 
 			int frameLength = (int) in.getFrameLength();
 
-			int start = Double.isFinite(startSecond) ? secondsToPos(startSecond) : 0;
-			int end = Double.isFinite(endSecond) ? secondsToPos(endSecond) : frameLength - 1;
-
 			if(end < start) {
 				throw new RuntimeException("invalid interval");
 			}
-			
+
 			this.dataLength = end - start + 1;
 
 			int MAX_SAMPLES = 512 * 1024 * 1024;
-			
+
 			if(dataLength > MAX_SAMPLES) {
 				throw new RuntimeException("interval is too large: " + dataLength + "    max allowed " + MAX_SAMPLES);
 			}
-			
+
 			if(start > Integer.MAX_VALUE - MAX_SAMPLES || end > start + MAX_SAMPLES) {
 				throw new RuntimeException("invalid interval: " + start +  " " + end + "   " + dataLength);
 			}

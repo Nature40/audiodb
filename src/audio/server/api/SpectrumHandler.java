@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.jtransforms.fft.FloatFFT_1D;
 
 import audio.Broker;
+import audio.GeneralSample;
 import audio.Sample;
 import audio.processing.SampleProcessor;
 import audio.server.Renderer;
@@ -26,7 +27,7 @@ public class SpectrumHandler {
 		this.broker = broker;
 	}
 
-	public void handle(Sample sample, Request request, HttpServletResponse response) throws IOException {
+	public void handle(GeneralSample sample, Request request, HttpServletResponse response) throws IOException {
 		int n = 1024;
 		//int n = 2048;
 		//int n = 512;
@@ -37,22 +38,32 @@ public class SpectrumHandler {
 			cutoff = n/2;
 		}
 		float threshold = (float) Web.getDouble(request, "threshold", 12);
-
-		double start = Web.getDouble(request, "start", Double.NaN);
-		double end = Web.getDouble(request, "end", Double.NaN);
-
-		//log.info("start " + start + "  end " + end);
-
+		
 		int max_width = Web.getInt(request, "max_width", 0);
 
+		int startSample = Web.getInt(request, "start_sample", -1);
+		int endSample = Web.getInt(request, "end_sample", -1);	
+		
+		log.info("spectrum " + startSample + " to " + endSample);
+
 		SampleProcessor sampleProcessor = new SampleProcessor(sample);
-		sampleProcessor.loadData(0, start, end);
+		if(startSample < 0) {
+			double startSecond = Web.getDouble(request, "start", Double.NaN);
+			startSample = Double.isFinite(startSecond) ? sampleProcessor.secondsToPos(startSecond) : 0;
+		}
+		if(endSample < 0) {
+			double endSecond = Web.getDouble(request, "end", Double.NaN);
+			endSample = Double.isFinite(endSecond) ? sampleProcessor.secondsToPos(endSecond) : sampleProcessor.getFrameLength() - 1;
+		}
+		log.info("start " + startSample + "  end " + endSample);
+		sampleProcessor.loadData(0, startSample, endSample);
 		short[] fullShorts = sampleProcessor.data;
 
 		int step = 256;
 		//int step = 512;
 		//int step = 1024;
-
+		step = Web.getInt(request, "step", step);
+		
 		int cols = ((sampleProcessor.dataLength - n) / step) + 1;
 
 		ImageRGBA image;

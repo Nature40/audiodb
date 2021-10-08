@@ -25,13 +25,23 @@
       bordered
     >
       <q-list>
-        <q-item clickable tag="a" :href="'#/projects/' + project + '/new'">
+        <q-item clickable :to="'/projects'">
           <q-item-section avatar>
             <q-icon name="school" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>New</q-item-label>
-            <q-item-label caption>New Item</q-item-label>
+            <q-item-label>Projects</q-item-label>
+            <q-item-label caption>Go to entry page with project selection</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable :to="'/projects/' + project + '/main'">
+          <q-item-section avatar>
+            <q-icon name="school" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Main</q-item-label>
+            <q-item-label caption>Go to main page</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>

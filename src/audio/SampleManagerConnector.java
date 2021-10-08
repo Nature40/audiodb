@@ -1,5 +1,6 @@
 package audio;
 
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,8 +67,9 @@ public class SampleManagerConnector {
 		
 		QUERY_AT_LOCATION("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED"),
 
-		QUERY_AT_LOCATION_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED LIMIT ? OFFSET ?");
+		QUERY_AT_LOCATION_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED LIMIT ? OFFSET ?"),
 
+		QUERY_ID("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE ID = ? AND NOT LOCKED");
 
 		public final String sql;
 
@@ -325,7 +327,7 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}		
 	}
-
+	
 	public void initClearTraverseTable() {
 		try {
 			getStatement(SQL.DROP_TRAVERSE_TABLE).executeUpdate();

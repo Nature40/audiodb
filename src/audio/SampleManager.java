@@ -110,19 +110,18 @@ public class SampleManager {
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("AudioSens") /*&& yamlMap.getString("AudioSens").equals("v1.0")*/) {
 					String sample_file = yamlMap.getString("file");
+					long timestamp = yamlMap.optLong("timestamp", 0);
 					String location = null;
 					String device_id = yamlMap.optString("device_id", null);
 					if(device_id != null) {
-						Entry entry = deviceInventory.getLast(device_id);
+						Entry entry = timestamp == 0 ? deviceInventory.getLastInfinite(device_id) : deviceInventory.getLast(device_id, timestamp);
 						if(entry != null && entry.location != null && !entry.location.isBlank()) {
 							location = entry.location;
 						}
 					}
 					if(location == null) {
 						location = yamlMap.optString("location", null);
-					}
-
-					long timestamp = yamlMap.optLong("timestamp", 0);
+					}					
 					String sample_rel_path = projectConfig.root_path.relativize(root.resolve(sample_file)).toString(); 
 					boolean locked = false; // TODO
 					if(sqlconnector.exist(id)) {
@@ -192,5 +191,28 @@ public class SampleManager {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, timestamp);
 			consumer.accept(sample);
 		}, limit, offset);
+	}
+	
+	public Sample2 getById(String id) {
+		try {
+			PreparedStatement stmt = tlSampleManagerConnector.get().getStatement(SQL.QUERY_ID);
+			stmt.setString(1, id);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				String qId = res.getString(1);
+				//log.info(id);
+				String project = res.getString(2);
+				String meta_rel_path = res.getString(3);
+				String sample_rel_path = res.getString(4);
+				String location = res.getString(5);
+				long timestamp = res.getLong(6);
+				Sample2 sample = new Sample2(qId, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp);
+				return sample;
+			} else {
+				return null;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

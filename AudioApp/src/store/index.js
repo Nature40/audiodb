@@ -1,10 +1,12 @@
-import Vue from 'vue'
 import { store } from 'quasar/wrappers'
 import { createStore } from 'vuex'
+
+import axios from 'axios'
 
 import projects from './projects'
 
 const isDev = process.env.DEV;
+const api = axios.create({ baseURL: isDev ? 'http://localhost:8080/' : '/' })
 
 export default store(function (/* { ssrContext } */) {
   const Store = createStore({
@@ -18,6 +20,7 @@ export default store(function (/* { ssrContext } */) {
 
     state: {
       project: undefined,
+      api: api,
     },
 
     getters: {
@@ -26,12 +29,8 @@ export default store(function (/* { ssrContext } */) {
         return isDev ? ('http://localhost:8080/' + path) : ('/' + path);
       },
       apiGET: (state, getters) => (parts, config) => {
-        console.log(this);
-        //console.log(parts);
-        var path = getters.api(...parts);
-        //console.log(path);
-        //console.log(Vue.prototype.$axios);
-        return Vue.prototype.$axios.get(path, config);
+        var path = parts.join('/');
+        return api.get(path, config);
       },
       apiPOST: (state, getters) => (parts, data, config) => {
         var path = getters.api(...parts);

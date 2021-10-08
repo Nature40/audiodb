@@ -1,13 +1,6 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import util.Web;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,18 +9,21 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
-import audio.Sample;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import util.Web;
 
 public class Samples2Handler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
-
-	private final SampleHandler sampleHandler;
-
+	
 	private final Broker broker;
-
+	
+	private final Sample2Handler sampleHandler;
+	
 	public Samples2Handler(Broker broker) {
 		this.broker = broker;
-		sampleHandler = new SampleHandler(broker);
+		sampleHandler = new Sample2Handler(broker);
 	}
 
 	@Override
@@ -59,6 +55,7 @@ public class Samples2Handler extends AbstractHandler {
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
+		log.info("query samples");
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();

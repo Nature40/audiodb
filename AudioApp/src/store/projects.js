@@ -33,15 +33,16 @@ export default {
         dispatch('refresh');
       }
     },
-    async refresh({commit, rootGetters}) {
+    async refresh({commit, rootState, rootGetters}) {
       commit('setLoading')
       try {
-          var response = await rootGetters.apiGET(['photodb2'], {params: {projects: true}});
-          commit('setData', response.data);
-        } catch(e) {
-          console.log(e);
-          commit('setError', 'error');
-        }
+        //var response = await rootGetters.apiGET(['photodb2'], {params: {projects: true}});
+        var response = await rootState.api.get('projects');
+        commit('setData', response.data);
+      } catch(e) {
+        console.log(e);
+        commit('setError', 'error');
+      }
     },
   },
 }
