@@ -175,10 +175,24 @@ public class SampleManager {
 			consumer.accept(sample);
 		});
 	}
+	
+	public void forEachAtTimestamp(long timestamp, Consumer<Sample2> consumer) {
+		tlSampleManagerConnector.get().forEachAtTimestamp(timestamp, (String id, String project, String meta_rel_path, String sample_rel_path, String location, long rtimestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, rtimestamp);
+			consumer.accept(sample);
+		});
+	}
 
 	public void forEachPaged(Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPaged((String id, String project, String meta_rel_path, String sample_rel_path, String location, long timestamp) -> {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp);
+			consumer.accept(sample);
+		}, limit, offset);
+	}
+	
+	public void forEachAtTimestampPaged(long timestamp, Consumer<Sample2> consumer, int limit, int offset) {
+		tlSampleManagerConnector.get().forEachAtTimestampPaged(timestamp, (String id, String project, String meta_rel_path, String sample_rel_path, String location, long rtimestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, rtimestamp);
 			consumer.accept(sample);
 		}, limit, offset);
 	}
@@ -189,10 +203,24 @@ public class SampleManager {
 			consumer.accept(sample);
 		});
 	}
+	
+	public void forEachAtLocationAtTimestamp(String location, long timestamp, Consumer<Sample2> consumer) {
+		tlSampleManagerConnector.get().forEachAtLocationAtTimestamp(location, timestamp, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long rtimestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, rtimestamp);
+			consumer.accept(sample);
+		});
+	}	
 
 	public void forEachPagedAtLocation(String location, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocation(location, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long timestamp) -> {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, timestamp);
+			consumer.accept(sample);
+		}, limit, offset);
+	}
+	
+	public void forEachPagedAtLocationAtTimestamp(String location, long timestamp, Consumer<Sample2> consumer, int limit, int offset) {
+		tlSampleManagerConnector.get().forEachPagedAtLocationAtTimestamp(location, timestamp, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long rtimestamp) -> {
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, rtimestamp);
 			consumer.accept(sample);
 		}, limit, offset);
 	}

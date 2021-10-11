@@ -185,6 +185,19 @@ public final class Web {
 			return defaultValue;
 		}
 	}
+	
+	public  static long getLong(Request request, String name, long defaultValue) {
+		String text = request.getParameter(name);
+		if(text==null) {
+			return defaultValue;
+		}
+		try {
+			return Long.parseLong(text);
+		} catch (Exception e) {
+			log.warn(e);
+			return defaultValue;
+		}
+	}
 
 	public static boolean getBoolean(Request request, String name, boolean defaultValue) {
 		String text = request.getParameter(name);

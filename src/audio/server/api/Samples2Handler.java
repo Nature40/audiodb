@@ -62,6 +62,7 @@ public class Samples2Handler extends AbstractHandler {
 
 
 		String location = request.getParameter("location");
+		long timestamp = Web.getLong(request, "timestamp", Long.MIN_VALUE);
 		int limit = Web.getInt(request, "limit", Integer.MAX_VALUE);
 		int offset = Web.getInt(request, "offset", 0);
 		boolean flagCount = Web.getFlagBoolean(request, "count");
@@ -69,47 +70,93 @@ public class Samples2Handler extends AbstractHandler {
 
 		if(location == null) {
 			if(flagCount) {
-				json.key("count");
-				int count = broker.sampleManager().tlSampleManagerConnector.get().count();
-				json.value(count);
+				if(timestamp == Long.MIN_VALUE) {
+					json.key("count");
+					int count = broker.sampleManager().tlSampleManagerConnector.get().count();
+					json.value(count);
+				} else {
+					json.key("count");
+					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtTimestamp(timestamp);
+					json.value(count);
+				}
 			}
 			if(flagSamples) {
 				if(limit == Integer.MAX_VALUE && offset == 0) {
-					json.key("samples");
-					json.array();
-					broker.sampleManager().forEach(sample -> {
-						json.object();
-						json.key("id");
-						json.value(sample.id);
-						if(sample.hasLocation()) {
-							json.key("location");
-							json.value(sample.location);
-						}
-						if(sample.hasTimestamp()) {
-							json.key("timestamp");
-							json.value(sample.timestamp);
-						}
-						json.endObject();
-					});
-					json.endArray();
+					if(timestamp == Long.MIN_VALUE) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEach(sample -> {
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						});
+						json.endArray();
+					} else {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtTimestamp(timestamp, sample -> {
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						});
+						json.endArray();	
+					}
 				} else {
-					json.key("samples");
-					json.array();
-					broker.sampleManager().forEachPaged(sample -> {					
-						json.object();
-						json.key("id");
-						json.value(sample.id);
-						if(sample.hasLocation()) {
-							json.key("location");
-							json.value(sample.location);
-						}
-						if(sample.hasTimestamp()) {
-							json.key("timestamp");
-							json.value(sample.timestamp);
-						}
-						json.endObject();
-					}, limit, offset);
-					json.endArray();
+					if(timestamp == Long.MIN_VALUE) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachPaged(sample -> {					
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						}, limit, offset);
+						json.endArray();
+					} else {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtTimestampPaged(timestamp, sample -> {					
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						}, limit, offset);
+						json.endArray();
+					}
 				}
 			}
 		} else {
@@ -117,47 +164,93 @@ public class Samples2Handler extends AbstractHandler {
 				location = null;
 			}
 			if(flagCount) {
-				json.key("count");
-				int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
-				json.value(count);
+				if(timestamp == Long.MIN_VALUE) {
+					json.key("count");
+					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
+					json.value(count);
+				} else {
+					json.key("count");
+					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocationAtTimestamp(location, timestamp);
+					json.value(count);
+				}
 			}
 			if(flagSamples) {
 				if(limit == Integer.MAX_VALUE && offset == 0) {
-					json.key("samples");
-					json.array();
-					broker.sampleManager().forEachAtLocation(location, sample -> {
-						json.object();
-						json.key("id");
-						json.value(sample.id);
-						if(sample.hasLocation()) {
-							json.key("location");
-							json.value(sample.location);
-						}
-						if(sample.hasTimestamp()) {
-							json.key("timestamp");
-							json.value(sample.timestamp);
-						}
-						json.endObject();
-					});
-					json.endArray();
+					if(timestamp == Long.MIN_VALUE) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtLocation(location, sample -> {
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						});
+						json.endArray();
+					} else {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtLocationAtTimestamp(location, timestamp, sample -> {
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						});
+						json.endArray();
+					}
 				} else {
-					json.key("samples");
-					json.array();
-					broker.sampleManager().forEachPagedAtLocation(location, sample -> {
-						json.object();
-						json.key("id");
-						json.value(sample.id);
-						if(sample.hasLocation()) {
-							json.key("location");
-							json.value(sample.location);
-						}
-						if(sample.hasTimestamp()) {
-							json.key("timestamp");
-							json.value(sample.timestamp);
-						}
-						json.endObject();
-					}, limit, offset);
-					json.endArray();
+					if(timestamp == Long.MIN_VALUE) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachPagedAtLocation(location, sample -> {
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						}, limit, offset);
+						json.endArray();
+					} else {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachPagedAtLocationAtTimestamp(location, timestamp, sample -> {
+							json.object();
+							json.key("id");
+							json.value(sample.id);
+							if(sample.hasLocation()) {
+								json.key("location");
+								json.value(sample.location);
+							}
+							if(sample.hasTimestamp()) {
+								json.key("timestamp");
+								json.value(sample.timestamp);
+							}
+							json.endObject();
+						}, limit, offset);
+						json.endArray();
+					}
 				}
 			}
 		}

@@ -60,21 +60,39 @@ public class SampleManagerConnector {
 		
 		COUNT_ALL("SELECT COUNT(ID) FROM SAMPLE WHERE NOT LOCKED"),
 		
+		COUNT_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED"),
+		
 		QUERY_ALL("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE NOT LOCKED"),
+		
+		QUERY_AT_TIMESTAMP("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED"),
 		
 		QUERY_ALL_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE NOT LOCKED LIMIT ? OFFSET ?"),
 		
+		QUERY_AT_TIMESTAMP_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED LIMIT ? OFFSET ?"),
+		
 		COUNT_AT_LOCATION("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED"),
+		
+		COUNT_AT_LOCATION_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP = ? AND NOT LOCKED"),
 		
 		COUNT_AT_LOCATION_NULL("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED"),
 		
+		COUNT_AT_LOCATION_NULL_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP = ? AND NOT LOCKED"),
+		
 		QUERY_AT_LOCATION("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED"),
 		
+		QUERY_AT_LOCATION_AT_TIMESTAMP("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP = ? AND NOT LOCKED"),
+
 		QUERY_AT_LOCATION_NULL("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED"),
+		
+		QUERY_AT_LOCATION_NULL_AT_TIMESTAMP("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP = ? AND NOT LOCKED"),
 
 		QUERY_AT_LOCATION_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED LIMIT ? OFFSET ?"),
+		
+		QUERY_AT_LOCATION_AT_TIMESTAMP_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP = ? AND NOT LOCKED LIMIT ? OFFSET ?"),
 
 		QUERY_AT_LOCATION_NULL_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED LIMIT ? OFFSET ?"),
+		
+		QUERY_AT_LOCATION_NULL_AT_TIMESTAMP_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP = ? AND NOT LOCKED LIMIT ? OFFSET ?"),
 
 		QUERY_ID("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE ID = ? AND NOT LOCKED"),
 		
@@ -226,6 +244,26 @@ public class SampleManagerConnector {
 		}
 	}
 	
+	public void forEachAtTimestamp(long timestamp, SampleRowConsumer consumer) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_AT_TIMESTAMP);
+			stmt.setLong(1, timestamp);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				//log.info(id);
+				String project = res.getString(2);
+				String meta_rel_path = res.getString(3);
+				String sample_rel_path = res.getString(4);
+				String location = res.getString(5);
+				long rtimestamp = res.getLong(6);
+				consumer.accept(id, project, meta_rel_path, sample_rel_path, location, rtimestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public void forEachLocation(Consumer<String> consumer) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_LOCATION);
@@ -267,6 +305,22 @@ public class SampleManagerConnector {
 		}
 	}
 	
+	public int countAtTimestamp(long timestamp) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.COUNT_AT_TIMESTAMP);
+			stmt.setLong(1, timestamp);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				int count = res.getInt(1);
+				return count;
+			} else {
+				throw new RuntimeException("internal error");
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public void forEachPaged(SampleRowConsumer consumer, int limit, int offset) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_PAGED);
@@ -288,6 +342,28 @@ public class SampleManagerConnector {
 		}
 	}
 	
+	public void forEachAtTimestampPaged(long timestamp, SampleRowConsumer consumer, int limit, int offset) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_AT_TIMESTAMP_PAGED);
+			stmt.setLong(1, timestamp);
+			stmt.setInt(2, limit);
+			stmt.setInt(3, offset);
+			ResultSet res = stmt.executeQuery();			
+			while(res.next()) {
+				String id = res.getString(1);
+				//log.info(id);
+				String project = res.getString(2);
+				String meta_rel_path = res.getString(3);
+				String sample_rel_path = res.getString(4);
+				String location = res.getString(5);
+				long rtimestamp = res.getLong(6);
+				consumer.accept(id, project, meta_rel_path, sample_rel_path, location, rtimestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public int countAtLocation(String location) {		
 		try {
 			PreparedStatement stmt;
@@ -296,6 +372,29 @@ public class SampleManagerConnector {
 			} else {
 				stmt = getStatement(SQL.COUNT_AT_LOCATION);
 				stmt.setString(1, location);
+			}			
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				int count = res.getInt(1);
+				return count;
+			} else {
+				throw new RuntimeException("internal error");
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public int countAtLocationAtTimestamp(String location, long timestamp) {		
+		try {
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.COUNT_AT_LOCATION_NULL_AT_TIMESTAMP);
+				stmt.setLong(1, timestamp);
+			} else {
+				stmt = getStatement(SQL.COUNT_AT_LOCATION_AT_TIMESTAMP);
+				stmt.setString(1, location);
+				stmt.setLong(2, timestamp);
 			}			
 			ResultSet res = stmt.executeQuery();
 			if(res.next()) {
@@ -334,6 +433,33 @@ public class SampleManagerConnector {
 		}
 	}
 	
+	public void forEachAtLocationAtTimestamp(String location, long timestamp, SampleRowConsumer consumer) {
+		try {
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_AT_TIMESTAMP);
+				stmt.setLong(1, timestamp);
+			} else {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_AT_TIMESTAMP);
+				stmt.setString(1, location);
+				stmt.setLong(2, timestamp);
+			}
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				//log.info(id);
+				String project = res.getString(2);
+				String meta_rel_path = res.getString(3);
+				String sample_rel_path = res.getString(4);
+				String locationR = res.getString(5);
+				long rtimestamp = res.getLong(6);
+				consumer.accept(id, project, meta_rel_path, sample_rel_path, locationR, rtimestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public void forEachPagedAtLocation(String location, SampleRowConsumer consumer, int limit, int offset) {
 		try {
 			PreparedStatement stmt;
@@ -362,6 +488,38 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public void forEachPagedAtLocationAtTimestamp(String location, long timestamp, SampleRowConsumer consumer, int limit, int offset) {
+		try {
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_AT_TIMESTAMP_PAGED);
+				stmt.setLong(1, timestamp);
+				stmt.setInt(2, limit);
+				stmt.setInt(3, offset);
+			} else {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_AT_TIMESTAMP_PAGED);
+				stmt.setString(1, location);
+				stmt.setLong(2, timestamp);
+				stmt.setInt(3, limit);
+				stmt.setInt(4, offset);
+			}
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				//log.info(id);
+				String project = res.getString(2);
+				String meta_rel_path = res.getString(3);
+				String sample_rel_path = res.getString(4);
+				String locationR = res.getString(5);
+				long rtimestamp = res.getLong(6);
+				consumer.accept(id, project, meta_rel_path, sample_rel_path, locationR, rtimestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	public boolean exist(String id) {
 		try {

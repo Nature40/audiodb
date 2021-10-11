@@ -23,16 +23,35 @@
             text-color="primary"
             :options="[
               {label: 'All', value: 'all'},
-              {label: 'Selected', value: 'one'},
+              {label: 'At', value: 'one'},
             ]"
           />
           <span v-if="toggleLocation === 'all'">Location</span>
           <q-select v-if="toggleLocation === 'one'" outlined v-model="selectedLocation" :options="locations" label="Location" class="col" dense />
         </q-card-section>
 
-
-
         <q-separator/>
+
+        <q-card-section class="text-h5 row">
+          <q-btn-toggle
+            v-model="toggleTime"
+            class="custom-toggle"
+            no-caps
+            rounded
+            unelevated
+            toggle-color="primary"
+            color="white"
+            text-color="primary"
+            :options="[
+              {label: 'All', value: 'all'},
+              {label: 'At', value: 'one'},
+            ]"
+          />
+          <span v-if="toggleTime === 'all'">Time</span>
+          <q-select v-if="toggleTime === 'one'" outlined v-model="selectedTimestamp" :options="timestamps" label="Time" class="col" dense />
+        </q-card-section>
+        
+        <q-separator/>        
 
         <q-card-section>
           <q-markup-table>
@@ -79,7 +98,9 @@ export default defineComponent({
       samplesOffset: 0,
       samplesLimit: 100,    
       toggleLocation: 'all',
+      toggleTime: 'all',
       selectedLocation: undefined,
+      selectedTimestamp: undefined,
       refreshRequested: false,
     };
   },
@@ -104,6 +125,15 @@ export default defineComponent({
         return location === null ? {label: '(unknown)', value: null} : {label: location, value: location};
       });
     },
+    timestamps() {
+      const d = this.$store.state.project.data;
+      if(d === undefined || d.timestamps === undefined || d.timestamps.length === 0) {
+        return {label: '(unknown)', value: undefined};
+      }
+      return d.timestamps.map(t => {
+        return t.timestamp <= 0 ? {label: '(unknown)', value: 0} : {label: t.date + "  " + t.time, value: t.timestamp};
+      });
+    },    
   },
   watch: {
     refreshRequested() {
@@ -118,6 +148,12 @@ export default defineComponent({
     selectedLocation() {
       this.requestRefresh();
     },
+    toggleTime() {
+      this.requestRefresh();
+    },
+    selectedTimestamp() {
+      this.requestRefresh();
+    },
   },
   methods: {
     async querySamples() {
@@ -126,6 +162,9 @@ export default defineComponent({
         let params = { samples: true, count: true, limit: this.samplesLimit, offset: this.samplesOffset,};
         if(this.toggleLocation === 'one' && this.selectedLocation !== undefined) {
           params.location = this.selectedLocation.value === null ? 'null' : this.selectedLocation.value;
+        }
+        if(this.toggleTime === 'one' && this.selectedTimestamp !== undefined) {
+          params.timestamp = this.selectedTimestamp.value;
         }
         var response = await this.$api.get('samples2', { params });
         var samples = response.data?.samples;
