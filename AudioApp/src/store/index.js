@@ -3,7 +3,9 @@ import { createStore } from 'vuex'
 
 import axios from 'axios'
 
+import identity from './identity'
 import projects from './projects'
+import project from './project'
 
 const isDev = process.env.DEV;
 const api = axios.create({ baseURL: isDev ? 'http://localhost:8080/' : '/' })
@@ -11,7 +13,9 @@ const api = axios.create({ baseURL: isDev ? 'http://localhost:8080/' : '/' })
 export default store(function (/* { ssrContext } */) {
   const Store = createStore({
     modules: {
+      identity,
       projects,
+      project,
     },
 
     // enable strict mode (adds overhead!)
@@ -19,7 +23,7 @@ export default store(function (/* { ssrContext } */) {
     strict: process.env.DEBUGGING,
 
     state: {
-      project: undefined,
+      projectId: undefined,
       api: api,
     },
 
@@ -40,10 +44,17 @@ export default store(function (/* { ssrContext } */) {
     },    
 
     mutations: {
-      setProject(state, payload) {
-        state.project = payload;
+      setProject(state, productId) {
+        state.projectId = productId;
       }
-    }    
+    },
+    
+    actions: {
+      setProject({ commit, dispatch }, productId) {
+        commit('setProject', productId);
+        dispatch('project/refresh');   
+      }
+    },
   });
   return Store;
 })

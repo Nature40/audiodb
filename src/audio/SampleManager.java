@@ -42,7 +42,7 @@ public class SampleManager {
 			throw new RuntimeException(e);
 		}
 		tlSampleManagerConnector.get().init();
-		rescan();	
+		rescan(false);	
 	}
 
 	public static String metaRelPathToID(String project, String meta_rel_path) {
@@ -147,10 +147,14 @@ public class SampleManager {
 		}
 	}
 
-	public void rescan() {
+	public void rescan(boolean rereadAll) {
 		Timer.start("traverse");
 		try {
+			if(rereadAll) {
+				tlSampleManagerConnector.get().initClear();
+			}
 			tlSampleManagerConnector.get().initClearTraverseTable();
+
 			AudioProjectConfig projectConfig = broker.config().audioConfig;
 			int[] stats = new int[] {0, 0};
 			traverse(projectConfig, projectConfig.root_path, stats);
@@ -171,28 +175,28 @@ public class SampleManager {
 			consumer.accept(sample);
 		});
 	}
-	
+
 	public void forEachPaged(Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPaged((String id, String project, String meta_rel_path, String sample_rel_path, String location, long timestamp) -> {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp);
 			consumer.accept(sample);
 		}, limit, offset);
 	}
-	
+
 	public void forEachAtLocation(String location, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtLocation(location, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long timestamp) -> {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, timestamp);
 			consumer.accept(sample);
 		});
 	}
-	
+
 	public void forEachPagedAtLocation(String location, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocation(location, (String id, String project, String meta_rel_path, String sample_rel_path, String locationR, long timestamp) -> {
 			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), locationR, timestamp);
 			consumer.accept(sample);
 		}, limit, offset);
 	}
-	
+
 	public Sample2 getById(String id) {
 		try {
 			PreparedStatement stmt = tlSampleManagerConnector.get().getStatement(SQL.QUERY_ID);

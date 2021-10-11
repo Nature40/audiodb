@@ -52,6 +52,19 @@ public final class Web {
 			return defaultValue;
 		}
 	}
+	
+	public  static float getFloat(Request request, String name, float defaultValue) {
+		String text = request.getParameter(name);
+		if(text==null) {
+			return defaultValue;
+		}
+		try {
+			return Float.parseFloat(text);
+		} catch (Exception e) {
+			log.warn(e);
+			return defaultValue;
+		}
+	}
 
 	/**
 	 * get one or more doubles separated by ","

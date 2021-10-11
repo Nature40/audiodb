@@ -58,6 +58,7 @@ public class Terminal {
 		putArgsCommand("server", audio.server.Webserver::main);
 		putClassCommand("create_yaml", Command_create_yaml.class);
 		putClassCommand("overwrite_yaml", Command_overwrite_yaml.class);
+		putClassCommand("audio_reread", Command_audio_reread.class);
 	}
 
 	private static void putClassCommand(String name, Class<? extends Command> commandClass) {

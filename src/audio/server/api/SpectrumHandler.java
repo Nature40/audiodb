@@ -28,14 +28,16 @@ public class SpectrumHandler {
 	}
 
 	public void handle(GeneralSample sample, Request request, HttpServletResponse response) throws IOException {
-		int n = 1024;
+		int window = 1024;
 		//int n = 2048;
 		//int n = 512;
+		
+		window = Web.getInt(request, "window", window);
 
 		int cutoff = Web.getInt(request, "cutoff", 320);
-		if(cutoff > n/2) {
-			log.warn("cutoff out of bounds: " + cutoff + "  set to " + n/2);
-			cutoff = n/2;
+		if(cutoff > window/2) {
+			log.warn("cutoff out of bounds: " + cutoff + "  set to " + window/2);
+			cutoff = window/2;
 		}
 		float threshold = (float) Web.getDouble(request, "threshold", 12);
 		
@@ -64,20 +66,23 @@ public class SpectrumHandler {
 		//int step = 1024;
 		step = Web.getInt(request, "step", step);
 		
-		int cols = ((sampleProcessor.dataLength - n) / step) + 1;
+		float intensity_max = 23f;
+		intensity_max = Web.getFloat(request, "intensity_max", intensity_max);
+		
+		int cols = ((sampleProcessor.dataLength - window) / step) + 1;
 
 		ImageRGBA image;
 		if(max_width <= 0 || cols <= max_width) {			
 			//image = render2(fullShorts, n, step, cols, cutoff, threshold);
-			image = render3(fullShorts, n, step, cols, cutoff, threshold);
+			image = render3(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
 		} else {
-			step = n;
-			cols = ((sampleProcessor.dataLength - n) / step) + 1;
+			step = window;
+			cols = ((sampleProcessor.dataLength - window) / step) + 1;
 			if(max_width <= 0 || cols <= max_width) {			
 				//image = render2(fullShorts, n, step, cols, cutoff, threshold);
-				image = render3(fullShorts, n, step, cols, cutoff, threshold);
+				image = render3(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
 			} else {
-				image = render3width(fullShorts, n, step, cols, cutoff, threshold, max_width);
+				image = render3width(fullShorts, window, step, cols, cutoff, threshold, intensity_max, max_width);
 			}
 		}
 
@@ -128,11 +133,10 @@ public class SpectrumHandler {
 		return image;
 	}
 
-	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold) {
+	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv) {
 		log.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
-		float maxv = 23;
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
 		ImageRGBA image = new ImageRGBA(cols, cutoff);
 		int[] dst = image.getRawArray();
@@ -152,11 +156,10 @@ public class SpectrumHandler {
 		return image;
 	}
 
-	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, int width) {
+	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv, int width) {
 		log.info("render3width step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
-		float maxv = 23;
 
 		float[][] target = new float[width][cutoff];
 

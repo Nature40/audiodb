@@ -3,13 +3,17 @@
     <q-toolbar class="bg-grey-3">
       <q-btn @click="$refs.browser.show = true;">Browse</q-btn>
       <audio-browser ref="browser"/>
-      <q-space></q-space><div v-if="sample !== undefined">{{sample.id}}</div><q-space></q-space>
+      <q-space></q-space>
+      <div v-if="sample !== undefined">{{sample.id}}</div>
+      <q-space></q-space>
+      <q-btn @click="$refs.settings.show = true;">Settings</q-btn>
+      <audio-settings ref="settings"/>
     </q-toolbar>
     <div style="margin-left: 15px; margin-right: 15px;">
     <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1"/>
     </div>
-    <div style="position: relative;" ref="canvasContainer" :style="{height: spectrogramCutoff + 'px'}">
-      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="spectrogramCutoff" :style="{width: canvasWidth + 'px', height: spectrogramCutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove"/>
+    <div style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
+      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff" :style="{width: canvasWidth + 'px', height: player_fft_cutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove"/>
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px;">
         <div class="absolute-full flex flex-center">
           <q-badge color="white" text-color="accent" label="loading spectrogram" />
@@ -22,14 +26,17 @@
 
 <script>
 import { defineComponent } from 'vue';
+import {mapState} from 'vuex';
 
 import AudioBrowser from 'components/browser';
+import AudioSettings from 'components/settings';
 
 export default defineComponent({
   name: 'PageMain',
 
   components: {
     AudioBrowser,
+    AudioSettings,
   },
 
   data() {
@@ -42,9 +49,6 @@ export default defineComponent({
       spectrogramImagesErrorCount: 0,
       spectrogramId: 0,
       spectrogramImageMaxPixelLen: 2048,
-      spectrogramWindow: 1024,
-      spectrogramStep: 1024,
-      spectrogramCutoff: 512,
       canvasPixelPosX: 0,
       canvasMovePixelStartX: undefined,
       canvasWidth: 1024,
@@ -53,24 +57,34 @@ export default defineComponent({
   },
   
   computed: {
+    ...mapState({
+      player_spectrum_threshold: state => state.project.player_spectrum_threshold,
+      player_fft_window: state => state.project.player_fft_window,
+      player_fft_step: state => state.project.player_fft_step,
+      player_fft_cutoff: state => state.project.player_fft_cutoff,
+      player_fft_intensity_max: state => state.project.player_fft_intensity_max,
+    }),
+    spectrogramSettingsQuery() {
+      return "&cutoff=" + this.player_fft_cutoff + "&step=" + this.player_fft_step + "&window=" + this.player_fft_window + "&threshold=" + this.player_spectrum_threshold + "&intensity_max=" + this.player_fft_intensity_max;
+    },     
     selectedSampleId() {
       return this.$route.query.sample;
     },
     spectrogramImageMaxSampleLen() {
-      return (this.spectrogramImageMaxPixelLen - 1) * this.spectrogramStep + this.spectrogramWindow;
+      return (this.spectrogramImageMaxPixelLen - 1) * this.player_fft_step + this.player_fft_window;
     },
     spectrogramFullPixelLen() {
       if(this.sampleLen === undefined) {
         return 0;
       }
-      var p = Math.trunc((this.sampleLen - this.spectrogramWindow) / this.spectrogramStep) + 1;
+      var p = Math.trunc((this.sampleLen - this.player_fft_window) / this.player_fft_step) + 1;
       return p < 0 ? 0 : p;
     },
     spectrogramFullSampleLen() {
       if(this.spectrogramFullPixelLen < 1) {
         return 0;
       }
-      return (this.spectrogramFullPixelLen - 1) * this.spectrogramStep + this.spectrogramWindow;
+      return (this.spectrogramFullPixelLen - 1) * this.player_fft_step + this.player_fft_window;
     },
     spectrogramImagesLen() {
       return Math.ceil(this.spectrogramFullPixelLen / this.spectrogramImageMaxPixelLen);
@@ -119,7 +133,7 @@ export default defineComponent({
             next = i;
           }
           ctx.fillStyle = 'grey';
-          ctx.fillRect(dstX, dstY, this.spectrogramImageMaxPixelLen, this.spectrogramCutoff);
+          ctx.fillRect(dstX, dstY, this.spectrogramImageMaxPixelLen, this.player_fft_cutoff);
         } else {
           ctx.drawImage(image, dstX, dstY);
         }
@@ -172,7 +186,7 @@ export default defineComponent({
         if(this.end_sample >= this.spectrogramFullSampleLen) {
           this.end_sample = this.spectrogramFullSampleLen - 1;
         }
-        image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + "&cutoff=" + this.spectrogramCutoff + "&step=" + this.spectrogramStep;
+        image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + this.spectrogramSettingsQuery;
       } else {
         var next = this.imageNextIndex;
         this.imageNextIndex = undefined;
@@ -249,7 +263,12 @@ export default defineComponent({
         
       }
     }, 
-  }
+    spectrogramSettingsQuery() {
+      this.$nextTick( () => {
+        this.loadSpectrogram();
+      });
+    },    
+  },
 })
 </script>
 

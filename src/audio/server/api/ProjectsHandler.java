@@ -18,9 +18,11 @@ public class ProjectsHandler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
+	private final ProjectHandler projectHanlder;
 
 	public ProjectsHandler(Broker broker) {
 		this.broker = broker;
+		this.projectHanlder = new ProjectHandler(broker);
 	}
 
 	@Override
@@ -33,10 +35,10 @@ public class ProjectsHandler extends AbstractHandler {
 				int i = target.indexOf('/', 1);
 				if(i == 1) {
 					throw new RuntimeException("no name: "+target);
-				}			
+				}
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
-				throw new RuntimeException("unknown: "+target);
+				projectHanlder.handle(name, next, baseRequest, request, response);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();

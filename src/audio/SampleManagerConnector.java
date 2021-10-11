@@ -1,11 +1,12 @@
 package audio;
 
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.EnumMap;
+import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,11 +66,21 @@ public class SampleManagerConnector {
 		
 		COUNT_AT_LOCATION("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED"),
 		
+		COUNT_AT_LOCATION_NULL("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED"),
+		
 		QUERY_AT_LOCATION("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED"),
+		
+		QUERY_AT_LOCATION_NULL("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED"),
 
 		QUERY_AT_LOCATION_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED LIMIT ? OFFSET ?"),
 
-		QUERY_ID("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE ID = ? AND NOT LOCKED");
+		QUERY_AT_LOCATION_NULL_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED LIMIT ? OFFSET ?"),
+
+		QUERY_ID("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED FROM SAMPLE WHERE ID = ? AND NOT LOCKED"),
+		
+		QUERY_ALL_LOCATION("SELECT DISTINCT LOCATION FROM SAMPLE ORDER BY LOCATION"),
+		
+		QUERY_ALL_TIMESTAMP("SELECT DISTINCT TIMESTAMP FROM SAMPLE ORDER BY TIMESTAMP");	
 
 		public final String sql;
 
@@ -215,6 +226,32 @@ public class SampleManagerConnector {
 		}
 	}
 	
+	public void forEachLocation(Consumer<String> consumer) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_LOCATION);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String location = res.getString(1);
+				consumer.accept(location);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void forEachTimestamp(LongConsumer consumer) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_TIMESTAMP);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				long timestamp = res.getLong(1);
+				consumer.accept(timestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public int count() {
 		try {
 			PreparedStatement stmt = getStatement(SQL.COUNT_ALL);
@@ -253,8 +290,13 @@ public class SampleManagerConnector {
 	
 	public int countAtLocation(String location) {		
 		try {
-			PreparedStatement stmt = getStatement(SQL.COUNT_AT_LOCATION);
-			stmt.setString(1, location);
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.COUNT_AT_LOCATION_NULL);
+			} else {
+				stmt = getStatement(SQL.COUNT_AT_LOCATION);
+				stmt.setString(1, location);
+			}			
 			ResultSet res = stmt.executeQuery();
 			if(res.next()) {
 				int count = res.getInt(1);
@@ -269,8 +311,13 @@ public class SampleManagerConnector {
 	
 	public void forEachAtLocation(String location, SampleRowConsumer consumer) {
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_AT_LOCATION);
-			stmt.setString(1, location);
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL);	
+			} else {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION);
+				stmt.setString(1, location);			
+			}
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
@@ -289,10 +336,17 @@ public class SampleManagerConnector {
 	
 	public void forEachPagedAtLocation(String location, SampleRowConsumer consumer, int limit, int offset) {
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_AT_LOCATION_PAGED);
-			stmt.setString(1, location);
-			stmt.setInt(2, limit);
-			stmt.setInt(3, offset);
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_PAGED);
+				stmt.setInt(1, limit);
+				stmt.setInt(2, offset);
+			} else {
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_PAGED);
+				stmt.setString(1, location);
+				stmt.setInt(2, limit);
+				stmt.setInt(3, offset);
+			}
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);

@@ -83,8 +83,7 @@ export default defineComponent({
   watch: {
     project: {
       handler(val, oldVal) {
-        console.log('e changed');
-        this.$store.commit('setProject', this.project);
+        this.$store.dispatch('setProject', this.project);
       },
       immediate: true,
     },

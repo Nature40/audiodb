@@ -16,11 +16,11 @@ import util.Web;
 
 public class Samples2Handler extends AbstractHandler {
 	static final Logger log = LogManager.getLogger();
-	
+
 	private final Broker broker;
-	
+
 	private final Sample2Handler sampleHandler;
-	
+
 	public Samples2Handler(Broker broker) {
 		this.broker = broker;
 		sampleHandler = new Sample2Handler(broker);
@@ -113,6 +113,9 @@ public class Samples2Handler extends AbstractHandler {
 				}
 			}
 		} else {
+			if(location.equalsIgnoreCase("null")) { // convert missing location marker to null
+				location = null;
+			}
 			if(flagCount) {
 				json.key("count");
 				int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
@@ -120,23 +123,23 @@ public class Samples2Handler extends AbstractHandler {
 			}
 			if(flagSamples) {
 				if(limit == Integer.MAX_VALUE && offset == 0) {
-				json.key("samples");
-				json.array();
-				broker.sampleManager().forEachAtLocation(location, sample -> {
-					json.object();
-					json.key("id");
-					json.value(sample.id);
-					if(sample.hasLocation()) {
-						json.key("location");
-						json.value(sample.location);
-					}
-					if(sample.hasTimestamp()) {
-						json.key("timestamp");
-						json.value(sample.timestamp);
-					}
-					json.endObject();
-				});
-				json.endArray();
+					json.key("samples");
+					json.array();
+					broker.sampleManager().forEachAtLocation(location, sample -> {
+						json.object();
+						json.key("id");
+						json.value(sample.id);
+						if(sample.hasLocation()) {
+							json.key("location");
+							json.value(sample.location);
+						}
+						if(sample.hasTimestamp()) {
+							json.key("timestamp");
+							json.value(sample.timestamp);
+						}
+						json.endObject();
+					});
+					json.endArray();
 				} else {
 					json.key("samples");
 					json.array();
