@@ -165,7 +165,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/query", true, new QueryHandler(broker)));
 		handlerList.addHandler(createContext("/timeseries", true, new TimeseriesHandler(broker)));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
-		handlerList.addHandler(new BaseRedirector("/web/app/"));
+		handlerList.addHandler(new BaseRedirector("/web/"));
 		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));
 		//if(broker.config().login) {
 		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));

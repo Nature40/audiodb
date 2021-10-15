@@ -19,11 +19,13 @@ public class Sample2Handler {
 	private final Broker broker;
 	private final SampleManager sampleManager;
 	private final SpectrumHandler spectrumHandler;
+	private final AudioHandler audioHandler;
 
 	public Sample2Handler(Broker broker) {
 		this.broker = broker;
 		this.sampleManager = broker.sampleManager();
 		this.spectrumHandler = new SpectrumHandler(broker);
+		this.audioHandler = new AudioHandler(broker);
 	}
 
 	public void handle(String sampleId, String target, Request request, HttpServletResponse response) throws IOException {
@@ -45,6 +47,10 @@ public class Sample2Handler {
 				spectrumHandler.handle(sample, request, response);
 				break;
 			}
+			case "audio": {
+				audioHandler.handle(sample, request, response);
+				break;
+			}
 			default:
 				throw new RuntimeException("no call");
 			}			
@@ -64,9 +70,10 @@ public class Sample2Handler {
 	private void handleRoot_GET(Sample2 sample, Request request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
-		
+
 		boolean reqSamples = Web.getFlagBoolean(request, "samples");
-		
+		boolean reqSampleRate = Web.getFlagBoolean(request, "sample_rate");
+
 		json.object();
 		json.key("sample");		
 		json.object();
@@ -85,6 +92,10 @@ public class Sample2Handler {
 		if(reqSamples && sample.hasSamples()) {
 			json.key("Samples");
 			json.value(sample.samples());
+		}
+		if(reqSampleRate && sample.hasSampleRate()) {
+			json.key("sample_rate");
+			json.value(sample.sampleRate());
 		}
 		json.endObject();
 		json.endObject();

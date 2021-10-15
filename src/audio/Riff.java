@@ -180,7 +180,7 @@ public class Riff {
 
 				break;
 			case data_CHUNK_MARKER:
-				log.info("chunk " + "data");
+				//log.info("chunk " + "data");
 				break;
 			default:
 				log.warn("unknown chunk marker: " + chunkMarker);

@@ -1,6 +1,8 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,9 +11,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
 
 import audio.Broker;
+import audio.Sample2;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.AudioTimeUtil;
 import util.Web;
 
 public class Samples2Handler extends AbstractHandler {
@@ -67,6 +71,31 @@ public class Samples2Handler extends AbstractHandler {
 		int offset = Web.getInt(request, "offset", 0);
 		boolean flagCount = Web.getFlagBoolean(request, "count");
 		boolean flagSamples = Web.getFlagBoolean(request, "samples");
+		
+		Consumer<Sample2> sampleWriter = sample -> {
+			json.object();
+			json.key("id");
+			json.value(sample.id);
+			if(sample.hasLocation()) {
+				json.key("location");
+				json.value(sample.location);
+			}
+			if(sample.hasTimestamp()) {
+				//json.key("timestamp");
+				//json.value(sample.timestamp);
+				//log.info(sample.timestamp);
+				LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(sample.timestamp);
+				json.key("date");
+				json.value(dateTime.toLocalDate());
+				json.key("time");
+				json.value(dateTime.toLocalTime());
+			}
+			if(sample.hasDevice()) {
+				json.key("device");
+				json.value(sample.device);
+			}
+			json.endObject();			
+		};
 
 		if(location == null) {
 			if(flagCount) {
@@ -85,76 +114,24 @@ public class Samples2Handler extends AbstractHandler {
 					if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEach(sample -> {
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						});
+						broker.sampleManager().forEach(sampleWriter);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtTimestamp(timestamp, sample -> {
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						});
+						broker.sampleManager().forEachAtTimestamp(timestamp, sampleWriter);
 						json.endArray();	
 					}
 				} else {
 					if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachPaged(sample -> {					
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						}, limit, offset);
+						broker.sampleManager().forEachPaged(sampleWriter, limit, offset);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtTimestampPaged(timestamp, sample -> {					
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						}, limit, offset);
+						broker.sampleManager().forEachAtTimestampPaged(timestamp, sampleWriter, limit, offset);
 						json.endArray();
 					}
 				}
@@ -179,76 +156,24 @@ public class Samples2Handler extends AbstractHandler {
 					if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtLocation(location, sample -> {
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						});
+						broker.sampleManager().forEachAtLocation(location, sampleWriter);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtLocationAtTimestamp(location, timestamp, sample -> {
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						});
+						broker.sampleManager().forEachAtLocationAtTimestamp(location, timestamp, sampleWriter);
 						json.endArray();
 					}
 				} else {
 					if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachPagedAtLocation(location, sample -> {
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						}, limit, offset);
+						broker.sampleManager().forEachPagedAtLocation(location, sampleWriter, limit, offset);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachPagedAtLocationAtTimestamp(location, timestamp, sample -> {
-							json.object();
-							json.key("id");
-							json.value(sample.id);
-							if(sample.hasLocation()) {
-								json.key("location");
-								json.value(sample.location);
-							}
-							if(sample.hasTimestamp()) {
-								json.key("timestamp");
-								json.value(sample.timestamp);
-							}
-							json.endObject();
-						}, limit, offset);
+						broker.sampleManager().forEachPagedAtLocationAtTimestamp(location, timestamp, sampleWriter, limit, offset);
 						json.endArray();
 					}
 				}

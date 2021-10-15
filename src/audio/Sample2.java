@@ -18,17 +18,20 @@ public class Sample2 implements GeneralSample {
 	public final Path samplePath;
 	public final String location;
 	public final long timestamp;
+	public final String device;
 
 	private YamlMap yamlMap = null;
 	private long samples = -2;
+	private double sampleRate = Double.NEGATIVE_INFINITY;
 
-	public Sample2(String id, String project, Path metaPath, Path samplePath, String location, long timestamp) {
+	public Sample2(String id, String project, Path metaPath, Path samplePath, String location, long timestamp, String device) {
 		this.id = id;
 		this.project = project;
 		this.metaPath = metaPath;
 		this.samplePath = samplePath;
 		this.location = location;
 		this.timestamp = timestamp;
+		this.device = device;
 	}
 
 	public Sample getSample() {
@@ -41,6 +44,10 @@ public class Sample2 implements GeneralSample {
 
 	public boolean hasTimestamp() {
 		return timestamp > 0;
+	}
+	
+	public boolean hasDevice() {
+		return device != null;
 	}
 
 	@Override
@@ -65,5 +72,16 @@ public class Sample2 implements GeneralSample {
 	
 	public boolean hasSamples() {
 		return samples() >= 0;
+	}
+	
+	public double sampleRate() {
+		if(sampleRate == Double.NEGATIVE_INFINITY) {
+			sampleRate = meta().optDouble("SampleRate", Double.NaN);
+		}
+		return sampleRate;
+	}
+
+	public boolean hasSampleRate() {
+		return Double.isFinite(sampleRate());
 	}
 }

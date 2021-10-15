@@ -30,7 +30,7 @@ public class DeviceInventory {
 			this.start = start;
 			this.end = end;
 		}
-		
+
 		public boolean contains(long timestamp) {
 			return start <= timestamp && timestamp <= end; 		
 		}
@@ -53,7 +53,7 @@ public class DeviceInventory {
 	}
 
 	private void insert(Entry entry) {
-		log.info("insert " + entry);
+		//log.info("insert " + entry);
 		String key = entry.device;
 		Object o = deviceMap.get(key);
 		if(o == null) {
@@ -92,19 +92,23 @@ public class DeviceInventory {
 			CsvCell cellStart = csvTable.getCell("start");
 			CsvCell cellEnd = csvTable.getCell("end");
 			csvTable.forEach(csvRow -> {
-				String device = cellDevice.get(csvRow);
-				String location = cellLocation.get(csvRow);
-				String startText = cellStart.get(csvRow);
-				String endText = cellEnd.get(csvRow);
-				long start = AudioTimeUtil.toAudiotimeStart(startText);
-				long end = AudioTimeUtil.toAudiotimeEnd(endText);
-				Entry entry = new Entry(device, location, start, end);				
-				insert(entry);
+				try {
+					String device = cellDevice.get(csvRow);
+					String location = cellLocation.get(csvRow);
+					String startText = cellStart.get(csvRow);
+					String endText = cellEnd.get(csvRow);
+					long start = AudioTimeUtil.toAudiotimeStart(startText);
+					long end = AudioTimeUtil.toAudiotimeEnd(endText);
+					Entry entry = new Entry(device, location, start, end);				
+					insert(entry);
+				} catch(Exception e) {
+					log.warn(e);
+				}
 			});
 		} catch(Exception e) {
 			log.warn(e);
 		}
-		forEach(entry -> log.info(entry));
+		//forEach(entry -> log.info(entry));
 	}
 
 	public Entry getLast(String device, long timestamp) {
@@ -130,7 +134,7 @@ public class DeviceInventory {
 		}
 		return entry;
 	}
-	
+
 	public Entry getLastInfinite(String device) {
 		Entry entry = null;
 		Object o = deviceMap.get(device);

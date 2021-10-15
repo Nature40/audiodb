@@ -10,7 +10,7 @@
       <audio-settings ref="settings"/>
     </q-toolbar>
     <div style="margin-left: 15px; margin-right: 15px;">
-    <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1"/>
+    <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @change="onSliderChange"/>
     </div>
     <div style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
       <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff" :style="{width: canvasWidth + 'px', height: player_fft_cutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove"/>
@@ -20,7 +20,22 @@
         </div>
       </q-linear-progress>
       <q-badge v-if="spectrogramImagesErrorCount > 0" style="position: absolute; top: 0px; left: 0px;" color="white" text-color="accent" label="ERROR laoding spectrogram" />        
+      <q-badge v-if="audioWaiting" color="yellow-14" text-color="accent" label="loading audio" style="position: absolute; top: 10px; right: 10px;"/>    
+      <q-badge v-if="audioStalled" color="yellow-14" text-color="red" label="stalled loading audio" style="position: absolute; top: 30px; right: 10px;"/>
+
+      <q-badge v-if="sampleLoading" color="grey-3" text-color="accent" label="loading metadata" style="position: absolute; top: 50px; left: 10px;"/>    
+      <q-badge v-if="sampleError" color="grey-3" text-color="red" style="position: absolute; top: 80px; left: 10px;">
+        error loading metadata
+        <q-btn color="grey" @click="refreshSample">refresh</q-btn>
+      </q-badge>
+
     </div>
+    <q-toolbar class="bg-grey-3">
+      <q-space></q-space>
+      <q-btn @click="onAudioPlayButton" :disabled="audioPlaying">play</q-btn>
+      <q-btn @click="onAudioPauseButton" :disabled="!audioPlaying">pause</q-btn>
+      <q-space></q-space>
+    </q-toolbar>    
   </q-page>
 </template>
 
@@ -41,7 +56,10 @@ export default defineComponent({
 
   data() {
     return {
+      sampleLoading: false,
+      sampleError: false,
       sample: undefined,
+      samplePos: undefined,
       sampleLen: undefined,
       spectrogramImages: [],
       imageNextIndex: undefined,
@@ -50,9 +68,15 @@ export default defineComponent({
       spectrogramId: 0,
       spectrogramImageMaxPixelLen: 2048,
       canvasPixelPosX: 0,
+      canvasPixelPosXrequest: undefined,
       canvasMovePixelStartX: undefined,
       canvasWidth: 1024,
       paintSpectrogramRequested: false,
+      audio: undefined,
+      audioPlaying: false,
+      audioWaiting: false,
+      audioStalled: false,
+      sampleRate: undefined,
     };
   },
   
@@ -91,6 +115,13 @@ export default defineComponent({
     },
     spectrogramLoadedprogress() {
       return this.spectrogramImagesLoadedCount / this.spectrogramImagesLen;
+    },
+    audioURL() {
+      if(!this.sample) {
+        return;
+      }
+      const baseURL = this.$api.defaults.baseURL;
+      return baseURL + 'samples2/' + this.sample.id + '/audio';
     },    
   },
 
@@ -98,7 +129,7 @@ export default defineComponent({
     paintSpectrogram() {      
       var canvasContainer = this.$refs.canvasContainer;
       this.canvasWidth = canvasContainer.clientWidth;
-      console.log(canvasContainer);
+      //console.log(canvasContainer);
       var canvas = this.$refs.spectrogram;
       var ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -111,7 +142,7 @@ export default defineComponent({
         imageIndexStart = 0;
       }
       if(imageIndexStart >= this.spectrogramImagesLen) {
-        return
+        return;
       }
       var imageIndexEnd = Math.trunc((this.canvasPixelPosX + (this.canvasWidth - 1)) / this.spectrogramImageMaxPixelLen);
       if(imageIndexEnd < 0) {
@@ -120,14 +151,14 @@ export default defineComponent({
        if(imageIndexEnd >= this.spectrogramImagesLen) {
         imageIndexEnd = this.spectrogramImagesLen - 1;
       }
-      console.log('draw');
+      //console.log('draw');
       var next = undefined;
       for(var i = imageIndexStart; i <= imageIndexEnd; i++) {        
         var image = this.spectrogramImages[i];
         var canvasPixelX = i * this.spectrogramImageMaxPixelLen;
         var dstX = canvasPixelX - this.canvasPixelPosX;
         var dstY = 0;
-        console.log('draw image ' + i + " at " + dstX + " of images " +  this.spectrogramImagesLen);
+        //console.log('draw image ' + i + " at " + dstX + " of images " +  this.spectrogramImagesLen);
         if(image === undefined) {
           if(next === undefined) {
             next = i;
@@ -140,6 +171,12 @@ export default defineComponent({
       }
       if(next !== undefined) {
         this.imageNextIndex = next;
+      }
+      if(!this.audio.paused) {
+        this.$nextTick(() => {
+          console.log("next");
+          this.onAudioTimeupdate();
+        });
       }
     },
     loadSpectrogram() {
@@ -213,7 +250,8 @@ export default defineComponent({
         if(e.buttons == 1) { // left mouse button
           var offsetX = e.pageX - this.canvasMovePixelStartX;
           //console.log('offsetX ' + offsetX);
-          this.canvasPixelPosX -= offsetX;
+          var newCanvasPixelPosX = this.canvasPixelPosX - offsetX;
+          this.moveToCanvasPixelPosX(newCanvasPixelPosX);
           this.canvasMovePixelStartX = e.pageX;
         } else {
           this.canvasMovePixelStartX = undefined;
@@ -223,28 +261,107 @@ export default defineComponent({
     paintSpectrogramRequestedAnimationFrame() {
       this.paintSpectrogram();
       this.paintSpectrogramRequested = false;
-    }, 
+    },
+    onAudioPlayButton() {
+      this.audio.play();
+    },
+    onAudioPauseButton() {
+      this.audio.pause();
+    },    
+    onAudioPlaying() {
+      this.audioPlaying = true;
+      this.audioWaiting = false;
+    },
+    onAudioPause() {
+      this.audioPlaying = false;
+    },
+    onAudioTimeupdate() {
+      var t = this.audio.currentTime;
+      var newSamplePos = t * this.sampleRate;
+      if(newSamplePos < 0) {
+        newSamplePos = 0;
+      }
+      if(newSamplePos >= this.sampleLen) {
+        newSamplePos = this.sampleLen - 1;
+      }
+      newSamplePos = Math.trunc(newSamplePos);
+      var newCanvasPixelPosX = newSamplePos / this.player_fft_step;
+      if(newCanvasPixelPosX < 0) {
+        newCanvasPixelPosX = 0;
+      }
+      if(newCanvasPixelPosX >= this.spectrogramFullPixelLen) {
+        newCanvasPixelPosX = this.spectrogramFullPixelLen - 1;
+      }
+      newCanvasPixelPosX = Math.trunc(newCanvasPixelPosX);
+      this.samplePos = newSamplePos;
+      this.canvasPixelPosX = newCanvasPixelPosX;
+      console.log(t + "  " + this.samplePos + "  " + this.canvasPixelPosX + "  " + this.player_fft_step);
+    },
+    moveToSamplePos(newSamplePos) {
+      if(newSamplePos < 0) {
+        newSamplePos = 0;
+      }
+      if(newSamplePos >= this.sampleLen) {
+        newSamplePos = this.sampleLen - 1;
+      }
+      var t = newSamplePos / this.sampleRate;
+      this.audio.currentTime = t;
+    },
+    moveToCanvasPixelPosX(newCanvasPixelPosX) {
+      this.canvasPixelPosX = newCanvasPixelPosX;
+      var newSamplePos = newCanvasPixelPosX * this.player_fft_step;
+      this.moveToSamplePos(newSamplePos);
+    },
+    onSliderChange(newValue) {
+      this.moveToCanvasPixelPosX(newValue);
+    },
+    onAudioWaiting() {
+      this.audioWaiting = true;
+    },
+    onAudioStalled() {
+      this.audioStalled = true;
+    },
+    onAudioLoadeddata() {
+      this.audioStalled = false;
+    },
+    onAudioCanplay() {
+      this.audioStalled = false;
+    },
+    onAudioCanplaythrough() {
+      this.audioStalled = false;
+    },
+    async refreshSample() {
+      if(this.selectedSampleId === undefined) {
+        return;
+      }
+      console.log("querySample");
+      try {
+        var urlPath = 'samples2/' + this.selectedSampleId;
+        var params = {samples: true, sample_rate: true,};
+        this.sampleLoading = true;
+        this.sampleError = false;
+        var response = await this.$api.get(urlPath, {params});
+        this.sampleLoading = false;
+        this.sampleError = false;
+        var sample = response.data?.sample;
+        console.log(sample);
+        this.sample = sample;
+        this.sampleLen = sample.Samples;
+        this.sampleRate = sample.sample_rate;
+      } catch(e) {
+        this.sampleLoading = false;
+        this.sampleError = true;
+        console.log(e);
+      }
+    },
   },
 
   watch: {
     selectedSampleId: {
       immediate: true,   
       async handler() {
-        if(this.selectedSampleId === undefined) {
-          return;
-        }
-        console.log("querySample");
-        try {
-          var urlPath = 'samples2/' + this.selectedSampleId;
-          var response = await this.$api.get(urlPath, { params: {samples: true,} });
-          var sample = response.data?.sample;
-          console.log(sample);
-          this.sample = sample;
-          this.sampleLen = sample.Samples;
-        } catch(e) {
-          console.log(e);
-        }
-      },  
+        this.refreshSample();
+      }
     },
     async sample() {
       this.$nextTick( () => {
@@ -267,8 +384,22 @@ export default defineComponent({
       this.$nextTick( () => {
         this.loadSpectrogram();
       });
+    },
+    audioURL() {
+      this.audio.src = this.audioURL;
     },    
   },
+  async mounted() {
+    this.audio = new Audio();    
+    this.audio.addEventListener('playing', e => this.onAudioPlaying(e));
+    this.audio.addEventListener('pause', e => this.onAudioPause(e));
+    this.audio.addEventListener('timeupdate', e => this.onAudioTimeupdate(e));
+    this.audio.addEventListener('waiting', e => this.onAudioWaiting(e));
+    this.audio.addEventListener('stalled', e => this.onAudioStalled(e));
+    this.audio.addEventListener('loadeddata', e => this.onAudioLoadeddata(e));
+    this.audio.addEventListener('canplay', e => this.onAudioCanplay(e));
+    this.audio.addEventListener('canplaythrough', e => this.onAudioCanplaythrough(e));
+   },  
 })
 </script>
 
