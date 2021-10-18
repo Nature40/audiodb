@@ -62,7 +62,36 @@
             markers
             snap
           />
-        </q-card-section>        
+        </q-card-section>
+
+        <q-card-section>
+          <q-badge color="blue-5">
+            Intensity maximum 
+            <q-btn
+              round
+              dense
+              color="primary"
+              size="xs"
+              icon="undo"
+              :label="default_player_fft_intensity_max"
+              title="reset to default"
+              @click="user_player_fft_intensity_max = toValidExp(default_player_fft_intensity_max)"
+              style="margin-left: 10px;"
+            />
+          </q-badge>
+          <q-slider
+            v-model="user_player_fft_intensity_max"
+            :min="user_player_fft_intensity_max_min"
+            :max="user_player_fft_intensity_max_max"
+            :step="1"
+            label-always
+            :label-value="user_player_fft_intensity_max"
+            dense
+            style="margin-top: 30px;"
+            markers
+            snap
+          />
+        </q-card-section>                
 
         <q-separator />
 
@@ -91,6 +120,9 @@ export default defineComponent({
       user_player_fft_window: 10, //2^10=1024
       user_player_fft_window_min: 8,
       user_player_fft_window_max: 16,
+      user_player_fft_intensity_max: 23,
+      user_player_fft_intensity_max_min: 20,
+      user_player_fft_intensity_max_max: 30,
     };
   },
   computed: {
@@ -99,6 +131,8 @@ export default defineComponent({
       default_player_spectrum_threshold: state => state.project.default_player_spectrum_threshold,
       player_fft_window: state => state.project.player_fft_window,
       default_player_fft_window: state => state.project.default_player_fft_window,
+      player_fft_intensity_max: state => state.project.player_fft_intensity_max,
+      default_player_fft_intensity_max: state => state.project.default_player_fft_intensity_max,
     }),    
   },
   methods: {
@@ -106,12 +140,14 @@ export default defineComponent({
       var settings = {};
       settings.player_spectrum_threshold = this.user_player_spectrum_threshold;
       settings.player_fft_window = 2**this.user_player_fft_window;
+      settings.player_fft_intensity_max = this.user_player_fft_intensity_max;
       console.log(settings.player_fft_window);
       this.$store.dispatch('project/set', settings); 
     },
     refresh() {
       this.user_player_spectrum_threshold = this.player_spectrum_threshold;
       this.user_player_fft_window = this.toValidExp(this.player_fft_window);
+      this.user_player_fft_intensity_max = this.player_fft_intensity_max;
     },
     toValidExp(window) {
       var exp = Math.trunc(Math.log2(window));

@@ -63,21 +63,22 @@ export default defineComponent({
   components: {
   },
 
-  setup () {
-    const leftDrawerOpen = ref(false)
-
+  data() {
     return {
-      leftDrawerOpen,
-      toggleLeftDrawer () {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-      }
-    }
+      leftDrawerOpen: false,
+    };
   },
 
   computed: {
     project() {
       return this.$route.params.project;
     },
+  },
+
+  methods: {
+    toggleLeftDrawer () {
+      this.leftDrawerOpen = !this.leftDrawerOpen;
+    }
   },
   
   watch: {
@@ -87,6 +88,10 @@ export default defineComponent({
       },
       immediate: true,
     },
+  },
+
+  mounted() {
+    this.leftDrawerOpen = false
   },
 })
 </script>

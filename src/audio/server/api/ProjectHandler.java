@@ -60,7 +60,9 @@ public class ProjectHandler {
 	private void handleRoot(String project, Request request, HttpServletResponse response) throws IOException {
 		boolean fLocations = Web.getFlagBoolean(request, "locations");
 		boolean fTimestamps = Web.getFlagBoolean(request, "timestamps");
+		boolean fDates = Web.getFlagBoolean(request, "dates");
 		String timestamps_of_location = Web.getString(request, "timestamps_of_location", null);
+		String dates_of_location = Web.getString(request, "dates_of_location", null);
 		boolean fInventory = Web.getFlagBoolean(request, "inventory");
 		AudioProjectConfig config = broker.config().audioConfig;		
 		if(!config.project.equals(project)) {
@@ -90,24 +92,19 @@ public class ProjectHandler {
 			json.endArray();
 		}
 		
-		LongConsumer timestampWriter = timestamp -> {
-			json.object();
-			json.key("timestamp");
-			json.value(timestamp);
-			if(timestamp > 0) {
-				LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(timestamp);
-				json.key("date");
-				json.value(dateTime.toLocalDate());
-				json.key("time");
-				json.value(dateTime.toLocalTime());
-			}				
-			json.endObject();
-		};
+		LongConsumer timestampDateTimeWriter = AudioTimeUtil.timestampDateTimeWriter(json); 		
+		LongConsumer timestampDateWriter = AudioTimeUtil.timestampDateWriter(json);
 		
 		if(fTimestamps) {
 			json.key("timestamps");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachTimestamp(timestampWriter);
+			sampleManager.tlSampleManagerConnector.get().forEachTimestamp(timestampDateTimeWriter);
+			json.endArray();
+		}
+		if(fDates) {
+			json.key("dates");
+			json.array();
+			sampleManager.tlSampleManagerConnector.get().forEachDate(timestampDateWriter);
 			json.endArray();
 		}
 		if(timestamps_of_location != null) {
@@ -118,7 +115,19 @@ public class ProjectHandler {
 			json.value(loc);
 			json.key("timestamps");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachTimestamp(loc, timestampWriter);
+			sampleManager.tlSampleManagerConnector.get().forEachTimestamp(loc, timestampDateTimeWriter);
+			json.endArray();
+			json.endObject();
+		}
+		if(dates_of_location != null) {
+			String loc = dates_of_location.equals("null") ? null : dates_of_location;
+			json.key("dates_of_location");
+			json.object();
+			json.key("location");
+			json.value(loc);
+			json.key("timestamps");
+			json.array();
+			sampleManager.tlSampleManagerConnector.get().forEachDate(loc, timestampDateWriter);
 			json.endArray();
 			json.endObject();
 		}

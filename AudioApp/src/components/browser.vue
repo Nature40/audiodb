@@ -63,7 +63,7 @@
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" dense>
                 <q-item-section>
-                  <q-item-label>{{scope.opt.date}} <span style="color: grey;">{{scope.opt.time}}</span></q-item-label>
+                  <q-item-label>{{scope.opt.date}}<!-- <span style="color: grey;">{{scope.opt.time}}</span>--></q-item-label>
                 </q-item-section>
               </q-item>              
             </template>
@@ -194,11 +194,17 @@ export default defineComponent({
         });
       } else {
         const d = this.$store.state.project.data;
-        if(d === undefined || d.timestamps === undefined || d.timestamps.length === 0) {
+        /*if(d === undefined || d.timestamps === undefined || d.timestamps.length === 0) {
           return [{date: '(no timestamps)', value: undefined}];
         }
         return d.timestamps.map(t => {
           return t.timestamp <= 0 ? {date: '(unknown)', value: 0} : {date: t.date, time: t.time, value: t.timestamp};
+        });*/
+        if(d === undefined || d.dates === undefined || d.dates.length === 0) {
+          return [{date: '(no timestamps)', value: undefined}];
+        }
+        return d.dates.map(t => {
+          return t.timestamp <= 0 ? {date: '(unknown)', value: 0} : {date: t.date, value: t.timestamp};
         });
       }
     },    
@@ -241,7 +247,14 @@ export default defineComponent({
           params.location = this.selectedLocation.value;
         }
         if(this.toggleTime === 'one' && this.selectedTimestamp) {
-          params.timestamp = this.selectedTimestamp.value;
+          //params.timestamp = this.selectedTimestamp.value;
+          var t = this.selectedTimestamp.value;
+          if(t === 0) {
+            params.end = 0;
+          } else {
+            params.start = t;
+            params.end = t + 86400;
+          }          
         }
         this.requestError = false;
         this.requestLoading = true;
@@ -290,14 +303,16 @@ export default defineComponent({
       try {
         var params = {};
         if(this.selectedLocation) {
-          params.timestamps_of_location = this.selectedLocation.value;
+          //params.timestamps_of_location = this.selectedLocation.value;
+          params.dates_of_location = this.selectedLocation.value;
         }
         this.timestamps_of_location = undefined;
         this.requestMetaError = false;
         this.requestMetaLoading = true;
         var response = await this.$api.get('projects/' + this.$store.state.projectId, {params});
         this.requestMetaLoading = false;
-        var tol = response.data.project.timestamps_of_location;
+        //var tol = response.data.project.timestamps_of_location;
+        var tol = response.data.project.dates_of_location;
         if(tol !== undefined) {
           if(tol.location === null) {
             tol.location = 'null';

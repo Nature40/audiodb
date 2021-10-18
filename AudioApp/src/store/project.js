@@ -10,9 +10,10 @@ state: {
   default_player_spectrum_threshold: undefined,
   player_fft_window: undefined,
   default_player_fft_window: undefined,
-  player_fft_step: undefined,  //4096,//2048,//1024,
-  player_fft_cutoff: undefined,  //4096,//2048,//1024,
-  player_fft_intensity_max: undefined,  //4096,//2048,//1024,
+  player_fft_step: undefined,
+  player_fft_cutoff: undefined,
+  player_fft_intensity_max: undefined,
+  default_player_fft_intensity_max: undefined,
 },
 getters: {
   isLoading: state => {
@@ -40,21 +41,24 @@ mutations: {
     var half = state.player_fft_window / 2;
     state.player_fft_cutoff = half > 800 ? 800 : half;
     state.player_fft_intensity_max = 23;
+    state.default_player_fft_window = state.player_fft_intensity_max;
   },
   setError(state, error) {
     state.loading = false;
     state.error = error;
   },
   set(state, settings) {
-    console.log("setset");
     if(settings.player_spectrum_threshold !== undefined) {
-      console.log("setsetset");
       state.player_spectrum_threshold = settings.player_spectrum_threshold;
+    }
+    if(settings.player_fft_window !== undefined) {
       state.player_fft_window = settings.player_fft_window;
       state.player_fft_step = state.player_fft_window / 4;
       var half = state.player_fft_window / 2;
-      state.player_fft_cutoff = half > 800 ? 800 : half;
-      state.player_fft_intensity_max = 23;    
+      state.player_fft_cutoff = half > 800 ? 800 : half;  
+    }
+    if(settings.player_fft_intensity_max !== undefined) {
+      state.player_fft_intensity_max = settings.player_fft_intensity_max;    
     }
   },
 },
@@ -69,7 +73,8 @@ actions: {
     try {
       var params = {};
       params.locations = true;
-      params.timestamps = true;
+      //params.timestamps = true;
+      params.dates = true;
       var response = await rootState.api.get('projects/' + rootState.projectId, {params});
       commit('setData', response.data);
     } catch(e) {

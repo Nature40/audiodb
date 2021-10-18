@@ -4,7 +4,13 @@
       <q-btn @click="$refs.browser.show = true;">Browse</q-btn>
       <audio-browser ref="browser"/>
       <q-space></q-space>
-      <div v-if="sample !== undefined">{{sample.id}}</div>
+      <div v-if="sample !== undefined">
+        <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
+        <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
+        <span class="text-weight-light text-grey-7" style="padding-left: 10px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sample.device"><q-icon name="memory"/>{{sample.device}}</span>
+        <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
+      </div>
       <q-space></q-space>
       <q-btn @click="$refs.settings.show = true;">Settings</q-btn>
       <audio-settings ref="settings"/>
@@ -337,7 +343,7 @@ export default defineComponent({
       console.log("querySample");
       try {
         var urlPath = 'samples2/' + this.selectedSampleId;
-        var params = {samples: true, sample_rate: true,};
+        var params = {samples: true, sample_rate: true};
         this.sampleLoading = true;
         this.sampleError = false;
         var response = await this.$api.get(urlPath, {params});
@@ -346,7 +352,7 @@ export default defineComponent({
         var sample = response.data?.sample;
         console.log(sample);
         this.sample = sample;
-        this.sampleLen = sample.Samples;
+        this.sampleLen = sample.samples;
         this.sampleRate = sample.sample_rate;
       } catch(e) {
         this.sampleLoading = false;

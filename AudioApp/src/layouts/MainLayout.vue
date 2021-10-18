@@ -49,18 +49,23 @@ import { defineComponent, ref } from 'vue'
 export default defineComponent({
   name: 'MainLayout',
 
+  data() {
+    return {
+      leftDrawerOpen: true,
+    };
+  },
+
   components: {
   },
 
-  setup () {
-    const leftDrawerOpen = ref(false)
-
-    return {
-      leftDrawerOpen,
-      toggleLeftDrawer () {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-      }
+  methods: {
+    toggleLeftDrawer () {
+      this.leftDrawerOpen = !this.leftDrawerOpen;
     }
+  },
+
+  mounted() {
+    this.$nextTick(() => this.toggleLeftDrawer());
   },
 })
 </script>

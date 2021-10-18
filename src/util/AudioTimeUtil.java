@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.function.LongConsumer;
+
+import org.json.JSONWriter;
 
 public class AudioTimeUtil {
 
@@ -48,8 +51,8 @@ public class AudioTimeUtil {
 
 		return new String(c);		
 	}
-	
-	
+
+
 
 	public static long toAudiotimeStart(String startText) {
 		if(startText == null) {
@@ -140,7 +143,7 @@ public class AudioTimeUtil {
 			throw new RuntimeException("unknown timestamp "+endText);
 		}		
 	}
-	
+
 	public static String toString(long timestamp) {
 		if(timestamp == Long.MIN_VALUE) {
 			return "-inf";
@@ -149,5 +152,47 @@ public class AudioTimeUtil {
 			return "+inf";
 		}
 		return ofAudiotime(timestamp).toString();
+	}
+
+	public static LongConsumer timestampDateTimeWriter(JSONWriter json) {
+		return timestamp -> writeTimestampDateTime(json, timestamp);
+	}
+
+	public static void writeTimestampDateTime(JSONWriter json, long timestamp) {
+		json.object();
+		writePropsTimestampDateTime(json, timestamp);			
+		json.endObject();
+	}
+
+	public static void writePropsTimestampDateTime(JSONWriter json, long timestamp) {
+		json.key("timestamp");
+		json.value(timestamp);
+		if(timestamp > 0) {
+			LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(timestamp);
+			json.key("date");
+			json.value(dateTime.toLocalDate());
+			json.key("time");
+			json.value(dateTime.toLocalTime());
+		}				
+	}
+
+	public static LongConsumer timestampDateWriter(JSONWriter json) {
+		return timestamp -> writeTimestampDate(json, timestamp);
+	}
+
+	public static void writeTimestampDate(JSONWriter json, long timestamp) {
+		json.object();
+		writePropsTimestampDate(json, timestamp);			
+		json.endObject();
+	}
+
+	public static void writePropsTimestampDate(JSONWriter json, long timestamp) {
+		json.key("timestamp");
+		json.value(timestamp);
+		if(timestamp > 0) {
+			LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(timestamp);
+			json.key("date");
+			json.value(dateTime.toLocalDate());
+		}				
 	}
 }

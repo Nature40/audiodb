@@ -11,6 +11,7 @@ import audio.Broker;
 import audio.Sample2;
 import audio.SampleManager;
 import jakarta.servlet.http.HttpServletResponse;
+import util.AudioTimeUtil;
 import util.Web;
 
 public class Sample2Handler {
@@ -85,12 +86,15 @@ public class Sample2Handler {
 			json.key("location");
 			json.value(sample.location);
 		}
+		if(sample.hasDevice()) {
+			json.key("device");
+			json.value(sample.device);
+		}
 		if(sample.hasTimestamp()) {
-			json.key("timestamp");
-			json.value(sample.timestamp);
+			AudioTimeUtil.writePropsTimestampDateTime(json, sample.timestamp);
 		}
 		if(reqSamples && sample.hasSamples()) {
-			json.key("Samples");
+			json.key("samples");
 			json.value(sample.samples());
 		}
 		if(reqSampleRate && sample.hasSampleRate()) {

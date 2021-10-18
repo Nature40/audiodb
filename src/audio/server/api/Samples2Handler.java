@@ -67,6 +67,9 @@ public class Samples2Handler extends AbstractHandler {
 
 		String location = request.getParameter("location");
 		long timestamp = Web.getLong(request, "timestamp", Long.MIN_VALUE);
+		long start = Web.getLong(request, "start", Long.MIN_VALUE);
+		long end = Web.getLong(request, "end", Long.MIN_VALUE);
+		boolean timerange = end != Long.MIN_VALUE;
 		int limit = Web.getInt(request, "limit", Integer.MAX_VALUE);
 		int offset = Web.getInt(request, "offset", 0);
 		boolean flagCount = Web.getFlagBoolean(request, "count");
@@ -99,7 +102,11 @@ public class Samples2Handler extends AbstractHandler {
 
 		if(location == null) {
 			if(flagCount) {
-				if(timestamp == Long.MIN_VALUE) {
+				if(timerange) {
+					json.key("count");
+					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtTimerange(start, end);
+					json.value(count);
+				} else if(timestamp == Long.MIN_VALUE) {
 					json.key("count");
 					int count = broker.sampleManager().tlSampleManagerConnector.get().count();
 					json.value(count);
@@ -111,7 +118,12 @@ public class Samples2Handler extends AbstractHandler {
 			}
 			if(flagSamples) {
 				if(limit == Integer.MAX_VALUE && offset == 0) {
-					if(timestamp == Long.MIN_VALUE) {
+					if(timerange) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtTimerange(start, end, sampleWriter);
+						json.endArray();
+					} else if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
 						broker.sampleManager().forEach(sampleWriter);
@@ -123,7 +135,12 @@ public class Samples2Handler extends AbstractHandler {
 						json.endArray();	
 					}
 				} else {
-					if(timestamp == Long.MIN_VALUE) {
+					if(timerange) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtTimerangePaged(start, end, sampleWriter, limit, offset);
+						json.endArray();
+					} else if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
 						broker.sampleManager().forEachPaged(sampleWriter, limit, offset);
@@ -141,7 +158,11 @@ public class Samples2Handler extends AbstractHandler {
 				location = null;
 			}
 			if(flagCount) {
-				if(timestamp == Long.MIN_VALUE) {
+				if(timerange) {
+					json.key("count");
+					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocationAtTimerange(location, start, end);
+					json.value(count);
+				} else if(timestamp == Long.MIN_VALUE) {
 					json.key("count");
 					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
 					json.value(count);
@@ -153,7 +174,12 @@ public class Samples2Handler extends AbstractHandler {
 			}
 			if(flagSamples) {
 				if(limit == Integer.MAX_VALUE && offset == 0) {
-					if(timestamp == Long.MIN_VALUE) {
+					if(timerange) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachAtLocationAtTimerange(location, start, end, sampleWriter);
+						json.endArray();
+					} else if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
 						broker.sampleManager().forEachAtLocation(location, sampleWriter);
@@ -165,7 +191,12 @@ public class Samples2Handler extends AbstractHandler {
 						json.endArray();
 					}
 				} else {
-					if(timestamp == Long.MIN_VALUE) {
+					if(timerange) {
+						json.key("samples");
+						json.array();
+						broker.sampleManager().forEachPagedAtLocationAtTimerange(location, start, end, sampleWriter, limit, offset);
+						json.endArray();
+					} else if(timestamp == Long.MIN_VALUE) {
 						json.key("samples");
 						json.array();
 						broker.sampleManager().forEachPagedAtLocation(location, sampleWriter, limit, offset);

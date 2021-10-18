@@ -208,6 +208,10 @@ public class SampleManager {
 	public void forEachAtTimestamp(long timestamp, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtTimestamp(timestamp, new SampleConverter(consumer));
 	}
+	
+	public void forEachAtTimerange(long start, long end, Consumer<Sample2> consumer) {
+		tlSampleManagerConnector.get().forEachAtTimerange(start, end, new SampleConverter(consumer));
+	}
 
 	public void forEachPaged(Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPaged(new SampleConverter(consumer), limit, offset);
@@ -216,6 +220,10 @@ public class SampleManager {
 	public void forEachAtTimestampPaged(long timestamp, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachAtTimestampPaged(timestamp, new SampleConverter(consumer), limit, offset);
 	}
+	
+	public void forEachAtTimerangePaged(long start, long end, Consumer<Sample2> consumer, int limit, int offset) {
+		tlSampleManagerConnector.get().forEachAtTimerangePaged(start, end, new SampleConverter(consumer), limit, offset);
+	}
 
 	public void forEachAtLocation(String location, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtLocation(location, new SampleConverter(consumer));
@@ -223,7 +231,11 @@ public class SampleManager {
 	
 	public void forEachAtLocationAtTimestamp(String location, long timestamp, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtLocationAtTimestamp(location, timestamp, new SampleConverter(consumer));
-	}	
+	}
+	
+	public void forEachAtLocationAtTimerange(String location, long start, long end, Consumer<Sample2> consumer) {
+		tlSampleManagerConnector.get().forEachAtLocationAtTimerange(location, start, end, new SampleConverter(consumer));
+	}
 
 	public void forEachPagedAtLocation(String location, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocation(location, new SampleConverter(consumer), limit, offset);
@@ -231,6 +243,10 @@ public class SampleManager {
 	
 	public void forEachPagedAtLocationAtTimestamp(String location, long timestamp, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocationAtTimestamp(location, timestamp, new SampleConverter(consumer), limit, offset);
+	}
+	
+	public void forEachPagedAtLocationAtTimerange(String location, long start, long end, Consumer<Sample2> consumer, int limit, int offset) {
+		tlSampleManagerConnector.get().forEachPagedAtLocationAtTimerange(location, start, end, new SampleConverter(consumer), limit, offset);
 	}
 	
 	private Sample2 convertRow(ResultSet res) {

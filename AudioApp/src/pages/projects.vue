@@ -31,7 +31,7 @@ export default defineComponent({
 
   methods: {
     toProjectHash(project) {
-      return '/projects/' + project.id;
+      return '/projects/' + project.id + '/main';
     }
   },
   
