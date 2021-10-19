@@ -31,7 +31,7 @@ public class SpectrumHandler {
 		int window = 1024;
 		//int n = 2048;
 		//int n = 512;
-		
+
 		window = Web.getInt(request, "window", window);
 
 		int cutoff = Web.getInt(request, "cutoff", 320);
@@ -40,13 +40,15 @@ public class SpectrumHandler {
 			cutoff = window/2;
 		}
 		float threshold = (float) Web.getDouble(request, "threshold", 12);
-		
+
+		int shrink_factor = Web.getInt(request, "shrink_factor", 1);
+		int width = Web.getInt(request, "width", 0);
 		int max_width = Web.getInt(request, "max_width", 0);
 
 		int startSample = Web.getInt(request, "start_sample", -1);
 		int endSample = Web.getInt(request, "end_sample", -1);	
-		
-		log.info("spectrum " + startSample + " to " + endSample);
+
+		//log.info("spectrum " + startSample + " to " + endSample);
 
 		SampleProcessor sampleProcessor = new SampleProcessor(sample);
 		if(startSample < 0) {
@@ -57,33 +59,48 @@ public class SpectrumHandler {
 			double endSecond = Web.getDouble(request, "end", Double.NaN);
 			endSample = Double.isFinite(endSecond) ? sampleProcessor.secondsToPos(endSecond) : sampleProcessor.getFrameLength() - 1;
 		}
-		log.info("start " + startSample + "  end " + endSample);
+		//log.info("start " + startSample + "  end " + endSample);
 		sampleProcessor.loadData(0, startSample, endSample);
 		short[] fullShorts = sampleProcessor.data;
+		/*log.info(fullShorts.length + "  " + window);
+		for (int i = 0; i < fullShorts.length; i++) {
+			fullShorts[i] = i%2 == 0 ? Short.MAX_VALUE : -Short.MAX_VALUE;
+		}*/
 
 		int step = 256;
 		//int step = 512;
 		//int step = 1024;
 		step = Web.getInt(request, "step", step);
-		
+
 		float intensity_max = 23f;
 		intensity_max = Web.getFloat(request, "intensity_max", intensity_max);
-		
-		int cols = ((sampleProcessor.dataLength - window) / step) + 1;
+
+		int cols = ((sampleProcessor.dataLength - window) / (step * shrink_factor)) + 1;
 
 		ImageRGBA image;
-		if(max_width <= 0 || cols <= max_width) {			
-			//image = render2(fullShorts, n, step, cols, cutoff, threshold);
+		int renderWidth = 0;
+		boolean isMaxWidth = false; 
+		if(width > 0) {
+			renderWidth = width;
+		} else if(max_width > 0 && cols > max_width) {
+			renderWidth = max_width;
+			isMaxWidth = true;
+		}
+		
+		if(shrink_factor > 1) {
+			image = render3Shrink(fullShorts, window, step, cols, cutoff, threshold, intensity_max, shrink_factor);
+		} else if(renderWidth <= 0) {
 			image = render3(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
-		} else {
+		} else if(isMaxWidth){
 			step = window;
 			cols = ((sampleProcessor.dataLength - window) / step) + 1;
-			if(max_width <= 0 || cols <= max_width) {			
-				//image = render2(fullShorts, n, step, cols, cutoff, threshold);
+			if(cols <= renderWidth) {
 				image = render3(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
 			} else {
-				image = render3width(fullShorts, window, step, cols, cutoff, threshold, intensity_max, max_width);
+				image = render3width(fullShorts, window, step, cols, cutoff, threshold, intensity_max, renderWidth);
 			}
+		} else {
+			image = render3width(fullShorts, window, step, cols, cutoff, threshold, intensity_max, renderWidth);
 		}
 
 		image.writePngCompressed(response.getOutputStream());
@@ -134,9 +151,19 @@ public class SpectrumHandler {
 	}
 
 	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv) {
-		log.info("render3 step " + step + "  cols " + cols);
+		//log.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
+
+		/*float energy = 0;
+		for (int i = 0; i < n; i++) {
+			float v = weight[i] * Short.MAX_VALUE;
+			energy += v*v;
+		}
+		float energy_per_sample = energy / n;
+		log.info("energy " +  energy + "   " + Math.log(energy));
+		log.info("energy sample " +  energy_per_sample + "   " + Math.log(energy_per_sample));*/
+
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
 		ImageRGBA image = new ImageRGBA(cols, cutoff);
 		int[] dst = image.getRawArray();
@@ -146,6 +173,14 @@ public class SpectrumHandler {
 				a[i] = fullShorts[pos*step + i] * weight[i];
 			}
 			fft.realForward(a);
+			/*float vmax = 0;
+			for (int i = 0; i < n/2; i++) {
+				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
+				if(vmax < v) {
+					vmax = v;
+				}
+			}
+			log.info("vmax " + vmax + "   " + Math.log(vmax) + "vmax " + vmax/n + "   " + Math.log(vmax/n));*/
 			for (int i = 0; i < cutoff; i++) {
 				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
@@ -191,6 +226,40 @@ public class SpectrumHandler {
 			}
 		}
 
+		return image;
+	}
+
+	private ImageRGBA render3Shrink(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv, int shrinkFactor) {
+		//log.info("render3 step " + step + "  cols " + cols);
+		FloatFFT_1D fft = new FloatFFT_1D(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n);
+
+		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
+		ImageRGBA image = new ImageRGBA(cols, cutoff);
+		int[] dst = image.getRawArray();
+		float[] a = new float[n];
+		float[] b = new float[cutoff];
+		for (int colPos = 0; colPos < cols; colPos++) {
+			for (int i = 0; i < cutoff; i++) {
+				b[i] = 0f;
+			}
+			for(int shrinkPos = 0; shrinkPos < shrinkFactor; shrinkPos++) {
+				int fftPos = colPos * step * shrinkFactor + shrinkPos * step;
+				for (int i = 0; i < n; i++) {
+					a[i] = fullShorts[fftPos + i] * weight[i];
+				}
+				fft.realForward(a);
+				for (int i = 0; i < cutoff; i++) {
+					float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
+					b[i] = Math.max(b[i], v);
+				}
+			}
+			for (int i = 0; i < cutoff; i++) {
+				float v = b[i];
+				int c = Renderer.colInferno[Lut.match256f(lut, v)];
+				dst[(cutoff - i - 1) * cols + colPos] = c;
+			}
+		}
 		return image;
 	}
 }

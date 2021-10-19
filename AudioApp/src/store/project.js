@@ -37,11 +37,12 @@ mutations: {
     state.default_player_spectrum_threshold = state.player_spectrum_threshold;
     state.player_fft_window = 1024; //16384,//8192,//4096,//2048,//1024,
     state.default_player_fft_window = state.player_fft_window;
-    state.player_fft_step = state.player_fft_window / 4;
+    //state.player_fft_step = state.player_fft_window / 4;
+    state.player_fft_step = state.player_fft_window;
     var half = state.player_fft_window / 2;
     state.player_fft_cutoff = half > 800 ? 800 : half;
     state.player_fft_intensity_max = 23;
-    state.default_player_fft_window = state.player_fft_intensity_max;
+    state.default_player_fft_intensity_max = state.player_fft_intensity_max;
   },
   setError(state, error) {
     state.loading = false;
@@ -53,7 +54,8 @@ mutations: {
     }
     if(settings.player_fft_window !== undefined) {
       state.player_fft_window = settings.player_fft_window;
-      state.player_fft_step = state.player_fft_window / 4;
+      //state.player_fft_step = state.player_fft_window / 4;
+      state.player_fft_step = state.player_fft_window;
       var half = state.player_fft_window / 2;
       state.player_fft_cutoff = half > 800 ? 800 : half;  
     }

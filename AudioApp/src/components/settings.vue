@@ -2,38 +2,13 @@
   <q-dialog v-model="show" style="width: 500px;">
       <q-card>
         <q-bar>
+          <q-icon name="tune"/>
           <div>Settings</div>
           <q-space />
           <q-btn dense flat icon="close" v-close-popup>
             <q-tooltip>Close</q-tooltip>
           </q-btn>
         </q-bar>     
-
-        <q-card-section>
-          <q-badge color="blue-5">
-            Spectrogram low signal threshold (noise reduction) 
-            <q-btn
-              round
-              dense
-              color="primary"
-              size="xs"
-              icon="undo"
-              :label="default_player_spectrum_threshold"
-              title="reset to default"
-              @click="user_player_spectrum_threshold = default_player_spectrum_threshold"
-              style="margin-left: 10px;"
-            />
-          </q-badge>
-          <q-slider
-            v-model="user_player_spectrum_threshold"
-            :min="0.0"
-            :max="21.0"
-            :step="0.1"
-            label-always
-            dense
-            style="margin-top: 30px;"
-          />
-        </q-card-section>
 
         <q-card-section>
           <q-badge color="blue-5">
@@ -66,6 +41,32 @@
 
         <q-card-section>
           <q-badge color="blue-5">
+            Spectrogram low signal threshold (noise reduction) 
+            <q-btn
+              round
+              dense
+              color="primary"
+              size="xs"
+              icon="undo"
+              :label="default_player_spectrum_threshold"
+              title="reset to default"
+              @click="user_player_spectrum_threshold = default_player_spectrum_threshold"
+              style="margin-left: 10px;"
+            />
+          </q-badge>
+          <q-slider
+            v-model="user_player_spectrum_threshold"
+            :min="0.0"
+            :max="33.0"
+            :step="0.1"
+            label-always
+            dense
+            style="margin-top: 30px;"
+          />
+        </q-card-section>        
+
+        <q-card-section>
+          <q-badge color="blue-5">
             Intensity maximum 
             <q-btn
               round
@@ -75,7 +76,7 @@
               icon="undo"
               :label="default_player_fft_intensity_max"
               title="reset to default"
-              @click="user_player_fft_intensity_max = toValidExp(default_player_fft_intensity_max)"
+              @click="user_player_fft_intensity_max = default_player_fft_intensity_max"
               style="margin-left: 10px;"
             />
           </q-badge>
@@ -122,7 +123,7 @@ export default defineComponent({
       user_player_fft_window_max: 16,
       user_player_fft_intensity_max: 23,
       user_player_fft_intensity_max_min: 20,
-      user_player_fft_intensity_max_max: 30,
+      user_player_fft_intensity_max_max: 33,
     };
   },
   computed: {
