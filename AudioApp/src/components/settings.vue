@@ -92,7 +92,65 @@
             markers
             snap
           />
-        </q-card-section>                
+        </q-card-section>
+
+         <q-card-section>
+          <q-badge color="blue-5">
+            Spectrogram time shrink factor 
+            <q-btn
+              round
+              dense
+              color="primary"
+              size="xs"
+              icon="undo"
+              :label="default_player_spectrum_shrink_Factor"
+              title="reset to default"
+              @click="user_player_spectrum_shrink_Factor = default_player_spectrum_shrink_Factor"
+              style="margin-left: 10px;"
+            />
+          </q-badge>
+          <q-slider
+            v-model="user_player_spectrum_shrink_Factor"
+            :min="1"
+            :max="256"
+            :step="1"
+            label-always
+            :label-value="user_player_spectrum_shrink_Factor"
+            dense
+            style="margin-top: 30px;"
+            markers
+            snap
+          />
+        </q-card-section>
+
+         <q-card-section>
+          <q-badge color="blue-5">
+            Player time expansion factor 
+            <q-btn
+              round
+              dense
+              color="primary"
+              size="xs"
+              icon="undo"
+              :label="default_player_time_expansion_factor"
+              title="reset to default"
+              @click="user_player_time_expansion_factor = default_player_time_expansion_factor"
+              style="margin-left: 10px;"
+            />
+          </q-badge>
+          <q-slider
+            v-model="user_player_time_expansion_factor"
+            :min="1"
+            :max="10"
+            :step="1"
+            label-always
+            :label-value="user_player_time_expansion_factor"
+            dense
+            style="margin-top: 30px;"
+            markers
+            snap
+          />
+        </q-card-section>                        
 
         <q-separator />
 
@@ -124,6 +182,8 @@ export default defineComponent({
       user_player_fft_intensity_max: 23,
       user_player_fft_intensity_max_min: 20,
       user_player_fft_intensity_max_max: 33,
+      user_player_spectrum_shrink_Factor: 1,
+      user_player_time_expansion_factor: 1,
     };
   },
   computed: {
@@ -134,6 +194,10 @@ export default defineComponent({
       default_player_fft_window: state => state.project.default_player_fft_window,
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
       default_player_fft_intensity_max: state => state.project.default_player_fft_intensity_max,
+      player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
+      default_player_spectrum_shrink_Factor: state => state.project.default_player_spectrum_shrink_Factor,
+      player_time_expansion_factor: state => state.project.player_time_expansion_factor,
+      default_player_time_expansion_factor: state => state.project.default_player_time_expansion_factor,
     }),    
   },
   methods: {
@@ -142,13 +206,16 @@ export default defineComponent({
       settings.player_spectrum_threshold = this.user_player_spectrum_threshold;
       settings.player_fft_window = 2**this.user_player_fft_window;
       settings.player_fft_intensity_max = this.user_player_fft_intensity_max;
-      console.log(settings.player_fft_window);
+      settings.player_spectrum_shrink_Factor = this.user_player_spectrum_shrink_Factor;
+      settings.player_time_expansion_factor = this.user_player_time_expansion_factor;
       this.$store.dispatch('project/set', settings); 
     },
     refresh() {
       this.user_player_spectrum_threshold = this.player_spectrum_threshold;
       this.user_player_fft_window = this.toValidExp(this.player_fft_window);
       this.user_player_fft_intensity_max = this.player_fft_intensity_max;
+      this.user_player_spectrum_shrink_Factor = this.player_spectrum_shrink_Factor;
+      this.user_player_time_expansion_factor = this.player_time_expansion_factor;
     },
     toValidExp(window) {
       var exp = Math.trunc(Math.log2(window));

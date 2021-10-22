@@ -8,20 +8,24 @@
         <q-btn icon="navigate_before" padding="xs"/>
         <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
         <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
-        <span class="text-weight-light text-grey-7" style="padding-left: 10px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
+        <span class="text-weight-light text-grey-7" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sample.device"><q-icon name="memory"/>{{sample.device}}</span>
         <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
-        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{(sampleRate/1000).toFixed(3)}} kHz</span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
         <q-btn icon="navigate_next" padding="xs"/>
+      </div>
+      <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">
+        <q-badge color="yellow-14" text-color="accent" label="no audio sample selected"/> 
       </div>
       <q-space></q-space>
       <q-btn @click="$refs.settings.show = true;" icon="tune" title="Settings" padding="xs"></q-btn>
       <audio-settings ref="settings"/>
     </q-toolbar>
-    <div style="margin-left: 15px; margin-right: 15px;">
+    <div :class="sampleVisibility" style="margin-left: 15px; margin-right: 15px;">
     <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @change="onSliderChange"/>
     </div>
-    <div style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
+    <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
       <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff" :style="{width: canvasWidth + 'px', height: player_fft_cutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave"/>
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px; pointer-events: none;">
         <div class="absolute-full flex flex-center">
@@ -42,15 +46,16 @@
       </q-badge>
       
       <div v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelPosY + 'px',}"></div>
-      <q-badge v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent" :label="(mouseFreuqencyPos<100000 ? (mouseFreuqencyPos<10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (mouseFreuqencyPos / 1000).toFixed(2) + ' kHz'">
+      <q-badge v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent">
+        <span v-html="mouseFreuqencyText"></span> kHz
+        <span style="padding-left: 10px;">{{mouseTimePosText}}</span> s
       </q-badge> 
     </div>
-    <q-toolbar class="bg-grey-3">
+    <q-toolbar class="bg-grey-3" :class="sampleVisibility">
       <q-space></q-space>
-      <q-btn @click="onAudioPlayButton" :disabled="audioPlaying" icon="play_arrow" title="Play" padding="xs"></q-btn>
-      <q-btn @click="onAudioPauseButton" :disabled="!audioPlaying" icon="pause" title="Pause" padding="xs"></q-btn>
+      <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" title="Play" padding="xs"></q-btn>
       <q-space></q-space>
-    </q-toolbar>    
+    </q-toolbar>  
   </q-page>
 </template>
 
@@ -83,7 +88,6 @@ export default defineComponent({
       spectrogramId: 0,
       spectrogramImageMaxPixelLenUnaligned: 2048,
       spectrogramImageMaxSampleLenUnaligned: 134217728,
-      spectrogramShrinkFactor: 128,
       canvasPixelPosX: 0,
       canvasPixelPosXrequest: undefined,
       canvasMovePixelStartX: undefined,
@@ -106,11 +110,13 @@ export default defineComponent({
       player_fft_step: state => state.project.player_fft_step,
       player_fft_cutoff: state => state.project.player_fft_cutoff,
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
+      player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
+      player_time_expansion_factor: state => state.project.player_time_expansion_factor,
     }),
     spectrogramSettingsQuery() {
       var q = "&cutoff=" + this.player_fft_cutoff + "&step=" + this.player_fft_step + "&window=" + this.player_fft_window + "&threshold=" + this.player_spectrum_threshold + "&intensity_max=" + this.player_fft_intensity_max;
-      if(this.spectrogramShrinkFactor !== undefined && this.spectrogramShrinkFactor > 1) {
-        q += "&shrink_factor=" + this.spectrogramShrinkFactor;
+      if(this.player_spectrum_shrink_Factor !== undefined && this.player_spectrum_shrink_Factor > 1) {
+        q += "&shrink_factor=" + this.player_spectrum_shrink_Factor;
       }
       return q;
     },     
@@ -118,27 +124,27 @@ export default defineComponent({
       return this.$route.query.sample;
     },
     /*spectrogramImageMaxSampleLen() {
-      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.spectrogramShrinkFactor) + this.player_fft_step * (this.spectrogramShrinkFactor - 1) + this.player_fft_window;
+      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
     },*/
     spectrogramImageMaxPixelLen() {
-      const p = Math.trunc((this.spectrogramImageMaxSampleLenUnaligned - this.player_fft_step * (this.spectrogramShrinkFactor - 1) - this.player_fft_window) / (this.player_fft_step * this.spectrogramShrinkFactor)) + 1;
+      const p = Math.trunc((this.spectrogramImageMaxSampleLenUnaligned - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
       return p < this.spectrogramImageMaxPixelLenUnaligned ? p : this.spectrogramImageMaxPixelLenUnaligned;      
     },
     spectrogramImageMaxSampleLen() {
-      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.spectrogramShrinkFactor) + this.player_fft_step * (this.spectrogramShrinkFactor - 1) + this.player_fft_window;
+      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
     },
     spectrogramFullPixelLen() {
       if(this.sampleLen === undefined) {
         return 0;
       }
-      var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.spectrogramShrinkFactor - 1) - this.player_fft_window) / (this.player_fft_step * this.spectrogramShrinkFactor)) + 1;
+      var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
       return p < 0 ? 0 : p;
     },
     spectrogramFullSampleLen() {
       if(this.spectrogramFullPixelLen < 1) {
         return 0;
       }
-      return (this.spectrogramFullPixelLen - 1) * (this.player_fft_step * this.spectrogramShrinkFactor) + this.player_fft_step * (this.spectrogramShrinkFactor - 1) + this.player_fft_window;
+      return (this.spectrogramFullPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
     },
     spectrogramImagesLen() {
       return Math.ceil(this.spectrogramFullPixelLen / this.spectrogramImageMaxPixelLen);
@@ -151,11 +157,89 @@ export default defineComponent({
         return;
       }
       const baseURL = this.$api.defaults.baseURL;
-      return baseURL + 'samples2/' + this.sample.id + '/audio';
+      var url = baseURL + 'samples2/' + this.sample.id + '/audio';
+      if(this.sampleRate !== this.playerSampleRate) {
+        url += '?overwrite_sampling_rate=' + this.playerSampleRate;
+      }
+      return url;
     },
     mouseFreuqencyPos() {
       return this.canvasMousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : ((this.canvasMousePixelPosY * this.sampleRate) / this.player_fft_window);
-    }    
+    },
+    mouseFreuqencyText() {
+      return (this.mouseFreuqencyPos < 100000 ? (this.mouseFreuqencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFreuqencyPos / 1000).toFixed(2);
+    },
+    mouseTimePos() {
+      if(this.canvasMousePixelPosX === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor || !this.sampleRate || this.canvasPixelPosX === undefined || this.player_time_expansion_factor === undefined) {
+        return undefined;
+      }
+      return ((this.canvasPixelPosX + this.canvasMousePixelPosX) * (this.player_fft_step * this.player_spectrum_shrink_Factor)) / this.sampleRate;
+    },
+    mouseTimePosText() {
+      return this.mouseTimePos === undefined ? '' : this.mouseTimePos.toFixed(3);
+    },
+    duration() {
+      if(!this.sampleLen || !this.sampleRate) {
+        return undefined;
+      }
+      return this.sampleLen / this.sampleRate;
+    },
+    durationHH() {
+      if(this.duration === undefined) {
+        return '--';
+      }
+      var h = Math.trunc(this.duration / 3600);
+      var h10 = Math.trunc(h/10);
+      var h1 = h%10; 
+      return '' + h10 + '' + h1;
+    },
+    durationMM() {
+      if(this.duration === undefined) {
+        return '--';
+      }
+      var m = Math.trunc(this.duration / 60) % 60;
+      var m10 = Math.trunc(m/10);      
+      var m1 = m%10;
+      return '' + m10 + '' + m1;
+    },
+    durationSS() {
+      if(this.duration === undefined) {
+        return '--';
+      }
+      var s = Math.trunc(this.duration % 60);
+      var s10 = Math.trunc(s/10);
+      var s1 = s%10;
+      return '' + s10 + '' + s1;
+      return (s < 10 ? '0' : '') + s.toFixed(3);
+    },
+    durationMS() {
+      if(this.duration === undefined) {
+        return '---';
+      }
+      var s = Math.trunc(this.duration * 1000) % 1000;
+      var s100 = Math.trunc(s/100);
+      var s10 = Math.trunc(s/10) % 10;
+      var s1 = s % 10;
+      return '' + s100 + '' + s10 + '' + s1;
+    },
+    sampleRatemhz() {
+      if(this.sampleRate === undefined) {
+        return '---';
+      }
+      var s = Math.trunc(this.sampleRate * 1000) % 1000;
+      var s100 = Math.trunc(s/100);
+      var s10 = Math.trunc(s/10) % 10;
+      var s1 = s % 10;
+      return '' + s100 + '' + s10 + '' + s1;
+    },
+    sampleVisibility() {
+      return {
+        'sample-hidden': this.sample === undefined,
+      };
+    },
+    playerSampleRate() {
+      return this.sampleRate === undefined ? undefined : Math.trunc(this.sampleRate / this.player_time_expansion_factor);
+    }
   },
 
   methods: {
@@ -234,7 +318,7 @@ export default defineComponent({
           if(end_sample >= this.spectrogramFullSampleLen) {
             end_sample = this.spectrogramFullSampleLen - 1;
 
-            var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.spectrogramShrinkFactor - 1) - this.player_fft_window) / (this.player_fft_step * this.spectrogramShrinkFactor)) + 1;
+            var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
 
 
 
@@ -373,8 +457,8 @@ export default defineComponent({
       this.audioPlaying = false;
     },
     onAudioTimeupdate() {
-      var t = this.audio.currentTime;
-      var newSamplePos = t * this.sampleRate;
+      const tPlayer = this.audio.currentTime;
+      var newSamplePos = tPlayer * this.playerSampleRate;
       if(newSamplePos < 0) {
         newSamplePos = 0;
       }
@@ -382,7 +466,7 @@ export default defineComponent({
         newSamplePos = this.sampleLen - 1;
       }
       newSamplePos = Math.trunc(newSamplePos);
-      var newCanvasPixelPosX = newSamplePos / (this.player_fft_step * this.spectrogramShrinkFactor);
+      var newCanvasPixelPosX = newSamplePos / (this.player_fft_step * this.player_spectrum_shrink_Factor);
       if(newCanvasPixelPosX < 0) {
         newCanvasPixelPosX = 0;
       }
@@ -392,7 +476,7 @@ export default defineComponent({
       newCanvasPixelPosX = Math.trunc(newCanvasPixelPosX);
       this.samplePos = newSamplePos;
       this.canvasPixelPosX = newCanvasPixelPosX;
-      console.log(t + "  " + this.samplePos + "  " + this.canvasPixelPosX + "  " + this.player_fft_step + "  " + this.spectrogramShrinkFactor);
+      console.log(tPlayer + "  " + this.samplePos + "  " + this.canvasPixelPosX + "  " + this.player_fft_step + "  " + this.player_spectrum_shrink_Factor);
     },
     moveToSamplePos(newSamplePos) {
       if(newSamplePos < 0) {
@@ -401,12 +485,12 @@ export default defineComponent({
       if(newSamplePos >= this.sampleLen) {
         newSamplePos = this.sampleLen - 1;
       }
-      var t = newSamplePos / this.sampleRate;
-      this.audio.currentTime = t;
+      var tPlayer = newSamplePos / this.playerSampleRate;
+      this.audio.currentTime = tPlayer;
     },
     moveToCanvasPixelPosX(newCanvasPixelPosX) {
       this.canvasPixelPosX = newCanvasPixelPosX;
-      var newSamplePos = newCanvasPixelPosX * (this.player_fft_step * this.spectrogramShrinkFactor);
+      var newSamplePos = newCanvasPixelPosX * (this.player_fft_step * this.player_spectrum_shrink_Factor);
       this.moveToSamplePos(newSamplePos);
     },
     onSliderChange(newValue) {
@@ -505,5 +589,9 @@ export default defineComponent({
   border-style: solid;
   border-width: 1px;
   border-color: black;
+}
+
+.sample-hidden {
+  visibility: hidden;
 }
 </style>

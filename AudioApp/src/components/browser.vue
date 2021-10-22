@@ -1,7 +1,6 @@
 <template>
   <q-dialog v-model="show">
-      <!--<q-card style="width: 500px;">-->
-      <q-layout view="Lhh lpR fff" container class="bg-white">
+      <q-layout view="Lhh lpR fff" container class="bg-white" style="min-width: 1000px;">
         <q-header class="bg-white text-black">
         <q-bar>
           <div>Browser</div>
@@ -122,6 +121,10 @@
           <q-inner-loading :showing="requestError">            
             <q-badge color="red">Error loading request</q-badge><q-btn color="grey" @click="requestRefresh">refresh</q-btn>
           </q-inner-loading>
+
+          <q-inner-loading :showing="refreshConfirmRequested">            
+            <q-badge color="red">Querying all data at once may take several minutes. Try to narrow the query by selecting location and/or time.</q-badge><q-btn color="grey" @click="refreshConfirmRequested = false; refreshConfirmed = true; requestRefresh()">Nevertheless, execute this query.</q-btn>
+          </q-inner-loading>
         </q-footer>
 
       </q-layout>
@@ -146,12 +149,14 @@ export default defineComponent({
       totalSamplesCount: undefined,
       samples: [],
       samplesOffset: 0,
-      samplesLimit: 100,    
+      samplesLimit: 1000,    
       toggleLocation: 'all',
       toggleTime: 'all',
       selectedLocation: undefined,
       selectedTimestamp: undefined,
       refreshRequested: false,
+      refreshConfirmRequested: false,
+      refreshConfirmed: false,
       refreshRequestedMeta: false,
       requestLoading: false,
       requestError: false,
@@ -172,7 +177,7 @@ export default defineComponent({
       return this.totalSamplesCount !== undefined && this.samplesOffset > 0;
     },
     hasNextPageSamples() {
-      return this.totalSamplesCount !== undefined && this.samplesOffset + this.samples.length < this.totalSamplesCount;
+      return this.totalSamplesCount !== undefined && this.samplesOffset + this.samplesLimit < this.totalSamplesCount;
     },
     locations() {
       const d = this.$store.state.project.data;
@@ -212,8 +217,18 @@ export default defineComponent({
   watch: {
     refreshRequested() {
       if(this.refreshRequested) {
-        this.$nextTick(() => this.querySamples());
+        if(
+          !this.refreshConfirmed
+          && (this.toggleLocation === 'all' || (this.toggleLocation === 'one' && !this.selectedLocation)) 
+          && (this.toggleTime === 'all' || (this.toggleTime === 'one' && !this.selectedTimestamp))
+        ) {
+          this.refreshConfirmRequested = true;
+        } else {
+          this.refreshConfirmRequested = false;
+          this.$nextTick(() => this.querySamples());
+        }
         this.refreshRequested = false;
+        this.refreshConfirmed = false;
       }
     },
     refreshRequestedMeta() {
@@ -223,17 +238,21 @@ export default defineComponent({
       }
     },
     toggleLocation() {
+      this.samplesOffset = 0;
       this.requestRefresh();
       this.requestRefreshMeta();
     },
     selectedLocation() {
+      this.samplesOffset = 0;
       this.requestRefresh();
       this.requestRefreshMeta();
     },
     toggleTime() {
+      this.samplesOffset = 0;
       this.requestRefresh();
     },
     selectedTimestamp() {
+      this.samplesOffset = 0;
       this.requestRefresh();
 
     },
@@ -253,7 +272,7 @@ export default defineComponent({
             params.end = 0;
           } else {
             params.start = t;
-            params.end = t + 86400;
+            params.end = t + (86400 - 1);
           }          
         }
         this.requestError = false;
@@ -263,7 +282,6 @@ export default defineComponent({
         var samples = response.data?.samples;
         this.samples = samples === undefined ? [] : samples;
         this.totalSamplesCount = response.data?.count;
-        this.samplesOffset = 0;
       } catch(e) {
         this.requestError = true;
         this.requestLoading = false;

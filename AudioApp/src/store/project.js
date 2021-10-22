@@ -14,6 +14,10 @@ state: {
   player_fft_cutoff: undefined,
   player_fft_intensity_max: undefined,
   default_player_fft_intensity_max: undefined,
+  player_spectrum_shrink_Factor: undefined,
+  default_player_spectrum_shrink_Factor: undefined,
+  player_time_expansion_factor: undefined,
+  default_player_time_expansion_factor: undefined,
 },
 getters: {
   isLoading: state => {
@@ -43,6 +47,10 @@ mutations: {
     state.player_fft_cutoff = half > 800 ? 800 : half;
     state.player_fft_intensity_max = 23;
     state.default_player_fft_intensity_max = state.player_fft_intensity_max;
+    state.player_spectrum_shrink_Factor = 1;
+    state.default_player_spectrum_shrink_Factor = state.layer_spectrum_shrink_Factor;
+    state.player_time_expansion_factor = 1;
+    state.default_player_time_expansion_factor = 1;
   },
   setError(state, error) {
     state.loading = false;
@@ -61,6 +69,12 @@ mutations: {
     }
     if(settings.player_fft_intensity_max !== undefined) {
       state.player_fft_intensity_max = settings.player_fft_intensity_max;    
+    }
+    if(settings.player_spectrum_shrink_Factor !== undefined) {
+      state.player_spectrum_shrink_Factor = settings.player_spectrum_shrink_Factor;    
+    }
+    if(settings.player_time_expansion_factor !== undefined) {
+      state.player_time_expansion_factor = settings.player_time_expansion_factor;    
     }
   },
 },
