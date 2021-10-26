@@ -5,7 +5,7 @@
       <audio-browser ref="browser"/>
       <q-space></q-space>
       <div v-if="sample !== undefined">
-        <q-btn icon="navigate_before" padding="xs"/>
+        <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :disabled="$refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev" @click="$refs.browser.movePrevSelectedSampleRequested = true"/>
         <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
         <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
         <span class="text-weight-light text-grey-7" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
@@ -13,7 +13,7 @@
         <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
-        <q-btn icon="navigate_next" padding="xs"/>
+        <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :disabled="$refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext" @click="$refs.browser.moveNextSelectedSampleRequested = true"/>
       </div>
       <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">
         <q-badge color="yellow-14" text-color="accent" label="no audio sample selected"/> 
@@ -22,8 +22,14 @@
       <q-btn @click="$refs.settings.show = true;" icon="tune" title="Settings" padding="xs"></q-btn>
       <audio-settings ref="settings"/>
     </q-toolbar>
-    <div :class="sampleVisibility" style="margin-left: 15px; margin-right: 15px;">
-    <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @change="onSliderChange"/>
+    <div :class="sampleVisibility" style="margin-left: 15px; margin-right: 15px; position: relative;">
+      <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @update:model-value="onSliderUpdate" @change="onSliderChange"/>
+      <div style="position: absolute; top: 0px; left: 0px; pointer-events: none;" v-if="sampleRate !== undefined && samplePos !== undefined">
+        <span style="font-weight: bold;">{{(samplePos/sampleRate).toFixed(3)}}</span>
+      </div>
+      <div style="position: absolute; top: 0px; right: 0px; pointer-events: none;" v-if="sampleRate !== undefined && sampleLen !== undefined">
+        {{(sampleLen/sampleRate).toFixed(3)}}
+      </div>
     </div>
     <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
       <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff" :style="{width: canvasWidth + 'px', height: player_fft_cutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave"/>
@@ -100,6 +106,7 @@ export default defineComponent({
       audioWaiting: false,
       audioStalled: false,
       sampleRate: undefined,
+      sliderPanValue: undefined,
     };
   },
   
@@ -291,22 +298,24 @@ export default defineComponent({
       }
       if(!this.audio.paused) {
         this.$nextTick(() => {
-          console.log("next");
+          //console.log("next");
           this.onAudioTimeupdate();
         });
       }
     },
     loadSpectrogram() {
-      this.spectrogramId++;
-      var id = this.spectrogramId;
-      console.log('loadSpectrogram ' + id + "    " + this.spectrogramImagesLen + "  " + this.spectrogramFullPixelLen + "  " + this.sampleLen);
-      this.spectrogramImages = new Array(this.spectrogramImagesLen);
-      this.spectrogramImagesLoadedCount = 0;
-      this.spectrogramImagesErrorCount = 0;
-      if(this.spectrogramImagesLen > 0) {   
-        this.loadSpectrogramImage(id, 0);
+      if(Number.isFinite(this.spectrogramImagesLen)) {
+        this.spectrogramId++;
+        var id = this.spectrogramId;
+        console.log('loadSpectrogram ' + id + "    " + this.spectrogramImagesLen + "  " + this.spectrogramFullPixelLen + "  " + this.sampleLen);
+        this.spectrogramImages = new Array(this.spectrogramImagesLen);
+        this.spectrogramImagesLoadedCount = 0;
+        this.spectrogramImagesErrorCount = 0;
+        if(this.spectrogramImagesLen > 0) {   
+          this.loadSpectrogramImage(id, 0);
+        }
+        this.paintSpectrogramRequested = true;
       }
-      this.paintSpectrogramRequested = true;
     },
     async loadSpectrogramImage(id, imageIndex) {
       console.log('loadSpectrogramImage ' + id + '  ' + imageIndex);
@@ -476,7 +485,7 @@ export default defineComponent({
       newCanvasPixelPosX = Math.trunc(newCanvasPixelPosX);
       this.samplePos = newSamplePos;
       this.canvasPixelPosX = newCanvasPixelPosX;
-      console.log(tPlayer + "  " + this.samplePos + "  " + this.canvasPixelPosX + "  " + this.player_fft_step + "  " + this.player_spectrum_shrink_Factor);
+      //console.log(tPlayer + "  " + this.samplePos + "  " + this.canvasPixelPosX + "  " + this.player_fft_step + "  " + this.player_spectrum_shrink_Factor);
     },
     moveToSamplePos(newSamplePos) {
       if(newSamplePos < 0) {
@@ -489,12 +498,18 @@ export default defineComponent({
       this.audio.currentTime = tPlayer;
     },
     moveToCanvasPixelPosX(newCanvasPixelPosX) {
+      console.log("moveToCanvasPixelPosX  " + newCanvasPixelPosX);
       this.canvasPixelPosX = newCanvasPixelPosX;
       var newSamplePos = newCanvasPixelPosX * (this.player_fft_step * this.player_spectrum_shrink_Factor);
       this.moveToSamplePos(newSamplePos);
     },
-    onSliderChange(newValue) {
-      this.moveToCanvasPixelPosX(newValue);
+    onSliderUpdate(newValue) {
+      this.sliderPanValue = newValue;
+    },
+    onSliderChange() {
+      if(this.sliderPanValue != undefined) {
+        this.moveToCanvasPixelPosX(this.sliderPanValue);
+      }
     },
     onAudioWaiting() {
       this.audioWaiting = true;
@@ -512,6 +527,10 @@ export default defineComponent({
       this.audioStalled = false;
     },
     async refreshSample() {
+      if(this.audio !== undefined) {
+        this.audio.pause();
+        this.audioPlaying = false;
+      }
       if(this.selectedSampleId === undefined) {
         return;
       }
@@ -567,6 +586,8 @@ export default defineComponent({
       });
     },
     audioURL() {
+      this.audio.pause();
+      this.audioPlaying = false;
       this.audio.src = this.audioURL;
     },    
   },

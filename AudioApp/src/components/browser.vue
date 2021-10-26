@@ -89,7 +89,7 @@
                </tr>
             </thead>
             <tbody>
-              <tr v-for="sample in samples" :key="sample.id" @click="onSelectSample(sample.id)" :class="{'selected-sample': sample.id === selectedSampleId}">
+              <tr v-for="sample, index in samples" :key="sample.id" @click="onSelectSample(sample.id)" :class="{'selected-sample': index === indexOfSelectedSampleId}">
                 <td class="text-left">{{sample.location}}</td>
                 <td class="text-left">{{sample.date}} <span style="color: grey;">{{sample.time}}</span></td>
                 <td class="text-left">{{sample.device}}</td>
@@ -165,6 +165,8 @@ export default defineComponent({
       timestamps_of_location: undefined,
       requestMetaLoading: false,
       requestMetaError: false,
+      movePrevSelectedSampleRequested: false,
+      moveNextSelectedSampleRequested: false,
     };
   },
   computed: {
@@ -172,6 +174,24 @@ export default defineComponent({
     }),     
     selectedSampleId() {
       return this.$route.query.sample;
+    },
+    indexOfSelectedSampleId() {
+      if(this.selectedSampleId === undefined || this.samples === undefined) {
+        return -1;
+      }
+      return this.samples.findIndex(sample => sample.id === this.selectedSampleId);
+    },
+    offsetOfSelectedSampleId() {
+      if(this.indexOfSelectedSampleId < 0) {
+        return -1;
+      }
+      return this.samplesOffset + this.indexOfSelectedSampleId;
+    },    
+    hasSelectedSamplePrev() {
+      return this.offsetOfSelectedSampleId < 0 ? false : this.offsetOfSelectedSampleId > 0;
+    },
+    hasSelectedSampleNext() {
+      return this.offsetOfSelectedSampleId < 0  || this.totalSamplesCount === undefined ? false : this.offsetOfSelectedSampleId < (this.totalSamplesCount - 1);
     },
     hasPrevPageSamples() {
       return this.totalSamplesCount !== undefined && this.samplesOffset > 0;
@@ -254,8 +274,43 @@ export default defineComponent({
     selectedTimestamp() {
       this.samplesOffset = 0;
       this.requestRefresh();
-
     },
+    movePrevSelectedSampleRequested() {
+      if(this.movePrevSelectedSampleRequested) {
+        if(this.hasSelectedSamplePrev) {
+          if(this.indexOfSelectedSampleId > 0) {
+            this.onSelectSample(this.samples[this.indexOfSelectedSampleId - 1].id);
+            this.movePrevSelectedSampleRequested = false;
+          } else {
+            if(this.hasPrevPageSamples) {
+              this.onPrevPage(true);
+            } else {
+              this.movePrevSelectedSampleRequested = false; 
+            }
+          }
+        } else {
+          this.movePrevSelectedSampleRequested = false;
+        }
+      }
+    },
+    moveNextSelectedSampleRequested() {
+      if(this.moveNextSelectedSampleRequested) {
+        if(this.hasSelectedSampleNext) {
+          if(this.indexOfSelectedSampleId < (this.samples.length - 1)) {
+            this.onSelectSample(this.samples[this.indexOfSelectedSampleId + 1].id);
+            this.moveNextSelectedSampleRequested = false;
+          } else {
+            if(this.hasNextPageSamples) {
+              this.onNextPage(true);
+            } else {
+              this.moveNextSelectedSampleRequested = false; 
+            }
+          }
+        } else {
+          this.moveNextSelectedSampleRequested = false;
+        }
+      }
+    },    
   },
   methods: {
     async querySamples() {
@@ -281,6 +336,17 @@ export default defineComponent({
         this.requestLoading = false;
         var samples = response.data?.samples;
         this.samples = samples === undefined ? [] : samples;
+        if(this.moveNextSelectedSampleRequested) {
+          if(this.samples.length > 0) {
+            this.onSelectSample(this.samples[0].id);
+          }
+        } else if(this.movePrevSelectedSampleRequested) {
+          if(this.samples.length > 0) {
+            this.onSelectSample(this.samples[this.samples.length - 1].id);
+          }
+        }
+        this.movePrevSelectedSampleRequested = false;
+        this.moveNextSelectedSampleRequested = false;
         this.totalSamplesCount = response.data?.count;
       } catch(e) {
         this.requestError = true;
@@ -294,14 +360,14 @@ export default defineComponent({
       console.log(query);
       await this.$router.replace({ query });
     },
-    onPrevPage() {
+    onPrevPage(force) {
       this.samplesOffset -= this.samplesLimit;
       if(this.samplesOffset < 0) {
         this.samplesOffset = 0;
       }
-      this.requestRefresh();
+      this.requestRefresh(force);
     },
-    onNextPage() {
+    onNextPage(force) {
       this.samplesOffset += this.samplesLimit;
       if(this.samplesOffset + this.samplesLimit > this.totalSamplesCount) {
         this.samplesOffset = this.totalSamplesCount - this.samplesLimit;
@@ -309,9 +375,12 @@ export default defineComponent({
       if(this.samplesOffset < 0) {
         this.samplesOffset = 0;
       }
-      this.requestRefresh();
+      this.requestRefresh(force);
     },
-    requestRefresh() {
+    requestRefresh(force) {
+      if(force) {
+        this.refreshConfirmed = true;
+      }
       this.refreshRequested = true;
     },
     requestRefreshMeta() {

@@ -48,7 +48,7 @@ mutations: {
     state.player_fft_intensity_max = 23;
     state.default_player_fft_intensity_max = state.player_fft_intensity_max;
     state.player_spectrum_shrink_Factor = 1;
-    state.default_player_spectrum_shrink_Factor = state.layer_spectrum_shrink_Factor;
+    state.default_player_spectrum_shrink_Factor = state.player_spectrum_shrink_Factor;
     state.player_time_expansion_factor = 1;
     state.default_player_time_expansion_factor = 1;
   },

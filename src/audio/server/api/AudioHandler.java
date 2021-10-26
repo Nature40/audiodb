@@ -5,18 +5,20 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.AudioFileFormat.Type;
-import javax.sound.sampled.AudioFormat.Encoding;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
 
+import audio.AudioCache;
 import audio.Broker;
 import audio.GeneralSample;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,6 +28,7 @@ public class AudioHandler {
 	static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
+	private final AudioCache audioCache = new AudioCache();
 
 	public AudioHandler(Broker broker) {
 		this.broker = broker;
@@ -44,7 +47,7 @@ public class AudioHandler {
 			if(overwrite_sampling_rate <= 0d || overwrite_sampling_rate > 1000000d) {
 				throw new RuntimeException("invalid overwrite_sampling_rate");
 			}
-			File tempFile = File.createTempFile("audio_", ".wav");
+			/*File tempFile = File.createTempFile("audio_", ".wav");
 			tempFile.deleteOnExit();
 			try {	
 				log.info(tempFile);	
@@ -54,20 +57,23 @@ public class AudioHandler {
 				throw new RuntimeException(e);
 			} finally {
 				tempFile.delete();
-			}	
+			}*/
+			audioCache.run(sample.getAudioFile(), (float) overwrite_sampling_rate, rangeText, response);
 		}
 	}
-	
-	private void sendFile(File file, String rangeText, HttpServletResponse response, String conentType) throws FileNotFoundException, IOException {
-		long fileLen = file.length();
 
-		if(rangeText == null) {
+	public static void sendFile(File file, String rangeText, HttpServletResponse response, String conentType) throws FileNotFoundException, IOException {
+		long fileLen = file.length();
+		//log.info("FILE "+ file.getPath() + "   " + fileLen);
+		if(rangeText == null || fileLen == 0) {
 			if(conentType != null) {
 				response.setContentType(conentType);
 			}
 			response.setContentLengthLong(fileLen);
 			try(FileInputStream in = new FileInputStream(file)) {
 				IO.copy(in, response.getOutputStream());
+			} catch(EofException e) {
+				log.info("remote connection closed");
 			}
 		} else {
 			if(rangeText.startsWith("bytes=")) {
@@ -92,7 +98,7 @@ public class AudioHandler {
 				}
 				long rangeEnd = rangeEndText.isEmpty() ? (fileLen - 1) : Long.parseLong(rangeEndText);
 				if(rangeEnd < rangeStart) {
-					throw new RuntimeException("unknown Range header: " + rangeText);
+					throw new RuntimeException("unknown Range header: |" + rangeText + "|      " + rangeStart + "   " + rangeEnd);
 				}
 				if(rangeEnd >= fileLen) {
 					throw new RuntimeException("unknown Range header: " + rangeText);
@@ -109,14 +115,16 @@ public class AudioHandler {
 					response.setContentLengthLong(fileLen);
 					response.setHeader("Content-Range", "bytes "+ rangeStart +"-" + rangeEnd + "/" + fileLen);
 					IO.copy(in, response.getOutputStream(), rangeLen);
+				} catch(EofException e) {
+					log.info("remote connection closed");
 				}
 			} else {
 				throw new RuntimeException("unknown Range header: " + rangeText);
 			}
 		}
 	}
-	
-	private static void createOverwriteSamplingRate(File inFile, File outFile, float overwrite_sampling_rate) throws IOException, UnsupportedAudioFileException {		
+
+	public static void createOverwriteSamplingRate(File inFile, File outFile, float overwrite_sampling_rate) throws IOException, UnsupportedAudioFileException {		
 		try(AudioInputStream originalAudioInputStream = AudioSystem.getAudioInputStream(inFile)) {
 			AudioFormat originalAudioFormat = originalAudioInputStream.getFormat();
 			Encoding encoding = originalAudioFormat.getEncoding();
@@ -154,13 +162,13 @@ public class AudioHandler {
 			}
 		}	
 	}
-	
+
 	private static boolean isAbove(File file, float samplingRate) {
 		float sr = getSamplingRate(file);
 		//log.info("sr " + sr);
 		return Float.isFinite(sr) && sr > samplingRate;
 	}
-	
+
 	private static float getSamplingRate(File file) {
 		try(AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
 			return audioInputStream.getFormat().getSampleRate();

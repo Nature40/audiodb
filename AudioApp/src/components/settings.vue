@@ -11,7 +11,7 @@
         </q-bar>     
 
         <q-card-section>
-          <q-badge color="blue-5">
+          <q-badge color="grey-6">
             Sampling window 
             <q-btn
               round
@@ -38,9 +38,9 @@
             snap
           />
         </q-card-section>
-
+        <q-separator/>
         <q-card-section>
-          <q-badge color="blue-5">
+          <q-badge color="grey-6">
             Spectrogram low signal threshold (noise reduction) 
             <q-btn
               round
@@ -64,9 +64,9 @@
             style="margin-top: 30px;"
           />
         </q-card-section>        
-
+        <q-separator/>
         <q-card-section>
-          <q-badge color="blue-5">
+          <q-badge color="grey-6">
             Intensity maximum 
             <q-btn
               round
@@ -84,19 +84,17 @@
             v-model="user_player_fft_intensity_max"
             :min="user_player_fft_intensity_max_min"
             :max="user_player_fft_intensity_max_max"
-            :step="1"
+            :step="0.1"
             label-always
             :label-value="user_player_fft_intensity_max"
             dense
             style="margin-top: 30px;"
-            markers
-            snap
           />
         </q-card-section>
-
-         <q-card-section>
-          <q-badge color="blue-5">
-            Spectrogram time shrink factor 
+        <q-separator/>
+        <q-card-section>
+          <q-badge color="grey-6">
+            Spectrogram time contraction factor 
             <q-btn
               round
               dense
@@ -118,13 +116,12 @@
             :label-value="user_player_spectrum_shrink_Factor"
             dense
             style="margin-top: 30px;"
-            markers
             snap
           />
         </q-card-section>
-
-         <q-card-section>
-          <q-badge color="blue-5">
+        <q-separator/>
+        <q-card-section>
+          <q-badge color="grey-6">
             Player time expansion factor 
             <q-btn
               round
