@@ -14,11 +14,10 @@
           <q-badge color="grey-6">
             Sampling window 
             <q-btn
-              round
               dense
-              color="primary"
+              color="blue-10"
               size="xs"
-              icon="undo"
+              icon-right="undo"
               :label="default_player_fft_window"
               title="reset to default"
               @click="user_player_fft_window = toValidExp(default_player_fft_window)"
@@ -41,66 +40,40 @@
         <q-separator/>
         <q-card-section>
           <q-badge color="grey-6">
-            Spectrogram low signal threshold (noise reduction) 
+            Intensity range of interest
             <q-btn
-              round
               dense
-              color="primary"
+              color="blue-10"
               size="xs"
-              icon="undo"
-              :label="default_player_spectrum_threshold"
+              icon-right="undo"
+              :label="default_player_spectrum_threshold + ' .. ' + default_player_fft_intensity_max"
               title="reset to default"
-              @click="user_player_spectrum_threshold = default_player_spectrum_threshold"
+              @click="user_player_fft_intensity_range.min = default_player_spectrum_threshold; user_player_fft_intensity_range.max = default_player_fft_intensity_max;"
               style="margin-left: 10px;"
             />
           </q-badge>
-          <q-slider
-            v-model="user_player_spectrum_threshold"
-            :min="0.0"
-            :max="33.0"
+          <q-range
+            v-model="user_player_fft_intensity_range"
+            :min="user_player_fft_intensity_range_min"
+            :max="user_player_fft_intensity_range_max"
             :step="0.1"
-            label-always
             dense
             style="margin-top: 30px;"
-          />
+            label-always
+            snap
+            :left-label-value="user_player_fft_intensity_range.min.toFixed(1)"
+            :right-label-value="user_player_fft_intensity_range.max.toFixed(1)"
+        	/>
         </q-card-section>        
-        <q-separator/>
-        <q-card-section>
-          <q-badge color="grey-6">
-            Intensity maximum 
-            <q-btn
-              round
-              dense
-              color="primary"
-              size="xs"
-              icon="undo"
-              :label="default_player_fft_intensity_max"
-              title="reset to default"
-              @click="user_player_fft_intensity_max = default_player_fft_intensity_max"
-              style="margin-left: 10px;"
-            />
-          </q-badge>
-          <q-slider
-            v-model="user_player_fft_intensity_max"
-            :min="user_player_fft_intensity_max_min"
-            :max="user_player_fft_intensity_max_max"
-            :step="0.1"
-            label-always
-            :label-value="user_player_fft_intensity_max"
-            dense
-            style="margin-top: 30px;"
-          />
-        </q-card-section>
         <q-separator/>
         <q-card-section>
           <q-badge color="grey-6">
             Spectrogram time contraction factor 
             <q-btn
-              round
               dense
-              color="primary"
+              color="blue-10"
               size="xs"
-              icon="undo"
+              icon-right="undo"
               :label="default_player_spectrum_shrink_Factor"
               title="reset to default"
               @click="user_player_spectrum_shrink_Factor = default_player_spectrum_shrink_Factor"
@@ -124,11 +97,10 @@
           <q-badge color="grey-6">
             Player time expansion factor 
             <q-btn
-              round
               dense
-              color="primary"
+              color="blue-10"
               size="xs"
-              icon="undo"
+              icon-right="undo"
               :label="default_player_time_expansion_factor"
               title="reset to default"
               @click="user_player_time_expansion_factor = default_player_time_expansion_factor"
@@ -172,23 +144,22 @@ export default defineComponent({
   },
   data() {
     return {  
-      user_player_spectrum_threshold: 10,
       user_player_fft_window: 10, //2^10=1024
       user_player_fft_window_min: 8,
       user_player_fft_window_max: 16,
-      user_player_fft_intensity_max: 23,
-      user_player_fft_intensity_max_min: 20,
-      user_player_fft_intensity_max_max: 33,
+      user_player_fft_intensity_range: {min: 20, max: 33},
+      user_player_fft_intensity_range_min: 10,
+      user_player_fft_intensity_range_max: 40,
       user_player_spectrum_shrink_Factor: 1,
       user_player_time_expansion_factor: 1,
     };
   },
   computed: {
     ...mapState({
-      player_spectrum_threshold: state => state.project.player_spectrum_threshold,
-      default_player_spectrum_threshold: state => state.project.default_player_spectrum_threshold,
       player_fft_window: state => state.project.player_fft_window,
       default_player_fft_window: state => state.project.default_player_fft_window,
+      player_spectrum_threshold: state => state.project.player_spectrum_threshold,
+      default_player_spectrum_threshold: state => state.project.default_player_spectrum_threshold,      
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
       default_player_fft_intensity_max: state => state.project.default_player_fft_intensity_max,
       player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
@@ -200,17 +171,17 @@ export default defineComponent({
   methods: {
     onApply() {
       var settings = {};
-      settings.player_spectrum_threshold = this.user_player_spectrum_threshold;
       settings.player_fft_window = 2**this.user_player_fft_window;
-      settings.player_fft_intensity_max = this.user_player_fft_intensity_max;
+      settings.player_spectrum_threshold = this.user_player_fft_intensity_range.min;      
+      settings.player_fft_intensity_max = this.user_player_fft_intensity_range.max;
       settings.player_spectrum_shrink_Factor = this.user_player_spectrum_shrink_Factor;
       settings.player_time_expansion_factor = this.user_player_time_expansion_factor;
       this.$store.dispatch('project/set', settings); 
     },
     refresh() {
-      this.user_player_spectrum_threshold = this.player_spectrum_threshold;
       this.user_player_fft_window = this.toValidExp(this.player_fft_window);
-      this.user_player_fft_intensity_max = this.player_fft_intensity_max;
+      this.user_player_fft_intensity_range.min = this.player_spectrum_threshold;      
+      this.user_player_fft_intensity_range.max = this.player_fft_intensity_max;      
       this.user_player_spectrum_shrink_Factor = this.player_spectrum_shrink_Factor;
       this.user_player_time_expansion_factor = this.player_time_expansion_factor;
     },

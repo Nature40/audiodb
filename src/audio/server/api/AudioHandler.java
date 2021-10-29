@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
@@ -117,6 +118,13 @@ public class AudioHandler {
 					IO.copy(in, response.getOutputStream(), rangeLen);
 				} catch(EofException e) {
 					log.info("remote connection closed");
+				} catch (IOException e) {
+					Throwable cause = e.getCause();
+					if(cause != null && cause instanceof TimeoutException) {
+						log.info(cause.getMessage());
+					} else {
+						throw e;
+					}
 				}
 			} else {
 				throw new RuntimeException("unknown Range header: " + rangeText);

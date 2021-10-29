@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
@@ -23,6 +24,7 @@ public class Sample2 implements GeneralSample {
 	private YamlMap yamlMap = null;
 	private long samples = -2;
 	private double sampleRate = Double.NEGATIVE_INFINITY;
+	private Vec<Label> labels = null;
 
 	public Sample2(String id, String project, Path metaPath, Path samplePath, String location, long timestamp, String device) {
 		this.id = id;
@@ -45,7 +47,7 @@ public class Sample2 implements GeneralSample {
 	public boolean hasTimestamp() {
 		return timestamp > 0;
 	}
-	
+
 	public boolean hasDevice() {
 		return device != null;
 	}
@@ -62,18 +64,18 @@ public class Sample2 implements GeneralSample {
 		}
 		return this.yamlMap;
 	}
-	
+
 	public long samples() {
 		if(samples == -2) {
 			samples = meta().optLong("Samples", -1);
 		}
 		return samples;
 	}
-	
+
 	public boolean hasSamples() {
 		return samples() >= 0;
 	}
-	
+
 	public double sampleRate() {
 		if(sampleRate == Double.NEGATIVE_INFINITY) {
 			sampleRate = meta().optDouble("SampleRate", Double.NaN);
@@ -83,5 +85,24 @@ public class Sample2 implements GeneralSample {
 
 	public boolean hasSampleRate() {
 		return Double.isFinite(sampleRate());
+	}
+
+	public Vec<Label> getLabels() {
+		if(this.labels == null) {
+			Vec<Label> labels = new Vec<Label>();
+			for(YamlMap labelMap:meta().optList("Labels").asMaps()) {		
+				Label label = Label.ofYAML(labelMap);
+				labels.add(label);
+			}
+			this.labels = labels;
+		}
+		return this.labels;
+	}
+	
+	public void setLabels(Vec<Label> labels) {	
+		log.info("setLabels");
+		this.labels = labels;
+		YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
+		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());		
 	}
 }

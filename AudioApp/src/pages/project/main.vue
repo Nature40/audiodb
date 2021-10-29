@@ -22,7 +22,77 @@
       <q-btn @click="$refs.settings.show = true;" icon="tune" title="Settings" padding="xs"></q-btn>
       <audio-settings ref="settings"/>
     </q-toolbar>
-    <div :class="sampleVisibility" style="margin-left: 15px; margin-right: 15px; position: relative;">
+    <q-separator/>
+    <q-toolbar class="bg-grey-3" :class="sampleVisibility">
+      <!--<q-space></q-space>-->
+      <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" :title="audioPlaying?'Pause audio':'Play audio'" padding="xs"></q-btn>
+      <div v-if="labels !== undefined && labels.length > 0 && newSegmentStart === undefined" class="q-ml-lg">
+        Segment 
+        <q-btn icon="fast_rewind" padding="xs" @click="onMovePrevLabel"/>
+        {{selectedLabelIndex === undefined ? '-' : (selectedLabelIndex + 1)}} / {{labels.length}}
+        <q-btn icon="fast_forward" padding="xs" @click="onMoveNextLabel"/>
+      </div>  
+      <div v-if="selectedLabel !== undefined" class="q-ml-lg row">
+        <q-btn icon-right="subdirectory_arrow_right" padding="xs" margin="xs" @click="onMoveToLabelStart" title="Move to label start time.">
+          <q-checkbox
+          v-model="autoMoveToLabelStart"
+          size="xs"
+          padding="xs"
+          margin="xs"      
+          color="grey-6"
+          style="padding: 0px; margin: -4px;"
+          title="Automatically move to label start time at each label change."
+          />
+        </q-btn>
+        <span class="q-pa-sm">{{selectedLabel.start.toFixed(3)}} .. {{selectedLabel.end.toFixed(3)}}</span>
+        <span v-for="(label,i) in selectedLabel.generated_labels" :key="i" class="q-pa-sm">{{label.name}}</span>
+        <q-select
+          filled
+          v-model="userSelectedLabelNames"
+          :options="['a', 'b', 'c']"
+          label="Labels"
+          style="width: 250px"
+          dense
+          multiple
+          @update:model-value="userSelectedLabelNamesChanged = true"
+        />
+        <q-btn icon-right="push_pin" padding="xs" margin="xs" @click="onSaveLabels" :disabled="!userSelectedLabelNamesChanged" title="Save changes.">
+          <q-checkbox
+          v-model="autoSaveLabels"
+          size="xs"
+          padding="xs"
+          margin="xs"      
+          color="grey-6"
+          style="padding: 0px; margin: -4px;"
+          title="! currently NOT IMPLEMENTED !  Automatically save changes when moving to another label. ! currently NOT IMPLEMENTED !"
+          />
+        </q-btn>
+        <q-space></q-space>        
+      </div>
+      <div v-if="newSegmentEnd !== undefined"  class="q-ml-lg row">
+        New Time segment
+        <span class="q-pa-sm">{{(newSegmentStart/sampleRate).toFixed(3)}} .. {{(newSegmentEnd/sampleRate).toFixed(3)}}</span>
+        <q-select
+          filled
+          v-model="userSelectedLabelNames"
+          :options="['a', 'b', 'c']"
+          label="Labels"
+          style="width: 250px"
+          dense
+          multiple
+          @update:model-value="userSelectedLabelNamesChanged = true"
+        />
+      </div>
+      <q-space></q-space>
+      <q-btn icon="add" size="xs" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
+      <q-btn icon="cancel" size="xs" padding="xs" margin="xs" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
+      <q-btn icon="navigation" label="Set end" size="xs" padding="xs" margin="xs" title="Set end time of new time segment at current time position." @click="onNewTimeSegmentEnd" v-if="newSegmentStart !== undefined && newSegmentEnd === undefined" :disabled="samplePos === undefined"/>
+      <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels and switch back to segment selection view." @click="onNewTimeSegmentSave" v-if="newSegmentStart !== undefined && newSegmentEnd !== undefined"/>
+
+    </q-toolbar>
+    <q-separator/>    
+    <div :class="sampleVisibility" style="margin-left: 15px; margin-right: 15px; position: relative;" ref="sliderDiv">
+      <canvas ref="labelMap" style="position: absolute; top: 0px; left: 0px; bottom: 0px; pointer-events: none;" />
       <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @update:model-value="onSliderUpdate" @change="onSliderChange"/>
       <div style="position: absolute; top: 0px; left: 0px; pointer-events: none;" v-if="sampleRate !== undefined && samplePos !== undefined">
         <span style="font-weight: bold;">{{(samplePos/sampleRate).toFixed(3)}}</span>
@@ -31,6 +101,7 @@
         {{(sampleLen/sampleRate).toFixed(3)}}
       </div>
     </div>
+    <q-separator/>      
     <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
       <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff" :style="{width: canvasWidth + 'px', height: player_fft_cutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave"/>
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px; pointer-events: none;">
@@ -57,11 +128,52 @@
         <span style="padding-left: 10px;">{{mouseTimePosText}}</span> s
       </q-badge> 
     </div>
-    <q-toolbar class="bg-grey-3" :class="sampleVisibility">
-      <q-space></q-space>
-      <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" title="Play" padding="xs"></q-btn>
-      <q-space></q-space>
-    </q-toolbar>  
+    <q-separator/>
+
+  <div class="q-pa-md row" v-if="selectedLabel !== undefined">
+    <div class="q-ma-md" v-if="selectedLabel.generated_labels.length > 0">
+      Generated labels
+      <q-markup-table dense>
+        <thead>
+          <tr>
+            <th class="text-left">Name</th>
+            <th class="text-left">Reliability</th>
+            <th class="text-left">Generator</th>
+            <th class="text-left">Generation date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(label, index) in selectedLabel.generated_labels" :key="index">
+            <td class="text-left">{{label.name}}</td>
+            <td class="text-left">{{label.reliability}}</td>
+            <td class="text-left">{{label.generator}}</td>
+            <td class="text-left">{{label.generation_date}}</td>
+          </tr>
+        </tbody>
+      </q-markup-table>
+    </div>
+
+    <div class="q-ma-md" v-if="selectedLabel.labels.length > 0">
+      Created labels
+      <q-markup-table dense>
+        <thead>
+          <tr>
+            <th class="text-left">Name</th>
+            <th class="text-left">Creator</th>
+            <th class="text-left">Creation date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(label, index) in selectedLabel.labels" :key="index">
+            <td class="text-left">{{label.name}}</td>
+            <td class="text-left">{{label.creator}}</td>
+            <td class="text-left">{{label.creation_date}}</td>
+          </tr>
+        </tbody>
+      </q-markup-table>
+    </div>
+  </div>
+
   </q-page>
 </template>
 
@@ -107,6 +219,13 @@ export default defineComponent({
       audioStalled: false,
       sampleRate: undefined,
       sliderPanValue: undefined,
+      selectedLabelIndex: undefined,
+      autoMoveToLabelStart: true,
+      userSelectedLabelNames: undefined,
+      userSelectedLabelNamesChanged: false,
+      autoSaveLabels: true,
+      newSegmentStart: undefined,
+      newSegmentEnd: undefined,
     };
   },
   
@@ -246,7 +365,13 @@ export default defineComponent({
     },
     playerSampleRate() {
       return this.sampleRate === undefined ? undefined : Math.trunc(this.sampleRate / this.player_time_expansion_factor);
-    }
+    },
+    labels() {
+      return this.sample === undefined ? [] : this.sample.labels;
+    },
+    selectedLabel() {
+      return this.selectedLabelIndex === undefined || this.selectedLabelIndex >= this.labels.length  ? undefined : this.labels[this.selectedLabelIndex];
+    },
   },
 
   methods: {
@@ -260,15 +385,17 @@ export default defineComponent({
       if(this.sampleLen === undefined) {
         return;
       }
+      const boxOffset = Math.trunc(canvas.width / 2);
+      const drawPixelPosX = this.canvasPixelPosX - boxOffset;
 
-      var imageIndexStart = Math.trunc(this.canvasPixelPosX / this.spectrogramImageMaxPixelLen);
+      var imageIndexStart = Math.trunc(drawPixelPosX / this.spectrogramImageMaxPixelLen);
       if(imageIndexStart < 0) {
         imageIndexStart = 0;
       }
       if(imageIndexStart >= this.spectrogramImagesLen) {
         return;
       }
-      var imageIndexEnd = Math.trunc((this.canvasPixelPosX + (this.canvasWidth - 1)) / this.spectrogramImageMaxPixelLen);
+      var imageIndexEnd = Math.trunc((drawPixelPosX + (this.canvasWidth - 1)) / this.spectrogramImageMaxPixelLen);
       if(imageIndexEnd < 0) {
         return;
       }
@@ -280,19 +407,21 @@ export default defineComponent({
       for(var i = imageIndexStart; i <= imageIndexEnd; i++) {        
         var image = this.spectrogramImages[i];
         var canvasPixelX = i * this.spectrogramImageMaxPixelLen;
-        var dstX = canvasPixelX - this.canvasPixelPosX;
+        var dstX = canvasPixelX - drawPixelPosX;
         var dstY = 0;
         //console.log('draw image ' + i + " at " + dstX + " of images " +  this.spectrogramImagesLen);
         if(image === undefined) {
           if(next === undefined) {
             next = i;
           }
-          ctx.fillStyle = 'grey';
+          ctx.fillStyle = '#404040';
           ctx.fillRect(dstX, dstY, this.spectrogramImageMaxPixelLen, this.player_fft_cutoff);
         } else {
           ctx.drawImage(image, dstX, dstY);
         }
       }
+      this.paintLabels();
+      this.paintLabelMap();
       if(next !== undefined) {
         this.imageNextIndex = next;
       }
@@ -301,6 +430,63 @@ export default defineComponent({
           //console.log("next");
           this.onAudioTimeupdate();
         });
+      }
+    },
+    paintLabels() {
+      var canvas = this.$refs.spectrogram;
+      var ctx = canvas.getContext("2d");
+      const boxOffset = Math.trunc(canvas.width / 2);
+      const canvasPixelXmin = this.canvasPixelPosX - boxOffset;
+      const canvasPixelXmax = this.canvasPixelPosX + (this.canvasWidth - 1);
+      for(var i = 0; i < this.labels.length; i++) {
+        var label = this.labels[i];
+        var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        //console.log(labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
+        if(canvasPixelXmin <= labelPixelXmax && canvasPixelXmax >= labelPixelXmin) {
+          //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
+          ctx.fillStyle = i === this.selectedLabelIndex ? 'rgba(255,0,0,0.3)' : 'rgba(0,255,0,0.3)';
+          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff);
+        }      
+      }
+      if(this.newSegmentStart !== undefined) {
+        const start = this.newSegmentStart;
+        const end = this.newSegmentEnd === undefined ? this.samplePos : this.newSegmentEnd;
+        var labelPixelXmin = Math.trunc(start / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        var labelPixelXmax = Math.trunc(end / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        if(canvasPixelXmin <= labelPixelXmax && canvasPixelXmax >= labelPixelXmin) {
+          //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
+          ctx.fillStyle = 'rgba(0,0,255,0.3)';
+          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff);
+        }           
+      }
+    },
+    paintLabelMap() {
+      var sliderDiv = this.$refs.sliderDiv;
+      var canvas = this.$refs.labelMap;
+      canvas.width = sliderDiv.clientWidth;
+      canvas.height = sliderDiv.clientHeight;
+      var width = canvas.width;
+      var height = canvas.height;
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, width, height);
+      var duration = this.sampleLen / this.sampleRate;
+      for(var i = 0; i < this.labels.length; i++) {
+        if(i !== this.selectedLabelIndex) {
+          var label = this.labels[i];
+          var labelPixelXmin = Math.trunc(label.start * width / duration);
+          var labelPixelXmax = Math.trunc(label.end * width / duration);
+          ctx.fillStyle = 'rgba(0,255,0,0.3)';
+          ctx.fillRect(labelPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, height);             
+        }
+      }
+      if(this.selectedLabel !== undefined) {
+        var label = this.selectedLabel;
+        var labelPixelXmin = Math.trunc(label.start * width / duration);
+        var labelPixelXmax = Math.trunc(label.end * width / duration);
+        ctx.fillStyle = 'rgba(255,0,0,1)';
+        ctx.fillRect(labelPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, height);
       }
     },
     loadSpectrogram() {
@@ -326,11 +512,7 @@ export default defineComponent({
           var end_sample = start_sample + (this.spectrogramImageMaxSampleLen - 1);
           if(end_sample >= this.spectrogramFullSampleLen) {
             end_sample = this.spectrogramFullSampleLen - 1;
-
-            var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
-
-
-
+            //var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
           }
           var image = new Image();
           image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + this.spectrogramSettingsQuery;
@@ -357,50 +539,8 @@ export default defineComponent({
           }           
         } catch {
           this.spectrogramImagesLoadedCount++;
-          this.spectrogramImagesErrorCount++;
-          /*var next = this.imageNextIndex;
-          this.imageNextIndex = undefined;
-          if(next == undefined) {
-            next = imageIndex + 1;
-          }
-          if(next < this.spectrogramImagesLen) {            
-            this.loadSpectrogramImage(id, next);
-          } else if(this.spectrogramImagesLoadedCount < this.spectrogramImagesLen && this.spectrogramImagesLen > 0) {
-            this.loadSpectrogramImage(id, 0);
-          }*/          
-        }
-        /*var image = new Image();
-        image.onload = async () => {
-          if(id != this.spectrogramId) {
-            return;
-          }
-          this.paintSpectrogramRequested = true;
-          this.spectrogramImagesLoadedCount++;
-          //console.log('loaded');
-          var imageBitmap = await createImageBitmap(image);
-          this.spectrogramImages[imageIndex] = imageBitmap;
-          var next = this.imageNextIndex;
-          this.imageNextIndex = undefined;
-          if(next == undefined) {
-            next = imageIndex + 1;
-          }
-          if(next < this.spectrogramImagesLen) {            
-            this.loadSpectrogramImage(id, next);
-          } else if(this.spectrogramImagesLoadedCount < this.spectrogramImagesLen && this.spectrogramImagesLen > 0) {
-            this.loadSpectrogramImage(id, 0);
-          }
-        }
-        image.onerror = () => {
-          this.spectrogramImagesLoadedCount++;
-          this.spectrogramImagesErrorCount++;
-        }
-        var baseURL = this.$api.defaults.baseURL;
-        var start_sample = imageIndex * this.spectrogramImageMaxSampleLen;
-        var end_sample = start_sample + (this.spectrogramImageMaxSampleLen - 1);
-        if(this.end_sample >= this.spectrogramFullSampleLen) {
-          this.end_sample = this.spectrogramFullSampleLen - 1;
-        }
-        image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + this.spectrogramSettingsQuery;*/
+          this.spectrogramImagesErrorCount++;         
+        }        
       } else {
         var next = this.imageNextIndex;
         this.imageNextIndex = undefined;
@@ -537,7 +677,7 @@ export default defineComponent({
       console.log("querySample");
       try {
         var urlPath = 'samples2/' + this.selectedSampleId;
-        var params = {samples: true, sample_rate: true};
+        var params = {samples: true, sample_rate: true, labels: true,};
         this.sampleLoading = true;
         this.sampleError = false;
         var response = await this.$api.get(urlPath, {params});
@@ -554,6 +694,85 @@ export default defineComponent({
         console.log(e);
       }
     },
+    onMovePrevLabel() {
+      if(this.selectedLabelIndex === undefined) {
+        this.selectedLabelIndex = this.labels.length - 1;
+      } else if(this.selectedLabelIndex === 0) {
+        this.selectedLabelIndex = undefined;
+      } else {
+        this.selectedLabelIndex = this.selectedLabelIndex - 1;
+      }
+    },
+    onMoveNextLabel() {
+      if(this.selectedLabelIndex === undefined) {
+        this.selectedLabelIndex = 0;
+      } else if(this.selectedLabelIndex >= this.labels.length - 1) {
+        this.selectedLabelIndex = undefined;
+      } else {
+        this.selectedLabelIndex = this.selectedLabelIndex + 1;
+      }
+    },
+    onMoveToLabelStart() {
+      if(this.selectedLabel !== undefined && this.selectedLabel.start !== undefined) {
+        var newSamplePos = this.selectedLabel.start * this.sampleRate;
+        this.moveToSamplePos(newSamplePos);
+      }
+    },
+    async onSaveLabels() {
+      const labelNames = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
+      try {
+        var urlPath = 'samples2/' + this.selectedSampleId;
+        var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
+        var data = {actions: [{action: 'set_label_names', names: names, start: this.selectedLabel.start, end: this.selectedLabel.end,}]};
+        this.sampleLoading = true;// TODO
+        this.sampleError = false;// TODO
+        var response = await this.$api.post(urlPath, data);
+        this.sampleLoading = false;// TODO
+        this.sampleError = false;// TODO
+        this.userSelectedLabelNamesChanged = false;
+      } catch(e) {
+        this.sampleLoading = false;// TODO
+        this.sampleError = true;// TODO
+        console.log(e);
+      }
+    },
+    onNewTimeSegmentStart() {
+      this.selectedLabelIndex = undefined;
+      this.newSegmentStart = this.samplePos;
+      this.newSegmentEnd = undefined;
+      this.userSelectedLabelNames = undefined;
+      this.userSelectedLabelNamesChanged = false;
+    },
+    onNewTimeSegmentCancel() {
+      this.selectedLabelIndex = undefined;
+      this.newSegmentStart = undefined;
+      this.newSegmentEnd = undefined;
+      this.userSelectedLabelNames = undefined;
+      this.userSelectedLabelNamesChanged = false;      
+    },
+    onNewTimeSegmentEnd() {
+      this.newSegmentEnd = this.samplePos;
+      this.userSelectedLabelNames = undefined;
+      this.userSelectedLabelNamesChanged = false;
+    },
+    async onNewTimeSegmentSave() {
+      const labelNames = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
+      try {
+        var urlPath = 'samples2/' + this.selectedSampleId;
+        var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
+        var data = {actions: [{action: 'add_label', names: names, start: this.newSegmentStart/this.sampleRate, end: this.newSegmentEnd/this.sampleRate,}]};
+        this.sampleLoading = true; // TODO
+        this.sampleError = false;// TODO
+        var response = await this.$api.post(urlPath, data);
+        this.sampleLoading = false;// TODO
+        this.sampleError = false;// TODO
+        this.userSelectedLabelNamesChanged = false;
+      } catch(e) {
+        this.sampleLoading = false;// TODO
+        this.sampleError = true;// TODO
+        console.log(e);
+      }
+    },         
   },
 
   watch: {
@@ -589,7 +808,29 @@ export default defineComponent({
       this.audio.pause();
       this.audioPlaying = false;
       this.audio.src = this.audioURL;
-    },    
+    },
+    labels() {
+      if(this.labels.length == 0) {
+        this.selectedLabelIndex = undefined;
+      } else if(this.selectedLabelIndex === undefined || this.selectedLabelIndex >= this.labels.length) {
+        this.selectedLabelIndex = undefined;
+      }
+    },
+    selectedLabelIndex() {
+      this.paintSpectrogramRequested = true;
+      if(this.autoMoveToLabelStart) {
+        this.onMoveToLabelStart();
+      }
+    },
+    selectedLabel() {
+      this.userSelectedLabelNames = this.selectedLabel === undefined ? undefined : this.selectedLabel.labels.map(label => label.name);
+      this.userSelectedLabelNamesChanged = false;
+    },
+    autoMoveToLabelStart() {
+      if(this.autoMoveToLabelStart) {
+        this.onMoveToLabelStart();
+      }
+    }    
   },
   async mounted() {
     this.audio = new Audio();    
@@ -607,12 +848,17 @@ export default defineComponent({
 
 <style scoped>
 .spectrogram {
-  border-style: solid;
+  /*border-style: solid;
   border-width: 1px;
-  border-color: black;
+  border-color: black;*/
+  /*background-color: #e5e5f7;*/
+  opacity: 1;
+  background-image:  repeating-linear-gradient(45deg, #202020 25%, transparent 25%, transparent 75%, #202020 75%, #202020), repeating-linear-gradient(45deg, #202020 25%, #404040 25%, #404040 75%, #202020 75%, #202020);  background-position: 0 0, 10px 10px;
+  background-size: 20px 20px;
 }
 
 .sample-hidden {
   visibility: hidden;
 }
+
 </style>

@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,8 @@ public class SampleManager {
 	private final Connection conn;
 	public final TlSampleManagerConnector tlSampleManagerConnector;	
 	public final DeviceInventory deviceInventory;
+	
+	public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	public SampleManager(Broker broker) {
 		this.broker = broker;
