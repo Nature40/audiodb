@@ -5,15 +5,15 @@
       <audio-browser ref="browser"/>
       <q-space></q-space>
       <div v-if="sample !== undefined">
-        <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :disabled="$refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev" @click="$refs.browser.movePrevSelectedSampleRequested = true"/>
+        <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :class="{'element-hidden': $refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.movePrevSelectedSampleRequested = true"/>
         <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
         <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
         <span class="text-weight-light text-grey-7" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
-        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sample.device"><q-icon name="memory"/>{{sample.device}}</span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px; font-family: monospace;" v-if="sample.device"><q-icon name="memory"/>{{sample.device}}</span>
         <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
-        <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :disabled="$refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext" @click="$refs.browser.moveNextSelectedSampleRequested = true"/>
+        <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true"/>
       </div>
       <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">
         <q-badge color="yellow-14" text-color="accent" label="no audio sample selected"/> 
@@ -28,9 +28,9 @@
       <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" :title="audioPlaying?'Pause audio':'Play audio'" padding="xs"></q-btn>
       <div v-if="labels !== undefined && labels.length > 0 && newSegmentStart === undefined" class="q-ml-lg">
         Segment 
-        <q-btn icon="fast_rewind" padding="xs" @click="onMovePrevLabel"/>
+        <q-btn icon="fast_rewind" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMovePrevLabel();"/>
         {{selectedLabelIndex === undefined ? '-' : (selectedLabelIndex + 1)}} / {{labels.length}}
-        <q-btn icon="fast_forward" padding="xs" @click="onMoveNextLabel"/>
+        <q-btn icon="fast_forward" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMoveNextLabel();"/>
       </div>  
       <div v-if="selectedLabel !== undefined" class="q-ml-lg row">
         <q-btn icon-right="subdirectory_arrow_right" padding="xs" margin="xs" @click="onMoveToLabelStart" title="Move to label start time.">
@@ -45,17 +45,42 @@
           />
         </q-btn>
         <span class="q-pa-sm">{{selectedLabel.start.toFixed(3)}} .. {{selectedLabel.end.toFixed(3)}}</span>
-        <span v-for="(label,i) in selectedLabel.generated_labels" :key="i" class="q-pa-sm">{{label.name}}</span>
+        <q-badge 
+          v-for="(label,i) in selectedLabel.generated_labels" 
+          :key="i" 
+          color="grey-4" 
+          :text-color="userSelectedLabelNamesSet.has(label.name) ? 'green' : 'grey-7'" class="q-ma-sm" @click="addLabel(label.name);" 
+          style="cursor: pointer;"
+          :title="selectedLabel === undefined ? 'Generated label.' : 'Click to add generated label to user selected labels.'"
+        >
+          {{label.name}}
+        </q-badge>
         <q-select
           filled
           v-model="userSelectedLabelNames"
-          :options="['a', 'b', 'c']"
+          :options="selectableLabels"
           label="Labels"
           style="width: 250px"
           dense
           multiple
           @update:model-value="userSelectedLabelNamesChanged = true"
-        />
+          option-label="name"
+          option-value="name"
+          emit-value
+          clearable
+        >
+          <template v-slot:append>
+            <q-icon name="apps" @click.stop="labelSelectDialogShow = true;" />
+            <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
+              <div class="q-pt-none column wrap justify-start content-around fit" style="background-color: white;"> 
+              <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name);"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
+                <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
+                <span v-else>{{labelDefinition.name}}</span>
+              </q-badge>
+              </div>
+            </q-dialog>            
+          </template>
+        </q-select>
         <q-btn icon-right="push_pin" padding="xs" margin="xs" @click="onSaveLabels" :disabled="!userSelectedLabelNamesChanged" title="Save changes.">
           <q-checkbox
           v-model="autoSaveLabels"
@@ -67,6 +92,7 @@
           title="! currently NOT IMPLEMENTED !  Automatically save changes when moving to another label. ! currently NOT IMPLEMENTED !"
           />
         </q-btn>
+        <q-badge v-if="userSelectedLabelNamesChanged" color="grey-3" text-color="accent" label="...unsaved changes..."/>        
         <q-space></q-space>        
       </div>
       <div v-if="newSegmentEnd !== undefined"  class="q-ml-lg row">
@@ -75,15 +101,22 @@
         <q-select
           filled
           v-model="userSelectedLabelNames"
-          :options="['a', 'b', 'c']"
+          :options="selectableLabels"
           label="Labels"
           style="width: 250px"
           dense
           multiple
           @update:model-value="userSelectedLabelNamesChanged = true"
+          option-label="name"
+          option-value="name"
+          emit-value
+          clearable
         />
+        <q-badge color="grey-3" text-color="accent" label="...unsaved changes..."/>  
       </div>
       <q-space></q-space>
+      <q-badge v-if="saveLabelsLoading" color="grey-3" text-color="accent" label="Sending label..."/>
+      <q-badge v-if="saveLabelsError" color="grey-3" text-color="red" label="Error sending label. You may try again."/>
       <q-btn icon="add" size="xs" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
       <q-btn icon="cancel" size="xs" padding="xs" margin="xs" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
       <q-btn icon="navigation" label="Set end" size="xs" padding="xs" margin="xs" title="Set end time of new time segment at current time position." @click="onNewTimeSegmentEnd" v-if="newSegmentStart !== undefined && newSegmentEnd === undefined" :disabled="samplePos === undefined"/>
@@ -129,6 +162,12 @@
       </q-badge> 
     </div>
     <q-separator/>
+  
+   
+  <div class="q-pa-md row" v-if="labelDefinitionsError">
+    <q-badge text-color="red" color="grey-3">Error loading label definitions</q-badge>
+    <q-btn color="grey" @click="refreshLabelDefinitions">refresh</q-btn>
+  </div>
 
   <div class="q-pa-md row" v-if="selectedLabel !== undefined">
     <div class="q-ma-md" v-if="selectedLabel.generated_labels.length > 0">
@@ -174,6 +213,22 @@
     </div>
   </div>
 
+  <div class="q-ma-md" v-if="labels.length > 0">
+    Occuring labels:
+    <q-badge 
+      v-for="name in occurringLabels"
+      :key="name" 
+      color="grey-4" 
+      :text-color="userSelectedLabelNamesSet.has(name) ? 'green' : 'grey-7'" 
+      class="q-ma-sm" 
+      @click="if(selectedLabel !== undefined) {addLabel(name);}" 
+      :style="{cursor: selectedLabel === undefined ? 'default' : 'pointer'}"
+      :title="selectedLabel === undefined ? 'Label occurring in one of the segments of this audio sample.' : 'Click to add label to selected segment.'"
+    >
+      {{name}}
+    </q-badge>
+  </div>
+
   </q-page>
 </template>
 
@@ -185,7 +240,7 @@ import AudioBrowser from 'components/browser';
 import AudioSettings from 'components/settings';
 
 export default defineComponent({
-  name: 'PageMain',
+  name: 'Main',
 
   components: {
     AudioBrowser,
@@ -226,11 +281,18 @@ export default defineComponent({
       autoSaveLabels: true,
       newSegmentStart: undefined,
       newSegmentEnd: undefined,
+      labelDefinitions: [],
+      labelDefinitionsLoading: false,
+      labelDefinitionsError: false,
+      saveLabelsLoading: false,
+      saveLabelsError: false,
+      labelSelectDialogShow: true,
     };
   },
   
   computed: {
     ...mapState({
+      project: state => state.projectId,      
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
       player_fft_window: state => state.project.player_fft_window,
       player_fft_step: state => state.project.player_fft_step,
@@ -360,7 +422,7 @@ export default defineComponent({
     },
     sampleVisibility() {
       return {
-        'sample-hidden': this.sample === undefined,
+        'element-hidden': this.sample === undefined,
       };
     },
     playerSampleRate() {
@@ -371,6 +433,24 @@ export default defineComponent({
     },
     selectedLabel() {
       return this.selectedLabelIndex === undefined || this.selectedLabelIndex >= this.labels.length  ? undefined : this.labels[this.selectedLabelIndex];
+    },
+    selectableLabels() {
+      return this.labelDefinitions;
+    },
+    occurringLabels() {
+      var set = new Set();
+      this.labels.forEach(label => {
+        label.generated_labels.forEach(generated_label => {
+          set.add(generated_label.name);
+        });
+        label.labels.forEach(e => {
+          set.add(e.name);
+        });        
+      });
+      return set;
+    },
+    userSelectedLabelNamesSet() {
+      return new Set(this.userSelectedLabelNames);
     },
   },
 
@@ -422,6 +502,19 @@ export default defineComponent({
       }
       this.paintLabels();
       this.paintLabelMap();
+      ctx.fillStyle = '#ffffff50';
+      ctx.fillRect(boxOffset, 0, 1, this.player_fft_cutoff);
+      ctx.fillStyle = '#00000050';
+      ctx.fillRect(boxOffset - 1, 0, 1, this.player_fft_cutoff);
+      ctx.fillRect(boxOffset + 1, 0, 1, this.player_fft_cutoff);
+
+      /*ctx.beginPath();
+      ctx.lineWidth = '1'; // width of the line
+      ctx.strokeStyle = 'red'; // color of the line
+      ctx.moveTo(boxOffset, 0); // begins a new sub-path based on the given x and y values.
+      ctx.lineTo(boxOffset, this.player_fft_cutoff); // used to create a pointer based on x and y  
+      ctx.stroke();*/
+
       if(next !== undefined) {
         this.imageNextIndex = next;
       }
@@ -450,10 +543,10 @@ export default defineComponent({
         }      
       }
       if(this.newSegmentStart !== undefined) {
-        const start = this.newSegmentStart;
         const end = this.newSegmentEnd === undefined ? this.samplePos : this.newSegmentEnd;
-        var labelPixelXmin = Math.trunc(start / (this.player_fft_step * this.player_spectrum_shrink_Factor));
-        var labelPixelXmax = Math.trunc(end / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        var labelPixelXmin = Math.trunc(this.newSegmentStart / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        //var labelPixelXmax = Math.trunc(end / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        var labelPixelXmax = this.newSegmentEnd === undefined ? this.canvasPixelPosX : Math.trunc(this.newSegmentEnd / (this.player_fft_step * this.player_spectrum_shrink_Factor));
         if(canvasPixelXmin <= labelPixelXmax && canvasPixelXmax >= labelPixelXmin) {
           //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
           ctx.fillStyle = 'rgba(0,0,255,0.3)';
@@ -724,15 +817,17 @@ export default defineComponent({
         var urlPath = 'samples2/' + this.selectedSampleId;
         var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
         var data = {actions: [{action: 'set_label_names', names: names, start: this.selectedLabel.start, end: this.selectedLabel.end,}]};
-        this.sampleLoading = true;// TODO
-        this.sampleError = false;// TODO
+        this.saveLabelsLoading = true;
+        this.saveLabelsError = false;
         var response = await this.$api.post(urlPath, data);
-        this.sampleLoading = false;// TODO
-        this.sampleError = false;// TODO
         this.userSelectedLabelNamesChanged = false;
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = false;
+        this.refreshSample();
+        this.$q.notify({type: 'positive', message: 'Changed labels saved.'});
       } catch(e) {
-        this.sampleLoading = false;// TODO
-        this.sampleError = true;// TODO
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = true;
         console.log(e);
       }
     },
@@ -761,18 +856,64 @@ export default defineComponent({
         var urlPath = 'samples2/' + this.selectedSampleId;
         var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
         var data = {actions: [{action: 'add_label', names: names, start: this.newSegmentStart/this.sampleRate, end: this.newSegmentEnd/this.sampleRate,}]};
-        this.sampleLoading = true; // TODO
-        this.sampleError = false;// TODO
+        this.saveLabelsLoading = true;
+        this.saveLabelsError = false;
         var response = await this.$api.post(urlPath, data);
-        this.sampleLoading = false;// TODO
-        this.sampleError = false;// TODO
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = false;
+        this.selectedLabelIndex = undefined;
+        this.newSegmentStart = undefined;
+        this.newSegmentEnd = undefined;
+        this.userSelectedLabelNames = undefined;
         this.userSelectedLabelNamesChanged = false;
+        this.refreshSample();
+        this.$q.notify({type: 'positive', message: 'New segement and new labels saved.'});
       } catch(e) {
-        this.sampleLoading = false;// TODO
-        this.sampleError = true;// TODO
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = true;
         console.log(e);
       }
-    },         
+    },
+    async refreshLabelDefinitions() {
+      this.labelDefinitions = [];
+      if(this.project !== undefined) {
+        try {
+          var urlPath = 'projects/' + this.project + "/label_definitions";
+          var params = {};
+          this.labelDefinitionsLoading = true;
+          this.labelDefinitionsError = false;
+          var response = await this.$api.get(urlPath, {params});
+          this.labelDefinitionsLoading = false;
+          this.labelDefinitionsError = false;
+          var d = response.data?.label_definitions;
+          if(d) {
+            var prev = '?';
+            for(var i=0; i<d.length; i++) {
+              var name = d[i].name;
+              var cur = name.length > 0 ? name[0] : '?';
+              if(prev !== cur) {
+                d[i].n = true;
+              }
+              prev = cur;              
+            }
+          }
+          this.labelDefinitions = d;          
+        } catch(e) {
+          this.labelDefinitionsLoading = false;
+          this.labelDefinitionsError = true;
+          console.log(e);
+        }
+      }
+    },
+    addLabel(name) {
+      if(!this.userSelectedLabelNames) {
+        this.userSelectedLabelNames = name;
+        this.userSelectedLabelNamesChanged = true;
+      } else if(!this.userSelectedLabelNamesSet.has(name)){
+        this.userSelectedLabelNames.push(name);
+        this.userSelectedLabelNamesChanged = true;
+      }
+    },
   },
 
   watch: {
@@ -782,9 +923,12 @@ export default defineComponent({
         this.refreshSample();
       }
     },
-    async sample() {
+    async sample(oldSample, newSample) {
+      var resetPos = oldSample === undefined || newSample === undefined || oldSample.id !== newSample.id;
       this.$nextTick( () => {
-        this.canvasPixelPosX = 0;
+        if(resetPos) {
+          this.canvasPixelPosX = 0;
+        }
         this.loadSpectrogram();
       });        
     },
@@ -830,7 +974,13 @@ export default defineComponent({
       if(this.autoMoveToLabelStart) {
         this.onMoveToLabelStart();
       }
-    }    
+    },
+    project: {
+      immediate: true,   
+      async handler() {
+        this.refreshLabelDefinitions();
+      }
+    },    
   },
   async mounted() {
     this.audio = new Audio();    
@@ -857,8 +1007,14 @@ export default defineComponent({
   background-size: 20px 20px;
 }
 
-.sample-hidden {
+.element-hidden {
   visibility: hidden;
 }
+
+.label-definition-n::first-letter {
+  color: black;
+  font-size: 120%;
+}
+
 
 </style>

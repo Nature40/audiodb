@@ -24,10 +24,12 @@ public class ProjectHandler {
 
 	private final Broker broker;
 	private final SampleManager sampleManager;
+	private final LabelDefinitionsHandler labelDefinitionsHandler;
 
 	public ProjectHandler(Broker broker) {
 		this.broker = broker;
 		this.sampleManager = broker.sampleManager();
+		this.labelDefinitionsHandler = new LabelDefinitionsHandler(broker);
 	}
 
 	public void handle(String project, String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -42,7 +44,14 @@ public class ProjectHandler {
 				}			
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
-				throw new RuntimeException("unknown: "+target);
+				switch(name) {
+				case "label_definitions": {
+					labelDefinitionsHandler.handle(next, baseRequest, request, response);
+					break;
+				}
+				default:
+					throw new RuntimeException("unknown: "+target);
+				}
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -91,10 +100,10 @@ public class ProjectHandler {
 			sampleManager.tlSampleManagerConnector.get().forEachLocation(location -> json.value(location));
 			json.endArray();
 		}
-		
+
 		LongConsumer timestampDateTimeWriter = AudioTimeUtil.timestampDateTimeWriter(json); 		
 		LongConsumer timestampDateWriter = AudioTimeUtil.timestampDateWriter(json);
-		
+
 		if(fTimestamps) {
 			json.key("timestamps");
 			json.array();

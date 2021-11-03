@@ -1,135 +1,143 @@
 <template>
   <q-dialog v-model="show">
-      <q-layout view="Lhh lpR fff" container class="bg-white" style="min-width: 1000px;">
-        <q-header class="bg-white text-black">
-        <q-bar>
-          <div>Browser</div>
-          <q-space />
-          <q-btn dense flat icon="close" v-close-popup>
-            <q-tooltip>Close</q-tooltip>
-          </q-btn>
-        </q-bar>
+    <q-layout view="Lhh lpR fff" container class="bg-white" style="min-width: 1000px;">
+      <q-header class="bg-white text-black">                
+      <q-bar>
+        <div>Browser</div>
+        <q-space />
+        <q-btn dense flat icon="close" v-close-popup>
+          <q-tooltip>Close</q-tooltip>
+        </q-btn>
+      </q-bar>
 
-        <q-separator/>        
+      <q-separator/>        
 
-        <q-card-section class="text-h5 row">
-          <q-btn-toggle
-            v-model="toggleLocation"
-            class="custom-toggle"
-            no-caps
-            rounded
-            unelevated
-            toggle-color="primary"
-            color="white"
-            text-color="primary"
-            :options="[
-              {label: 'All', value: 'all'},
-              {label: 'At', value: 'one'},
-            ]"
-          />
-          <span v-if="toggleLocation === 'all'">Location</span>
-          <q-select v-if="toggleLocation === 'one'" outlined v-model="selectedLocation" :options="filteredLocations" label="Location" class="col" dense clearable use-input @filter="locationfilterFn" input-debounce="0">
-            <template v-slot:option="scope">
-              <q-item v-bind="scope.itemProps" dense>
-                <q-item-section>
-                  <q-item-label>{{scope.opt.label}}</q-item-label>
-                </q-item-section>
-              </q-item>              
-            </template>
-          </q-select>
-        </q-card-section>
+      <q-card-section class="text-h5 row">
+        <q-btn-toggle
+          v-model="toggleLocation"
+          class="custom-toggle"
+          no-caps
+          rounded
+          unelevated
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="[
+            {label: 'All', value: 'all'},
+            {label: 'At', value: 'one'},
+          ]"
+        />
+        <span v-if="toggleLocation === 'all'">Location</span>
+        <q-select v-if="toggleLocation === 'one'" outlined v-model="selectedLocation" :options="filteredLocations" label="Location" class="col" dense clearable use-input @filter="locationfilterFn" input-debounce="0" :loading="requestMetaLoading">
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps" dense>
+              <q-item-section>
+                <q-item-label>{{scope.opt.label}}</q-item-label>
+              </q-item-section>
+            </q-item>              
+          </template>
+        </q-select>
+      </q-card-section>
 
-        <q-separator/>
+      <q-separator/>
 
-        <q-card-section class="text-h5 row">
-          <q-btn-toggle
-            v-model="toggleTime"
-            class="custom-toggle"
-            no-caps
-            rounded
-            unelevated
-            toggle-color="primary"
-            color="white"
-            text-color="primary"
-            :options="[
-              {label: 'All', value: 'all'},
-              {label: 'At', value: 'one'},
-            ]"
-          />
-          <span v-if="toggleTime === 'all'">Time</span>
-          <q-badge v-if="toggleTime === 'one' && requestMetaError" color="red">Error loading timestamps<q-btn color="grey" @click="requestRefreshMeta">refresh</q-btn></q-badge>
-          <q-select v-if="toggleTime === 'one'" outlined v-model="selectedTimestamp" :options="filteredTimestamps" label="Time" class="col" dense clearable use-input @filter="timestampfilterFn" input-debounce="0" :loading="requestMetaLoading">
-            <template v-slot:option="scope">
-              <q-item v-bind="scope.itemProps" dense>
-                <q-item-section>
-                  <q-item-label>{{scope.opt.date}}<!-- <span style="color: grey;">{{scope.opt.time}}</span>--></q-item-label>
-                </q-item-section>
-              </q-item>              
-            </template>
-            <template v-slot:selected>
-              <span v-if="selectedTimestamp">{{selectedTimestamp.date}} <span style="color: grey;">{{selectedTimestamp.time}}</span></span>
-            </template>
-          </q-select>
-        </q-card-section>
+      <q-card-section class="text-h5 row">
+        <q-btn-toggle
+          v-model="toggleTime"
+          class="custom-toggle"
+          no-caps
+          rounded
+          unelevated
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="[
+            {label: 'All', value: 'all'},
+            {label: 'At', value: 'one'},
+          ]"
+        />
+        <span v-if="toggleTime === 'all'">Time</span>
+        <q-badge v-if="toggleTime === 'one' && requestMetaError" color="red">Error loading timestamps<q-btn color="grey" @click="requestRefreshMeta">refresh</q-btn></q-badge>
+        <q-select v-if="toggleTime === 'one'" outlined v-model="selectedTimestamp" :options="filteredTimestamps" label="Time" class="col" dense clearable use-input @filter="timestampfilterFn" input-debounce="0" :loading="requestMetaLoading">
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps" dense>
+              <q-item-section>
+                <q-item-label>{{scope.opt.date}}<!-- <span style="color: grey;">{{scope.opt.time}}</span>--></q-item-label>
+              </q-item-section>
+            </q-item>              
+          </template>
+          <template v-slot:selected>
+            <span v-if="selectedTimestamp">{{selectedTimestamp.date}} <span style="color: grey;">{{selectedTimestamp.time}}</span></span>
+          </template>
+        </q-select>
+      </q-card-section>
 
-        <q-separator/>
+      <q-separator/>
+        <q-inner-loading :showing="$store.state.project.loading">
+          <q-spinner-gears size="50px" color="primary" />
+          Loading metadata....
+        </q-inner-loading>
+        <q-inner-loading :showing="$store.state.project.error !== undefined">
+          <q-badge color="red">Error loading metadata </q-badge><q-btn color="grey" @click="$store.dispatch('project/refresh');">refresh</q-btn>
+        </q-inner-loading> 
+      
+      </q-header>
+
+      <q-page-container>
+
+      <q-card-section>
         
-        </q-header>
-
-        <q-page-container>      
-
-        <q-card-section>
-          <q-markup-table separator="cell" dense bordered>
-            <thead>
-              <tr>
-                <th class="text-left">Location</th>
-                <th class="text-left">Time</th>
-                <th class="text-left">Device</th>
-                <th class="text-left">Id</th>
-               </tr>
-            </thead>
-            <tbody>
-              <tr v-for="sample, index in samples" :key="sample.id" @click="onSelectSample(sample.id)" :class="{'selected-sample': index === indexOfSelectedSampleId}">
-                <td class="text-left">{{sample.location}}</td>
-                <td class="text-left">{{sample.date}} <span style="color: grey;">{{sample.time}}</span></td>
-                <td class="text-left">{{sample.device}}</td>
-                <td class="text-left">{{sample.id}}</td>
+        <q-markup-table separator="cell" dense bordered>
+          <thead>
+            <tr>
+              <th class="text-left">Location</th>
+              <th class="text-left">Time</th>
+              <th class="text-left">Device</th>
+              <th class="text-left">Id</th>
               </tr>
-            </tbody>
-          </q-markup-table> 
-        </q-card-section>
+          </thead>
+          <tbody>
+            <tr v-for="sample, index in samples" :key="sample.id" @click="onSelectSample(sample.id)" :class="{'selected-sample': index === indexOfSelectedSampleId}">
+              <td class="text-left">{{sample.location}}</td>
+              <td class="text-left">{{sample.date}} <span style="color: grey;">{{sample.time}}</span></td>
+              <td class="text-left">{{sample.device}}</td>
+              <td class="text-left">{{sample.id}}</td>
+            </tr>
+          </tbody>
+        </q-markup-table> 
+      </q-card-section>
 
-        </q-page-container>
+      </q-page-container>
 
-        <q-footer class="bg-white text-black">
-          <q-separator/>
-          <q-toolbar>
-          <q-space />
-          <q-btn :disabled="!hasPrevPageSamples" @click="onPrevPage">prev page</q-btn>
-          {{samplesOffset}}
-          <q-btn :disabled="!hasNextPageSamples"  @click="onNextPage">next page</q-btn>
-          
-          <q-space />
-          </q-toolbar>
-          <q-separator/>
-          <span v-if="totalSamplesCount !== undefined">{{totalSamplesCount}} samples received</span>
+      <q-footer class="bg-white text-black">
+        <q-separator/>
+        <q-toolbar>
+        <q-space />
+        <q-btn :disabled="!hasPrevPageSamples" @click="onPrevPage">prev page</q-btn>
+        {{samplesOffset}}
+        <q-btn :disabled="!hasNextPageSamples"  @click="onNextPage">next page</q-btn>
+        
+        <q-space />
+        </q-toolbar>
+        <q-separator/>
+        <span v-if="totalSamplesCount !== undefined">{{totalSamplesCount}} samples received</span>
 
-          <q-inner-loading :showing="requestLoading">
-            <q-spinner-gears size="50px" color="primary" />
-          </q-inner-loading>
+        <q-inner-loading :showing="requestLoading">
+          <q-spinner-gears size="50px" color="primary" />
+        </q-inner-loading>
 
-          <q-inner-loading :showing="requestError">            
-            <q-badge color="red">Error loading request</q-badge><q-btn color="grey" @click="requestRefresh">refresh</q-btn>
-          </q-inner-loading>
+        <q-inner-loading :showing="requestError">            
+          <q-badge color="red">Error loading request</q-badge><q-btn color="grey" @click="requestRefresh">refresh</q-btn>
+        </q-inner-loading>
 
-          <q-inner-loading :showing="refreshConfirmRequested">            
-            <q-badge color="red">Querying all data at once may take several minutes. Try to narrow the query by selecting location and/or time.</q-badge><q-btn color="grey" @click="refreshConfirmRequested = false; refreshConfirmed = true; requestRefresh()">Nevertheless, execute this query.</q-btn>
-          </q-inner-loading>
-        </q-footer>
+        <q-inner-loading :showing="refreshConfirmRequested">            
+          <q-badge color="red">Querying all data at once may take several minutes. Try to narrow the query by selecting location and/or time.</q-badge><q-btn color="grey" @click="refreshConfirmRequested = false; refreshConfirmed = true; requestRefresh()">Nevertheless, execute this query.</q-btn>
+        </q-inner-loading>
+      </q-footer>
 
-      </q-layout>
-      <!--</q-card>-->
-    </q-dialog>
+    </q-layout>
+    <!--</q-card>-->
+  </q-dialog>
 </template>
 
 <script>
