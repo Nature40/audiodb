@@ -11,8 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import com.github.aelstad.keccakj.fips202.SHA3_512;
 import com.webauthn4j.authenticator.Authenticator;
@@ -22,7 +22,6 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class AccountManager {
-	private static final Logger log = LogManager.getLogger();
 
 	private final Path accountsPath;
 	private String salt = null;
@@ -93,7 +92,7 @@ public class AccountManager {
 			md.update(server_nonce_bytes);
 			String server_hash = Hex.bytesToHex(md.digest());
 			if(server_hash.equals(client_hash)) {
-				log.info("valid: " + account.username);
+				Logger.info("valid: " + account.username);
 				return account;
 			}
 		}
@@ -112,7 +111,7 @@ public class AccountManager {
 
 	public synchronized boolean read() {
 		if(!Files.exists(accountsPath)) {
-			log.info("no accounts file: " + accountsPath);
+			Logger.info("no accounts file: " + accountsPath);
 			return false;			
 		}
 		YamlMap yamlMap = YamlUtil.readYamlMap(accountsPath);
@@ -181,9 +180,9 @@ public class AccountManager {
 				Authenticator authenticator = account.webAuthnAccount().authenticator();
 				byte[] credentialId = authenticator.getAttestedCredentialData().getCredentialId();
 				m.put(credentialId, account);
-				log.info("Aaguid " + authenticator.getAttestedCredentialData().getAaguid());
-				log.info("COSEKey " + authenticator.getAttestedCredentialData().getCOSEKey());
-				log.info("CredentialId " + WebAuthn.bytesToBase64(credentialId));
+				Logger.info("Aaguid " + authenticator.getAttestedCredentialData().getAaguid());
+				Logger.info("COSEKey " + authenticator.getAttestedCredentialData().getCOSEKey());
+				Logger.info("CredentialId " + WebAuthn.bytesToBase64(credentialId));
 			}
 		}
 		webAuthnCredentialIdMap = m;

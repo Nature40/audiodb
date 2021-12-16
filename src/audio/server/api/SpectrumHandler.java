@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.jtransforms.fft.FloatFFT_1D;
 
@@ -19,7 +19,7 @@ import util.image.ImageRGBA;
 import util.image.Lut;
 
 public class SpectrumHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 
@@ -36,7 +36,7 @@ public class SpectrumHandler {
 
 		int cutoff = Web.getInt(request, "cutoff", 320);
 		if(cutoff > window/2) {
-			log.warn("cutoff out of bounds: " + cutoff + "  set to " + window/2);
+			Logger.warn("cutoff out of bounds: " + cutoff + "  set to " + window/2);
 			cutoff = window/2;
 		}
 		float threshold = (float) Web.getDouble(request, "threshold", 12);
@@ -48,7 +48,7 @@ public class SpectrumHandler {
 		int startSample = Web.getInt(request, "start_sample", -1);
 		int endSample = Web.getInt(request, "end_sample", -1);	
 
-		//log.info("spectrum " + startSample + " to " + endSample);
+		//Logger.info("spectrum " + startSample + " to " + endSample);
 
 		SampleProcessor sampleProcessor = new SampleProcessor(sample);
 		if(startSample < 0) {
@@ -59,10 +59,10 @@ public class SpectrumHandler {
 			double endSecond = Web.getDouble(request, "end", Double.NaN);
 			endSample = Double.isFinite(endSecond) ? sampleProcessor.secondsToPos(endSecond) : sampleProcessor.getFrameLength() - 1;
 		}
-		//log.info("start " + startSample + "  end " + endSample);
+		//Logger.info("start " + startSample + "  end " + endSample);
 		sampleProcessor.loadData(0, startSample, endSample);
 		short[] fullShorts = sampleProcessor.data;
-		/*log.info(fullShorts.length + "  " + window);
+		/*Logger.info(fullShorts.length + "  " + window);
 		for (int i = 0; i < fullShorts.length; i++) {
 			fullShorts[i] = i%2 == 0 ? Short.MAX_VALUE : -Short.MAX_VALUE;
 		}*/
@@ -108,7 +108,7 @@ public class SpectrumHandler {
 	}
 
 	private ImageRGBA render2(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold) {
-		log.info("render2 step " + step + "  cols " + cols);
+		Logger.info("render2 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 		float[][] transformed = new float[cols][n];
@@ -134,7 +134,7 @@ public class SpectrumHandler {
 			}
 		}
 
-		log.info(minv + "  " + maxv);
+		Logger.info(minv + "  " + maxv);
 
 		float[] lut = Lut.getGammaLUT256f(minv, maxv, 1.2);			
 		ImageRGBA image = new ImageRGBA(cols, cutoff);
@@ -152,7 +152,7 @@ public class SpectrumHandler {
 	}
 
 	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv) {
-		//log.info("render3 step " + step + "  cols " + cols);
+		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 
@@ -162,8 +162,8 @@ public class SpectrumHandler {
 			energy += v*v;
 		}
 		float energy_per_sample = energy / n;
-		log.info("energy " +  energy + "   " + Math.log(energy));
-		log.info("energy sample " +  energy_per_sample + "   " + Math.log(energy_per_sample));*/
+		Logger.info("energy " +  energy + "   " + Math.log(energy));
+		Logger.info("energy sample " +  energy_per_sample + "   " + Math.log(energy_per_sample));*/
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
 		ImageRGBA image = new ImageRGBA(cols, cutoff);
@@ -181,7 +181,7 @@ public class SpectrumHandler {
 					vmax = v;
 				}
 			}
-			log.info("vmax " + vmax + "   " + Math.log(vmax) + "vmax " + vmax/n + "   " + Math.log(vmax/n));*/
+			Logger.info("vmax " + vmax + "   " + Math.log(vmax) + "vmax " + vmax/n + "   " + Math.log(vmax/n));*/
 			for (int i = 0; i < cutoff; i++) {
 				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
@@ -193,7 +193,7 @@ public class SpectrumHandler {
 	}
 
 	private ImageRGBA render3denoise(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv) {
-		//log.info("render3 step " + step + "  cols " + cols);
+		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 
@@ -233,7 +233,7 @@ public class SpectrumHandler {
 	}
 
 	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv, int width) {
-		log.info("render3width step " + step + "  cols " + cols);
+		Logger.info("render3width step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 
@@ -271,7 +271,7 @@ public class SpectrumHandler {
 	}
 
 	private ImageRGBA render3Shrink(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv, int shrinkFactor) {
-		//log.info("render3 step " + step + "  cols " + cols);
+		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 

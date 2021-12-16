@@ -17,8 +17,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -37,7 +37,6 @@ import io.jsonwebtoken.SigningKeyResolver;
 import util.TemplateUtil;
 
 public class JwsHandler extends AbstractHandler {
-	private static final Logger log = LogManager.getLogger();
 
 	private final static int clock_skew = 60;
 
@@ -110,7 +109,7 @@ public class JwsHandler extends AbstractHandler {
 			response.setContentLength(0);
 			return;
 		} catch (Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 			request.setHandled(true);
 			try {
 				Thread.sleep(1000);

@@ -8,8 +8,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,7 +32,7 @@ import util.collections.vec.Vec;
 import util.yaml.YamlUtil;
 
 public class Sample2Handler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 	private final SampleManager sampleManager;

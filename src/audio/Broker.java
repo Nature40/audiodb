@@ -5,8 +5,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Paths;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import audio.labeling.LabelingListManager;
@@ -15,7 +15,6 @@ import photo2.PhotoDB2;
 import util.yaml.YamlMap;
 
 public class Broker {
-	private static final Logger log = LogManager.getLogger();
 
 	private Config config;
 	private RoleManager roleManager;
@@ -60,11 +59,11 @@ public class Broker {
 					config = Config.ofYAML(yamlMap);
 				} catch(Exception e) {
 					config = Config.DEFAULT;
-					log.error("error in config, set config to default: " + e);
+					Logger.error("error in config, set config to default: " + e);
 					e.printStackTrace();
 				}
 			} else {
-				log.info("no config found: config.yaml file missing");
+				Logger.info("no config found: config.yaml file missing");
 				config = Config.DEFAULT;
 			}
 		}

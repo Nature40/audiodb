@@ -9,13 +9,13 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 
 
 public class Riff {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private static final int RIFF_MARK = 1179011410;
 	private static final int WAVE_MARK = 1163280727;
@@ -81,7 +81,7 @@ public class Riff {
 		try(FileChannel fileChannel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
 			fileSize = fileChannel.size();
 			if(fileSize < 12) {
-				log.warn("file too small for RIFF header");
+				Logger.warn("file too small for RIFF header");
 				return;
 			}
 			if(fileSize < bufferSize) {
@@ -94,28 +94,28 @@ public class Riff {
 		byteBuffer.flip();
 		int riffMarker = byteBuffer.getInt();
 		if(riffMarker != RIFF_MARK) {
-			log.info(riffMarker);
+			Logger.info(riffMarker);
 			throw new RuntimeException("no RIFF");
 		}
 		int riffFileSize = byteBuffer.getInt();
-		//log.info("file size: " + riffFileSize);
+		//Logger.info("file size: " + riffFileSize);
 		if((fileSize - 8) != riffFileSize) {
-			log.warn("file size no same as in RIFF size: " + fileSize + "    " + riffFileSize);
+			Logger.warn("file size no same as in RIFF size: " + fileSize + "    " + riffFileSize);
 		}
 		
 		int riffTypeMarker = byteBuffer.getInt();
 		if(riffTypeMarker != WAVE_MARK) {
-			log.info(riffTypeMarker);
+			Logger.info(riffTypeMarker);
 			throw new RuntimeException("no WAVE");
 		}
 		long chunkPosition = byteBuffer.position();
 		while(chunkPosition + 8 <= bufferSize) {
 			byteBuffer.position((int) chunkPosition);
-			//log.info("chunk position: " + chunkPosition);
+			//Logger.info("chunk position: " + chunkPosition);
 			int chunkMarker = byteBuffer.getInt();
 			int chunkSize = byteBuffer.getInt();
 			
-			//log.info("chunk size: " + chunkSize + "   chunk    |" + convertIntToForcc(chunkMarker) + "|  " + chunkMarker);
+			//Logger.info("chunk size: " + chunkSize + "   chunk    |" + convertIntToForcc(chunkMarker) + "|  " + chunkMarker);
 			long nextChunkPosition = chunkPosition + 8 + chunkSize;
 			
 			if(chunkMarker == data_CHUNK_MARKER && chunkSize >= 0 && type == PCM_WAVE_TYPE && this.block_align > 0) {				
@@ -125,7 +125,7 @@ public class Riff {
 				}				
 				long sampleBytes = sampleEndPos - chunkPosition - 8;
 				this.samples = sampleBytes / this.block_align;
-				//log.info("fileSize " + fileSize + "  chunkSize " + chunkSize + "  block_align " + block_align + "  sampleBytes " + sampleBytes + "  samples " + samples);
+				//Logger.info("fileSize " + fileSize + "  chunkSize " + chunkSize + "  block_align " + block_align + "  sampleBytes " + sampleBytes + "  samples " + samples);
 			}
 			
 			if(nextChunkPosition > bufferSize) {
@@ -133,27 +133,27 @@ public class Riff {
 			}
 			switch(chunkMarker) {
 			case fmt_CHUNK_MARKER:
-				//log.info("chunk " + "fmt");
+				//Logger.info("chunk " + "fmt");
 				this.type = byteBuffer.getShort();
 				this.channels = byteBuffer.getShort();
 				this.sample_rate = byteBuffer.getInt();
 				this.avg_bytes_per_sec =  byteBuffer.getInt();
 				this.block_align = byteBuffer.getShort();
-				//log.info("fmt_block_align " + fmt_block_align);
+				//Logger.info("fmt_block_align " + fmt_block_align);
 				if(type == PCM_WAVE_TYPE) {
 					this.bits_per_sample = byteBuffer.getShort();
 				}
 				break;
 			case LIST_CHUNK_MARKER:
 				int listType = byteBuffer.getInt();
-				//log.info("chunk " + "LIST   type    |" + convertIntToForcc(listType) + "|  " + listType);
+				//Logger.info("chunk " + "LIST   type    |" + convertIntToForcc(listType) + "|  " + listType);
 				if(listType == INFO_LIST_TYPE) {
 					long subChunkPosition = byteBuffer.position();
 					while(subChunkPosition + 8 <= nextChunkPosition) {
 						byteBuffer.position((int) subChunkPosition);
 						int subChunkMarker = byteBuffer.getInt();
 						int subChunkSize = byteBuffer.getInt();
-						//log.info("subChunk size: " + subChunkSize + "   subChunk    |" + convertIntToForcc(subChunkMarker) + "|  " + subChunkMarker);
+						//Logger.info("subChunk size: " + subChunkSize + "   subChunk    |" + convertIntToForcc(subChunkMarker) + "|  " + subChunkMarker);
 						long nextSubChunkPosition = subChunkPosition + 8 + subChunkSize;
 						if(nextSubChunkPosition > nextChunkPosition) {
 							break;
@@ -161,38 +161,38 @@ public class Riff {
 						switch(subChunkMarker) {
 						case ICMT_SUBCHUNK_MARKER: {
 							this.comments = getString(byteBuffer, subChunkSize);
-							//log.info("ICMT |" + comments + "|");
+							//Logger.info("ICMT |" + comments + "|");
 							break;
 						}
 						case IART_SUBCHUNK_MARKER: {
 							this.artist = getString(byteBuffer, subChunkSize);
-							//log.info("IART |" + artist + "|");
+							//Logger.info("IART |" + artist + "|");
 							break;
 						}
 						default:
-							log.warn("unknown subChunk marker: " + subChunkMarker);
+							Logger.warn("unknown subChunk marker: " + subChunkMarker);
 						}
 						subChunkPosition = nextSubChunkPosition;
 					}
 				} else {
-					log.warn("unknown LIST type: " + listType);
+					Logger.warn("unknown LIST type: " + listType);
 				}
 
 				break;
 			case data_CHUNK_MARKER:
-				//log.info("chunk " + "data");
+				//Logger.info("chunk " + "data");
 				break;
 			default:
-				log.warn("unknown chunk marker: " + chunkMarker);
+				Logger.warn("unknown chunk marker: " + chunkMarker);
 			}
 			chunkPosition = nextChunkPosition;			
 		}
 		/*if(waveMarker != WAVE_MARK) {
-			log.info(waveMarker);
+			Logger.info(waveMarker);
 			throw new RuntimeException("no WAVE");
 		}
-		log.info(chunkMarker);
-		log.info(chunkSize);*/
+		Logger.info(chunkMarker);
+		Logger.info(chunkSize);*/
 	}
 
 }

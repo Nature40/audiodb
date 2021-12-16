@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONObject;
@@ -27,9 +27,6 @@ import audio.WebAuthn;
 import audio.server.AccessHandler;
 
 public class LoginWebAuthnHandler extends AbstractHandler {
-	private static final Logger log = LogManager.getLogger();
-	
-	
 
 	private final Broker broker;
 
@@ -40,7 +37,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		try {
-			log.info("LoginWebAuthnHandler");
+			Logger.info("LoginWebAuthnHandler");
 			baseRequest.setHandled(true);
 			switch(baseRequest.getMethod()) {
 			case "GET":
@@ -51,7 +48,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 				break;
 			default: {
 				String errorText = "unknown method in " + "login: " + baseRequest.getMethod();
-				log.error(errorText );
+				Logger.error(errorText );
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				response.setContentType("text/plain");
 				response.getWriter().print(errorText);		
@@ -59,7 +56,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 			}
 		}
 		catch(Exception e) {
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());
@@ -75,7 +72,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());			
 			byte[] challengeBytes = WebAuthn.createChallenge();
-			log.info(Arrays.toString(challengeBytes));
+			Logger.info(Arrays.toString(challengeBytes));
 			String challenge = WebAuthn.bytesToBase64(challengeBytes);
 			
 			json.object();
@@ -83,7 +80,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 			json.value(challenge);
 			json.endObject();
 		} catch(Exception e) {
-			log.error(e);
+			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
@@ -114,7 +111,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 			response.setContentType("text/plain;charset=utf-8");		
 			response.getWriter().write("Validated identity: " + WebAuthn.bytesToString(authenticationData.getUserHandle()));
 		} catch(Exception e) {
-			log.error(e);
+			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");

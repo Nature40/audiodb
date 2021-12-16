@@ -15,8 +15,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -30,7 +30,6 @@ import util.collections.vec.SyncVec;
 import util.collections.vec.Vec;
 
 public class YamlUtil {
-	private static final Logger log = LogManager.getLogger();
 
 	private static class CleanResolver extends Resolver {
 		@Override

@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -28,7 +28,7 @@ import com.webauthn4j.data.client.challenge.DefaultChallenge;
 import com.webauthn4j.server.ServerProperty;
 
 public class WebAuthn {
-	static final Logger log = LogManager.getLogger();
+	
 	
 	public final static ConcurrentSkipListSet<byte[]> challenges = new ConcurrentSkipListSet<byte[]>(AccountManager.BYTES_COMPARATOR);
 	
@@ -49,22 +49,22 @@ public class WebAuthn {
 		do {
 			ThreadLocalRandom.current().nextBytes(challengeBytes);
 		} while (!challenges.add(challengeBytes));
-		log.info("create challenge");
-		log.info(Arrays.toString(challengeBytes));
-		log.info("existings challenges");
+		Logger.info("create challenge");
+		Logger.info(Arrays.toString(challengeBytes));
+		Logger.info("existings challenges");
 		for(byte[] cmpChallenge:challenges) {
-			log.info(Arrays.toString(cmpChallenge));
+			Logger.info(Arrays.toString(cmpChallenge));
 		}
 		return challengeBytes;
 	}
 	
 	public static void takeChallenge(byte[] challengeBytes) {
-		log.info("take challenge");
+		Logger.info("take challenge");
 		//new RuntimeException().printStackTrace();
-		log.info(Arrays.toString(challengeBytes));
-		log.info("existings challenges");
+		Logger.info(Arrays.toString(challengeBytes));
+		Logger.info("existings challenges");
 		for(byte[] cmpChallenge:challenges) {
-			log.info(Arrays.toString(cmpChallenge));
+			Logger.info(Arrays.toString(cmpChallenge));
 		}
 		if(!challenges.remove(challengeBytes)) {						
 			throw new RuntimeException("not valid challenge");
@@ -106,13 +106,13 @@ public class WebAuthn {
 
 	public AuthenticationRequest createAuthenticationRequest(JSONObject jsonReq) {
 		byte[] credentialId = base64ToBytes(jsonReq.getString("credentialId"));
-		log.info("credentialId " + bytesToBase64(credentialId));
+		Logger.info("credentialId " + bytesToBase64(credentialId));
 		byte[] userHandle = base64ToBytes(jsonReq.getString("userHandle"));
 		String userID = bytesToString(userHandle);
-		log.info("userID " + userID);
+		Logger.info("userID " + userID);
 		byte[] authenticatorData = base64ToBytes(jsonReq.getString("authenticatorData"));
 		byte[] clientDataJSON = base64ToBytes(jsonReq.getString("clientDataJSON"));
-		log.info("clientDataJSON " + bytesToString(clientDataJSON));
+		Logger.info("clientDataJSON " + bytesToString(clientDataJSON));
 		String clientExtensionJSON = null;
 		byte[] signature = base64ToBytes(jsonReq.getString("signature"));
 		return new AuthenticationRequest(credentialId, userHandle, authenticatorData, clientDataJSON, clientExtensionJSON, signature);

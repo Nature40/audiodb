@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
@@ -19,7 +19,6 @@ import audio.AudioProjectConfig;
 import audio.Broker;
 
 public class IdentityHandler extends AbstractHandler {
-	private static final Logger log = LogManager.getLogger();
 	
 	private final Broker broker;
 

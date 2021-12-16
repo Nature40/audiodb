@@ -8,16 +8,17 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.tinylog.Logger;
 
 import util.AudioTimeUtil;
 import util.collections.vec.Vec;
+import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Command_create_yaml implements Command {
-	static final Logger log = LogManager.getLogger();
+	
 
 	@Override
 	public void execute(String command, String[] params) {
@@ -40,7 +41,7 @@ public class Command_create_yaml implements Command {
 	private long traverseFolder(Path folder) {
 		LocalDateTime start = LocalDateTime.now();
 		long counter = 0;
-		log.info("traverse " + folder);
+		Logger.info("traverse " + folder);
 		try {
 			DirectoryStream<Path> dirStream = Files.newDirectoryStream(folder);
 			for(Path path: dirStream) {
@@ -53,19 +54,19 @@ public class Command_create_yaml implements Command {
 						counter++;
 					}
 				} else {
-					log.warn("unknown entry");
+					Logger.warn("unknown entry");
 				}
 			}
 		} catch (Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 		LocalDateTime end = LocalDateTime.now();
 		Duration duration = Duration.between(start, end);
 		if(counter > 0) {			
 			Duration durationPerFile = duration.dividedBy(counter);
-			log.info("traversed " + folder + "  " + counter + " files  in " + duration + "     " + durationPerFile + " per file");
+			Logger.info("traversed " + folder + "  " + counter + " files  in " + duration + "     " + durationPerFile + " per file");
 		} else {
-			log.info("traversed " + folder + "  " + counter + " files  in " + duration);
+			Logger.info("traversed " + folder + "  " + counter + " files  in " + duration);
 		}
 
 		return counter;
@@ -99,22 +100,22 @@ public class Command_create_yaml implements Command {
 			if(riff.comments != null && riff.comments.startsWith(RECORDED_AT)) {
 				try {
 					String timeText = riff.comments.substring(RECORDED_AT_LEN, RECORDED_AT_LEN + 19);
-					//log.info("timeText |" + timeText + "|");
+					//Logger.info("timeText |" + timeText + "|");
 					LocalDateTime localDateTime = LocalDateTime.parse(timeText, AUDIO_FORMATTER);
-					//log.info("dateTime |" + localDateTime + "|");
+					//Logger.info("dateTime |" + localDateTime + "|");
 					long timestamp = AudioTimeUtil.toAudiotime(localDateTime);
 					m.put("timestamp", timestamp);
 				} catch(Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 				}
 			}
 			if(riff.artist != null && riff.artist.startsWith(AUDIOMOTH)) {
 				try {
 					String idText = riff.artist.substring(AUDIOMOTH_LEN);
-					//log.info("idText |" + idText + "|");						
+					//Logger.info("idText |" + idText + "|");						
 					m.put("device_id", idText);
 				} catch(Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 				}
 			}				
 			if(riff.sample_rate > 0) {
@@ -153,7 +154,65 @@ public class Command_create_yaml implements Command {
 			YamlUtil.writeSafeYamlMap(yamlPath, m);
 			return true;
 		} catch (Exception e) {
-			log.warn(e);
+			Logger.warn(e);
+			return false;
+		}
+	}
+	
+	public static boolean supplementYaml(Map<String, Object> map, Path samplePath) {
+		try {
+			Riff riff = new Riff(samplePath.toFile());
+			if(riff.comments != null && riff.comments.startsWith(RECORDED_AT)) {
+				try {
+					String timeText = riff.comments.substring(RECORDED_AT_LEN, RECORDED_AT_LEN + 19);
+					//Logger.info("timeText |" + timeText + "|");
+					LocalDateTime localDateTime = LocalDateTime.parse(timeText, AUDIO_FORMATTER);
+					//Logger.info("dateTime |" + localDateTime + "|");
+					long timestamp = AudioTimeUtil.toAudiotime(localDateTime);
+					map.put("timestamp", timestamp);
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
+			}
+			if(riff.artist != null && riff.artist.startsWith(AUDIOMOTH)) {
+				try {
+					String idText = riff.artist.substring(AUDIOMOTH_LEN);
+					//Logger.info("idText |" + idText + "|");						
+					map.put("device_id", idText);
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
+			}				
+			if(riff.sample_rate > 0) {
+				map.put("SampleRate", riff.sample_rate);
+			}
+			if(riff.avg_bytes_per_sec > 0) {
+				map.put("AvgBytesPerSec", riff.avg_bytes_per_sec);
+			}
+			if(riff.bits_per_sample > 0) {
+				map.put("BitsPerSample", riff.bits_per_sample);
+			}
+			if(riff.comments != null) {
+				map.put("Comment", riff.comments);
+			}
+			if(riff.artist != null) {
+				map.put("Artist", riff.artist);				
+			}
+			if(riff.artist != null && riff.artist.startsWith(AUDIOMOTH)) {
+				map.put("device_type", "AudioMoth");
+			}				
+			if(riff.samples > 0) {
+				map.put("Samples", riff.samples);
+			}
+			if(riff.samples > 0 && riff.sample_rate > 0) {
+				double duration = ((double) riff.samples) / ((double) riff.sample_rate);
+				if(Double.isFinite(duration) && duration > 0) {
+					map.put("Duration", duration);
+				}
+			}
+			return true;
+		} catch (Exception e) {
+			Logger.warn(e);
 			return false;
 		}
 	}

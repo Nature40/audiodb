@@ -7,13 +7,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import audio.server.Webserver;
 
 public class Samples {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Path root_path;
 	
@@ -32,7 +32,7 @@ public class Samples {
 			for(Path path:paths) {
 				try {
 					String id = root_path.relativize(path).toString();
-					log.info("read " + id);
+					Logger.info("read " + id);
 					id = id.replaceAll("/", "__");
 					id = id.replaceAll("\\\\", "__");
 					id = id.replaceAll(".yaml", "");
@@ -42,11 +42,11 @@ public class Samples {
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
 					//e.printStackTrace();
-					log.warn("error in " + path + "   " + e);
+					Logger.warn("error in " + path + "   " + e);
 				}
 			}
 		} catch (IOException e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 	}
 

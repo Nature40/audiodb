@@ -7,8 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -26,7 +26,7 @@ import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 
 public class TimeseriesHandler extends AbstractHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 
@@ -52,7 +52,7 @@ public class TimeseriesHandler extends AbstractHandler {
 					break;
 				default: {
 					String errorText = "unknown method in " + baseRequest.getMethod();
-					log.error(errorText);
+					Logger.error(errorText);
 					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					response.setContentType("text/plain");
 					response.getWriter().print(errorText);		
@@ -73,7 +73,7 @@ public class TimeseriesHandler extends AbstractHandler {
 						break;
 					default: {
 						String errorText = "unknown method in " + baseRequest.getMethod();
-						log.error(errorText);
+						Logger.error(errorText);
 						response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 						response.setContentType("text/plain");
 						response.getWriter().print(errorText);		
@@ -86,7 +86,7 @@ public class TimeseriesHandler extends AbstractHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());

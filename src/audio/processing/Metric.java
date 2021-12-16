@@ -1,10 +1,10 @@
 package audio.processing;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 public abstract class Metric {
-	static final Logger log = LogManager.getLogger();
+	
 	
 	public final String name;
 	
@@ -22,7 +22,7 @@ public abstract class Metric {
 			if(st.length > 0) {
 				s += "  " + st[0];
 			}
-			log.warn(s);
+			Logger.warn(s);
 			throw e;
 		}
 	}

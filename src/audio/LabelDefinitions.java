@@ -10,15 +10,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class LabelDefinitions {
-	private static final Logger log = LogManager.getLogger();
 
 	private final ReadLock readLock;
 	private final WriteLock changeLock;
@@ -38,7 +37,7 @@ public class LabelDefinitions {
 		changeLock.lock();
 		try {
 			if(!Files.exists(labelDefinitionsPath)) {
-				log.info("no file: " + labelDefinitionsPath);
+				Logger.info("no file: " + labelDefinitionsPath);
 				return false;			
 			}
 			YamlMap yamlMap = YamlUtil.readYamlMap(labelDefinitionsPath);

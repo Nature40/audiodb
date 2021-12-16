@@ -13,8 +13,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import util.Web;
 
 public class AudioHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 	private final AudioCache audioCache = new AudioCache();
@@ -51,7 +51,7 @@ public class AudioHandler {
 			/*File tempFile = File.createTempFile("audio_", ".wav");
 			tempFile.deleteOnExit();
 			try {	
-				log.info(tempFile);	
+				Logger.info(tempFile);	
 				createOverwriteSamplingRate(sample.getAudioFile(), tempFile, (float) overwrite_sampling_rate);
 				sendFile(tempFile, rangeText, response, "audio/wave");
 			} catch (UnsupportedAudioFileException e) {
@@ -65,7 +65,7 @@ public class AudioHandler {
 
 	public static void sendFile(File file, String rangeText, HttpServletResponse response, String conentType) throws FileNotFoundException, IOException {
 		long fileLen = file.length();
-		//log.info("FILE "+ file.getPath() + "   " + fileLen);
+		//Logger.info("FILE "+ file.getPath() + "   " + fileLen);
 		if(rangeText == null || fileLen == 0) {
 			if(conentType != null) {
 				response.setContentType(conentType);
@@ -74,12 +74,12 @@ public class AudioHandler {
 			try(FileInputStream in = new FileInputStream(file)) {
 				IO.copy(in, response.getOutputStream());
 			} catch(EofException e) {
-				log.info("remote connection closed");
+				Logger.info("remote connection closed");
 			}
 		} else {
 			if(rangeText.startsWith("bytes=")) {
 				String rangeIntervalText = rangeText.substring(6);
-				//log.info("rangeIntervalText |" + rangeIntervalText + "|");
+				//Logger.info("rangeIntervalText |" + rangeIntervalText + "|");
 				if(rangeIntervalText.contains(",")) {
 					throw new RuntimeException("unknown Range header, multiple ranges not supported: " + rangeText);
 				}
@@ -89,7 +89,7 @@ public class AudioHandler {
 				}
 				String rangeStartText = rangeIntervalText.substring(0, rangeIntervalTextSeperatorIndex);
 				String rangeEndText = rangeIntervalText.substring(rangeIntervalTextSeperatorIndex + 1);
-				//log.info("rangeIntervalText |" + rangeStartText + "|" + rangeEndText + "|");
+				//Logger.info("rangeIntervalText |" + rangeStartText + "|" + rangeEndText + "|");
 				if(rangeStartText.isEmpty()) {
 					throw new RuntimeException("unknown Range header, suffix-length not supported: " + rangeText);
 				}
@@ -117,11 +117,11 @@ public class AudioHandler {
 					response.setHeader("Content-Range", "bytes "+ rangeStart +"-" + rangeEnd + "/" + fileLen);
 					IO.copy(in, response.getOutputStream(), rangeLen);
 				} catch(EofException e) {
-					log.info("remote connection closed");
+					Logger.info("remote connection closed");
 				} catch (IOException e) {
 					Throwable cause = e.getCause();
 					if(cause != null && cause instanceof TimeoutException) {
-						log.info(cause.getMessage());
+						Logger.info(cause.getMessage());
 					} else {
 						throw e;
 					}
@@ -173,7 +173,7 @@ public class AudioHandler {
 
 	private static boolean isAbove(File file, float samplingRate) {
 		float sr = getSamplingRate(file);
-		//log.info("sr " + sr);
+		//Logger.info("sr " + sr);
 		return Float.isFinite(sr) && sr > samplingRate;
 	}
 
@@ -181,7 +181,7 @@ public class AudioHandler {
 		try(AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
 			return audioInputStream.getFormat().getSampleRate();
 		} catch (Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 			return Float.NaN;
 		}
 	}

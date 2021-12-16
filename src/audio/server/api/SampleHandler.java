@@ -6,8 +6,8 @@ import java.time.ZoneOffset;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 public class SampleHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final LabelsHandler labelsHandler;
 	private final SpectrumHandler spectrumHandler;

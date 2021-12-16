@@ -2,11 +2,11 @@ package audio;
 
 import java.io.File;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 public class Command_overwrite_yaml extends Command_create_yaml {
-	static final Logger log = LogManager.getLogger();
+	
 
 	@Override
 	protected boolean traverseFile(File file) {

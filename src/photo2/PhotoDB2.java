@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import audio.Broker;
 import de.siegmar.fastcsv.reader.CloseableIterator;
@@ -32,7 +32,7 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class PhotoDB2 {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 	public final PhotoConfig config;
@@ -56,19 +56,19 @@ public class PhotoDB2 {
 		this.thumbManager = new ThumbManager(this);
 		try {
 			this.conn = DriverManager.getConnection("jdbc:h2:./photo_cache");
-			//log.info("transaction isolation level: " + this.conn.getTransactionIsolation());
-			//log.info("auto-commit mode: " + this.conn.getAutoCommit());
+			//Logger.info("transaction isolation level: " + this.conn.getTransactionIsolation());
+			//Logger.info("auto-commit mode: " + this.conn.getAutoCommit());
 			Statement stmt = conn.createStatement();
 
 			/*ResultSet res = conn.getMetaData().getTables(null, null, "PHOTO", null);
 			if(res.next()) {
-				log.info("DROP TABLE");
+				Logger.info("DROP TABLE");
 				stmt.executeUpdate("DROP TABLE PHOTO");
 			}*/		
 
 			ResultSet res1 = conn.getMetaData().getTables(null, null, "PHOTO", null);
 			if(!res1.next()) {
-				log.info("CREATE TABLE");
+				Logger.info("CREATE TABLE");
 				stmt.executeUpdate(SqlConnector.SQL_CREATE_TABLE);
 				stmt.executeUpdate("CREATE INDEX IF NOT EXISTS IDX_LOCATION ON PHOTO (LOCATION)");
 				stmt.executeUpdate("CREATE INDEX IF NOT EXISTS IDX_PROJECT ON PHOTO (PROJECT)");
@@ -81,9 +81,9 @@ public class PhotoDB2 {
 		try {
 			scanRemoved();
 		} catch (IOException e1) {
-			log.warn(e1);
+			Logger.warn(e1);
 		}
-		log.info(Timer.stop("scanRemoved"));
+		Logger.info(Timer.stop("scanRemoved"));
 
 		for(PhotoProjectConfig projectConfig : broker.config().photoConfig.projectMap.values()) {
 			Timer.start("traverse");
@@ -91,12 +91,12 @@ public class PhotoDB2 {
 				int[] stats = new int[] {0, 0};
 				traverse(projectConfig, projectConfig.root_path, stats);
 				if(stats[0] > 0 || stats[1] > 0) {
-					log.info(stats[0] + " rows inserted, " + stats[1] + " rows updated");
+					Logger.info(stats[0] + " rows inserted, " + stats[1] + " rows updated");
 				}
 			} catch (IOException e) {
-				log.error(e);
+				Logger.error(e);
 			}
-			log.info(Timer.stop("traverse"));
+			Logger.info(Timer.stop("traverse"));
 		}
 
 		readDefinitions();
@@ -121,18 +121,18 @@ public class PhotoDB2 {
 
 				PhotoProjectConfig projectConfig = config.projectMap.get(project);
 				if(projectConfig == null) {
-					log.info("no config for project, remove meta data");					
+					Logger.info("no config for project, remove meta data");					
 					try {
 						sqlconnector.stmt_delete_project.setString(1, project);
 						sqlconnector.stmt_delete_project.executeUpdate();
 					} catch (SQLException e) {
-						log.warn(e);
+						Logger.warn(e);
 					}
 				} else {
 					Path meta_path = projectConfig.root_path.resolve(meta_rel_path);
-					//log.info("check " + meta_path);
+					//Logger.info("check " + meta_path);
 					if(!meta_path.toFile().exists()) {
-						log.info("remove from DB " + meta_path);
+						Logger.info("remove from DB " + meta_path);
 						sqlconnector.stmt_delete_photo.setString(1, id);
 						sqlconnector.stmt_delete_photo.executeUpdate();
 						removeCount++;
@@ -140,7 +140,7 @@ public class PhotoDB2 {
 				}
 			}
 			if(removeCount > 0) {
-				log.info("Removed from DB " + removeCount + " rows.");	
+				Logger.info("Removed from DB " + removeCount + " rows.");	
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -159,7 +159,7 @@ public class PhotoDB2 {
 	}
 
 	private void traverse(PhotoProjectConfig projectConfig, Path root, int[] stats) throws IOException {
-		log.info("traverse " + root);
+		Logger.info("traverse " + root);
 		try {
 			for(Path path:Files.newDirectoryStream(root)) {
 				if(path.toFile().isDirectory()) {
@@ -170,15 +170,15 @@ public class PhotoDB2 {
 							refreshPhotoDBentry(projectConfig, root, path, stats);
 						}
 					} catch(Exception e) {
-						log.warn(e);
+						Logger.warn(e);
 						e.printStackTrace();
 					}
 				} else {
-					log.warn("unknown entity: " + path);
+					Logger.warn("unknown entity: " + path);
 				}
 			}
 		} catch(Exception e) {
-			log.warn("error in " + root + "   " + e);
+			Logger.warn("error in " + root + "   " + e);
 		}
 	}
 
@@ -192,7 +192,7 @@ public class PhotoDB2 {
 		if(metaPath.toFile().exists()) {			
 			long last_modified = metaPath.toFile().lastModified();
 			if(!this.isUpToDate(id, last_modified)) {
-				//log.info("refresh " + metaPath);
+				//Logger.info("refresh " + metaPath);
 
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("PhotoSens") /*&& yamlMap.getString("PhotoSens").equals("v1.0")*/) {
@@ -203,13 +203,13 @@ public class PhotoDB2 {
 					PhotoMeta photoMeta = new PhotoMeta(yamlMap);
 					boolean locked = photoMeta.isClassifiedAsPerson();
 
-					//log.info("refresh " + metaPath + "  locked " + locked);
+					//Logger.info("refresh " + metaPath + "  locked " + locked);
 
-					//log.info(path);
+					//Logger.info(path);
 					try {
 						String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
-						//log.info("read " + meta_rel_path);
-						//log.info("read+" + id);	
+						//Logger.info("read " + meta_rel_path);
+						//Logger.info("read+" + id);	
 
 						if(this.contains(id)) {
 							SqlConnector sqlconnector = tlsqlconnector.get();
@@ -241,21 +241,21 @@ public class PhotoDB2 {
 							}
 						}
 					} catch (SQLException e) {
-						log.warn(e);
+						Logger.warn(e);
 					}
 				} else {
-					log.warn("no valid PhotoSens yaml  " + metaPath);
+					Logger.warn("no valid PhotoSens yaml  " + metaPath);
 				}
 			}	
 		} else {
 			try {
 				SqlConnector sqlconnector = tlsqlconnector.get();
-				log.info("remove from DB " + metaPath);
+				Logger.info("remove from DB " + metaPath);
 				sqlconnector.stmt_delete_photo.setString(1, id);
 				sqlconnector.stmt_delete_photo.executeUpdate();
 
 			} catch (SQLException e) {
-				log.warn(e);
+				Logger.warn(e);
 			}
 		}
 	}
@@ -287,7 +287,7 @@ public class PhotoDB2 {
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
-				//log.info(id);
+				//Logger.info(id);
 				consumer.accept(id);
 			}
 		} catch (SQLException e) {
@@ -308,7 +308,7 @@ public class PhotoDB2 {
 	public void foreachReviewListSetByProject(String project, ReviewListSetConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
-			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_SET_BY_PROJECT);
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_COLLECTION_BY_PROJECT);
 			stmt.setString(1, project);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
@@ -317,7 +317,7 @@ public class PhotoDB2 {
 				consumer.accept(id, name);				
 			}
 		} catch (SQLException e) {
-			log.warn(e);
+			Logger.warn(e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -335,7 +335,7 @@ public class PhotoDB2 {
 				consumer.accept(id, set, name);				
 			}
 		} catch (SQLException e) {
-			log.warn(e);
+			Logger.warn(e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -343,7 +343,7 @@ public class PhotoDB2 {
 	public void foreachReviewListBySet(String set, ReviewListConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
-			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_BY_SET);
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_BY_COLLECTION);
 			stmt.setString(1, set);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
@@ -353,7 +353,7 @@ public class PhotoDB2 {
 				consumer.accept(id, setName, name);				
 			}
 		} catch (SQLException e) {
-			log.warn(e);
+			Logger.warn(e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -376,7 +376,7 @@ public class PhotoDB2 {
 				consumer.accept(pos, photo, name);				
 			}
 		} catch (SQLException e) {
-			log.warn(e);
+			Logger.warn(e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -388,7 +388,7 @@ public class PhotoDB2 {
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
-				//log.info(id);
+				//Logger.info(id);
 				consumer.accept(id);
 			}
 		} catch (SQLException e) {
@@ -403,7 +403,7 @@ public class PhotoDB2 {
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
-				//log.info(id);
+				//Logger.info(id);
 				consumer.accept(id);
 			}
 		} catch (SQLException e) {
@@ -418,7 +418,7 @@ public class PhotoDB2 {
 			ResultSet explRes = stmt.executeQuery();
 			if(explRes.next()) {
 				String expl = explRes.getString(1);
-				log.info("\n\n" + expl + "\n\n");
+				Logger.info("\n\n" + expl + "\n\n");
 			}*/
 			SqlConnector sqlconnector = tlsqlconnector.get();
 			sqlconnector.stmt_qery_locations.setString(1, project);
@@ -502,7 +502,7 @@ public class PhotoDB2 {
 				if(locked) {
 					return null;
 				}
-				//log.info("locked " + locked + "  " + meta_rel_path);
+				//Logger.info("locked " + locked + "  " + meta_rel_path);
 				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date, last_modified, locked);
 			}
 			return null;
@@ -520,31 +520,31 @@ public class PhotoDB2 {
 					long reqWidth = 320;
 					long reqHeight = 320;
 					String cacheFilename = thumbManager.getCacheFilename(photo_id, reqWidth, reqHeight);
-					//log.info("id: " + id + " -->  " + cacheFilename);
+					//Logger.info("id: " + id + " -->  " + cacheFilename);
 					ThumbSqlConnector sqlConn = thumbManager.getSqlConnector();
 					sqlConn.stmt_exist_id.setString(1, cacheFilename);
 					ResultSet res = sqlConn.stmt_exist_id.executeQuery();
 					if(res.next()) {
-						//log.info("true");
+						//Logger.info("true");
 					} else {
 						Photo2 photo = getPhoto2NotLocked(photo_id);
 						if(photo != null) {
-							log.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
+							Logger.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
 							while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
 								try {
 									Thread.sleep(100);
 								} catch (InterruptedException e) {
-									log.warn(e);
+									Logger.warn(e);
 								}
 							}
-							//log.info(ForkJoinPool.commonPool().getQueuedSubmissionCount());
-							//log.info("start " + parallelism + "  " + ForkJoinPool.commonPool().getPoolSize() + "  " + ForkJoinPool.commonPool().getRunningThreadCount());
+							//Logger.info(ForkJoinPool.commonPool().getQueuedSubmissionCount());
+							//Logger.info("start " + parallelism + "  " + ForkJoinPool.commonPool().getPoolSize() + "  " + ForkJoinPool.commonPool().getRunningThreadCount());
 							thumbManager.submitScaled(cacheFilename, photo, reqWidth, reqHeight);					
-							//log.info("done");
+							//Logger.info("done");
 						}
 					}
 				} catch (Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 					e.printStackTrace();
 				}
 			});			
@@ -583,7 +583,7 @@ public class PhotoDB2 {
 					}
 					csv.forEach(System.out::println);
 				} catch(Exception e) {
-					log.warn("error in read classification_definition_csv: " + e);
+					Logger.warn("error in read classification_definition_csv: " + e);
 				}
 			}
 		}
@@ -616,7 +616,7 @@ public class PhotoDB2 {
 	public void deleteReviewListSet(String setId) {
 		SqlConnector sqlConnector = getSqlConnector();
 		try {
-			PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_SET_BY_ID);
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_COLLECTION_BY_ID);
 			stmt.setString(1, setId);
 			stmt.executeUpdate();
 		} catch (SQLException e) {
@@ -624,7 +624,7 @@ public class PhotoDB2 {
 		}
 
 		foreachReviewListBySet(setId, (id, setName, name) -> {
-			log.info("remove in set " + setId + "  list " + id);
+			Logger.info("remove in set " + setId + "  list " + id);
 			deleteReviewList(id);
 		});
 	}

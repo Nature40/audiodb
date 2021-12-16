@@ -6,15 +6,15 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import audio.server.api.AudioHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import util.collections.vec.Vec;
 
 public class AudioCache {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private static class Entry {
 		public final String infile;
@@ -39,10 +39,10 @@ public class AudioCache {
 		int index = vec.findIndexOf(e -> infile.equals(e.infile) && osr == e.osr);
 		Entry entry;
 		if(index < 0) {
-			log.info("insert " + infile + "   " + overwrite_sampling_rate);
+			Logger.info("insert " + infile + "   " + overwrite_sampling_rate);
 			entry = new Entry(infile, osr);
 		} else {
-			log.info("get pos " + index);
+			Logger.info("get pos " + index);
 			entry = vec.remove(index);
 		}
 		entry.lifecycleLock.readLock().lock();
@@ -56,11 +56,11 @@ public class AudioCache {
 			for(int i = 0; i < len; i++) {
 				Entry entry = vec.get(i);
 				if(entry.lifecycleLock.writeLock().tryLock()) {
-					log.info("remove pos " + i + "   of " + vec.size());
+					Logger.info("remove pos " + i + "   of " + vec.size());
 					vec.remove(i);
 					return entry;
 				} else {
-					log.info("skip locked remove pos " + i);
+					Logger.info("skip locked remove pos " + i);
 				}
 			}
 		}
@@ -80,7 +80,7 @@ public class AudioCache {
 						changed = true;
 						tempFile.deleteOnExit();
 						try {	
-							log.info(tempFile);	
+							Logger.info(tempFile);	
 							AudioHandler.createOverwriteSamplingRate(infile, tempFile, (float) overwrite_sampling_rate);
 						} catch (UnsupportedAudioFileException e) {
 							throw new RuntimeException(e);

@@ -2,8 +2,8 @@ package photo2.api;
 
 import java.io.IOException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
@@ -17,7 +17,6 @@ import photo2.PhotoDB2;
 import util.Web;
 
 public class PhotoDB2Handler extends AbstractHandler {
-	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
 	private final PhotoDB2 photodb;
@@ -65,7 +64,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());

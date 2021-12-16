@@ -11,8 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,7 +32,6 @@ import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 
 public class ReviewListsHandler {
-	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
 	private final PhotoDB2 photodb;
@@ -58,7 +57,7 @@ public class ReviewListsHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
@@ -104,7 +103,7 @@ public class ReviewListsHandler {
 				String classClassificator = jsonAction.getString("classification_classificator");
 				float classConf = jsonAction.getFloat("classification_threshold");
 				boolean sortedByRanking = jsonAction.optBoolean("sorted_by_ranking", false);
-				log.info("create_review_list");
+				Logger.info("create_review_list");
 				HashMap<String, Integer> occurringSpecies = new HashMap<String, Integer>();				
 				//String username = account.username;
 				long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();				
@@ -122,7 +121,7 @@ public class ReviewListsHandler {
 				
 				
 				try {
-					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_SET);
+					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_COLLECTION);
 					stmt.setString(1, setId);
 					stmt.setString(2, project);
 					stmt.setString(3, setName);
@@ -220,13 +219,13 @@ public class ReviewListsHandler {
 					}
 				}
 
-				log.info("create_review_list done.");
+				Logger.info("create_review_list done.");
 				break;
 			}
 			case "remove_review_list": {
 				String[] sets = JsonUtil.optStrings(jsonAction, "sets");
 				for(String setId : sets) {
-					log.info("remove set " + setId);
+					Logger.info("remove set " + setId);
 					photodb.deleteReviewListSet(setId);
 				}
 				break;

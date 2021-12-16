@@ -11,14 +11,14 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.apache.commons.math3.analysis.function.Gaussian;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.jtransforms.fft.FloatFFT_1D;
 
 import audio.GeneralSample;
 
 public class SampleProcessor {
-	static final Logger log = LogManager.getLogger();
+	
 
 	public static final int n = 1024;
 	public static final int n2 = n / 2;
@@ -87,9 +87,9 @@ public class SampleProcessor {
 	public void loadData(int additionalSpace, int start, int end) {
 		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {			
 			AudioFormat audioFormat = in.getFormat();
-			//log.info("Format: " + audioFormat);
-			//log.info("FrameLength: " + in.getFrameLength());
-			//log.info("rate: " + audioFormat.getFrameRate() + "   " + audioFormat.getSampleRate());
+			//Logger.info("Format: " + audioFormat);
+			//Logger.info("FrameLength: " + in.getFrameLength());
+			//Logger.info("rate: " + audioFormat.getFrameRate() + "   " + audioFormat.getSampleRate());
 
 			this.sampleRate = audioFormat.getSampleRate();
 
@@ -135,7 +135,7 @@ public class SampleProcessor {
 			int off = start < 0 ? -start : 0;
 
 			int fullBytesLen = (int) ((dataLength + additionalSpace) * 2);
-			//log.info("allocate data array for spectrum: " + fullBytesLen);
+			//Logger.info("allocate data array for spectrum: " + fullBytesLen);
 			byte[] fullBytes = new byte[fullBytesLen];
 			if(readStart > 0) {
 				in.skip(readStart * 2);

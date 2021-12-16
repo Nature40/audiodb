@@ -6,15 +6,15 @@ import java.nio.file.Path;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import audio.Label;
 import audio.Sample;
 import audio.Samples;
 
 public class LabelingListManager {
-	private static final Logger log = LogManager.getLogger();
+	private 
 
 	ConcurrentSkipListMap<String, LabelingList> labelingListMap = new ConcurrentSkipListMap<>();
 	private final Path root;
@@ -43,11 +43,11 @@ public class LabelingListManager {
 					try {
 					load(sub, id);
 					} catch(Exception e) {
-						log.warn("Error loading " + sub);
+						Logger.warn("Error loading " + sub);
 					}
 				}
 			} else {
-				log.warn("unknown entity: " + sub);
+				Logger.warn("unknown entity: " + sub);
 			}
 		}	
 	}
@@ -84,23 +84,23 @@ public class LabelingListManager {
 									// change
 									LabelingListEntry e2 = e.withLabeled(true);
 									list.setUnsync(index, e2);
-									log.info("updated " + e2);
+									Logger.info("updated " + e2);
 								}
 							} else {
 								if(e.labeled) {
 									// change
 									LabelingListEntry e2 = e.withLabeled(false);
 									list.setUnsync(index, e2);
-									log.info("updated " + e2);
+									Logger.info("updated " + e2);
 								} else {
 									// OK
 								}
 							}
 						} else {
-							log.warn("label not found" + e);
+							Logger.warn("label not found" + e);
 						}
 					} else {
-						log.warn("sample not found " + e);
+						Logger.warn("sample not found " + e);
 					}					
 				});
 				//list.sortUnsync(LabelingListEntry.COMPARATOR);

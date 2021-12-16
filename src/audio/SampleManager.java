@@ -11,8 +11,8 @@ import java.sql.SQLException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import audio.DeviceInventory.Entry;
 import audio.SampleManagerConnector.SQL;
@@ -23,7 +23,7 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class SampleManager {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Path root_path;
 
@@ -58,7 +58,7 @@ public class SampleManager {
 	}
 
 	private void traverse(AudioProjectConfig projectConfig, Path root, int[] stats) throws IOException {
-		log.info("traverse " + root);
+		Logger.info("traverse " + root);
 		try {
 			for(Path path:Files.newDirectoryStream(root)) {
 				if(path.toFile().isDirectory()) {
@@ -69,15 +69,15 @@ public class SampleManager {
 							refreshSampleEntry(projectConfig, root, path, stats);
 						}
 					} catch(Exception e) {
-						log.warn(e);
+						Logger.warn(e);
 						e.printStackTrace();
 					}
 				} else {
-					log.warn("unknown entity: " + path);
+					Logger.warn("unknown entity: " + path);
 				}
 			}
 		} catch(Exception e) {
-			log.warn("error in " + root + "   " + e);
+			Logger.warn("error in " + root + "   " + e);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class SampleManager {
 			sqlconnector.insertTraverse(id);
 			long last_modified = metaPath.toFile().lastModified();
 			if(!this.isUpToDate(id, last_modified)) {
-				//log.info("update sample " + id);
+				//Logger.info("update sample " + id);
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("AudioSens") /*&& yamlMap.getString("AudioSens").equals("v1.0")*/) {
 					String sample_file = yamlMap.getString("file");
@@ -129,7 +129,7 @@ public class SampleManager {
 					String sample_rel_path = projectConfig.root_path.relativize(root.resolve(sample_file)).toString(); 
 					boolean locked = false; // TODO
 					if(sqlconnector.exist(id)) {
-						log.info("update sample " + id);
+						Logger.info("update sample " + id);
 						sqlconnector.update(id, projectConfig.project, meta_rel_path, sample_rel_path, location, timestamp, last_modified, locked, device_id);
 						if(stats != null) {
 							stats[1]++;
@@ -141,12 +141,12 @@ public class SampleManager {
 						}
 					}
 				} else {
-					log.warn("no valid AudioSens yaml  " + metaPath);
+					Logger.warn("no valid AudioSens yaml  " + metaPath);
 					sqlconnector.deleteSample(id);
 				}
 			}	
 		} else {
-			log.info("remove from DB " + metaPath);				
+			Logger.info("remove from DB " + metaPath);				
 			sqlconnector.deleteSample(id);			
 		}
 	}
@@ -163,13 +163,13 @@ public class SampleManager {
 			int[] stats = new int[] {0, 0};
 			traverse(projectConfig, projectConfig.root_path, stats);
 			if(stats[0] > 0 || stats[1] > 0) {
-				log.info(stats[0] + " rows inserted, " + stats[1] + " rows updated");
+				Logger.info(stats[0] + " rows inserted, " + stats[1] + " rows updated");
 			}
 			tlSampleManagerConnector.get().deleteTraverseMissing();
 		} catch (IOException e) {
-			log.error(e);
+			Logger.error(e);
 		} finally {
-			log.info(Timer.stop("traverse"));
+			Logger.info(Timer.stop("traverse"));
 		}
 	}
 	

@@ -3,15 +3,15 @@ package audio;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 public class Terminal {	
 	static { // needs to be positioned as first entry in class!
 		System.setProperty("java.awt.headless", "true");
 	}
 
-	static final Logger log = LogManager.getLogger();
+	
 
 	@FunctionalInterface
 	interface CommandProvider {
@@ -66,7 +66,7 @@ public class Terminal {
 			CommandClassProvider commandProvider = new CommandClassProvider(commandClass);			
 			commandMap.put(name, commandProvider);
 		} catch(Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 	}
 
@@ -75,7 +75,7 @@ public class Terminal {
 			CommandArgsProvider commandArgsProvider = new CommandArgsProvider(commandArgs);			
 			commandMap.put(name, commandArgsProvider);
 		} catch(Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 	}
 

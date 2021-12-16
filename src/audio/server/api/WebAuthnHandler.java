@@ -13,8 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONObject;
@@ -38,7 +38,7 @@ import audio.WebAuthn;
 import audio.WebAuthnAccount;
 
 public class WebAuthnHandler extends AbstractHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;	
 
@@ -48,7 +48,7 @@ public class WebAuthnHandler extends AbstractHandler {
 
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		log.info(target);
+		Logger.info(target);
 		try {
 			baseRequest.setHandled(true);
 			if(target.equals("/")) {
@@ -60,7 +60,7 @@ public class WebAuthnHandler extends AbstractHandler {
 				}			
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
-				log.info(name);
+				Logger.info(name);
 				switch(name) {
 				case "register": {
 					switch (baseRequest.getMethod()) {
@@ -88,7 +88,7 @@ public class WebAuthnHandler extends AbstractHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
@@ -108,12 +108,12 @@ public class WebAuthnHandler extends AbstractHandler {
 			byte[] clientDataJSON = Base64.getDecoder().decode(jsonReq.getString("clientDataJSON"));
 			JSONObject clientDataJSONobject = new JSONObject(new JSONTokener(new String(clientDataJSON, StandardCharsets.UTF_8)));
 			byte[] challengeBytes = WebAuthn.base64UrlToBytes(clientDataJSONobject.getString("challenge"));
-			log.info(Arrays.toString(challengeBytes));
+			Logger.info(Arrays.toString(challengeBytes));
 			WebAuthn.takeChallenge(challengeBytes);
 			Challenge challenge = new DefaultChallenge(challengeBytes);
 			byte[] attestationObject = Base64.getDecoder().decode(jsonReq.getString("attestationObject"));		
-			log.info("clientDataJSON " + new String(clientDataJSON, StandardCharsets.UTF_8));
-			log.info("attestationObject " + Arrays.toString(attestationObject));
+			Logger.info("clientDataJSON " + new String(clientDataJSON, StandardCharsets.UTF_8));
+			Logger.info("attestationObject " + Arrays.toString(attestationObject));
 			String clientExtensionJSON = null;  /* set clientExtensionJSON */;
 			Set<String> transports = null /* set transports */;
 			RegistrationRequest registrationRequest = new RegistrationRequest(attestationObject, clientDataJSON, clientExtensionJSON, transports);
@@ -134,7 +134,7 @@ public class WebAuthnHandler extends AbstractHandler {
 			RegistrationData registrationData = webAuthn.webAuthnManager.parse(registrationRequest);
 			webAuthn.webAuthnManager.validate(registrationData, registrationParameters);
 
-			log.info("clientDataJSONobject " + clientDataJSONobject);
+			Logger.info("clientDataJSONobject " + clientDataJSONobject);
 
 
 			WebAuthnAccount webAuthnAccount = new WebAuthnAccount(registrationData.getAttestationObjectBytes());
@@ -147,7 +147,7 @@ public class WebAuthnHandler extends AbstractHandler {
 
 		}
 		catch (Exception e){			
-			log.error(e);
+			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
@@ -159,7 +159,7 @@ public class WebAuthnHandler extends AbstractHandler {
 
 	private void handleVerifyPOST(Request request, HttpServletResponse response) throws IOException {
 		WebAuthn webAuthn = broker.webAuthn();
-		log.info(request.getOriginalURI());
+		Logger.info(request.getOriginalURI());
 		try{
 			JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 			JSONObject clientDataJSONobject = WebAuthn.base64ToJSON(jsonReq.getString("clientDataJSON"));
@@ -174,7 +174,7 @@ public class WebAuthnHandler extends AbstractHandler {
 			response.getWriter().write("Validated identity: " + account.username);
 		}
 		catch (Exception e){			
-			log.error(e);
+			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");

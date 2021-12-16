@@ -2,8 +2,8 @@ package audio;
 
 import java.util.LinkedHashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
@@ -18,7 +18,6 @@ import com.webauthn4j.data.extension.authenticator.RegistrationExtensionAuthenti
 import util.yaml.YamlMap;
 
 public class WebAuthnAccount {
-	private static final Logger log = LogManager.getLogger();
 	
 	private static final AttestationObjectConverter attestationObjectConverter = new AttestationObjectConverter(new ObjectConverter());
 	
@@ -51,7 +50,7 @@ public class WebAuthnAccount {
 
 	public static WebAuthnAccount ofYAML(YamlMap yamlWebAuthn) {
 		Object object = yamlWebAuthn.getObject("attestationObjectBytes");
-		log.info(object.getClass().getName());
+		Logger.info(object.getClass().getName());
 		byte[] attestationObjectBytes = (byte[]) object;
 		return new WebAuthnAccount(attestationObjectBytes);
 	}

@@ -12,8 +12,8 @@ import jakarta.servlet.SessionCookieConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.CompressedContentFormat;
 import org.eclipse.jetty.http.HttpHeader;
@@ -60,7 +60,7 @@ import audio.server.api.WebAuthnHandler;
 import photo2.api.PhotoDB2Handler;
 
 public class Webserver {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private static HttpConfiguration createBaseHttpConfiguration() {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
@@ -119,7 +119,7 @@ public class Webserver {
 		Broker broker = new Broker();
 		Config config = broker.config();
 
-		log.info("starting server");
+		Logger.info("starting server");
 
 		Server server = new Server();
 		if(config.enableHttps()) {
@@ -180,7 +180,7 @@ public class Webserver {
 		//server.setHandler(sessionHandler);
 		server.start();
 		server.join();
-		log.info("server stopped");
+		Logger.info("server stopped");
 	}
 
 	private static ContextHandler createContext(String contextPath, boolean allowNullPathInfo, Handler handler) {
@@ -215,7 +215,7 @@ public class Webserver {
 			response.setHeader("X-Frame-Options", "deny");
 			response.setHeader("Referrer-Policy", "no-referrer");
 			//response.setHeader("X-Content-Type-Options", "nosniff");
-			//log.info("baseRequest.getRemoteAddr() " + baseRequest.getRemoteAddr());
+			//Logger.info("baseRequest.getRemoteAddr() " + baseRequest.getRemoteAddr());
 			if("127.0.0.1".equals(baseRequest.getRemoteAddr())  || "[0:0:0:0:0:0:0:1]".equals(baseRequest.getRemoteAddr())) {
 				response.setHeader("Access-Control-Allow-Origin", "*");
 				response.setHeader("Access-Control-Allow-Headers", "content-type");
@@ -231,7 +231,7 @@ public class Webserver {
 		@Override
 		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 			baseRequest.setHandled(true);
-			log.info(target);
+			Logger.info(target);
 			if(target.trim().equalsIgnoreCase("/robots.txt")) {
 				response.setContentType("text/plain; charset=utf-8");
 				response.getWriter().print("User-agent: * \nDisallow: /\n");
@@ -266,11 +266,11 @@ public class Webserver {
 						collector.add(path);
 					}
 				} else {
-					log.warn("unknown entity: " + path);
+					Logger.warn("unknown entity: " + path);
 				}
 			}
 		} catch(Exception e) {
-			log.warn("error in " + root + "   " + e);
+			Logger.warn("error in " + root + "   " + e);
 		}
 		return collector;
 	}

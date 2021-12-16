@@ -17,13 +17,13 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import util.collections.ReadonlyList;
 
 public class YamlMap {
-	static final Logger log = LogManager.getLogger();
+	
 	
 	public static final YamlMap EMPTY_MAP = new YamlMap(new HashMap<>());
 

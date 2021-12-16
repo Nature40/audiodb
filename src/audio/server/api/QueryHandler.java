@@ -6,8 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -27,7 +27,7 @@ import audio.processing.SampleProcessor;
 import util.collections.vec.Vec;
 
 public class QueryHandler extends AbstractHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final SampleHandler sampleHandler;
 
@@ -50,7 +50,7 @@ public class QueryHandler extends AbstractHandler {
 					break;
 				default: {
 					String errorText = "unknown method in " + baseRequest.getMethod();
-					log.error(errorText);
+					Logger.error(errorText);
 					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					response.setContentType("text/plain");
 					response.getWriter().print(errorText);		
@@ -71,7 +71,7 @@ public class QueryHandler extends AbstractHandler {
 						break;
 					default: {
 						String errorText = "unknown method in " + baseRequest.getMethod();
-						log.error(errorText);
+						Logger.error(errorText);
 						response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 						response.setContentType("text/plain");
 						response.getWriter().print(errorText);		
@@ -84,7 +84,7 @@ public class QueryHandler extends AbstractHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
@@ -179,13 +179,13 @@ public class QueryHandler extends AbstractHandler {
 			colEnd = sampleProcessor.fqCols - 1;
 		}
 
-		//log.info(sampleProcessor.frameLength + "  "  + posStart + "  "  + posEnd);
+		//Logger.info(sampleProcessor.frameLength + "  "  + posStart + "  "  + posEnd);
 
 		for (int i = 0; i < metrics.size(); i++) {
 			try {
 				row[HEADER_META_ROWS + i] = Double.toString(metrics.get(i).apply(sampleProcessor, posStart, posEnd, colStart, colEnd));
 			} catch (Exception e) {
-				//log.warn(e);
+				//Logger.warn(e);
 				row[HEADER_META_ROWS + i] = "NA";
 			}
 

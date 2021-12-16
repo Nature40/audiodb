@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONArray;
@@ -22,7 +22,6 @@ import audio.Broker;
 import audio.Role;
 
 public class AccountsHandler extends AbstractHandler {
-	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
 
@@ -40,7 +39,7 @@ public class AccountsHandler extends AbstractHandler {
 				break;
 			default: {
 				String errorText = "unknown method in " + "accounts: " + baseRequest.getMethod();
-				log.error(errorText );
+				Logger.error(errorText );
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				response.setContentType("text/plain");
 				response.getWriter().print(errorText);		
@@ -48,7 +47,7 @@ public class AccountsHandler extends AbstractHandler {
 			}
 		}
 		catch(Exception e) {
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());
@@ -64,7 +63,7 @@ public class AccountsHandler extends AbstractHandler {
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
 		broker.roleManager().role_readOnly.checkHasNot(roleBits);
 		
-		log.info("accounts");		
+		Logger.info("accounts");		
 
 		JSONObject jsonReq = new JSONObject(new JSONTokener(baseRequest.getReader()));
 		JSONArray jsonActions = jsonReq.getJSONArray("actions");
@@ -75,7 +74,7 @@ public class AccountsHandler extends AbstractHandler {
 			switch(actionName) {
 			case "create_account": {
 				broker.roleManager().role_create_account.checkHas(roleBits);
-				log.info("create_account action");
+				Logger.info("create_account action");
 				String user = jsonAction.getString("user");
 				String hash = jsonAction.getString("hash");
 				Account account = Account.ofHash(user, hash.getBytes(), new String[] {});

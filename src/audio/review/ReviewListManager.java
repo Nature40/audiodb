@@ -6,15 +6,15 @@ import java.nio.file.Path;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import audio.Label;
 import audio.Sample;
 import audio.Samples;
 
 public class ReviewListManager {
-	private static final Logger log = LogManager.getLogger();
+	private 
 
 	ConcurrentSkipListMap<String, ReviewList> reviewListMap = new ConcurrentSkipListMap<>();
 	private final Path root;
@@ -43,11 +43,11 @@ public class ReviewListManager {
 					try {
 						load(sub, id);
 					} catch(Exception e) {
-						log.warn("Error loading " + sub);
+						Logger.warn("Error loading " + sub);
 					}
 				}
 			} else {
-				log.warn("unknown entity: " + sub);
+				Logger.warn("unknown entity: " + sub);
 			}
 		}	
 	}
@@ -79,7 +79,7 @@ public class ReviewListManager {
 						if(e.missing_sample) {
 							e = e.withMissingSample(false);
 							list.setUnsync(index, e);
-							log.info("updated " + e);
+							Logger.info("updated " + e);
 						}
 						Label label = sample.findLabel(e.label_start, e.label_end);
 						if(label != null) {
@@ -93,45 +93,45 @@ public class ReviewListManager {
 										// change
 										e = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
 										list.setUnsync(index, e);
-										log.info("updated " + e);
+										Logger.info("updated " + e);
 									}
 								} else {
 									// change
 									e = e.withClassifiedAndReviewed(true, reviewedLabel.reviewed);
 									list.setUnsync(index, e);
-									log.info("updated " + e);
+									Logger.info("updated " + e);
 								}
 							} else {
 								if(e.classified) {
 									// change
 									e = e.withClassifiedAndReviewed(false, null);
 									list.setUnsync(index, e);
-									log.info("updated " + e);
+									Logger.info("updated " + e);
 								} else {
 									// OK
 								}
 							}
 						} else {
-							log.warn("label not found" + e);
+							Logger.warn("label not found" + e);
 						}
 					} else {
 						sampleNotFoundCount[0]++;
 						if(sampleNotFoundCount[0] <= 3) {
-							log.warn("sample not found " + e);
+							Logger.warn("sample not found " + e);
 						}
 						// change
 						if(!e.missing_sample) {
 							e = e.withMissingSample(true);
 							list.setUnsync(index, e);
 							if(sampleNotFoundCount[0] <= 3) {
-								log.info("updated " + e);
+								Logger.info("updated " + e);
 							}
 						}
 					}					
 				});
 				//list.sortUnsync(ReviewListEntry.COMPARATOR);
 				if(sampleNotFoundCount[0] > 0) {
-					log.info(sampleNotFoundCount[0] + " samples not found for " + id);
+					Logger.info(sampleNotFoundCount[0] + " samples not found for " + id);
 				}
 			});			
 		});		

@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONArray;
@@ -22,7 +22,6 @@ import audio.LabelDefinition;
 import util.collections.vec.Vec;
 
 public class LabelDefinitionsHandler extends AbstractHandler {
-	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
 
@@ -43,7 +42,7 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 				break;
 			default: {
 				String errorText = "unknown method in " + "label_definitions: " + baseRequest.getMethod();
-				log.error(errorText);
+				Logger.error(errorText);
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				response.setContentType("text/plain");
 				response.getWriter().print(errorText);		
@@ -51,7 +50,7 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 			}
 		}
 		catch(Exception e) {
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());

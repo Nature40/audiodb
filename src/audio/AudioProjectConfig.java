@@ -3,13 +3,12 @@ package audio;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import util.yaml.YamlMap;
 
 public final class AudioProjectConfig {
-	private static final Logger log = LogManager.getLogger();
 	
 	public static final AudioProjectConfig DEFAULT = new AudioProjectConfig(new Builder());
 	
@@ -54,7 +53,7 @@ public final class AudioProjectConfig {
 		player_preservesPitch = builder.player_preservesPitch;
 		player_overwriteSamplingRate = builder.player_overwriteSamplingRate;
 		player_samplingRate = builder.player_samplingRate;
-		log.info(this);
+		Logger.info(this);
 	}
 
 	@Override

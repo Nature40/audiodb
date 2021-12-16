@@ -1,10 +1,10 @@
 package audio;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 public class Command_audio_reread implements Command {
-	static final Logger log = LogManager.getLogger();
+	
 
 	@Override
 	public void execute(String command, String[] params) {

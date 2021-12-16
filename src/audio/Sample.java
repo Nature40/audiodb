@@ -6,8 +6,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import audio.review.ReviewedLabel;
@@ -16,7 +16,7 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Sample implements GeneralSample {
-	static final Logger log = LogManager.getLogger();
+	
 
 	public final String id;
 	public final Path metaPath;
@@ -55,9 +55,9 @@ public class Sample implements GeneralSample {
 
 		labels = new Vec<Label>();
 		for(YamlMap labelMap:yamlMap.optList("Labels").asMaps()) {		
-			//log.info(labelMap.toString());
+			//Logger.info(labelMap.toString());
 			Label label = Label.ofYAML(labelMap);
-			//log.info(label.toString());
+			//Logger.info(label.toString());
 			labels.add(label);
 		}
 		if(yamlMap.contains("sample_locked")) {
@@ -144,8 +144,8 @@ public class Sample implements GeneralSample {
 
 	public synchronized void checkAndCorrectLabelDublicates() {
 		if(checkLabelDublicates()) {
-			log.info("dublicate labels in " + id);
-			log.info("old labels size " + labels.size());			
+			Logger.info("dublicate labels in " + id);
+			Logger.info("old labels size " + labels.size());			
 			int len = labels.size();
 			for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
 				Label label = labels.get(outerIndex);
@@ -153,7 +153,7 @@ public class Sample implements GeneralSample {
 					for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
 						Label label2 = labels.get(innerIndex);
 						if(label2 != null && label.start == label2.start && label.end == label2.end) {
-							log.info("merge");
+							Logger.info("merge");
 							Label labelMerge = Label.merge(label, label2);
 							labels.setFast(outerIndex, labelMerge);
 							labels.setFast(innerIndex, null);
@@ -162,7 +162,7 @@ public class Sample implements GeneralSample {
 				}
 			}
 			labels = labels.filter(label -> label != null);
-			log.info("new labels size " + labels.size());
+			Logger.info("new labels size " + labels.size());
 			writeToFile();
 		}
 	}

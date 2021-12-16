@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import photo2.api.PhotoMeta;
 import util.yaml.YamlList;
@@ -14,7 +14,7 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Photo2 {
-	static final Logger log = LogManager.getLogger();
+	
 
 	public final String id;
 	public final PhotoProjectConfig projectConfig;
@@ -34,7 +34,7 @@ public class Photo2 {
 		this.date = date;
 		this.last_modified = last_modified;
 		this.locked = locked;
-		//log.info(this);
+		//Logger.info(this);
 	}
 
 	/*public void foreachClassification(Consumer<YamlMap> consumer) {

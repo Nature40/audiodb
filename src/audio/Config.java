@@ -1,7 +1,7 @@
 package audio;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import photo2.PhotoConfig;
 import util.collections.ReadonlyList;
@@ -9,7 +9,6 @@ import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 
 public class Config {
-	private static final Logger log = LogManager.getLogger();
 	
 	public static final Config DEFAULT = new Config();
 
@@ -66,11 +65,11 @@ public class Config {
 					JwsConfig jwsConfig = JwsConfig.ofYAML(yamlJws);
 					jwsConfigs.add(jwsConfig);
 				} catch (Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 				}
 			}
 		} catch (Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 		
 		//AudioConfig audioConfig = AudioConfig.ofYAML(yamlMap.optMap("audio"));

@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.function.LongConsumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONWriter;
 
@@ -20,7 +20,7 @@ import util.AudioTimeUtil;
 import util.Web;
 
 public class ProjectHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 	private final SampleManager sampleManager;
@@ -55,13 +55,13 @@ public class ProjectHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.setContentType("text/plain;charset=utf-8");
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
-				log.warn(e1);
+				Logger.warn(e1);
 			}
 		}
 	}

@@ -6,8 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
@@ -16,7 +16,7 @@ import audio.Broker;
 import audio.labeling.LabelingList;
 
 public class Labeling_listsHandler extends AbstractHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Labeling_listHandler labeling_listHandler;
 	
@@ -44,7 +44,7 @@ public class Labeling_listsHandler extends AbstractHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());

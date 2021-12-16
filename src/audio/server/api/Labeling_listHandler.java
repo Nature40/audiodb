@@ -9,8 +9,8 @@ import java.util.function.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,7 +32,7 @@ import util.JsonUtil;
 import util.collections.vec.Vec;
 
 public class Labeling_listHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 
@@ -122,7 +122,7 @@ public class Labeling_listHandler {
 						if(sample_label_index >= 0) {
 							sample.setLabel(sample_label_index, label);
 						} else {
-							log.info("add new label " + label);
+							Logger.info("add new label " + label);
 							sample.addLabel(label);
 						}
 					});					

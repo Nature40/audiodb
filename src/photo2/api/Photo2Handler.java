@@ -14,8 +14,8 @@ import java.time.format.DateTimeFormatter;
 
 import javax.imageio.ImageIO;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
 import org.json.JSONArray;
@@ -36,7 +36,6 @@ import util.JsonUtil;
 import util.Web;
 
 public class Photo2Handler {
-	private static final Logger log = LogManager.getLogger();
 
 	private final Broker broker;
 	private final PhotoDB2 photodb2;
@@ -84,7 +83,7 @@ public class Photo2Handler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			response.setContentType("text/plain;charset=utf-8");
 			response.getWriter().println("ERROR: " + e.getMessage());
@@ -117,7 +116,7 @@ public class Photo2Handler {
 				for (int i = 0; i <= 255; i++) {
 					long v = Math.round(255d * Math.pow(i / 255d, gammaCorrection));
 					lut[i] =  (byte) v;
-					//log.info(i + " -> " + lut[i] + "   " + v + "   " + Byte.toUnsignedInt(lut[i]));
+					//Logger.info(i + " -> " + lut[i] + "   " + v + "   " + Byte.toUnsignedInt(lut[i]));
 				}
 				for (int i = 0; i < imageBuffer.length; i++) {
 					byte v = imageBuffer[i];
@@ -281,7 +280,7 @@ public class Photo2Handler {
 						}
 					} catch(Exception e) {
 						e.printStackTrace();
-						log.warn(e);
+						Logger.warn(e);
 					}
 					if(cmap.contains("conf")) {
 						json.key("conf");
@@ -315,7 +314,7 @@ public class Photo2Handler {
 						json.value(localDateTime);
 					}
 				} catch(Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 				}
 				if(map.contains("bbox")) {
 					json.key("bbox");					

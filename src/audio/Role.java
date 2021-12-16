@@ -2,11 +2,10 @@ package audio;
 
 import java.util.BitSet;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 public class Role {
-	private static final Logger log = LogManager.getLogger();
 
 	public final int index;	
 	public final String name;	
@@ -47,7 +46,7 @@ public class Role {
 	}
 
 	public void populate(BitSet bitSet) {
-		//log.info("populate role: " + name);
+		//Logger.info("populate role: " + name);
 		//new RuntimeException().printStackTrace();
 		bitSet.set(index);
 		if(roles != null) {

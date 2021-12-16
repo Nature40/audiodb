@@ -8,11 +8,11 @@ import java.util.EnumMap;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 public class SampleManagerConnector {
-	static final Logger log = LogManager.getLogger();
+	
 
 	public static enum SQL {
 		DROP_TABLE("DROP TABLE IF EXISTS SAMPLE"),
@@ -180,14 +180,14 @@ public class SampleManagerConnector {
 	public void explain(SQL sql) {
 		try {
 			String text = "EXPLAIN " + sql.sql;
-			log.info(text);
+			Logger.info(text);
 			ResultSet res = conn.createStatement().executeQuery(text);
-			//log.info(res.getMetaData().getColumnCount());
+			//Logger.info(res.getMetaData().getColumnCount());
 			while(res.next()) {
-				log.info(res.getString(1));
+				Logger.info(res.getString(1));
 			}
 		} catch (SQLException e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 	}
 
@@ -196,7 +196,7 @@ public class SampleManagerConnector {
 			if(clear) {
 				ResultSet res = conn.getMetaData().getTables(null, null, "SAMPLE", null);
 				if(res.next()) {
-					log.info("DROP TABLE");
+					Logger.info("DROP TABLE");
 					getStatement(SQL.DROP_TABLE).executeUpdate();
 				}
 			}
@@ -706,7 +706,7 @@ public class SampleManagerConnector {
 	}
 
 	public void insertTraverse(String id) {
-		//log.info("insertTraverse " + id);
+		//Logger.info("insertTraverse " + id);
 		try {
 			PreparedStatement stmt = getStatement(SQL.INSERT_TRAVERSE);		
 			stmt.setString(1, id);

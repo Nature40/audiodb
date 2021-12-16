@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
@@ -19,7 +19,7 @@ import util.AudioTimeUtil;
 import util.Web;
 
 public class Samples2Handler extends AbstractHandler {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final Broker broker;
 
@@ -47,19 +47,19 @@ public class Samples2Handler extends AbstractHandler {
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			log.error(e);
+			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.setContentType("text/plain;charset=utf-8");
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
-				log.warn(e1);
+				Logger.warn(e1);
 			}
 		}
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		log.info("query samples");
+		Logger.info("query samples");
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
@@ -86,7 +86,7 @@ public class Samples2Handler extends AbstractHandler {
 			if(sample.hasTimestamp()) {
 				//json.key("timestamp");
 				//json.value(sample.timestamp);
-				//log.info(sample.timestamp);
+				//Logger.info(sample.timestamp);
 				LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(sample.timestamp);
 				json.key("date");
 				json.value(dateTime.toLocalDate());

@@ -3,15 +3,14 @@ package audio;
 import java.io.File;
 import java.nio.file.Path;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Sample2 implements GeneralSample {
-	static final Logger log = LogManager.getLogger();
 
 	public final String id;
 	public final String project;
@@ -67,7 +66,16 @@ public class Sample2 implements GeneralSample {
 
 	public long samples() {
 		if(samples == -2) {
-			samples = meta().optLong("Samples", -1);
+			YamlMap m = meta();
+			samples = m.optLong("Samples", -1);
+			if(samples == -1) {
+				if(Command_create_yaml.supplementYaml(m.getInternalMap(), samplePath)) {
+					YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
+					samples = m.optLong("Samples", -1);
+				} else {
+					this.yamlMap = null;
+				}
+			}
 		}
 		return samples;
 	}
@@ -100,7 +108,7 @@ public class Sample2 implements GeneralSample {
 	}
 	
 	public void setLabels(Vec<Label> labels) {	
-		log.info("setLabels");
+		Logger.info("setLabels");
 		this.labels = labels;
 		YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
 		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());		

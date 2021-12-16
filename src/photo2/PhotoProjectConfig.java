@@ -3,13 +3,12 @@ package photo2;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import util.yaml.YamlMap;
 
 public final class PhotoProjectConfig {
-	private static final Logger log = LogManager.getLogger();
 	
 	private static final PhotoProjectConfig DEFAULT = new PhotoProjectConfig();
 	

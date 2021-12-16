@@ -26,8 +26,8 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 import org.eclipse.jetty.util.IO;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
@@ -38,7 +38,7 @@ import util.SpiUtil;
 import util.Timer;
 
 public class ThumbManager {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final PhotoDB2 photodb2;
 
@@ -69,13 +69,13 @@ public class ThumbManager {
 		@Override
 		public void run() {
 			try {
-				//log.info(cacheFilename);
+				//Logger.info(cacheFilename);
 				ThumbSqlConnector sqlconnector = tlsqlconnector.get();				
 				try {
 					sqlconnector.stmt_query_file.setString(1, cacheFilename);
 					ResultSet res1 = sqlconnector.stmt_query_file.executeQuery();
 					if(res1.next()) {
-						log.info("image already scaled. return.");
+						Logger.info("image already scaled. return.");
 						return;
 					}
 				} catch (SQLException e) {
@@ -125,10 +125,10 @@ public class ThumbManager {
 				inStream.close();
 			} catch(Exception e) {
 				if(photo.imagePath.toFile().exists()) {
-					log.warn(e + "  " + photo.imagePath);
+					Logger.warn(e + "  " + photo.imagePath);
 					throw new RuntimeException(e);	
 				} else {
-					log.warn("missing image file: " + photo.imagePath);
+					Logger.warn("missing image file: " + photo.imagePath);
 					throw new RuntimeException("missing image file: " + photo.imagePath);	
 				}				
 			} finally {
@@ -145,7 +145,7 @@ public class ThumbManager {
 			Statement stmt = conn.createStatement();
 			ResultSet res = conn.getMetaData().getTables(null, null, "THUMB", null);
 			if(res.next()) {
-				/*log.info("DROP TABLE THUMB");
+				/*Logger.info("DROP TABLE THUMB");
 				stmt.executeUpdate("DROP TABLE THUMB");
 				stmt.executeUpdate("CREATE TABLE THUMB (ID VARCHAR(255) PRIMARY KEY, FILE BLOB)");*/
 			} else {
@@ -170,7 +170,7 @@ public class ThumbManager {
 	}
 
 	public void getScaled(String cacheFilename, Photo2 photo, long reqWidth, long reqHeight, HttpServletResponse response) {
-		log.info(cacheFilename);
+		Logger.info(cacheFilename);
 		try {
 			ThumbSqlConnector sqlconnector = tlsqlconnector.get();
 			sqlconnector.stmt_query_file.setString(1, cacheFilename);
@@ -181,7 +181,7 @@ public class ThumbManager {
 					try {
 						task.get();
 					} catch (InterruptedException | ExecutionException e) {
-						log.warn(e);
+						Logger.warn(e);
 						throw new RuntimeException(e);
 					}
 				}
@@ -237,7 +237,7 @@ public class ThumbManager {
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 		//g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);	
 		if(!g.drawImage(src, 0, 0, width, height, null)) {
-			log.warn("image not drawn fully");			
+			Logger.warn("image not drawn fully");			
 		}
 		g.dispose();
 		dst.flush();*/
@@ -252,7 +252,7 @@ public class ThumbManager {
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 		//g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);	
 		if(!g.drawImage(src, 0, 0, width, height, null)) {
-			log.warn("image not drawn fully");			
+			Logger.warn("image not drawn fully");			
 		}
 		g.dispose();
 		dst.flush();*/
@@ -272,7 +272,7 @@ public class ThumbManager {
 				sqlconnector.stmt_query_file.setString(1, cacheFilename);
 				ResultSet res1 = sqlconnector.stmt_query_file.executeQuery();
 				if(res1.next()) {
-					log.info("image already scaled. return.");
+					Logger.info("image already scaled. return.");
 					return null;
 				}
 			} catch (SQLException e) {
@@ -280,7 +280,7 @@ public class ThumbManager {
 			}
 			ThumbTask thumbTask = new ThumbTask(photo, cacheFilename, reqWidth, reqHeight);
 			ForkJoinTask<?> fjt = ForkJoinPool.commonPool().submit(thumbTask);
-			//log.info(fjt);
+			//Logger.info(fjt);
 			return fjt;
 		});
 		return task;
@@ -303,12 +303,12 @@ public class ThumbManager {
 				}			
 			}
 			if(removeCount > 0) {
-				log.info("Removed thumbs from DB " + removeCount + " rows.");	
+				Logger.info("Removed thumbs from DB " + removeCount + " rows.");	
 			}			
 		} catch (SQLException e) {
-			log.warn(e);
+			Logger.warn(e);
 		} finally {
-			log.info(Timer.stop("scanRemoved thumbs"));
+			Logger.info(Timer.stop("scanRemoved thumbs"));
 		}
 	}
 

@@ -6,15 +6,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import photo2.CsvTable;
 import photo2.CsvTable.CsvCell;
 import util.AudioTimeUtil;
 
 public class DeviceInventory {
-	private static final Logger log = LogManager.getLogger();
 
 	private static Entry[] EMPTY = new Entry[] {};
 
@@ -53,7 +52,7 @@ public class DeviceInventory {
 	}
 
 	private void insert(Entry entry) {
-		//log.info("insert " + entry);
+		//Logger.info("insert " + entry);
 		String key = entry.device;
 		Object o = deviceMap.get(key);
 		if(o == null) {
@@ -82,10 +81,10 @@ public class DeviceInventory {
 			return;
 		}
 		if(!deviceInventoryPath.toFile().exists()) {
-			log.warn("missing inventory file: " + deviceInventoryPath);
+			Logger.warn("missing inventory file: " + deviceInventoryPath);
 			return;
 		}
-		log.info("device inventroy read "  + deviceInventoryPath);
+		Logger.info("device inventroy read "  + deviceInventoryPath);
 		try(CsvTable csvTable = new CsvTable(deviceInventoryPath)) {
 			CsvCell cellDevice = csvTable.getCell("device");
 			CsvCell cellLocation = csvTable.getCell("location");	
@@ -102,13 +101,13 @@ public class DeviceInventory {
 					Entry entry = new Entry(device, location, start, end);				
 					insert(entry);
 				} catch(Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 				}
 			});
 		} catch(Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
-		//forEach(entry -> log.info(entry));
+		//forEach(entry -> Logger.info(entry));
 	}
 
 	public Entry getLast(String device, long timestamp) {

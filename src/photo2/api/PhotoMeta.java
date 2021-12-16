@@ -4,15 +4,15 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import util.collections.vec.Vec;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;
 
 public class PhotoMeta {
-	static final Logger log = LogManager.getLogger();
+	
 	
 	public final YamlMap metaMap;
 
@@ -115,12 +115,12 @@ public class PhotoMeta {
 				}
 			}
 		}
-		//log.info(classificationSet);
+		//Logger.info(classificationSet);
 		return classificationSet;
 	}
 	
 	public boolean isClassifiedAsPerson() {
-		//log.info(getClassifications().contains("person"));
+		//Logger.info(getClassifications().contains("person"));
 		return getClassifications().contains("person");
 	}
 }

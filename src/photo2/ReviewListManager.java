@@ -7,14 +7,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.tinylog.Logger;
 
 import photo2.CsvTable.CsvCell;
 import photo2.SqlConnector.SQL;
 
 public class ReviewListManager {
-	static final Logger log = LogManager.getLogger();
+	
 
 	private final PhotoDB2 photodb;
 
@@ -25,24 +25,24 @@ public class ReviewListManager {
 	public void init() {
 		try {
 			SqlConnector sqlConnector = photodb.getSqlConnector();
-			ResultSet res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST_SET", null);
+			ResultSet res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST_COLLECTION", null);
 			if(!res.next()) {
-				log.info("CREATE TABLE REVIEW_LIST_SET");
-				sqlConnector.getStatement(SQL.CREATE_TABLE_REVIEW_LIST_SET).executeUpdate();
+				Logger.info("CREATE TABLE REVIEW_LIST_COLLECTION");
+				sqlConnector.getStatement(SQL.CREATE_TABLE_REVIEW_LIST_COLLECTION).executeUpdate();
 			}
 			res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST", null);
 			if(!res.next()) {
-				log.info("CREATE TABLE REVIEW_LIST");
+				Logger.info("CREATE TABLE REVIEW_LIST");
 				sqlConnector.getStatement(SQL.CREATE_TABLE_REVIEW_LIST).executeUpdate();
 			}
 			res = sqlConnector.conn.getMetaData().getTables(null, null, "REVIEW_LIST_ENTRY", null);
 			if(!res.next()) {
-				log.info("CREATE TABLE REVIEW_LIST_ENTRY");
+				Logger.info("CREATE TABLE REVIEW_LIST_ENTRY");
 				sqlConnector.getStatement(SQL.CREATE_TABLE_REVIEW_LIST_ENTRY).executeUpdate();
 			}
 			refresh();
 		} catch(Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 			throw new RuntimeException(e);
 		}
 	}	
@@ -52,12 +52,12 @@ public class ReviewListManager {
 			SqlConnector sqlConnector = photodb.getSqlConnector();
 			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY).executeUpdate();
 			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST).executeUpdate();
-			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_SET).executeUpdate();			
+			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_COLLECTION).executeUpdate();			
 			photodb.foreachProject(projectConfig -> {
 				refreshProject(projectConfig);
 			});
 		} catch(Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 	}
 
@@ -76,7 +76,7 @@ public class ReviewListManager {
 			}
 			if(projectConfig.review_list_path != null) {
 				try {
-					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_SET);
+					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_COLLECTION);
 					stmt.setString(1, projectConfig.project + "__" + "file");
 					stmt.setString(2, projectConfig.project);
 					stmt.setString(3, "file");
@@ -87,12 +87,12 @@ public class ReviewListManager {
 				traverse(projectConfig, projectConfig.review_list_path);
 			}
 		} catch (Exception e) {
-			log.warn(e);
+			Logger.warn(e);
 		}
 	}
 
 	private void traverse(PhotoProjectConfig projectConfig, Path root) throws IOException {
-		log.info("traverse " + root);
+		Logger.info("traverse " + root);
 		for(Path path:Files.newDirectoryStream(root)) {
 			if(path.toFile().isDirectory()) {
 				traverse(projectConfig, path);
@@ -102,10 +102,10 @@ public class ReviewListManager {
 						refreshReviewList(projectConfig, path);
 					}
 				} catch(Exception e) {
-					log.warn(e);
+					Logger.warn(e);
 				}
 			} else {
-				log.warn("unknown entity: " + path);
+				Logger.warn("unknown entity: " + path);
 			}
 		}
 	}
