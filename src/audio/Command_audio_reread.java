@@ -1,10 +1,6 @@
 package audio;
 
-
-import org.tinylog.Logger;
-
 public class Command_audio_reread implements Command {
-	
 
 	@Override
 	public void execute(String command, String[] params) {

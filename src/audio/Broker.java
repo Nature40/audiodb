@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import audio.labeling.LabelingListManager;
 import audio.review.ReviewListManager;
+import audio.task.Tasks;
 import photo2.PhotoDB2;
 import util.yaml.YamlMap;
 
@@ -39,6 +40,14 @@ public class Broker {
 	private SampleManager sampleManager;
 	private volatile SampleManager sampleManagerVolatile;
 	private Object sampleManagerLock = new Object();
+	
+	private LabelStore labelStore;
+	private volatile LabelStore labelStoreVolatile;
+	private Object labelStoreLock = new Object();
+	
+	private Tasks tasks;
+	private volatile Tasks tasksVolatile;
+	private Object tasksLock = new Object();
 
 	public Broker() {
 		//samples(); // preload sample metadata
@@ -207,6 +216,48 @@ public class Broker {
 			r = new SampleManager(this);
 			sampleManagerVolatile = r;
 			sampleManager = r;
+			return r;
+		}
+	}
+	
+	public LabelStore labelStore() {		
+		return labelStore != null ? labelStore : loadLabelStore();
+	}
+
+	private LabelStore loadLabelStore() {
+		LabelStore r = labelStoreVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (labelStoreLock) {
+			r = labelStoreVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new LabelStore(this);
+			labelStoreVolatile = r;
+			labelStore = r;
+			return r;
+		}
+	}
+	
+	public Tasks tasks() {		
+		return tasks != null ? tasks : loadTasks();
+	}
+
+	private Tasks loadTasks() {
+		Tasks r = tasksVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (tasksLock) {
+			r = tasksVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new Tasks(this);
+			tasksVolatile = r;
+			tasks = r;
 			return r;
 		}
 	}

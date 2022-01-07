@@ -27,7 +27,7 @@
       <q-list>
         <q-item clickable :to="'/projects'">
           <q-item-section avatar>
-            <q-icon name="school" />
+            <q-icon name="settings_input_component" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Projects</q-item-label>
@@ -37,11 +37,31 @@
 
         <q-item clickable :to="'/projects/' + project + '/main'">
           <q-item-section avatar>
-            <q-icon name="school" />
+            <q-icon name="home" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Main</q-item-label>
             <q-item-label caption>Go to main page</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable :to="'/projects/' + project + '/task'">
+          <q-item-section avatar>
+            <q-icon name="work" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Task submission</q-item-label>
+            <q-item-label caption>Execute tasks</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable :to="'/projects/' + project + '/tasks'">
+          <q-item-section avatar>
+            <q-icon name="work" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Task status</q-item-label>
+            <q-item-label caption>List status of submitted tasks</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>

@@ -55,6 +55,7 @@ import audio.server.api.ReviewStatisticsHandler;
 import audio.server.api.Review_listsHandler;
 import audio.server.api.Samples2Handler;
 import audio.server.api.SamplesHandler;
+import audio.server.api.TasksHandler;
 import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
 import photo2.api.PhotoDB2Handler;
@@ -151,6 +152,7 @@ public class Webserver {
 		handlerList.addHandler(new JwsHandler(broker));
 		handlerList.addHandler(new AccessHandler(broker));
 		handlerList.addHandler(createContext("/projects", true, new ProjectsHandler(broker)));
+		handlerList.addHandler(createContext("/tasks", true, new TasksHandler(broker)));
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/samples2", true, new Samples2Handler(broker)));

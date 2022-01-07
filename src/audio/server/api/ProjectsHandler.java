@@ -14,8 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public class ProjectsHandler extends AbstractHandler {
-	
+public class ProjectsHandler extends AbstractHandler {	
 
 	private final Broker broker;
 	private final ProjectHandler projectHanlder;

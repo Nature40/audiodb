@@ -1,6 +1,8 @@
 <template>
-  <q-page class="flex flex-center">
-    Select Project:
+  <q-page class="flex flex-center" style="color: black;">
+    <div>
+    <b>Select one project:</b>
+    <br>
     <div v-if="projects === undefined">
       no projects loaded
     </div>
@@ -9,8 +11,9 @@
     </div>
     <div v-else>
       <div v-for="project in projects" :key="project.id">
-        <br><router-link :to="toProjectHash(project)">{{project.id}}</router-link>
+        <br><router-link :to="toProjectHash(project)"> -->{{project.id}}</router-link>
       </div>
+    </div>
     </div>
     
   </q-page>

@@ -82,15 +82,18 @@ dependencies {
 	
 	implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.16.0'
 	
-	implementation group: 'com.h2database', name: 'h2', version: '2.0.202'	
+	implementation group: 'com.h2database', name: 'h2', version: '2.0.202'
+	
+	implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'	
 }
 
 sourceSets.main.java.srcDir 'src'
 
 jar {
 	from file('src/tinylog.properties')
-	destinationDirectory = project.layout.projectDirectory.dir('package')
 	
+	destinationDirectory = project.layout.projectDirectory.dir('package')
+		
 	manifest {
 		String classPathFiles = "";
 		for(java.io.File file : files(configurations.runtimeClasspath)) {

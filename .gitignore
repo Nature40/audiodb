@@ -44,7 +44,10 @@ photo_data_n1
 photo_data_n2
 review_lists_n1
 .Rproj.user
-AudioMoth_Zuordnung_2021-08.csv
-AudioMoth_Zuordnung_2021-08.ods
-AudioMoth_Zuordnung_2021-08_test.csv
-inventory.csv
+/AudioMoth_Zuordnung_2021-08.csv
+/AudioMoth_Zuordnung_2021-08.ods
+/AudioMoth_Zuordnung_2021-08_test.csv
+/inventory.csv
+/csv_out.csv
+/label_store.mv.db
+/label_store.trace.db
