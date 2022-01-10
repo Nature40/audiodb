@@ -2,14 +2,11 @@ package audio;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.HashSet;
 
 import org.tinylog.Logger;
 
 import audio.LabelStoreConnector.TlLabelStoreConnector;
 import de.siegmar.fastcsv.writer.CsvWriter;
-import util.AudioTimeUtil;
 
 public class LabelStore {
 
@@ -26,27 +23,32 @@ public class LabelStore {
 		SampleManager sampleManager = broker.sampleManager();
 		LabelStoreConnector conn = tlLabelStoreConnector.get();
 		conn.init(true);
-		HashSet<String> labelSet = new HashSet<String>();
+		
 		sampleManager.forEach(sample -> {
+			int sampleMapId = conn.getOrCreateIdBySample(sample.id);
 			Logger.info(sample.id);
-			labelSet.clear();
 			for(Label label : sample.getLabels()) {
 				for(GeneratorLabel lbl : label.generatorLabels) {
-					labelSet.add(lbl.name);
+					int labelMapId = conn.getOrCreateIdByLabel(lbl.name);
+					double rel = lbl.reliability;
+					int reliability = Double.isFinite(rel) ? rel >= 0 ? rel <= 1 ? (int) Math.round(rel * 100): 100 : 0: -1;
+					conn.insert(sampleMapId, labelMapId, reliability);
 				}
 			}
-			for (String name : labelSet) {
-				conn.insert(sample.id, name);
-			}
-		});		
+		});
 
 		try (CsvWriter csv = CsvWriter.builder().build(Path.of("csv_out.csv"))) {
-			csv.writeRow("location", "time", "label");		    
-			conn.forEach((id, label) -> {
-				Sample2 sample = sampleManager.getById(id);
+			csv.writeRow("location", "time", "label", "reliability");		    
+			conn.forEach((int id, int label, byte reliability) -> {
+				String sampleID = conn.getSampleById(id);
+				Sample2 sample = sampleManager.getById(sampleID);
 				String location = sample.hasLocation() ? sample.location : "";
-				String time = sample.hasTimestamp() ? AudioTimeUtil.ofAudiotime(sample.timestamp).toString() : "";
-				csv.writeRow(location, time, label);
+				//String time = sample.hasTimestamp() ? AudioTimeUtil.ofAudiotime(sample.timestamp).toString() : "";
+				String time = sample.hasTimestamp() ? "" + (sample.timestamp / 60) : "";
+				//String labelName = conn.getLabelById(label);
+				String labelName = "" + label;
+				String rel = "" + reliability;
+				csv.writeRow(location, time, labelName, rel);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);

@@ -24,8 +24,8 @@ public class SampleManagerConnector {
 				"META_PATH VARCHAR(255), " +
 				"SAMPLE_PATH VARCHAR(255), " +
 				"LOCATION VARCHAR(255), " +
-				"TIMESTAMP INT8, " +
-				"LAST_MODIFIED INT8, " +
+				"TIMESTAMP BIGINT, " +
+				"LAST_MODIFIED BIGINT, " +
 				"LOCKED BOOLEAN, " +
 				"DEVICE VARCHAR(255) " +
 				")"),
