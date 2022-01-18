@@ -121,6 +121,7 @@ public class PhotoMeta {
 	
 	public boolean isClassifiedAsPerson() {
 		//Logger.info(getClassifications().contains("person"));
-		return getClassifications().contains("person");
+		LinkedHashSet<String> classifications = getClassifications();
+		return classifications.contains("person") || classifications.contains("Human");
 	}
 }

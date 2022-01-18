@@ -5,9 +5,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Consumer;
 
-
-import org.tinylog.Logger;
-
 import photo2.api.PhotoMeta;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;

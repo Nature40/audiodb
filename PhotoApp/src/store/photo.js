@@ -36,7 +36,7 @@ export default {
     },
     move({state, rootState, dispatch}, relative) {
       var index = state.index + relative;
-      if(index > 0 && index < rootState.photos.data.length) {
+      if(index >= 0 && index < rootState.photos.data.length) {
         dispatch('setIndex', index);
       }
     }    

@@ -62,17 +62,13 @@
         </span>
         <hr>
         <b>Options</b>
-        <br><q-checkbox v-model="sorted_by_ranking" label="Sorted by ranking" />
+        <br><q-checkbox v-model="sorted_by_ranking" label="Sort by ranking" />
         <hr>
       </q-page>
     </q-page-container>
   </q-layout>
 </q-dialog>
 
-
-  
-  
-  
 </template>
 
 <script>

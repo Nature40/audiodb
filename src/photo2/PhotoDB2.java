@@ -183,7 +183,7 @@ public class PhotoDB2 {
 	}
 
 	public void refreshPhotoDBentry(Photo2 photo, int[] stats) {
-		refreshPhotoDBentry(photo.projectConfig, photo.projectConfig.root_path, photo.metaPath, stats);
+		refreshPhotoDBentry(photo.projectConfig, photo.metaPath.getParent(), photo.metaPath, stats);
 	}
 
 	public void refreshPhotoDBentry(PhotoProjectConfig projectConfig, Path root, Path metaPath, int[] stats) {
@@ -502,7 +502,7 @@ public class PhotoDB2 {
 				if(locked) {
 					return null;
 				}
-				//Logger.info("locked " + locked + "  " + meta_rel_path);
+				Logger.info("locked " + locked + "  " + meta_rel_path + "    " + image_rel_path);
 				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date, last_modified, locked);
 			}
 			return null;

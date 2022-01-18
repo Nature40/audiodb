@@ -51,3 +51,6 @@ review_lists_n1
 /csv_out.csv
 /label_store.mv.db
 /label_store.trace.db
+/data.csv
+/label.csv
+/location.csv

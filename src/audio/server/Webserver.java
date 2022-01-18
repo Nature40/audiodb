@@ -90,23 +90,23 @@ public class Webserver {
 		HttpConfiguration httpsConfiguration = createHttpsConfiguration(https_port);
 		httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
 
-		HTTP2ServerConnectionFactory https2ConnectionFactory = new HTTP2ServerConnectionFactory(httpsConfiguration);
+		/*HTTP2ServerConnectionFactory https2ConnectionFactory = new HTTP2ServerConnectionFactory(httpsConfiguration);
 		ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
-		alpn.setDefaultProtocol("h2");
+		alpn.setDefaultProtocol("h2");*/
 
 		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 		sslContextFactory.setKeyStorePath(keystore_path);
 		sslContextFactory.setKeyStorePassword(keystore_password);
 		sslContextFactory.setCipherComparator(HTTP2Cipher.COMPARATOR);
 
-		//SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory,HttpVersion.HTTP_1_1.asString());
-		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
+		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory,HttpVersion.HTTP_1_1.asString());
+		/*SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());*/
 
 		OptionalSslConnectionFactory optionalSslConnectionFactory = new OptionalSslConnectionFactory(sslConnectionFactory, HttpVersion.HTTP_1_1.asString());
 
 		HttpConnectionFactory httpsConnectionFactory = new HttpConnectionFactory(httpsConfiguration);
 
-		ServerConnector httpServerConnector = new ServerConnector(server, optionalSslConnectionFactory, sslConnectionFactory, alpn, https2ConnectionFactory, httpsConnectionFactory);
+		ServerConnector httpServerConnector = new ServerConnector(server, optionalSslConnectionFactory, sslConnectionFactory, /*alpn,*/ /*https2ConnectionFactory,*/ httpsConnectionFactory);
 		//ServerConnector httpServerConnector = new ServerConnector(server, sslContextFactory, httpsConnectionFactory);
 		httpServerConnector.setPort(https_port);
 

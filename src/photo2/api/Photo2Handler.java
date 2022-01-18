@@ -98,6 +98,7 @@ public class Photo2Handler {
 		if(reqWidth == 320 && reqHeight == 320) {
 			photodb2.thumbManager.getScaled(photo, reqWidth, reqHeight, response);
 		} else if(reqWidth <= 0 && reqHeight <= 0 && (reqGamma == 1 || !Double.isFinite(reqGamma))) {
+			Logger.info("load " + photo.imagePath);
 			File file = photo.imagePath.toFile();
 			long fileLen = file.length();
 			response.setContentType("image/jpeg");

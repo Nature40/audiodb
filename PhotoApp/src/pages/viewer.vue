@@ -13,7 +13,18 @@
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
       <q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>
-      <q-checkbox size="xs" v-model="hideIncorrectBoxes" val="xs" label="hide incorrect boxes" />      
+      <!--<q-checkbox size="xs" v-model="hideIncorrectBoxes" val="xs" label="hide incorrect boxes" />-->
+      <q-btn-toggle
+        v-model="show_box_mode"
+        push
+        glossy
+        toggle-color="primary"
+        :options="[
+          {label: 'All', value: 'all'},
+          {label: 'No incorrect', value: 'no_incorrect'},
+          {label: 'None', value: 'none'}
+        ]"
+      />      
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
@@ -59,7 +70,7 @@
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
             <q-item-section>
-              <q-item-label>{{scope.opt.name}} {{scope.opt.description !== '' ? ' - ' + scope.opt.description : ''}}</q-item-label>
+              <q-item-label><b>{{scope.opt.name}}</b> {{scope.opt.description !== '' ? ' - ' + scope.opt.description : ''}}</q-item-label>
             </q-item-section>
           </q-item>
         </template>
@@ -150,7 +161,8 @@ export default {
     userBox: undefined,
     classificationSelectMode: 'list',
     customClassificationText: undefined,
-    hideIncorrectBoxes: true,
+    /*hideIncorrectBoxes: true,*/
+    show_box_mode: 'no_incorrect',
   }),  
 
   computed: {
@@ -226,7 +238,8 @@ export default {
       if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.detections === undefined) {
         return [];
       }
-      if(this.hideIncorrectBoxes) {
+      //if(this.hideIncorrectBoxes) {
+      if(this.show_box_mode === 'no_incorrect') {
         return this.photoMeta.data.detections.filter(detection => {
           let classifications = detection.classifications;
           if(classifications === undefined || classifications.length < 1) {
@@ -234,11 +247,13 @@ export default {
           } else {
             let classification = classifications[classifications.length - 1].classification;
             console.log(classification);
-            return classification !== 'incorrect box';
+            return classification !== 'incorrect box' && classification !== 'Empty box' && classification !== 'Misaligned box';
           }          
         });
-      } else {
+      } else if(this.show_box_mode === 'all') {
         return this.photoMeta.data.detections;
+      } else {
+        return [];
       }
     },
     selectedDetection() {
