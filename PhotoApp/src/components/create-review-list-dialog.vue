@@ -63,6 +63,7 @@
         <hr>
         <b>Options</b>
         <br><q-checkbox v-model="sorted_by_ranking" label="Sort by ranking" />
+        <br><q-checkbox v-model="categorize_classification_location" label="Catgerize by classification and location" />
         <hr>
       </q-page>
     </q-page-container>
@@ -86,6 +87,7 @@ export default {
     classification_classificator: 'EfficientNetB3',
     classification_threshold: 0.8,
     sorted_by_ranking: true,
+    categorize_classification_location: false,
     loading: undefined,
     loadingError: undefined,
   }),  
@@ -123,6 +125,7 @@ export default {
       action.classification_classificator = this.classification_classificator;
       action.classification_threshold = this.classification_threshold;
       action.sorted_by_ranking = this.sorted_by_ranking;
+      action.categorize_classification_location = this.categorize_classification_location;
       var content = {actions: [action]}; 
       let params = {project: this.project};     
       try {

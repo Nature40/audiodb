@@ -103,8 +103,9 @@ public class ReviewListsHandler {
 				String classClassificator = jsonAction.getString("classification_classificator");
 				float classConf = jsonAction.getFloat("classification_threshold");
 				boolean sortedByRanking = jsonAction.optBoolean("sorted_by_ranking", false);
+				boolean categorizeClassificationLocation = jsonAction.optBoolean("categorize_classification_location", false);
 				Logger.info("create_review_list");
-				HashMap<String, Integer> occurringSpecies = new HashMap<String, Integer>();				
+				HashMap<String, Integer> occurringListCategry = new HashMap<String, Integer>();				
 				//String username = account.username;
 				long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();				
 				SqlConnector sqlConnector = photodb.getSqlConnector();
@@ -118,8 +119,8 @@ public class ReviewListsHandler {
 				}
 				final String setName = setName_;				
 				String setId = project + "__" + setName;
-				
-				
+
+
 				try {
 					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_COLLECTION);
 					stmt.setString(1, setId);
@@ -134,19 +135,20 @@ public class ReviewListsHandler {
 				photodb.foreachId(project, null, photoId -> {
 					Photo2 photo = photodb.getPhoto2NotLocked(photoId);
 					if(photo != null) {
+						String location = photo.location;
 						PhotoMeta photoMeta = new PhotoMeta(photo.getMeta());
 						Vec<Detection> detections = photoMeta.getDetections();
 						Map<String, CollectorEntry> collectorMap = new HashMap<String, CollectorEntry>();
 						detections.forEach(detection -> {
-							collectClassifications(detection, collectorMap, filterClassificator, filterConf, classClassificator, classConf);					
+							collectClassifications(photo, detection, collectorMap, filterClassificator, filterConf, classClassificator, classConf);					
 						});
 						for(CollectorEntry collectorEntry : collectorMap.values()) {
 							try {
-								String species = collectorEntry.classification;
-								String reviewListId = setId + "__" + species;
-								String reviewListName = species;
+								String listCategory = categorizeClassificationLocation ? collectorEntry.classification + '_' + location : collectorEntry.classification;
+								String reviewListId = setId + "__" + listCategory;
+								String reviewListName = categorizeClassificationLocation ? collectorEntry.classification + " (loc: " + location + ")" : collectorEntry.classification;
 								float ranking = collectorEntry.ranking;
-								Integer pos = occurringSpecies.get(species);
+								Integer pos = occurringListCategry.get(listCategory);
 								if(pos == null) {
 									try {
 										PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST);
@@ -162,11 +164,11 @@ public class ReviewListsHandler {
 									pos = 0;
 								}
 								pos++; // 1 based index
-								occurringSpecies.put(species, pos);
+								occurringListCategry.put(listCategory, pos);
 								insStmt.setString(1, reviewListId);
 								insStmt.setInt(2, pos);
 								insStmt.setString(3, photoId);
-								insStmt.setString(4, species);
+								insStmt.setString(4, listCategory);
 								insStmt.setFloat(5, ranking);
 								insStmt.executeUpdate();
 							} catch (SQLException e) {
@@ -177,9 +179,22 @@ public class ReviewListsHandler {
 				});
 
 				if(sortedByRanking) {
-					for(String species : occurringSpecies.keySet()) {
-						String reviewListId = setId + "__" + species;
-						String reviewListName = species;
+					for(String listCategory : occurringListCategry.keySet()) {
+
+						String reviewListId = setId + "__" + listCategory;
+						String reviewListName = null;
+						try {
+							PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_BY_ID);
+							stmt.setString(1, reviewListId);
+							ResultSet res = stmt.executeQuery();
+							if(!res.next()) {
+								throw new RuntimeException("review list not found");
+							}
+							reviewListName = res.getString(3);
+						} catch (SQLException e) {
+							throw new RuntimeException(e);
+						}
+
 						String reviewListIdOrdered = reviewListId + "__" + "ordered";
 						String reviewListIdOrderedName = reviewListName;
 
@@ -243,16 +258,18 @@ public class ReviewListsHandler {
 	}
 
 	static class CollectorEntry {
+		private Photo2 photo;
 		public String classification;
 		public float ranking;
 
-		public CollectorEntry(String classification, float ranking) {
+		public CollectorEntry(Photo2 photo, String classification, float ranking) {
+			this.photo = photo;
 			this.classification = classification;
 			this.ranking = ranking;
 		}
 	}
 
-	private static void collectClassifications(Detection detection, Map<String, CollectorEntry> collectorMap, String filterClassificator, float filterConf, String classClassificator, float classConf) {
+	private static void collectClassifications(Photo2 photo, Detection detection, Map<String, CollectorEntry> collectorMap, String filterClassificator, float filterConf, String classClassificator, float classConf) {
 		Vec<YamlMap> classifications = detection.classifications;
 		if(classifications.isEmpty()) {
 			return;
@@ -286,7 +303,7 @@ public class ReviewListsHandler {
 		float ranking = netConf;
 		CollectorEntry collectorEntry = collectorMap.get(netClass);
 		if(collectorEntry == null || ranking > collectorEntry.ranking) {
-			collectorEntry = new CollectorEntry(netClass, ranking);
+			collectorEntry = new CollectorEntry(photo, netClass, ranking);
 			collectorMap.put(netClass, collectorEntry);
 		}
 	}

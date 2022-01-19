@@ -12,7 +12,7 @@
       <span class="time-text">{{locationText}} | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
-      <q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>
+      <!--<q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>-->
       <!--<q-checkbox size="xs" v-model="hideIncorrectBoxes" val="xs" label="hide incorrect boxes" />-->
       <q-btn-toggle
         v-model="show_box_mode"

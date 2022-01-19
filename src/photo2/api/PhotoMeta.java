@@ -4,9 +4,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-
-import org.tinylog.Logger;
-
 import util.collections.vec.Vec;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;

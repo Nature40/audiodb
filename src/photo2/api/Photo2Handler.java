@@ -248,6 +248,7 @@ public class Photo2Handler {
 		JsonUtil.write(json, "id", photo.id);
 		JsonUtil.write(json, "location", photo.location);
 		JsonUtil.write(json, "date", photo.date);
+
 		if(writeDetections) {
 			json.key("detections");
 			json.array(); // detections
