@@ -13,14 +13,15 @@ import org.tinylog.Logger;
 import audio.server.Webserver;
 
 public class Samples {
-	
 
 	private final Path root_path;
+	private final Path root_data_path;	
 	
-	public Map<String, Sample> sampleMap;	
+	public Map<String, Sample> sampleMap;
 
 	public Samples(Broker broker) {
 		this.root_path = broker.config().audioConfig.root_path;
+		this.root_data_path = broker.config().audioConfig.root_data_path;
 		sampleMap = new ConcurrentSkipListMap<String, Sample>();
 		rescan();
 	}
@@ -29,20 +30,23 @@ public class Samples {
 		try {
 			sampleMap.clear();
 			ArrayList<Path> paths = Webserver.getAudioPaths(root_path, null);
-			for(Path path:paths) {
+			for(Path metaPath:paths) {
 				try {
-					String id = root_path.relativize(path).toString();
+					String id = root_path.relativize(metaPath).toString();
 					Logger.info("read " + id);
 					id = id.replaceAll("/", "__");
 					id = id.replaceAll("\\\\", "__");
 					id = id.replaceAll(".yaml", "");
-					Sample sample = new Sample(id, path);
+					Path metaDirectoryPath = metaPath.getParent();
+					Path metaRelDirectoryPath = root_path.relativize(metaDirectoryPath);
+					Path dataDirectoryPath = root_data_path.resolve(metaRelDirectoryPath);
+					Sample sample = new Sample(id, metaPath, dataDirectoryPath);
 					sample.readFromFile();
 					sample.checkAndCorrectLabelDublicates();
 					sampleMap.put(id, sample);
 				} catch (Exception e) {
 					//e.printStackTrace();
-					Logger.warn("error in " + path + "   " + e);
+					Logger.warn("error in " + metaPath + "   " + e);
 				}
 			}
 		} catch (IOException e) {

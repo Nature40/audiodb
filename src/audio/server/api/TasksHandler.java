@@ -81,10 +81,13 @@ public class TasksHandler extends AbstractHandler {
 			json.key("descriptors");
 			json.object();
 			Tasks.foreachDescriptor((name, descriptor) -> {
+				json.key(name);
+				json.object();
 				json.key("name");
 				json.value(name);
+				json.endObject();
 			});
-			json.endObject();
+			json.endObject();			
 		}
 		if(fTasks) {
 			json.key("tasks");
@@ -130,5 +133,4 @@ public class TasksHandler extends AbstractHandler {
 			throw new RuntimeException("unknown action:" + actionName);
 		}	
 	}	
-	
 }

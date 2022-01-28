@@ -63,7 +63,7 @@ public class Tasks {
 				name = name.substring(TASK_PREFIX_LEN);
 			}
 			Descriptor descriptor = new Descriptor(name, taskClass);
-			if(descriptorMap.containsKey("name")) {
+			if(descriptorMap.containsKey(name)) {
 				Logger.warn("overwrite existing name " + name + "  of  " + descriptorMap.get(name).taskClass + "  to  " + taskClass);
 			}
 			descriptorMap.put(name, descriptor);

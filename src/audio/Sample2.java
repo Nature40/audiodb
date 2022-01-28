@@ -36,7 +36,7 @@ public class Sample2 implements GeneralSample {
 	}
 
 	public Sample getSample() {
-		return new Sample(id, metaPath);
+		return new Sample(id, metaPath, samplePath.getParent());
 	}
 
 	public boolean hasLocation() {

@@ -135,8 +135,8 @@
       </div>
     </div>
     <q-separator/>      
-    <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff + 'px'}">
-      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff" :style="{width: canvasWidth + 'px', height: player_fft_cutoff + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave"/>
+    <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff_range + 'px'}">
+      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff_range" :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave"/>
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px; pointer-events: none;">
         <div class="absolute-full flex flex-center">
           <q-badge color="white" text-color="accent" label="loading spectrogram" />
@@ -154,7 +154,13 @@
         error loading metadata
         <q-btn color="grey" @click="refreshSample">refresh</q-btn>
       </q-badge>
-      
+
+      <template v-if="staticLinesCanvasPosY !== undefined">
+        <template v-for="staticLineCanvasPosY in staticLinesCanvasPosY" :key="staticLineCanvasPosY">
+          <div v-if="staticLineCanvasPosY >= player_fft_cutoff_lower && staticLineCanvasPosY < player_fft_cutoff" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(0, 255, 255, 0.30);" :style="{bottom: (staticLineCanvasPosY - player_fft_cutoff_lower) + 'px',}"></div>
+        </template>
+      </template>
+
       <div v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelPosY + 'px',}"></div>
       <q-badge v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent">
         <span v-html="mouseFreuqencyText"></span> kHz
@@ -214,7 +220,7 @@
   </div>
 
   <div class="q-ma-md" v-if="labels.length > 0">
-    Occuring labels:
+    Occurring labels:
     <q-badge 
       v-for="name in occurringLabels"
       :key="name" 
@@ -296,13 +302,33 @@ export default defineComponent({
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
       player_fft_window: state => state.project.player_fft_window,
       player_fft_step: state => state.project.player_fft_step,
-      player_fft_cutoff: state => state.project.player_fft_cutoff,
+      /*player_fft_cutoff: state => state.project.player_fft_cutoff,*/
+      player_fft_cutoff_lower_frequency: state => state.project.player_fft_cutoff_lower_frequency,
+      player_fft_cutoff_upper_frequency: state => state.project.player_fft_cutoff_upper_frequency,
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
       player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
       player_time_expansion_factor: state => state.project.player_time_expansion_factor,
+      player_static_lines_frequency: state => state.project.player_static_lines_frequency, 
     }),
+    /*player_fft_cutoff_lower_frequency() {
+      return 5000;
+    },
+    player_fft_cutoff_upper_frequency() {
+      return 10000;
+    },*/
+    player_fft_cutoff_lower() {
+      let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sampleRate);
+      return c < 0 ? 0 : c > (this.player_fft_window / 2) - 1 ? (this.player_fft_window / 2) - 1 : c;
+    },    
+    player_fft_cutoff() {
+      let c = Math.floor((this.player_fft_cutoff_upper_frequency *  this.player_fft_window) / this.sampleRate);
+      return c < 1 ? 1 : c > this.player_fft_window / 2 ? this.player_fft_window / 2 : c;
+    },
+    player_fft_cutoff_range() {
+      return this.player_fft_cutoff - this.player_fft_cutoff_lower;
+    },
     spectrogramSettingsQuery() {
-      var q = "&cutoff=" + this.player_fft_cutoff + "&step=" + this.player_fft_step + "&window=" + this.player_fft_window + "&threshold=" + this.player_spectrum_threshold + "&intensity_max=" + this.player_fft_intensity_max;
+      var q = "&cutoff_lower=" + this.player_fft_cutoff_lower + "&cutoff=" + this.player_fft_cutoff + "&step=" + this.player_fft_step + "&window=" + this.player_fft_window + "&threshold=" + this.player_spectrum_threshold + "&intensity_max=" + this.player_fft_intensity_max;
       if(this.player_spectrum_shrink_Factor !== undefined && this.player_spectrum_shrink_Factor > 1) {
         q += "&shrink_factor=" + this.player_spectrum_shrink_Factor;
       }
@@ -351,8 +377,11 @@ export default defineComponent({
       }
       return url;
     },
+    staticLinesCanvasPosY() {
+      return this.sampleRate === undefined || this.player_fft_window === undefined || this.player_static_lines_frequency === undefined || this.player_static_lines_frequency.length === 0 ? undefined : this.player_static_lines_frequency.map(staticLineFrequency => Math.round((staticLineFrequency * this.player_fft_window) / this.sampleRate));
+    },    
     mouseFreuqencyPos() {
-      return this.canvasMousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : ((this.canvasMousePixelPosY * this.sampleRate) / this.player_fft_window);
+      return this.canvasMousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (((this.player_fft_cutoff_lower + this.canvasMousePixelPosY) * this.sampleRate) / this.player_fft_window);
     },
     mouseFreuqencyText() {
       return (this.mouseFreuqencyPos < 100000 ? (this.mouseFreuqencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFreuqencyPos / 1000).toFixed(2);
@@ -495,7 +524,7 @@ export default defineComponent({
             next = i;
           }
           ctx.fillStyle = '#404040';
-          ctx.fillRect(dstX, dstY, this.spectrogramImageMaxPixelLen, this.player_fft_cutoff);
+          ctx.fillRect(dstX, dstY, this.spectrogramImageMaxPixelLen, this.player_fft_cutoff_range);
         } else {
           ctx.drawImage(image, dstX, dstY);
         }
@@ -503,16 +532,16 @@ export default defineComponent({
       this.paintLabels();
       this.paintLabelMap();
       ctx.fillStyle = '#ffffff50';
-      ctx.fillRect(boxOffset, 0, 1, this.player_fft_cutoff);
+      ctx.fillRect(boxOffset, 0, 1, this.player_fft_cutoff_range);
       ctx.fillStyle = '#00000050';
-      ctx.fillRect(boxOffset - 1, 0, 1, this.player_fft_cutoff);
-      ctx.fillRect(boxOffset + 1, 0, 1, this.player_fft_cutoff);
+      ctx.fillRect(boxOffset - 1, 0, 1, this.player_fft_cutoff_range);
+      ctx.fillRect(boxOffset + 1, 0, 1, this.player_fft_cutoff_range);
 
       /*ctx.beginPath();
       ctx.lineWidth = '1'; // width of the line
       ctx.strokeStyle = 'red'; // color of the line
       ctx.moveTo(boxOffset, 0); // begins a new sub-path based on the given x and y values.
-      ctx.lineTo(boxOffset, this.player_fft_cutoff); // used to create a pointer based on x and y  
+      ctx.lineTo(boxOffset, this.player_fft_cutoff_range); // used to create a pointer based on x and y  
       ctx.stroke();*/
 
       if(next !== undefined) {
@@ -539,7 +568,7 @@ export default defineComponent({
         if(canvasPixelXmin <= labelPixelXmax && canvasPixelXmax >= labelPixelXmin) {
           //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
           ctx.fillStyle = i === this.selectedLabelIndex ? 'rgba(255,0,0,0.3)' : 'rgba(0,255,0,0.3)';
-          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff);
+          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff_range);
         }      
       }
       if(this.newSegmentStart !== undefined) {
@@ -550,7 +579,7 @@ export default defineComponent({
         if(canvasPixelXmin <= labelPixelXmax && canvasPixelXmax >= labelPixelXmin) {
           //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
           ctx.fillStyle = 'rgba(0,0,255,0.3)';
-          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff);
+          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff_range);
         }           
       }
     },
@@ -675,7 +704,7 @@ export default defineComponent({
       }
       var rect = this.$refs.spectrogram.getBoundingClientRect();
       this.canvasMousePixelPosX = e.clientX - rect.left;
-      this.canvasMousePixelPosY = (this.player_fft_cutoff - 1) - (e.clientY - rect.top);
+      this.canvasMousePixelPosY = (this.player_fft_cutoff_range - 1) - (e.clientY - rect.top);
     },
     onCanvasMouseleave(e) {
       this.canvasMousePixelPosX = undefined;

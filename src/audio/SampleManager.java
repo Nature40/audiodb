@@ -26,6 +26,7 @@ public class SampleManager {
 	
 
 	private final Path root_path;
+	private final Path root_data_path;
 
 	private final Broker broker;
 
@@ -38,6 +39,7 @@ public class SampleManager {
 	public SampleManager(Broker broker) {
 		this.broker = broker;
 		this.root_path = broker.config().audioConfig.root_path;
+		this.root_data_path = broker.config().audioConfig.root_data_path;
 		this.deviceInventory = new DeviceInventory(broker.config().audioConfig.device_inventory_file);
 		try {
 			conn = DriverManager.getConnection("jdbc:h2:./sample_cache");
@@ -57,27 +59,27 @@ public class SampleManager {
 		return id;
 	}
 
-	private void traverse(AudioProjectConfig projectConfig, Path root, int[] stats) throws IOException {
-		Logger.info("traverse " + root);
+	private void traverse(AudioProjectConfig projectConfig, Path traversing_path, int[] stats) throws IOException {
+		Logger.info("traverse " + traversing_path);
 		try {
-			for(Path path:Files.newDirectoryStream(root)) {
-				if(path.toFile().isDirectory()) {
-					traverse(projectConfig, path, stats);
-				} else if(path.toFile().isFile()) {
+			for(Path sub_path:Files.newDirectoryStream(traversing_path)) {
+				if(sub_path.toFile().isDirectory()) {
+					traverse(projectConfig, sub_path, stats);
+				} else if(sub_path.toFile().isFile()) {
 					try {
-						if(path.getFileName().toString().endsWith(".yaml")) {
-							refreshSampleEntry(projectConfig, root, path, stats);
+						if(sub_path.getFileName().toString().endsWith(".yaml")) {
+							refreshSampleEntry(projectConfig, traversing_path, sub_path, stats);
 						}
 					} catch(Exception e) {
 						Logger.warn(e);
 						e.printStackTrace();
 					}
 				} else {
-					Logger.warn("unknown entity: " + path);
+					Logger.warn("unknown entity: " + sub_path);
 				}
 			}
 		} catch(Exception e) {
-			Logger.warn("error in " + root + "   " + e);
+			Logger.warn("error in " + traversing_path + "   " + e);
 		}
 	}
 
@@ -176,7 +178,7 @@ public class SampleManager {
 	abstract class AbstractSampleConverter implements SampleRowConsumer {
 		@Override
 		public final void accept(String id, String project, String meta_rel_path, String sample_rel_path, String location, long timestamp, long lastModified, boolean locked, String device) {
-			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_path.resolve(sample_rel_path), location, timestamp, device);
+			Sample2 sample = new Sample2(id, project, root_path.resolve(meta_rel_path), root_data_path.resolve(sample_rel_path), location, timestamp, device);
 			accept(sample);			
 		}
 		public abstract void accept(Sample2 sample);

@@ -20,7 +20,7 @@ import util.AudioTimeUtil;
 import util.Web;
 
 public class ProjectHandler {
-	
+
 
 	private final Broker broker;
 	private final SampleManager sampleManager;
@@ -86,6 +86,8 @@ public class ProjectHandler {
 		json.value(config.project);
 		json.key("player_spectrum_threshold");
 		json.value(config.player_spectrum_threshold);
+		json.key("player_fft_intensity_max");
+		json.value(config.player_fft_intensity_max);
 		json.key("player_playbackRate");
 		json.value(config.player_playbackRate);
 		json.key("player_preservesPitch");
@@ -94,6 +96,18 @@ public class ProjectHandler {
 		json.value(config.player_overwriteSamplingRate);
 		json.key("player_samplingRate");
 		json.value(config.player_samplingRate);
+		json.key("player_fft_window");
+		json.value(config.player_fft_window);
+		json.key("player_time_expansion_factor");
+		json.value(config.player_time_expansion_factor);
+		if(config.player_static_lines_frequency != null) {
+			json.key("player_static_lines_frequency");
+			json.value(config.player_static_lines_frequency);
+		}
+		json.key("player_fft_cutoff_lower_frequency");
+		json.value(config.player_fft_cutoff_lower_frequency);
+		json.key("player_fft_cutoff_upper_frequency");
+		json.value(config.player_fft_cutoff_upper_frequency);
 		if(fLocations) {
 			json.key("locations");
 			json.array();

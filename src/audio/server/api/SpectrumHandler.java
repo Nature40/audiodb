@@ -34,10 +34,26 @@ public class SpectrumHandler {
 
 		window = Web.getInt(request, "window", window);
 
-		int cutoff = Web.getInt(request, "cutoff", 320);
-		if(cutoff > window/2) {
-			Logger.warn("cutoff out of bounds: " + cutoff + "  set to " + window/2);
-			cutoff = window/2;
+		int cutoff_lower_max = window/2 - 1;
+		int cutoff_lower = Web.getInt(request, "cutoff_lower", 0);
+		if(cutoff_lower < 0) {
+			Logger.warn("cutoff_lower out of bounds: " + cutoff_lower + "  set to " + 0);
+			cutoff_lower = 0;
+		}
+		if(cutoff_lower > cutoff_lower_max) {
+			Logger.warn("cutoff_lower out of bounds: " + cutoff_lower + "  set to " + cutoff_lower_max);
+			cutoff_lower = cutoff_lower_max;
+		}
+		
+		int cutoff_upper_max = window/2;
+		int cutoff_upper = Web.getInt(request, "cutoff", 320);
+		if(cutoff_upper < 1) {
+			Logger.warn("cutoff out of bounds: " + cutoff_upper + "  set to " + 1);
+			cutoff_upper = 1;
+		}
+		if(cutoff_upper > cutoff_upper_max) {
+			Logger.warn("cutoff out of bounds: " + cutoff_upper + "  set to " + cutoff_upper_max);
+			cutoff_upper = cutoff_upper_max;
 		}
 		float threshold = (float) Web.getDouble(request, "threshold", 12);
 
@@ -88,26 +104,31 @@ public class SpectrumHandler {
 		}
 
 		if(shrink_factor > 1) {
-			image = render3Shrink(fullShorts, window, step, cols, cutoff, threshold, intensity_max, shrink_factor);
+			//image = render3Shrink(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, shrink_factor);
+			image = render3Shrink(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, shrink_factor);
 		} else if(renderWidth <= 0) {
-			image = render3(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
+			//image = render3(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max);
+			image = render3(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max);
 			//image = render3denoise(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
 		} else if(isMaxWidth){
 			step = window;
 			cols = ((sampleProcessor.dataLength - window) / step) + 1;
 			if(cols <= renderWidth) {
-				image = render3(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
+				//image = render3(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max);
+				image = render3(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max);
 			} else {
-				image = render3width(fullShorts, window, step, cols, cutoff, threshold, intensity_max, renderWidth);
+				//image = render3width(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, renderWidth);
+				image = render3width(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, renderWidth);
 			}
 		} else {
-			image = render3width(fullShorts, window, step, cols, cutoff, threshold, intensity_max, renderWidth);
+			//image = render3width(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, renderWidth);
+			image = render3width(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, renderWidth);
 		}
 
 		image.writePngCompressed(response.getOutputStream());
 	}
 
-	private ImageRGBA render2(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold) {
+	private ImageRGBA render2(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold) {
 		Logger.info("render2 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
@@ -120,7 +141,7 @@ public class SpectrumHandler {
 				a[i] = fullShorts[pos*step + i] * weight[i];
 			}
 			fft.realForward(a);
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = (float) Math.log(a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1] + Float.MIN_VALUE);
 				a[i] = v;
 				if(v >= threshold) {
@@ -137,21 +158,21 @@ public class SpectrumHandler {
 		Logger.info(minv + "  " + maxv);
 
 		float[] lut = Lut.getGammaLUT256f(minv, maxv, 1.2);			
-		ImageRGBA image = new ImageRGBA(cols, cutoff);
+		ImageRGBA image = new ImageRGBA(cols, cutoff_upper);
 		int[] dst = image.getRawArray();
 		for (int pos = 0; pos < cols; pos++) {
 			float[] a = transformed[pos];
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = a[i];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
-				dst[(cutoff - i - 1) * cols + pos] = c;
+				dst[(cutoff_upper - i - 1) * cols + pos] = c;
 			}
 		}
 
 		return image;
 	}
 
-	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv) {
+	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv) {
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
@@ -166,7 +187,7 @@ public class SpectrumHandler {
 		Logger.info("energy sample " +  energy_per_sample + "   " + Math.log(energy_per_sample));*/
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
-		ImageRGBA image = new ImageRGBA(cols, cutoff);
+		ImageRGBA image = new ImageRGBA(cols, cutoff_upper);
 		int[] dst = image.getRawArray();
 		float[] a = new float[n];
 		for (int pos = 0; pos < cols; pos++) {			
@@ -182,49 +203,91 @@ public class SpectrumHandler {
 				}
 			}
 			Logger.info("vmax " + vmax + "   " + Math.log(vmax) + "vmax " + vmax/n + "   " + Math.log(vmax/n));*/
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
-				dst[(cutoff - i - 1) * cols + pos] = c;
+				dst[(cutoff_upper - i - 1) * cols + pos] = c;
+			}
+		}
+
+		return image;
+	}
+	
+	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff_lower, int cutoff_upper, float threshold, float maxv) {
+		int cutoff_range = cutoff_upper - cutoff_lower;
+		//Logger.info("render3 step " + step + "  cols " + cols);
+		FloatFFT_1D fft = new FloatFFT_1D(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n);
+
+		/*float energy = 0;
+		for (int i = 0; i < n; i++) {
+			float v = weight[i] * Short.MAX_VALUE;
+			energy += v*v;
+		}
+		float energy_per_sample = energy / n;
+		Logger.info("energy " +  energy + "   " + Math.log(energy));
+		Logger.info("energy sample " +  energy_per_sample + "   " + Math.log(energy_per_sample));*/
+
+		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
+		ImageRGBA image = new ImageRGBA(cols, cutoff_range);
+		int[] dst = image.getRawArray();
+		float[] a = new float[n];
+		for (int pos = 0; pos < cols; pos++) {			
+			for (int i = 0; i < n; i++) {
+				a[i] = fullShorts[pos*step + i] * weight[i];
+			}
+			fft.realForward(a);
+			/*float vmax = 0;
+			for (int i = 0; i < n/2; i++) {
+				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
+				if(vmax < v) {
+					vmax = v;
+				}
+			}
+			Logger.info("vmax " + vmax + "   " + Math.log(vmax) + "vmax " + vmax/n + "   " + Math.log(vmax/n));*/
+			for (int i = cutoff_lower; i < cutoff_upper; i++) {
+				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
+				int c = Renderer.colInferno[Lut.match256f(lut, v)];
+				dst[(cutoff_upper - i - 1) * cols + pos] = c;
 			}
 		}
 
 		return image;
 	}
 
-	private ImageRGBA render3denoise(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv) {
+	private ImageRGBA render3denoise(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv) {
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
-		ImageRGBA image = new ImageRGBA(cols, cutoff);
+		ImageRGBA image = new ImageRGBA(cols, cutoff_upper);
 		int[] dst = image.getRawArray();
 		float[] a = new float[n];
-		float[][] bb = new float[cols][cutoff];
-		float[] sum = new float[cutoff];
+		float[][] bb = new float[cols][cutoff_upper];
+		float[] sum = new float[cutoff_upper];
 		for (int pos = 0; pos < cols; pos++) {
 			for (int i = 0; i < n; i++) {
 				a[i] = fullShorts[pos*step + i] * weight[i];
 			}
 			fft.realForward(a);
 			float[] b = bb[pos];
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 				b[i] = v;
 				sum[i] += v;
 			}
 		}
-		for (int i = 0; i < cutoff; i++) {
-			sum[i] = (sum[i] / cutoff) * 1.1f;
+		for (int i = 0; i < cutoff_upper; i++) {
+			sum[i] = (sum[i] / cutoff_upper) * 1.1f;
 		}
 		for (int pos = 0; pos < cols; pos++) {
 			float[] b = bb[pos];
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = b[i];
 				if(sum[i] <= v) {
 					int c = Renderer.colInferno[Lut.match256f(lut, v)];
-					dst[(cutoff - i - 1) * cols + pos] = c;
+					dst[(cutoff_upper - i - 1) * cols + pos] = c;
 				}
 			}
 		}
@@ -232,15 +295,15 @@ public class SpectrumHandler {
 		return image;
 	}
 
-	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv, int width) {
+	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv, int width) {
 		Logger.info("render3width step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 
-		float[][] target = new float[width][cutoff];
+		float[][] target = new float[width][cutoff_upper];
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
-		ImageRGBA image = new ImageRGBA(width, cutoff);
+		ImageRGBA image = new ImageRGBA(width, cutoff_upper);
 		int[] dst = image.getRawArray();
 		float[] a = new float[n];
 		for (int pos = 0; pos < cols; pos++) {			
@@ -249,7 +312,7 @@ public class SpectrumHandler {
 			}
 			fft.realForward(a);
 			float[] t = target[(int) Math.floor(((pos + 0.5d) * width) / cols)];
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 				t[i] = Math.max(t[i], v);
 				/*if(t[i] < v) { // slower
@@ -260,28 +323,68 @@ public class SpectrumHandler {
 
 		for (int pos = 0; pos < width; pos++) {			
 			float[] t = target[pos];
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = t[i];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
-				dst[(cutoff - i - 1) * width + pos] = c;
+				dst[(cutoff_upper - i - 1) * width + pos] = c;
+			}
+		}
+
+		return image;
+	}
+	
+	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff_lower, int cutoff_upper, float threshold, float maxv, int width) {
+		int cutoff_range = cutoff_upper - cutoff_lower;
+		Logger.info("render3width step " + step + "  cols " + cols);
+		FloatFFT_1D fft = new FloatFFT_1D(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n);
+
+		float[][] target = new float[width][cutoff_range];
+
+		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
+		ImageRGBA image = new ImageRGBA(width, cutoff_range);
+		int[] dst = image.getRawArray();
+		float[] a = new float[n];
+		for (int pos = 0; pos < cols; pos++) {			
+			for (int i = 0; i < n; i++) {
+				a[i] = fullShorts[pos*step + i] * weight[i];
+			}
+			fft.realForward(a);
+			float[] t = target[(int) Math.floor(((pos + 0.5d) * width) / cols)];
+			for (int i = cutoff_lower; i < cutoff_upper; i++) {
+				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
+				int bIndex = i - cutoff_lower;
+				t[bIndex] = Math.max(t[bIndex], v);
+				/*if(t[i] < v) { // slower
+					t[i] = v;
+				}*/
+			}
+		}
+
+		for (int pos = 0; pos < width; pos++) {			
+			float[] t = target[pos];
+			for (int i = 0; i < cutoff_range; i++) {
+				float v = t[i];
+				int c = Renderer.colInferno[Lut.match256f(lut, v)];
+				dst[(cutoff_range - i - 1) * width + pos] = c;
 			}
 		}
 
 		return image;
 	}
 
-	private ImageRGBA render3Shrink(short[] fullShorts, int n, int step, int cols, int cutoff, float threshold, float maxv, int shrinkFactor) {
+	private ImageRGBA render3Shrink(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv, int shrinkFactor) {
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
 		float[] weight = SampleProcessor.getGaussianWeights(n);
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
-		ImageRGBA image = new ImageRGBA(cols, cutoff);
+		ImageRGBA image = new ImageRGBA(cols, cutoff_upper);
 		int[] dst = image.getRawArray();
 		float[] a = new float[n];
-		float[] b = new float[cutoff];
+		float[] b = new float[cutoff_upper];
 		for (int colPos = 0; colPos < cols; colPos++) {
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				b[i] = 0f;
 			}
 			for(int shrinkPos = 0; shrinkPos < shrinkFactor; shrinkPos++) {
@@ -290,15 +393,51 @@ public class SpectrumHandler {
 					a[i] = fullShorts[fftPos + i] * weight[i];
 				}
 				fft.realForward(a);
-				for (int i = 0; i < cutoff; i++) {
+				for (int i = 0; i < cutoff_upper; i++) {
 					float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 					b[i] = Math.max(b[i], v);
 				}
 			}
-			for (int i = 0; i < cutoff; i++) {
+			for (int i = 0; i < cutoff_upper; i++) {
 				float v = b[i];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
-				dst[(cutoff - i - 1) * cols + colPos] = c;
+				dst[(cutoff_upper - i - 1) * cols + colPos] = c;
+			}
+		}
+		return image;
+	}
+	
+	private ImageRGBA render3Shrink(short[] fullShorts, int n, int step, int cols, int cutoff_lower, int cutoff_upper, float threshold, float maxv, int shrinkFactor) {
+		int cutoff_range = cutoff_upper - cutoff_lower;
+		//Logger.info("render3 step " + step + "  cols " + cols);
+		FloatFFT_1D fft = new FloatFFT_1D(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n);
+
+		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
+		ImageRGBA image = new ImageRGBA(cols, cutoff_range);
+		int[] dst = image.getRawArray();
+		float[] a = new float[n];
+		float[] b = new float[cutoff_range];
+		for (int colPos = 0; colPos < cols; colPos++) {
+			for (int i = 0; i < cutoff_range; i++) {
+				b[i] = 0f;
+			}
+			for(int shrinkPos = 0; shrinkPos < shrinkFactor; shrinkPos++) {
+				int fftPos = colPos * step * shrinkFactor + shrinkPos * step;
+				for (int i = 0; i < n; i++) {
+					a[i] = fullShorts[fftPos + i] * weight[i];
+				}
+				fft.realForward(a);
+				for (int i = cutoff_lower; i < cutoff_upper; i++) {
+					float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
+					int bIndex = i - cutoff_lower;
+					b[bIndex] = Math.max(b[bIndex], v);
+				}
+			}
+			for (int i = 0; i < cutoff_range; i++) {
+				float v = b[i];
+				int c = Renderer.colInferno[Lut.match256f(lut, v)];
+				dst[(cutoff_range - i - 1) * cols + colPos] = c;
 			}
 		}
 		return image;

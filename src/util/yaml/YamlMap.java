@@ -266,6 +266,12 @@ public class YamlMap {
 			fun.accept(getInt(name));
 		}	
 	}
+	
+	public void optFunList(String name, Consumer<YamlList> fun) {
+		if(contains(name)) {
+			fun.accept(optList(name));
+		}	
+	}
 
 	public boolean optBoolean(String name, boolean def) {
 		if(contains(name)) {

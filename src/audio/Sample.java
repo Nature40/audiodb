@@ -20,7 +20,7 @@ public class Sample implements GeneralSample {
 
 	public final String id;
 	public final Path metaPath;
-	public final Path directoryPath;
+	public final Path dataDirectoryPath;
 
 	private YamlMap yamlMap;
 	private String audioFilename;
@@ -29,10 +29,10 @@ public class Sample implements GeneralSample {
 	private Vec<Label> labels;
 	private SampleUserLocked sampleUserLocked;
 
-	public Sample(String id, Path metaPath) {
+	public Sample(String id, Path metaPath, Path dataDirectoryPath) {
 		this.id = id;		
 		this.metaPath = metaPath;
-		this.directoryPath = metaPath.getParent();
+		this.dataDirectoryPath = dataDirectoryPath;
 	}	
 
 	public synchronized void readFromFile() {
@@ -50,7 +50,7 @@ public class Sample implements GeneralSample {
 			throw new RuntimeException("no AudioSens");
 		}
 		audioFilename = yamlMap.getString("file");
-		audioPath = directoryPath.resolve(audioFilename);
+		audioPath = dataDirectoryPath.resolve(audioFilename);
 		audioFile = audioPath.toFile();
 
 		labels = new Vec<Label>();

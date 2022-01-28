@@ -6,8 +6,6 @@ import java.time.ZoneOffset;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -117,16 +115,6 @@ public class SampleHandler {
 		json.endObject();	
 	}
 
-
-
-
-	
-
-	
-
-
-
-
 	private void handleMeta(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		//response.setContentType("text/yaml; charset=utf-8");
 		response.setContentType("text/plain; charset=utf-8");
@@ -136,13 +124,12 @@ public class SampleHandler {
 		LinkedHashMap<String, Object> yamlMapSample = new LinkedHashMap<String, Object>();
 		yamlMap.put("sample", yamlMapSample);
 		yamlMapSample.put("id", sample.id);
-		yamlMapSample.put("directory", sample.directoryPath.toString());
+		yamlMapSample.put("directory", sample.dataDirectoryPath.toString());
 		yamlMapSample.put("audio_file_name", sample.getAudioFileName());
 		yamlMapSample.put("audio_file_size", sample.getAudioFile().length());
 
 		yamlMap.put("meta", sample.getMetaMap().getInternalMap());
 
 		new Yaml().dump(yamlMap, response.getWriter());
-
 	}
 }
