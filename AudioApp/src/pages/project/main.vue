@@ -16,6 +16,7 @@
         <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true"/>
       </div>
       <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">
+        <q-badge color="grey-4" text-color="grey-14" label="<== use the 'browse'-button on the left"/> 
         <q-badge color="yellow-14" text-color="accent" label="no audio sample selected"/> 
       </div>
       <q-space></q-space>

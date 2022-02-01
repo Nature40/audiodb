@@ -9,16 +9,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.tinylog.Logger;
 
 import util.AudioTimeUtil;
 import util.collections.vec.Vec;
-import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Command_create_yaml implements Command {
-	
+
 
 	@Override
 	public void execute(String command, String[] params) {
@@ -54,7 +55,7 @@ public class Command_create_yaml implements Command {
 						counter++;
 					}
 				} else {
-					Logger.warn("unknown entry");
+					Logger.warn("unknown entry: " + file.toString());
 				}
 			}
 		} catch (Exception e) {
@@ -91,20 +92,74 @@ public class Command_create_yaml implements Command {
 	private final static int AUDIOMOTH_LEN = AUDIOMOTH.length();
 	private final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
+	private final static Pattern DATETIME_PATTERN = Pattern.compile(".*([0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]).*");
+	private final static Pattern UTC_OFFSET_PATTERN = Pattern.compile(".*\\(UTC([-+]?[0-9]*)\\).*");	
+	private final static int HOUR_OFFSET = 60*60;
+	private final static Pattern GAIN_SETTING_PATTERN = Pattern.compile(".*at (.*?) gain setting.*");
+	private final static Pattern BATTERY_STATE_PATTERN = Pattern.compile(".*battery state was (.*?V).*");
+	private final static Pattern TEMPERATURE_PATTERN = Pattern.compile(".*temperature was (.*?C).*");
+
+
 	protected boolean createYaml(File file, Path yamlPath) {
 		try {
 			Riff riff = new Riff(file);
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
 			m.put("AudioSens", "v1.1");
 			m.put("file", file.getName());
-			if(riff.comments != null && riff.comments.startsWith(RECORDED_AT)) {
+			if(riff.comments != null) {
 				try {
-					String timeText = riff.comments.substring(RECORDED_AT_LEN, RECORDED_AT_LEN + 19);
-					//Logger.info("timeText |" + timeText + "|");
-					LocalDateTime localDateTime = LocalDateTime.parse(timeText, AUDIO_FORMATTER);
-					//Logger.info("dateTime |" + localDateTime + "|");
-					long timestamp = AudioTimeUtil.toAudiotime(localDateTime);
-					m.put("timestamp", timestamp);
+					final Matcher datetimeMatcher = DATETIME_PATTERN.matcher(riff.comments);
+					if(datetimeMatcher.matches() && datetimeMatcher.groupCount() == 1) {
+						String datetimeText = datetimeMatcher.group(1);
+						LocalDateTime localDateTime = LocalDateTime.parse(datetimeText, AUDIO_FORMATTER);
+						long timestamp = AudioTimeUtil.toAudiotime(localDateTime);
+						try {
+							final Matcher offsetMatcher = UTC_OFFSET_PATTERN.matcher(riff.comments);
+							if(offsetMatcher.matches() && offsetMatcher.groupCount() == 1) {
+								String offsetText = offsetMatcher.group(1);
+								if(!offsetText.isEmpty()) {
+									int offset = Integer.parseInt(offsetText);
+									timestamp -= offset * HOUR_OFFSET; 
+								}
+								m.put("recording_time_zone", "UTC" + offsetText);
+							} else {
+								Logger.warn("no timestamp UTC offset marker found");
+							}
+						} catch(Exception e) {
+							Logger.warn(e);
+						}
+						m.put("timestamp", timestamp);
+					}
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
+
+				try {
+					final Matcher matcher = GAIN_SETTING_PATTERN.matcher(riff.comments);
+					if(matcher.matches() && matcher.groupCount() == 1) {
+						String text = matcher.group(1);						
+						m.put("gain_setting", text);
+					}
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
+
+				try {
+					final Matcher matcher = BATTERY_STATE_PATTERN.matcher(riff.comments);
+					if(matcher.matches() && matcher.groupCount() == 1) {
+						String text = matcher.group(1);						
+						m.put("battery_state", text);
+					}
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
+				
+				try {
+					final Matcher matcher = TEMPERATURE_PATTERN.matcher(riff.comments);
+					if(matcher.matches() && matcher.groupCount() == 1) {
+						String text = matcher.group(1);						
+						m.put("temperature", text);
+					}
 				} catch(Exception e) {
 					Logger.warn(e);
 				}
@@ -158,7 +213,7 @@ public class Command_create_yaml implements Command {
 			return false;
 		}
 	}
-	
+
 	public static boolean supplementYaml(Map<String, Object> map, Path samplePath) {
 		try {
 			Riff riff = new Riff(samplePath.toFile());

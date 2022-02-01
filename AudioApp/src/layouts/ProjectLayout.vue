@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="hHh Lpr lFf">
     <q-header elevated>
       <q-toolbar>
         <q-btn
@@ -24,28 +24,28 @@
       show-if-above
       bordered
     >
-      <q-list>
-        <q-item clickable :to="'/projects'">
+      <q-list separator>
+        <q-item clickable :to="'/projects'" active-class="active-item">
           <q-item-section avatar>
             <q-icon name="settings_input_component" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>Projects</q-item-label>
-            <q-item-label caption>Go to entry page with project selection</q-item-label>
+            <q-item-label>Project selection</q-item-label>
+            <q-item-label caption>Go back to entry page with project selection</q-item-label>
           </q-item-section>
         </q-item>
 
-        <q-item clickable :to="'/projects/' + project + '/main'">
+        <q-item clickable :to="'/projects/' + project + '/main'" active-class="active-item">
           <q-item-section avatar>
             <q-icon name="home" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>Main</q-item-label>
+            <q-item-label>Audio view</q-item-label>
             <q-item-label caption>Go to main page</q-item-label>
           </q-item-section>
         </q-item>
 
-        <q-item clickable :to="'/projects/' + project + '/task'">
+        <q-item clickable :to="'/projects/' + project + '/task'" active-class="active-item">
           <q-item-section avatar>
             <q-icon name="work" />
           </q-item-section>
@@ -55,7 +55,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item clickable :to="'/projects/' + project + '/tasks'">
+        <q-item clickable :to="'/projects/' + project + '/tasks'" active-class="active-item">
           <q-item-section avatar>
             <q-icon name="work" />
           </q-item-section>
@@ -115,3 +115,12 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+
+.active-item {
+  background-color: aliceblue;
+  border-right: 2px solid black;
+}
+
+</style>
