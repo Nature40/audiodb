@@ -65,6 +65,8 @@ public class SampleManagerConnector {
 
 		DELETE_TRAVERSE_MISSING("DELETE FROM SAMPLE WHERE NOT EXISTS ( SELECT 1 FROM TRAVERSE WHERE SAMPLE.ID = TRAVERSE.ID)"),
 
+		COUNT_TABLE("SELECT COUNT(1) FROM SAMPLE"),
+		
 		COUNT_ALL("SELECT COUNT(ID) FROM SAMPLE WHERE NOT LOCKED"),
 
 		COUNT_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED"),
@@ -722,5 +724,19 @@ public class SampleManagerConnector {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public int getTableSize() {
+		try {
+			PreparedStatement stmt = getStatement(SQL.COUNT_TABLE);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				int count = res.getInt(1);
+				return count;				
+			}
+			throw new RuntimeException("error in count table");
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}		
 	}
 }

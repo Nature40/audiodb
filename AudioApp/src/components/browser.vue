@@ -3,6 +3,7 @@
     <q-layout view="Lhh lpR fff" container class="bg-white" style="min-width: 1000px;">
       <q-header class="bg-white text-black">                
       <q-bar>
+        <q-icon name="menu_book"/>
         <div>Browser</div>
         <q-space />
         <q-btn dense flat icon="close" v-close-popup>
@@ -179,7 +180,12 @@ export default defineComponent({
   },
   computed: {
     ...mapState({
-    }),     
+      samples_table_count: state => state.project.samples_table_count,
+    }),
+    refreshConfirmNeeded() {
+      const count = this.samples_table_count;
+      return count === undefined || count > 10000;
+    },     
     selectedSampleId() {
       return this.$route.query.sample;
     },
@@ -246,7 +252,8 @@ export default defineComponent({
     refreshRequested() {
       if(this.refreshRequested) {
         if(
-          !this.refreshConfirmed
+          this.refreshConfirmNeeded
+          && !this.refreshConfirmed
           && (this.toggleLocation === 'all' || (this.toggleLocation === 'one' && !this.selectedLocation)) 
           && (this.toggleTime === 'all' || (this.toggleTime === 'one' && !this.selectedTimestamp))
         ) {
@@ -257,6 +264,15 @@ export default defineComponent({
         }
         this.refreshRequested = false;
         this.refreshConfirmed = false;
+      }
+    },
+    refreshConfirmNeeded() {
+      if(!this.refreshConfirmNeeded) {
+        if(this.refreshConfirmRequested) {
+          this.refreshConfirmRequested = false;
+          this.refreshConfirmed = true;
+          this.requestRefresh();
+        }
       }
     },
     refreshRequestedMeta() {

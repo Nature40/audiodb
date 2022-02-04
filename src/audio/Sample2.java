@@ -69,7 +69,7 @@ public class Sample2 implements GeneralSample {
 			YamlMap m = meta();
 			samples = m.optLong("Samples", -1);
 			if(samples == -1) {
-				if(Command_create_yaml.supplementYaml(m.getInternalMap(), samplePath)) {
+				if(MetaCreator.supplementYaml(m.getInternalMap(), samplePath)) {
 					YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
 					samples = m.optLong("Samples", -1);
 				} else {

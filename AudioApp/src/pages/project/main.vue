@@ -5,7 +5,7 @@
       <audio-browser ref="browser"/>
       <q-space></q-space>
       <div v-if="sample !== undefined">
-        <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :class="{'element-hidden': $refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.movePrevSelectedSampleRequested = true"/>
+        <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :class="{'element-hidden': $refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.movePrevSelectedSampleRequested = true" title="Move to previous sample on the browsed list of samples"/>
         <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
         <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
         <span class="text-weight-light text-grey-7" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
@@ -13,7 +13,7 @@
         <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
-        <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true"/>
+        <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true" title="Move to next sample on the browsed list of samples"/>
       </div>
       <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">
         <q-badge color="grey-4" text-color="grey-14" label="<== use the 'browse'-button on the left"/> 
@@ -126,7 +126,7 @@
     </q-toolbar>
     <q-separator/>    
     <div :class="sampleVisibility" style="margin-left: 15px; margin-right: 15px; position: relative;" ref="sliderDiv">
-      <canvas ref="labelMap" style="position: absolute; top: 0px; left: 0px; bottom: 0px; pointer-events: none;" />
+      <canvas ref="labelMap" style="position: absolute; top: 0px; left: 0px; bottom: 0px; pointer-events: none;"/>
       <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @update:model-value="onSliderUpdate" @change="onSliderChange"/>
       <div style="position: absolute; top: 0px; left: 0px; pointer-events: none;" v-if="sampleRate !== undefined && samplePos !== undefined">
         <span style="font-weight: bold;">{{(samplePos/sampleRate).toFixed(3)}}</span>
@@ -137,7 +137,8 @@
     </div>
     <q-separator/>      
     <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff_range + 'px'}">
-      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff_range" :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave"/>
+      <detail-view ref="detail"/>
+      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff_range" :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave" @contextmenu="onCanvasContextmenu"/>
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px; pointer-events: none;">
         <div class="absolute-full flex flex-center">
           <q-badge color="white" text-color="accent" label="loading spectrogram" />
@@ -168,8 +169,7 @@
         <span style="padding-left: 10px;">{{mouseTimePosText}}</span> s
       </q-badge> 
     </div>
-    <q-separator/>
-  
+    <q-separator/>  
    
   <div class="q-pa-md row" v-if="labelDefinitionsError">
     <q-badge text-color="red" color="grey-3">Error loading label definitions</q-badge>
@@ -245,6 +245,7 @@ import {mapState} from 'vuex';
 
 import AudioBrowser from 'components/browser';
 import AudioSettings from 'components/settings';
+import DetailView from 'components/detail';
 
 export default defineComponent({
   name: 'Main',
@@ -252,6 +253,7 @@ export default defineComponent({
   components: {
     AudioBrowser,
     AudioSettings,
+    DetailView,
   },
 
   data() {
@@ -387,11 +389,17 @@ export default defineComponent({
     mouseFreuqencyText() {
       return (this.mouseFreuqencyPos < 100000 ? (this.mouseFreuqencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFreuqencyPos / 1000).toFixed(2);
     },
-    mouseTimePos() {
-      if(this.canvasMousePixelPosX === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor || !this.sampleRate || this.canvasPixelPosX === undefined || this.player_time_expansion_factor === undefined) {
+    mouseSamplePos() {
+      if(this.canvasMousePixelPosX === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor || this.canvasPixelPosX === undefined || this.player_time_expansion_factor === undefined || !this.canvasWidth) {
         return undefined;
       }
-      return ((this.canvasPixelPosX + this.canvasMousePixelPosX) * (this.player_fft_step * this.player_spectrum_shrink_Factor)) / this.sampleRate;
+      return (this.canvasPixelPosX - Math.trunc(this.canvasWidth / 2) + this.canvasMousePixelPosX) * (this.player_fft_step * this.player_spectrum_shrink_Factor);
+    },
+    mouseTimePos() {
+      if(this.mouseSamplePos === undefined || !this.sampleRate) {
+        return undefined;
+      }
+      return this.mouseSamplePos / this.sampleRate;
     },
     mouseTimePosText() {
       return this.mouseTimePos === undefined ? '' : this.mouseTimePos.toFixed(3);
@@ -616,7 +624,7 @@ export default defineComponent({
       if(Number.isFinite(this.spectrogramImagesLen)) {
         this.spectrogramId++;
         var id = this.spectrogramId;
-        console.log('loadSpectrogram ' + id + "    " + this.spectrogramImagesLen + "  " + this.spectrogramFullPixelLen + "  " + this.sampleLen);
+        //console.log('loadSpectrogram ' + id + "    " + this.spectrogramImagesLen + "  " + this.spectrogramFullPixelLen + "  " + this.sampleLen);
         this.spectrogramImages = new Array(this.spectrogramImagesLen);
         this.spectrogramImagesLoadedCount = 0;
         this.spectrogramImagesErrorCount = 0;
@@ -627,7 +635,7 @@ export default defineComponent({
       }
     },
     async loadSpectrogramImage(id, imageIndex) {
-      console.log('loadSpectrogramImage ' + id + '  ' + imageIndex);
+      //console.log('loadSpectrogramImage ' + id + '  ' + imageIndex);
       if(this.spectrogramImages[imageIndex] === undefined) {
         try {
           var baseURL = this.$api.defaults.baseURL;
@@ -689,7 +697,7 @@ export default defineComponent({
       } else {
         if(e.buttons == 1) { // left mouse button
           const mouseSpeedup = 8;
-          console.log('offsetX ' + (e.pageX - this.canvasMovePixelStartX));
+          //console.log('offsetX ' + (e.pageX - this.canvasMovePixelStartX));
           var deltaX = (e.pageX - this.canvasMovePixelStartX);
           var offsetX = deltaX;
           //if(Math.abs(deltaX) > 20) {
@@ -716,7 +724,9 @@ export default defineComponent({
       this.paintSpectrogramRequested = false;
     },
     onAudioPlayButton() {
+      //console.log("play audio A " + this.audio.currentTime);
       this.audio.play();
+      //console.log("play audio B " + this.audio.currentTime);
     },
     onAudioPauseButton() {
       this.audio.pause();
@@ -759,9 +769,10 @@ export default defineComponent({
       }
       var tPlayer = newSamplePos / this.playerSampleRate;
       this.audio.currentTime = tPlayer;
+      console.log("set audio " + tPlayer + '   ' + this.audio.currentTime + '   ' + this.audio.duration);
     },
     moveToCanvasPixelPosX(newCanvasPixelPosX) {
-      console.log("moveToCanvasPixelPosX  " + newCanvasPixelPosX);
+      //console.log("moveToCanvasPixelPosX  " + newCanvasPixelPosX);
       this.canvasPixelPosX = newCanvasPixelPosX;
       var newSamplePos = newCanvasPixelPosX * (this.player_fft_step * this.player_spectrum_shrink_Factor);
       this.moveToSamplePos(newSamplePos);
@@ -797,7 +808,7 @@ export default defineComponent({
       if(this.selectedSampleId === undefined) {
         return;
       }
-      console.log("querySample");
+      //console.log("querySample");
       try {
         var urlPath = 'samples2/' + this.selectedSampleId;
         var params = {samples: true, sample_rate: true, labels: true,};
@@ -807,7 +818,7 @@ export default defineComponent({
         this.sampleLoading = false;
         this.sampleError = false;
         var sample = response.data?.sample;
-        console.log(sample);
+        //console.log(sample);
         this.sample = sample;
         this.sampleLen = sample.samples;
         this.sampleRate = sample.sample_rate;
@@ -944,6 +955,15 @@ export default defineComponent({
         this.userSelectedLabelNamesChanged = true;
       }
     },
+    onCanvasContextmenu(e) {
+      e.preventDefault();
+      console.log('onCanvasContextmenu');
+      if(this.sample !== undefined && this.mouseSamplePos !== undefined) {
+        this.$refs.detail.sample = this.sample;      
+        this.$refs.detail.samplePos = this.mouseSamplePos; 
+        this.$refs.detail.show = true;
+      }
+    },
   },
 
   watch: {
@@ -1035,7 +1055,12 @@ export default defineComponent({
   opacity: 1;
   background-image:  repeating-linear-gradient(45deg, #202020 25%, transparent 25%, transparent 75%, #202020 75%, #202020), repeating-linear-gradient(45deg, #202020 25%, #404040 25%, #404040 75%, #202020 75%, #202020);  background-position: 0 0, 10px 10px;
   background-size: 20px 20px;
+  cursor: crosshair;
 }
+
+.spectrogram:active{
+  cursor: col-resize;
+ }
 
 .element-hidden {
   visibility: hidden;

@@ -14,7 +14,7 @@ public class Command_overwrite_yaml extends Command_create_yaml {
 		if(path.endsWith(".wav") || path.endsWith(".WAV")) {
 			String yamlPath = path + ".yaml";
 			File yamlFile = new File(yamlPath);
-			return createYaml(file, yamlFile.toPath());
+			return MetaCreator.createYaml(file, yamlFile.toPath());
 		}
 		return false;		
 	}

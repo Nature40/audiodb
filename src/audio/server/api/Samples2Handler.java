@@ -46,8 +46,8 @@ public class Samples2Handler extends AbstractHandler {
 				sampleHandler.handle(name, next, baseRequest, response);
 			}
 		} catch(Exception e) {
-			e.printStackTrace();
 			Logger.error(e);
+			e.printStackTrace();
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.setContentType("text/plain;charset=utf-8");

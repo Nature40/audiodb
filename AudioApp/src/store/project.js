@@ -6,6 +6,9 @@ state: {
   data: undefined,
   loading: false,
   error: undefined,
+
+  samples_table_count: undefined,
+  
   player_spectrum_threshold: undefined,
   default_player_spectrum_threshold: undefined,
   player_fft_window: undefined,
@@ -43,6 +46,9 @@ mutations: {
     state.data = project;
     state.loading = false;
     state.error = undefined;
+
+    state.samples_table_count = project.samples_table_count;
+
     state.player_spectrum_threshold = project.player_spectrum_threshold;
     state.default_player_spectrum_threshold = state.player_spectrum_threshold;
     state.player_fft_window = project.player_fft_window;
@@ -112,6 +118,7 @@ actions: {
       params.locations = true;
       //params.timestamps = true;
       params.dates = true;
+      params.samples_table_count = true;
       var response = await rootState.api.get('projects/' + rootState.projectId, {params});
       commit('setData', response.data);
     } catch(e) {

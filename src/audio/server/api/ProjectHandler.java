@@ -73,6 +73,7 @@ public class ProjectHandler {
 		String timestamps_of_location = Web.getString(request, "timestamps_of_location", null);
 		String dates_of_location = Web.getString(request, "dates_of_location", null);
 		boolean fInventory = Web.getFlagBoolean(request, "inventory");
+		boolean fSamplesTableCount = Web.getFlagBoolean(request, "samples_table_count");
 		AudioProjectConfig config = broker.config().audioConfig;		
 		if(!config.project.equals(project)) {
 			throw new RuntimeException("unknown project");
@@ -113,6 +114,11 @@ public class ProjectHandler {
 			json.array();
 			sampleManager.tlSampleManagerConnector.get().forEachLocation(location -> json.value(location));
 			json.endArray();
+		}
+		if(fSamplesTableCount) {
+			int samples_table_count = sampleManager.tlSampleManagerConnector.get().getTableSize();
+			json.key("samples_table_count");
+			json.value(samples_table_count);
 		}
 
 		LongConsumer timestampDateTimeWriter = AudioTimeUtil.timestampDateTimeWriter(json); 		
