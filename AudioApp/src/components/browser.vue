@@ -338,7 +338,7 @@ export default defineComponent({
   },
   methods: {
     async querySamples() {
-      console.log("querySamples");
+      //console.log("querySamples");
       try {        
         let params = { samples: true, count: true, limit: this.samplesLimit, offset: this.samplesOffset,};
         if(this.toggleLocation === 'one' && this.selectedLocation) {

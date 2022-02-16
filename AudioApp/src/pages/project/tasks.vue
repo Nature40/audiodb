@@ -6,8 +6,29 @@
       </q-btn>
     </q-toolbar>
     <div>
-      <div v-for="task in tasks" :key="task.id">{{task}}</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Task</th>
+            <th>State</th>
+            <th>Runtime</th>
+            <th>Message</th>  
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="task in tasks" :key="task.id" @click="view(task.id);">
+            <td>{{task.id}}</td>
+            <td>{{task.task}}</td>
+            <td>{{task.state}}</td>
+            <td>{{task.runtime}}</td>
+            <td>{{task.message}}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
+    <task-console ref="TaskConsole"/>
 
   </q-page>
 </template>
@@ -16,11 +37,13 @@
 import { defineComponent } from 'vue';
 import {mapState} from 'vuex';
 
+import TaskConsole from 'components/task-console';
+
 export default defineComponent({
   name: 'Main',
 
   components: {
-
+    TaskConsole,
   },
 
   data() {
@@ -46,7 +69,10 @@ export default defineComponent({
         this.tasks = [];
         console.log(e);
       }
-    }
+    },
+    view(id) {
+      this.$refs.TaskConsole.view(id);
+    },
   },
 
   watch: {
@@ -61,5 +87,21 @@ export default defineComponent({
 
 <style scoped>
 
+td:nth-child(1) {
+  color: grey;
+}
+
+td:nth-child(2) {
+  color: black;
+}
+
+td:nth-child(3) {
+  color: black;
+  font-weight: bold;
+}
+
+td:nth-child(4) {
+  color: blue;
+}
 
 </style>

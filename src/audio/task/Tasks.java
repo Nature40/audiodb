@@ -79,6 +79,10 @@ public class Tasks {
 		Arrays.sort(tasks);
 		return tasks;
 	}
+	
+	public Task getTask(String id) {
+		return taskMap.get(id);
+	}
 
 	public Tasks(Broker broker) {
 		this.broker = broker;

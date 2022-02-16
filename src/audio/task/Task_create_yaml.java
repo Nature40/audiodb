@@ -1,6 +1,8 @@
 package audio.task;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,7 +46,11 @@ public class Task_create_yaml extends Task {
 		//Logger.info("folder " + folder);
 		LocalDateTime start = LocalDateTime.now();
 		long counter = 0;
-		Logger.info("traverse " + folder);
+		{
+			String m = "traverse " + folder;
+			setMessage(m);
+			Logger.info(m);
+		}
 		try {
 			DirectoryStream<Path> dirStream = Files.newDirectoryStream(folder);
 			for(Path path: dirStream) {
@@ -60,6 +66,8 @@ public class Task_create_yaml extends Task {
 					Logger.warn("unknown entry: " + file.toString());
 				}
 			}
+		} catch (DirectoryIteratorException e){ 
+			Logger.warn(e.getMessage());
 		} catch (Exception e) {
 			Logger.warn(e);
 		}
@@ -67,9 +75,13 @@ public class Task_create_yaml extends Task {
 		Duration duration = Duration.between(start, end);
 		if(counter > 0) {			
 			Duration durationPerFile = duration.dividedBy(counter);
-			Logger.info("traversed " + folder + "  " + counter + " files  in " + duration + "     " + durationPerFile + " per file");
+			String m = "traversed " + folder + "  " + counter + " files  in " + duration + "     " + durationPerFile + " per file";
+			setMessage(m);
+			Logger.info(m);
 		} else {
-			Logger.info("traversed " + folder + "  " + counter + " files  in " + duration);
+			String m = "traversed " + folder + " with no files  in " + duration;
+			setMessage(m);
+			Logger.info(m);
 		}
 
 		return counter;
@@ -79,15 +91,22 @@ public class Task_create_yaml extends Task {
 		//Logger.info("file " + path);
 		String filename = file.getName();
 		if(filename.endsWith(".wav") || filename.endsWith(".WAV")) {
-			Path yamlPath = getYamlPath(path);
-			//Logger.info("yamlPath " + yamlPath);
-			File yamlFile = yamlPath.toFile();
-			if(!yamlFile.exists()) {
-				yamlFile.getParentFile().mkdirs();
-				return MetaCreator.createYaml(file, yamlPath);
-			} else {
-				//Logger.info("already exists " + path);
-			}
+			try {
+				long fileSize = Files.size(path);
+				if(fileSize > 0) {
+					Path yamlPath = getYamlPath(path);
+					//Logger.info("yamlPath " + yamlPath);
+					File yamlFile = yamlPath.toFile();
+					if(!yamlFile.exists()) {
+						yamlFile.getParentFile().mkdirs();
+						return MetaCreator.createYaml(file, yamlPath);
+					} else {
+						//Logger.info("already exists " + path);
+					}	
+				}
+			} catch (IOException e) {
+				Logger.warn(e);
+			}			
 		}
 		return false;		
 	}

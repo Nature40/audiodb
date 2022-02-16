@@ -137,7 +137,7 @@
     </div>
     <q-separator/>      
     <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff_range + 'px'}">
-      <detail-view ref="detail"/>
+      <detail-view ref="detail" :sampleRate="sampleRate" :labels="labels" @save="onSaveDetailViewLabel"/>
       <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff_range" :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave" @contextmenu="onCanvasContextmenu"/>
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px; pointer-events: none;">
         <div class="absolute-full flex flex-center">
@@ -295,7 +295,7 @@ export default defineComponent({
       labelDefinitionsError: false,
       saveLabelsLoading: false,
       saveLabelsError: false,
-      labelSelectDialogShow: true,
+      labelSelectDialogShow: false,
     };
   },
   
@@ -769,7 +769,7 @@ export default defineComponent({
       }
       var tPlayer = newSamplePos / this.playerSampleRate;
       this.audio.currentTime = tPlayer;
-      console.log("set audio " + tPlayer + '   ' + this.audio.currentTime + '   ' + this.audio.duration);
+      //console.log("set audio " + tPlayer + '   ' + this.audio.currentTime + '   ' + this.audio.duration);
     },
     moveToCanvasPixelPosX(newCanvasPixelPosX) {
       //console.log("moveToCanvasPixelPosX  " + newCanvasPixelPosX);
@@ -908,7 +908,7 @@ export default defineComponent({
         this.userSelectedLabelNames = undefined;
         this.userSelectedLabelNamesChanged = false;
         this.refreshSample();
-        this.$q.notify({type: 'positive', message: 'New segement and new labels saved.'});
+        this.$q.notify({type: 'positive', message: 'New segment and new labels saved.'});
       } catch(e) {
         this.saveLabelsLoading = false;
         this.saveLabelsError = true;
@@ -957,12 +957,22 @@ export default defineComponent({
     },
     onCanvasContextmenu(e) {
       e.preventDefault();
-      console.log('onCanvasContextmenu');
+      //console.log('onCanvasContextmenu');
       if(this.sample !== undefined && this.mouseSamplePos !== undefined) {
         this.$refs.detail.sample = this.sample;      
         this.$refs.detail.samplePos = this.mouseSamplePos; 
+        this.$refs.detail.userSelectedLabelNames = this.userSelectedLabelNames; 
+        this.$refs.detail.selectableLabels = this.selectableLabels;
         this.$refs.detail.show = true;
       }
+    },
+    onSaveDetailViewLabel(e) {
+      console.log('onSaveDetailViewLabel');
+      console.log(e);
+      this.newSegmentStart = e.start;
+      this.newSegmentEnd = e.end;
+      this.userSelectedLabelNames = e.names;      
+      this.onNewTimeSegmentSave();
     },
   },
 

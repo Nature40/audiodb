@@ -2,6 +2,7 @@ package audio.task;
 
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import org.json.JSONObject;
 import org.tinylog.Logger;
@@ -40,7 +41,9 @@ public abstract class Task extends RecursiveAction implements Comparable<Task> {
 	private volatile State state = State.INITIAL;
 	public final long cnt = counter.getAndIncrement();
 	public final long tstart = System.currentTimeMillis();
-	protected volatile String message = "";
+	public long tend = -1;
+	private volatile String message = "";
+	private BoundedLog boundedLog = new BoundedLog(1000);
 
 	public final void setCtxAndInit(Ctx ctx) throws Exception {
 		this.ctx = ctx;
@@ -68,7 +71,9 @@ public abstract class Task extends RecursiveAction implements Comparable<Task> {
 			state = State.ERROR;
 			message = e.getMessage();
 			Logger.warn(e);
-		}		
+		} finally {
+			tend = System.currentTimeMillis();
+		}
 	}
 
 	@Override
@@ -84,7 +89,37 @@ public abstract class Task extends RecursiveAction implements Comparable<Task> {
 		return state;
 	}
 	
+	public void setMessage(String message) {
+		this.message = message;
+		boundedLog.add(message);
+	}
+	
 	public String getMessage() {
 		return message;
+	}
+	
+	public void foreachLog(Consumer<String> consumer) {
+		boundedLog.foreach(consumer);	
+	}
+	
+	public long getCurrentTimeOrEnd() {
+		return tend < 0 ? System.currentTimeMillis() : tend;
+	}
+	
+	public long getRuntime() {
+		return getCurrentTimeOrEnd() - tstart;
+	}
+
+	public String getRuntimeText() {
+		long tdiff = getRuntime();
+		//Duration duration = Duration.ofMillis(tdiff);
+		//return duration.toString();
+		long seconds = tdiff / 1000;
+		long minutes = seconds / 60;
+		long hours = minutes / 60;
+		long secondsPart = seconds % 60;
+		long minutesPart = minutes % 60;
+		String s = hours + ":" +  String.format("%02d", minutesPart) + ":" + String.format("%02d", secondsPart);
+		return s;
 	}
 }

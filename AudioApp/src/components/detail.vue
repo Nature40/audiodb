@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="show" full-width>
+  <q-dialog v-model="show" full-width @contextmenu="onContextmenu">
       <q-card v-if="show">
         <q-bar>
           <q-icon name="image"/>
@@ -15,10 +15,49 @@
           <q-btn dense flat icon="close" v-close-popup>
             <q-tooltip>Close</q-tooltip>
           </q-btn>
-        </q-bar>     
+        </q-bar>
+
+        <div>
+          <q-select
+            filled
+            v-model="userSelectedLabelNames"
+            :options="selectableLabels"
+            label="Labels"
+            style="width: 250px"
+            dense
+            multiple
+            option-label="name"
+            option-value="name"
+            emit-value
+            clearable
+          >
+          </q-select>
+          <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave"/>          
+        </div>     
 
         <!--<q-card-section>-->
-          <canvas ref="spectrogram" :width="canvasWidth" :height="canvasHeight" :style="{width: canvasWidth + 'px', height: canvasHeight + 'px'}" class="spectrogram"/>
+          <div :style="{
+                        position: 'relative',
+                        width: canvasWidth + 'px', 
+                        height: canvasHeight + 'px'
+                      }">
+            <canvas 
+              ref="spectrogram" 
+              :width="canvasWidth" 
+              :height="canvasHeight" 
+              :style="{
+                        position: 'absolute', 
+                        top: '0px', 
+                        left: '0px',
+                        width: canvasWidth + 'px', 
+                        height: canvasHeight + 'px'
+                      }" 
+              class="spectrogram"
+              @mousedown="onMousedown"
+              @mousemove="onMousemove"
+              @mouseup="onMouseup"
+            />
+          </div>
         <!--</q-card-section>-->
 
         <q-separator />
@@ -33,6 +72,9 @@ import {mapState} from 'vuex';
 
 export default defineComponent({
   name: 'detail-view',
+
+  props: ['sampleRate', 'labels'],
+
   setup () {
     const show = ref(false);
     return {
@@ -47,7 +89,13 @@ export default defineComponent({
       canvasHeight: 300,
       image: undefined,
       loading: false, 
-      error: false, 
+      error: false,
+      mouseStartX: undefined, 
+      mouseEndX: undefined,
+      labelStartX: undefined,
+      labelEndX: undefined,
+      userSelectedLabelNames: undefined,
+      selectableLabels: undefined,
     };
   },
   computed: {
@@ -57,8 +105,7 @@ export default defineComponent({
       //player_fft_step: state => state.project.player_fft_step,
       player_fft_window: state => state.project.player_fft_window,      
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
-      player_fft_intensity_max: state => state.project.player_fft_intensity_max,
-      player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,      
+      player_fft_intensity_max: state => state.project.player_fft_intensity_max,     
     }),
     player_fft_cutoff_lower() {
       let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sample.sample_rate);
@@ -70,18 +117,37 @@ export default defineComponent({
     },
     player_fft_cutoff_range() {
       return this.player_fft_cutoff - this.player_fft_cutoff_lower;
+    },
+    player_fft_step() {
+      if(this.player_fft_window === undefined) {
+        return undefined;
+      }
+      return this.player_fft_window / 4;
+    },
+    player_spectrum_shrink_Factor() {
+      return 1;
     },    
     spectrogramSettingsQuery() {
-      var fft_window = this.player_fft_window;
-      //var fft_window = 4096;
       var q = "&cutoff_lower=" + this.player_fft_cutoff_lower 
       + "&cutoff=" + this.player_fft_cutoff 
-      + "&step=" + (fft_window / 4)
-      + "&window=" + fft_window
+      + "&step=" + this.player_fft_step
+      + "&window=" + this.player_fft_window
       + "&threshold=" + this.player_spectrum_threshold 
       + "&intensity_max=" + this.player_fft_intensity_max;
       return q;
-    }, 
+    },
+    labelStartPixelX() {
+      if(this.labelStartX === undefined) {
+        return undefined;
+      }
+      return this.samplePosToPixelPos(this.labelStartX);
+    },
+    labelEndPixelX() {
+      if(this.labelEndX === undefined) {
+        return undefined;
+      }
+      return this.samplePosToPixelPos(this.labelEndX);
+    },     
   },
   methods: {
     refresh() {
@@ -124,15 +190,108 @@ export default defineComponent({
       }
     },
     repaint() {
-      console.log('repaint'); 
+      //console.log('repaint'); 
       var canvas = this.$refs.spectrogram;
+      if(!canvas) {
+        return;
+      }
       var ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if(this.image !== undefined) {
-        console.log('drawImage'); 
-        console.log(this.image);
+        //console.log('drawImage'); 
+        //console.log(this.image);
         ctx.drawImage(this.image, 0, 0);          
+      }
+
+      if(this.labels !== undefined) {
+        for(var i = 0; i < this.labels.length; i++) {
+          var label = this.labels[i];
+          var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate - this.samplePos) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+          var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate - this.samplePos) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+          //console.log(labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
+          if(0 <= labelPixelXmax && this.canvasWidth >= labelPixelXmin) {
+            //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
+            ctx.fillStyle = i === this.selectedLabelIndex ? 'rgba(255,0,0,0.3)' : 'rgba(0,255,0,0.3)';
+            ctx.fillRect(labelPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff_range);
+          }
+        }
+      }
+
+      if(this.mouseStartX !== undefined && this.mouseEndX !== undefined) {
+        ctx.fillStyle = 'rgba(0,0,255,0.3)';
+        ctx.fillRect(this.mouseStartX, 0, this.mouseEndX - this.mouseStartX + 1, this.canvasHeight);
+      } 
+      if(this.labelStartPixelX !== undefined && this.labelEndPixelX !== undefined) {
+        ctx.fillStyle = 'rgba(255,255,0,0.3)';
+        ctx.fillRect(this.labelStartPixelX, 0, this.labelEndPixelX - this.labelStartPixelX + 1, this.canvasHeight);
       }      
+    },
+    onMousedown(e) {
+      if(e.buttons == 1) {
+        //console.log('onMousedown');
+        //console.log(e);
+        const x = e.offsetX;
+        this.mouseStartX = x;
+        this.mouseEndX = x;
+        this.repaint();
+      }
+    },
+    onMousemove(e) {
+      if(e.buttons == 1) {
+        if(this.mouseStartX !== undefined) {
+          //console.log('onMousemove');
+          //console.log(e);
+          const x = e.offsetX;
+          this.mouseEndX = x;
+        }
+      } else {
+        this.mouseStartX = undefined;
+        this.mouseEndX = undefined;
+      }
+      this.repaint();
+    },
+    onMouseup(e) {
+      if(this.mouseStartX !== undefined) {
+        console.log('onMouseup');
+        //console.log(e);
+        const x = e.offsetX;
+        this.mouseEndX = x;
+        this.labelStartX = this.pixelPosToSamplePos(this.mouseStartX);
+        this.labelEndX = this.pixelPosToSamplePos(this.mouseEndX);
+        console.log(this.samplePos + '  ' + x + '  ' + this.pixelPosToSamplePos(x));
+        this.mouseStartX = undefined;
+        this.mouseEndX = undefined;
+        this.repaint();
+      }
+    },
+    pixelPosToSamplePos(x) {
+      if(this.samplePos === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
+        return undefined;
+      }
+      return this.samplePos + x * (this.player_fft_step * this.player_spectrum_shrink_Factor);
+    },
+    samplePosToPixelPos(x) {
+      if(this.samplePos === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
+        return undefined;
+      }
+      return (x - this.samplePos) / (this.player_fft_step * this.player_spectrum_shrink_Factor);      
+    },
+    onContextmenu(e) {
+      e.preventDefault();      
+      this.onNewTimeSegmentSave();
+    },
+    onNewTimeSegmentSave() {
+      console.log('onNewTimeSegmentSave');  
+      console.log('A' + this.labelStartX);    
+      let event = {};
+      console.log('B' + this.labelEndX);  
+      event.start = this.labelStartX;
+      console.log('C');  
+      event.end = this.labelEndX;
+      console.log('D');  
+      event.names = this.userSelectedLabelNames;
+      console.log(event);
+      this.$emit('save', event);
     },
   },
   watch: {
@@ -140,6 +299,9 @@ export default defineComponent({
       if(this.show) {
         this.refresh();
       }
+    },
+    labels() {
+      this.repaint();
     },
   },
   async mounted() {

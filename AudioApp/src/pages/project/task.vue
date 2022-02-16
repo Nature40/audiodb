@@ -9,6 +9,7 @@
       </q-btn>
     </div>
 
+    <task-console ref="TaskConsole"/>
 
   </q-page>
 </template>
@@ -17,11 +18,13 @@
 import { defineComponent } from 'vue';
 import {mapState} from 'vuex';
 
+import TaskConsole from 'components/task-console';
+
 export default defineComponent({
   name: 'Main',
 
   components: {
-
+    TaskConsole,
   },
 
   data() {
@@ -51,20 +54,15 @@ export default defineComponent({
       try {
         var urlPath = 'tasks';
         var response = await this.$api.get(urlPath, {params: {descriptors: true,}});
-        this.descriptors = response.data.descriptors;       
-      } catch(e) {
+        this.descriptors = response.data.descriptors;
+       } catch(e) {
         this.descriptors = {};
         console.log(e);
       }
     },
-    async execute() {
-      try {
-        var urlPath = 'tasks';
-        var data = {action: {action: 'submit', task: { task: this.descriptor.name}}};
-        var response = await this.$api.post(urlPath, data);       
-      } catch(e) {
-        console.log(e);
-      }
+    execute() {
+      var task = { task: this.descriptor.name};
+      this.$refs.TaskConsole.submit(task);
     },
   },
 

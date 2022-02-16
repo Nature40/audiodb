@@ -22,10 +22,12 @@ public class TasksHandler extends AbstractHandler {
 
 	private final Broker broker;
 	private final Tasks tasks;
+	private final TaskHandler taskHandler;
 
 	public TasksHandler(Broker broker) {
 		this.broker = broker;
 		this.tasks = broker.tasks();
+		this.taskHandler = new TaskHandler(broker);
 	}
 
 	@Override
@@ -41,8 +43,11 @@ public class TasksHandler extends AbstractHandler {
 				}
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
-				//taskHanlder.handle(name, next, baseRequest, request, response);
-				throw new RuntimeException("no page");
+				Task task = tasks.getTask(name);
+				if(task == null) {
+					throw new RuntimeException("task not found");
+				}
+				taskHandler.handle(task, next, baseRequest, response);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -69,6 +74,22 @@ public class TasksHandler extends AbstractHandler {
 			throw new RuntimeException("no call");
 		}
 	}
+	
+	private static void taskToJSON(Task task, JSONWriter json) {
+		Ctx ctx = task.geCtx();
+		json.object();
+		json.key("id");
+		json.value(ctx.id);
+		json.key("task");
+		json.value(ctx.descriptor.name);
+		json.key("state");
+		json.value(task.getState().toString());
+		json.key("runtime");
+		json.value(task.getRuntimeText());
+		json.key("message");
+		json.value(task.getMessage());
+		json.endObject();		
+	}
 
 	private void handleRoot_GET(Request request, HttpServletResponse response) throws IOException {
 		boolean fDescriptors = Web.getFlagBoolean(request, "descriptors");
@@ -93,17 +114,7 @@ public class TasksHandler extends AbstractHandler {
 			json.key("tasks");
 			json.array();
 			for(Task task:tasks.getTasks()) {
-				Ctx ctx = task.geCtx();
-				json.object();
-				json.key("id");
-				json.value(ctx.id);
-				json.key("task");
-				json.value(ctx.descriptor.name);
-				json.key("state");
-				json.value(task.getState().toString());
-				json.key("message");
-				json.value(task.getMessage());
-				json.endObject();
+				taskToJSON(task, json);
 			}
 			json.endArray();
 		}

@@ -42,8 +42,10 @@ public class Label {
 	}
 
 	public static Label ofJSON(JSONObject jsonLabel) {		
-		double start = jsonLabel.getDouble("start");
-		double end = jsonLabel.getDouble("end");
+		double a = jsonLabel.getDouble("start");
+		double b = jsonLabel.getDouble("end");
+		double start = Math.min(a, b);
+		double end = Math.max(a, b);
 		String comment = jsonLabel.optString("comment", "");
 		Vec<GeneratorLabel> generatorLabels = JsonUtil.optVec(jsonLabel, "generated_labels", GeneratorLabel::ofJSON);
 		Vec<UserLabel> userLabels = JsonUtil.optVec(jsonLabel, "labels", UserLabel::ofJSON);

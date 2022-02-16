@@ -199,8 +199,10 @@ public class Sample2Handler {
 				break;
 			}
 			case "add_label": {
-				double start = jsonAction.getDouble("start");
-				double end = jsonAction.getDouble("end");
+				double a = jsonAction.getDouble("start");
+				double b = jsonAction.getDouble("end");
+				double start = Math.min(a, b);
+				double end = Math.max(a, b);
 				String[] names = JsonUtil.optStrings(jsonAction, "names");
 				Vec<Label> labels = sample.getLabels();
 				Vec<UserLabel> newUserlabels = new Vec<UserLabel>();
