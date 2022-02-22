@@ -17,7 +17,7 @@
           </q-btn>
         </q-bar>
 
-        <div>
+        <q-toolbar class="bg-grey-3">
           <q-select
             filled
             v-model="userSelectedLabelNames"
@@ -32,8 +32,11 @@
             clearable
           >
           </q-select>
-          <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave"/>          
-        </div>     
+          <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave"/>
+          <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;">
+          Place mouse cursor at spectrogram segment start position, press and hold left mouse button, move mouse cursor to segment end position, release left mouse button,<br> select correct label, click right mouse button to save the new segment.          
+          </q-badge>
+        </q-toolbar>     
 
         <!--<q-card-section>-->
           <div :style="{
@@ -56,7 +59,20 @@
               @mousedown="onMousedown"
               @mousemove="onMousemove"
               @mouseup="onMouseup"
+              @mouseleave="onMouseleave"
             />
+
+            <template v-if="staticLinesCanvasPosY !== undefined">
+              <template v-for="staticLineCanvasPosY in staticLinesCanvasPosY" :key="staticLineCanvasPosY">
+                <div v-if="staticLineCanvasPosY >= player_fft_cutoff_lower && staticLineCanvasPosY < player_fft_cutoff" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(0, 255, 255, 0.30);" :style="{bottom: (staticLineCanvasPosY - player_fft_cutoff_lower) + 'px',}"></div>
+              </template>
+        	  </template>
+
+            <div v-if="mousePixelPosX !== undefined && mousePixelPosY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: mousePixelPosY + 'px',}"></div>
+            <q-badge v-if="mousePixelPosX !== undefined && mousePixelPosY !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: mousePixelPosY + 'px', left: mousePixelPosX + 'px',}" color="white" text-color="accent">
+              <span v-html="mouseFrequencyText"></span> kHz
+              <span style="padding-left: 10px;">{{mouseTimePosText}}</span> s
+            </q-badge>             
           </div>
         <!--</q-card-section>-->
 
@@ -96,6 +112,8 @@ export default defineComponent({
       labelEndX: undefined,
       userSelectedLabelNames: undefined,
       selectableLabels: undefined,
+      mousePixelPosX: undefined,
+      mousePixelPosY: undefined,
     };
   },
   computed: {
@@ -105,7 +123,8 @@ export default defineComponent({
       //player_fft_step: state => state.project.player_fft_step,
       player_fft_window: state => state.project.player_fft_window,      
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
-      player_fft_intensity_max: state => state.project.player_fft_intensity_max,     
+      player_fft_intensity_max: state => state.project.player_fft_intensity_max,
+      player_static_lines_frequency: state => state.project.player_static_lines_frequency,     
     }),
     player_fft_cutoff_lower() {
       let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sample.sample_rate);
@@ -147,7 +166,31 @@ export default defineComponent({
         return undefined;
       }
       return this.samplePosToPixelPos(this.labelEndX);
-    },     
+    },
+    mouseFrequencyPos() {
+      return this.mousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (((this.player_fft_cutoff_lower + this.mousePixelPosY) * this.sampleRate) / this.player_fft_window);
+    },
+    mouseFrequencyText() {
+      return (this.mouseFrequencyPos < 100000 ? (this.mouseFrequencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFrequencyPos / 1000).toFixed(2);
+    },
+    mouseSamplePos() {
+      if(this.mousePixelPosX === undefined) {
+        return undefined;
+      }
+      return this.pixelPosToSamplePos(this.mousePixelPosX);
+    },    
+    mouseTimePos() {
+      if(this.mouseSamplePos === undefined || !this.sampleRate) {
+        return undefined;
+      }
+      return this.mouseSamplePos / this.sampleRate;
+    },
+    mouseTimePosText() {
+      return this.mouseTimePos === undefined ? '' : this.mouseTimePos.toFixed(3);
+    },
+    staticLinesCanvasPosY() {
+      return this.sampleRate === undefined || this.player_fft_window === undefined || this.player_static_lines_frequency === undefined || this.player_static_lines_frequency.length === 0 ? undefined : this.player_static_lines_frequency.map(staticLineFrequency => Math.round((staticLineFrequency * this.player_fft_window) / this.sampleRate));
+    },             
   },
   methods: {
     refresh() {
@@ -237,11 +280,14 @@ export default defineComponent({
       }
     },
     onMousemove(e) {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      this.mousePixelPosX = x;
+      this.mousePixelPosY = this.canvasHeight - 1 - y;
       if(e.buttons == 1) {
         if(this.mouseStartX !== undefined) {
           //console.log('onMousemove');
-          //console.log(e);
-          const x = e.offsetX;
+          //console.log(e);          
           this.mouseEndX = x;
         }
       } else {
@@ -263,6 +309,10 @@ export default defineComponent({
         this.mouseEndX = undefined;
         this.repaint();
       }
+    },
+    onMouseleave() {
+      this.mousePixelPosX = undefined;
+      this.mousePixelPosY = undefined;
     },
     pixelPosToSamplePos(x) {
       if(this.samplePos === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
