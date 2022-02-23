@@ -165,8 +165,10 @@ public class Sample2Handler {
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
 			case "set_label_names": {
-				double start = jsonAction.getDouble("start");
-				double end = jsonAction.getDouble("end");
+				double a = jsonAction.getDouble("start");
+				double b = jsonAction.getDouble("end");
+				double start = Math.min(a, b);
+				double end = Math.max(a, b);
 				String[] names = JsonUtil.optStrings(jsonAction, "names");
 				Vec<Label> labels = sample.getLabels();
 				int labelIndex = labels.findIndexOf(l -> l.start == start && l.end == end);
@@ -217,9 +219,23 @@ public class Sample2Handler {
 				labels.add(label);
 				sample.setLabels(labels);
 				break;
-			}			
+			}
+			case "remove_label": {
+				double a = jsonAction.getDouble("start");
+				double b = jsonAction.getDouble("end");
+				double start = Math.min(a, b);
+				double end = Math.max(a, b);
+				Vec<Label> labels = sample.getLabels();
+				int labelIndex = labels.findIndexOf(l -> l.start == start && l.end == end);
+				if(labelIndex < 0) {
+					throw new RuntimeException("label not found");
+				}
+				labels.remove(labelIndex);
+				sample.setLabels(labels);
+				break;
+			}
 			default:
-				throw new RuntimeException("unknown action:" + actionName);
+				throw new RuntimeException("unknown action: " + actionName);
 			}
 		}		
 

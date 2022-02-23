@@ -83,8 +83,10 @@ public class Label {
 	}
 
 	public static Label ofYAML(YamlMap yamlMap) {
-		double start = yamlMap.getDouble("start");
-		double end = yamlMap.getDouble("end");		
+		double a = yamlMap.getDouble("start");
+		double b = yamlMap.getDouble("end");
+		double start = Math.min(a, b);
+		double end = Math.max(a, b);		
 		String comment = yamlMap.optString("comment", "");
 		Vec<GeneratorLabel> generatorLabels = YamlUtil.optVec(yamlMap, "generated_labels", GeneratorLabel::ofYAML);
 		Vec<UserLabel> userLabels = YamlUtil.optVec(yamlMap, "labels", UserLabel::ofYAML);

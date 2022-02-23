@@ -31,6 +31,13 @@
             emit-value
             clearable
           >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>          
           </q-select>
           <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave"/>
           <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;">

@@ -81,6 +81,13 @@
               </div>
             </q-dialog>            
           </template>
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps">
+              <q-item-section>
+                <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>          
         </q-select>
         <q-btn icon-right="push_pin" padding="xs" margin="xs" @click="onSaveLabels" :disabled="!userSelectedLabelNamesChanged" title="Save changes.">
           <q-checkbox
@@ -93,7 +100,19 @@
           title="! currently NOT IMPLEMENTED !  Automatically save changes when moving to another label. ! currently NOT IMPLEMENTED !"
           />
         </q-btn>
-        <q-badge v-if="userSelectedLabelNamesChanged" color="grey-3" text-color="accent" label="...unsaved changes..."/>        
+        <q-badge v-if="userSelectedLabelNamesChanged" color="grey-3" text-color="accent" label="...unsaved changes..."/>
+        <q-btn icon="delete_forever" text-color="red" size="s" padding="xs" margin="xs" title="Remove selected time segment." @click="removeTimeSegmentShow = true;" />
+        <q-dialog v-model="removeTimeSegmentShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
+          <div class="q-pt-none column wrap justify-around content-around" style="background-color: white;"> 
+          <q-btn icon="delete_forever" text-color="red" size="s" padding="xs" margin="xs" title="Remove selected time segment." @click="onRemoveTimeSegment" :disabled="saveLabelsLoading">
+            Confirm to remove the currently selected time segment. This can not be undone.
+            <q-spinner color="primary" size="1em" :thickness="2" v-if="saveLabelsLoading"/>
+          </q-btn>
+          <q-btn icon="home" text-color="green" size="s" padding="xs" margin="xs" title="Close dialog box." @click="removeTimeSegmentShow = false;"  :disabled="saveLabelsLoading">
+            No I do not want to remove it after all.
+          </q-btn>
+          </div>
+        </q-dialog>                   
         <q-space></q-space>        
       </div>
       <div v-if="newSegmentEnd !== undefined"  class="q-ml-lg row">
@@ -112,13 +131,21 @@
           option-value="name"
           emit-value
           clearable
-        />
-        <q-badge color="grey-3" text-color="accent" label="...unsaved changes..."/>  
+        >
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps">
+              <q-item-section>
+                <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
+        <q-badge color="grey-3" text-color="accent" label="...unsaved changes..."/>    
       </div>
       <q-space></q-space>
       <q-badge v-if="saveLabelsLoading" color="grey-3" text-color="accent" label="Sending label..."/>
       <q-badge v-if="saveLabelsError" color="grey-3" text-color="red" label="Error sending label. You may try again."/>
-      <q-btn icon="add" size="xs" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
+      <q-btn icon="add" size="xs" text-color="green" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
       <q-btn icon="cancel" size="xs" padding="xs" margin="xs" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
       <q-btn icon="navigation" label="Set end" size="xs" padding="xs" margin="xs" title="Set end time of new time segment at current time position." @click="onNewTimeSegmentEnd" v-if="newSegmentStart !== undefined && newSegmentEnd === undefined" :disabled="samplePos === undefined"/>
       <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels and switch back to segment selection view." @click="onNewTimeSegmentSave" v-if="newSegmentStart !== undefined && newSegmentEnd !== undefined"/>
@@ -296,6 +323,7 @@ export default defineComponent({
       saveLabelsLoading: false,
       saveLabelsError: false,
       labelSelectDialogShow: false,
+      removeTimeSegmentShow: false,
     };
   },
   
@@ -973,6 +1001,26 @@ export default defineComponent({
       this.newSegmentEnd = e.end;
       this.userSelectedLabelNames = e.names;      
       this.onNewTimeSegmentSave();
+    },
+    async onRemoveTimeSegment() {
+      try {
+        var urlPath = 'samples2/' + this.selectedSampleId;
+        var data = {actions: [{action: 'remove_label', start: this.selectedLabel.start, end: this.selectedLabel.end,}]};
+        this.saveLabelsLoading = true;
+        this.saveLabelsError = false;
+        var response = await this.$api.post(urlPath, data);
+        this.userSelectedLabelNamesChanged = false;
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = false;
+        this.selectedLabelIndex = undefined;
+        this.refreshSample();
+        this.$q.notify({type: 'positive', message: 'Remove time segment saved.'});
+        this.removeTimeSegmentShow = false;        
+      } catch(e) {
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = true;
+        console.log(e);
+      }
     },
   },
 
