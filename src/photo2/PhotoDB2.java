@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -496,7 +497,8 @@ public class PhotoDB2 {
 				String meta_rel_path = res.getString(3);
 				String image_rel_path = res.getString(4);
 				String location = res.getString(5);
-				LocalDateTime date = res.getTimestamp(6).toLocalDateTime();
+				Timestamp timestamp = res.getTimestamp(6);
+				LocalDateTime date = timestamp == null ? null : timestamp.toLocalDateTime();
 				long last_modified = res.getLong(7);
 				boolean locked = res.getBoolean(8);
 				if(locked) {

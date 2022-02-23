@@ -2,6 +2,10 @@
 
 Requirements: Java 11 (or newer)
 
+AudioDB releases: 
+
+https://github.com/Nature40/audiodb/releases
+
 # Installation on Ubuntu
 
 Install Java, e.g.:
@@ -26,6 +30,11 @@ Start AudioDB server:
 ./audio.sh
 ```
 
+Open AudioDB web-interface on a browser.
+Local URL with default port 8080:
+
+http://127.0.0.1:8080/
+
 Stop server by key crtl-c or by closing the terminal.
 
 
@@ -43,4 +52,13 @@ Start AudioDB server:
 win_audio.cmd
 ```
 
+Open AudioDB web-interface on a browser.
+Local URL with default port 8080:
+
+http://127.0.0.1:8080/
+
 Stop server by key crtl-c or by closing the terminal.
+
+# Configuration
+
+AudioDB settings are in YAML file `config.yaml`
