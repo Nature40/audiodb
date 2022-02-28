@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,8 +16,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
-
-import org.tinylog.Logger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -56,7 +55,7 @@ public class YamlUtil {
 
 	public static void writeSafeYamlMap(Path path, Map<String, Object> yamlMap) {		
 		Path writepath = Paths.get(path.toString()+"_temp");
-		try(FileWriter fileWriter = new FileWriter(writepath.toFile())){
+		try(FileWriter fileWriter = new FileWriter(writepath.toFile(), StandardCharsets.UTF_8)){
 			PrintWriter out = new PrintWriter(fileWriter);
 			new Yaml().dump(yamlMap, out);
 			out.close();
