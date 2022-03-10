@@ -14,7 +14,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import util.collections.vec.Vec;
 
 public class AudioCache {
-	
 
 	private static class Entry {
 		public final String infile;
@@ -30,9 +29,14 @@ public class AudioCache {
 		}
 	}
 	
-	private static final int CAPACITY = 100;
+	private final int capacity;
 
-	private Vec<Entry> vec = new Vec<Entry>(CAPACITY);
+	private Vec<Entry> vec;
+	
+	public AudioCache(int capacity) {
+		this.capacity = capacity;
+		this.vec = new Vec<Entry>(capacity);
+	}
 
 	public synchronized Entry getEntry(String infile, float overwrite_sampling_rate) {
 		int osr = Float.floatToIntBits(overwrite_sampling_rate);
@@ -52,7 +56,7 @@ public class AudioCache {
 
 	public synchronized Entry tryRemoveFirstUnlocked() {
 		int len = vec.size();
-		if(CAPACITY < len) {
+		if(capacity < len) {
 			for(int i = 0; i < len; i++) {
 				Entry entry = vec.get(i);
 				if(entry.lifecycleLock.writeLock().tryLock()) {

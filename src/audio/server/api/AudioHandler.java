@@ -29,10 +29,11 @@ public class AudioHandler {
 	
 
 	private final Broker broker;
-	private final AudioCache audioCache = new AudioCache();
+	private final AudioCache audioCache;
 
 	public AudioHandler(Broker broker) {
 		this.broker = broker;
+		this.audioCache = new AudioCache(broker.config().audioConfig.audio_cache_max_files);
 	}
 
 	public void handle(GeneralSample sample, Request request, HttpServletResponse response) throws IOException {

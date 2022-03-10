@@ -10,8 +10,7 @@ import util.yaml.YamlList;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
-public class Photo2 {
-	
+public class Photo2 {	
 
 	public final String id;
 	public final PhotoProjectConfig projectConfig;
