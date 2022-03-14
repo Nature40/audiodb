@@ -39,7 +39,7 @@
               </q-item>
             </template>          
           </q-select>
-          <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave"/>
+          <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave" :disabled="labelStartX === undefined || labelEndX === undefined"/>
           <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;">
           Place mouse cursor at spectrogram segment start position, press and hold left mouse button, move mouse cursor to segment end position, release left mouse button,<br> select correct label, click right mouse button to save the new segment.          
           </q-badge>
@@ -349,6 +349,10 @@ export default defineComponent({
       event.names = this.userSelectedLabelNames;
       console.log(event);
       this.$emit('save', event);
+      this.mouseStartX = undefined;
+      this.mouseEndX = undefined;
+      this.labelStartX = undefined;
+      this.labelEndX = undefined;
     },
   },
   watch: {

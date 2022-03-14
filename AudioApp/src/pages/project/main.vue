@@ -27,11 +27,23 @@
     <q-toolbar class="bg-grey-3" :class="sampleVisibility">
       <!--<q-space></q-space>-->
       <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" :title="audioPlaying?'Pause audio':'Play audio'" padding="xs"></q-btn>
-      <div v-if="labels !== undefined && labels.length > 0 && newSegmentStart === undefined" class="q-ml-lg">
-        Segment 
-        <q-btn icon="fast_rewind" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMovePrevLabel();"/>
-        {{selectedLabelIndex === undefined ? '-' : (selectedLabelIndex + 1)}} / {{labels.length}}
-        <q-btn icon="fast_forward" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMoveNextLabel();"/>
+      <div v-if="labels !== undefined && labels.length > 0 && newSegmentStart === undefined" class="q-ml-lg row">
+        <span>Segment</span> 
+        <q-btn icon="fast_rewind" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMovePrevLabel();" title="Move to previous label segment within this samples"/>
+        <q-select v-model="selectedLabelIndex" dense options-dense hide-bottom-space filled :options="labelIndices" style="min-width: 100px;">
+          <template v-slot:selected>
+            {{selectedLabelIndex === undefined ? '-' : (selectedLabelIndex + 1)}} / {{labels.length}}
+          </template>
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps" style="min-width: 150px;">
+              <q-item-section>
+                <q-item-label>{{scope.opt + 1}}</q-item-label>
+                <q-item-label caption>{{labels[scope.opt].start.toFixed(3)}} .. {{labels[scope.opt].end.toFixed(3)}}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>                    
+        </q-select>
+        <q-btn icon="fast_forward" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMoveNextLabel();" title="Move to next label segment within this samples"/>
       </div>  
       <div v-if="selectedLabel !== undefined" class="q-ml-lg row">
         <q-btn icon-right="subdirectory_arrow_right" padding="xs" margin="xs" @click="onMoveToLabelStart" title="Move to label start time.">
@@ -146,9 +158,9 @@
       <q-badge v-if="saveLabelsLoading" color="grey-3" text-color="accent" label="Sending label..."/>
       <q-badge v-if="saveLabelsError" color="grey-3" text-color="red" label="Error sending label. You may try again."/>
       <q-btn icon="add" size="xs" text-color="green" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
-      <q-btn icon="cancel" size="xs" padding="xs" margin="xs" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
-      <q-btn icon="navigation" label="Set end" size="xs" padding="xs" margin="xs" title="Set end time of new time segment at current time position." @click="onNewTimeSegmentEnd" v-if="newSegmentStart !== undefined && newSegmentEnd === undefined" :disabled="samplePos === undefined"/>
-      <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels and switch back to segment selection view." @click="onNewTimeSegmentSave" v-if="newSegmentStart !== undefined && newSegmentEnd !== undefined"/>
+      <q-btn icon="cancel" size="xs" padding="xs" margin="xs" text-color="red" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
+      <q-btn icon="navigation" label="Set end" size="xs" padding="xs" margin="xs" text-color="green" title="Set end time of new time segment at current time position." @click="onNewTimeSegmentEnd" v-if="newSegmentStart !== undefined && newSegmentEnd === undefined" :disabled="samplePos === undefined"/>
+      <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" text-color="green" title="Save new time segment with currently selected labels and switch back to segment selection view." @click="onNewTimeSegmentSave" v-if="newSegmentStart !== undefined && newSegmentEnd !== undefined"/>
 
     </q-toolbar>
     <q-separator/>    
@@ -517,6 +529,16 @@ export default defineComponent({
     },
     userSelectedLabelNamesSet() {
       return new Set(this.userSelectedLabelNames);
+    },
+    labelIndices() {
+      if(this.labels === undefined || this.labels.length === 0) {
+        return [];
+      }
+      var indices = [];
+      for (var i = 0; i < this.labels.length; i++) {
+          indices.push(i);
+      }
+      return indices;
     },
   },
 
