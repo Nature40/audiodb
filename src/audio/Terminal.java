@@ -56,9 +56,9 @@ public class Terminal {
 	private static HashMap<String, CommandProvider> commandMap = new HashMap<String, CommandProvider>();
 	static {
 		putArgsCommand("server", audio.server.Webserver::main);
-		putClassCommand("create_yaml", Command_create_yaml.class);
-		putClassCommand("overwrite_yaml", Command_overwrite_yaml.class);
-		putClassCommand("audio_reread", Command_audio_reread.class);
+		//putClassCommand("create_yaml", Command_create_yaml.class); // obsolete
+		//putClassCommand("overwrite_yaml", Command_overwrite_yaml.class); // obsolete
+		//putClassCommand("audio_reread", Command_audio_reread.class); // obsolete
 	}
 
 	private static void putClassCommand(String name, Class<? extends Command> commandClass) {

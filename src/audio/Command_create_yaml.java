@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 import org.tinylog.Logger;
 
+@Deprecated
 public class Command_create_yaml implements Command {
 
 	@Override

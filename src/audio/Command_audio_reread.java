@@ -1,5 +1,6 @@
 package audio;
 
+@Deprecated
 public class Command_audio_reread implements Command {
 
 	@Override

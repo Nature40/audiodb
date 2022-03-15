@@ -1,5 +1,6 @@
 package util.yaml;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
@@ -55,10 +56,14 @@ public class YamlUtil {
 
 	public static void writeSafeYamlMap(Path path, Map<String, Object> yamlMap) {		
 		Path writepath = Paths.get(path.toString()+"_temp");
-		try(FileWriter fileWriter = new FileWriter(writepath.toFile(), StandardCharsets.UTF_8)){
+		File writeFile = writepath.toFile();
+		try(FileWriter fileWriter = new FileWriter(writeFile, StandardCharsets.UTF_8)){
 			PrintWriter out = new PrintWriter(fileWriter);
 			new Yaml().dump(yamlMap, out);
 			out.close();
+			if(out.checkError()) {
+				throw new RuntimeException("write error");	
+			}				
 			Files.move(writepath, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (Exception e) {
 			throw new RuntimeException(e);

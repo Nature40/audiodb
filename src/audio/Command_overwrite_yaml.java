@@ -2,11 +2,8 @@ package audio;
 
 import java.io.File;
 
-
-import org.tinylog.Logger;
-
+@Deprecated
 public class Command_overwrite_yaml extends Command_create_yaml {
-	
 
 	@Override
 	protected boolean traverseFile(File file) {
