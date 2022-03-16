@@ -48,7 +48,7 @@ public class SampleManager {
 			throw new RuntimeException(e);
 		}
 		tlSampleManagerConnector.get().init(false);
-		rescan(false);	
+		refresh(false);	
 	}
 
 	public static String metaRelPathToID(String project, String meta_rel_path) {
@@ -153,10 +153,10 @@ public class SampleManager {
 		}
 	}
 
-	public void rescan(boolean rereadAll) {
+	public void refresh(boolean clear) {
 		Timer.start("traverse");
 		try {
-			if(rereadAll) {
+			if(clear) {
 				tlSampleManagerConnector.get().init(true);
 			}
 			tlSampleManagerConnector.get().initClearTraverseTable();

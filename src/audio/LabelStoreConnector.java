@@ -12,23 +12,47 @@ import org.tinylog.Logger;
 public class LabelStoreConnector {
 
 	public static enum SQL {
-		DROP_TABLE_LABEL_STORE("DROP TABLE IF EXISTS LABEL_STORE"),
+		DROP_TABLE_GENERATOR_LABEL_STORE("DROP TABLE IF EXISTS GENERATOR_LABEL_STORE"),
 
-		CREATE_TABLE_LABEL_STORE("CREATE TABLE IF NOT EXISTS LABEL_STORE " +
+		CREATE_TABLE_GENERATOR_LABEL_STORE("CREATE TABLE IF NOT EXISTS GENERATOR_LABEL_STORE " +
 				"(" +
-				"ID INTEGER NOT NULL, " +
+				"SAMPLE INTEGER NOT NULL, " +
 				"LABEL INTEGER NOT NULL, " +
-				"RELIABILITY INTEGER NOT NULL, " +
+				"RELIABILITY REAL NOT NULL, " +
 				"LOCATION INTEGER NOT NULL," + 
-				"TIME INTEGER NOT NULL" + 
+				"TIME INTEGER NOT NULL," +
+				"START_TIME REAL NOT NULL," + 
+				"END_TIME REAL NOT NULL" + 
 				")"),
 
-		INSERT_LABEL_STORE("INSERT INTO LABEL_STORE " +
-				"(ID, LABEL, RELIABILITY, LOCATION, TIME) " +
+		INSERT_GENERATOR_LABEL_STORE("INSERT INTO GENERATOR_LABEL_STORE " +
+				"(SAMPLE, LABEL, RELIABILITY, LOCATION, TIME, START_TIME, END_TIME) " +
 				"VALUES " +
-				"(?, ?, ?, ?, ?)"),
+				"(?, ?, ?, ?, ?, ?, ?)"),
+		
+		QUERY_GENERATOR_LABEL_ALL("SELECT SAMPLE, LABEL, RELIABILITY, LOCATION, TIME, START_TIME, END_TIME FROM GENERATOR_LABEL_STORE"),
+		
+		
+		DROP_TABLE_USER_LABEL_STORE("DROP TABLE IF EXISTS USER_LABEL_STORE"),
 
-		QUERY_ALL("SELECT ID, LABEL, RELIABILITY, LOCATION, TIME FROM LABEL_STORE"),
+		CREATE_TABLE_USER_LABEL_STORE("CREATE TABLE IF NOT EXISTS USER_LABEL_STORE " +
+				"(" +
+				"SAMPLE INTEGER NOT NULL, " +
+				"LABEL INTEGER NOT NULL, " +
+				"LOCATION INTEGER NOT NULL," + 
+				"TIME INTEGER NOT NULL," +
+				"START_TIME REAL NOT NULL," + 
+				"END_TIME REAL NOT NULL," + 
+				"CREATOR INTEGER NOT NULL," + 
+				"CREATION_TIME INTEGER NOT NULL" + 
+				")"),
+
+		INSERT_USER_LABEL_STORE("INSERT INTO USER_LABEL_STORE " +
+				"(SAMPLE, LABEL, LOCATION, TIME, START_TIME, END_TIME, CREATOR, CREATION_TIME) " +
+				"VALUES " +
+				"(?, ?, ?, ?, ?, ?, ?, ?)"),
+
+		QUERY_USER_LABEL_ALL("SELECT SAMPLE, LABEL, LOCATION, TIME, START_TIME, END_TIME, CREATOR, CREATION_TIME FROM USER_LABEL_STORE"),
 		
 
 		DROP_TABLE_ID_SAMPLE_MAP("DROP TABLE IF EXISTS ID_SAMPLE_MAP"),
@@ -92,7 +116,29 @@ public class LabelStoreConnector {
 
 		QUERY_LOCATION_BY_ID("SELECT LOCATION FROM ID_LOCATION_MAP WHERE ID = ?"),
 		
-		QUERY_ALL_LOCATION("SELECT ID, LOCATION FROM ID_LOCATION_MAP");
+		QUERY_ALL_LOCATION("SELECT ID, LOCATION FROM ID_LOCATION_MAP"),
+		
+		
+		DROP_TABLE_ID_CREATOR_MAP("DROP TABLE IF EXISTS ID_CREATOR_MAP"),
+
+		CREATE_TABLE_ID_CREATOR_MAP("CREATE TABLE IF NOT EXISTS ID_CREATOR_MAP " +
+				"(" +
+				"ID INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " +
+				"CREATOR VARCHAR(255) NOT NULL UNIQUE" +
+				")"),
+
+		CREATE_IDX_ID_CREATOR_MAP_CREATOR("CREATE INDEX IF NOT EXISTS IDX_ID_CREATOR_MAP_CREATOR ON ID_CREATOR_MAP (CREATOR)"),
+
+		INSERT_ID_CREATOR("INSERT INTO ID_CREATOR_MAP " +
+				"(CREATOR) " +
+				"VALUES " +
+				"(?)"),		
+
+		QUERY_ID_BY_CREATOR("SELECT ID FROM ID_CREATOR_MAP WHERE CREATOR = ?"),
+
+		QUERY_CREATOR_BY_ID("SELECT CREATOR FROM ID_CREATOR_MAP WHERE ID = ?"),
+		
+		QUERY_ALL_CREATOR("SELECT ID, CREATOR FROM ID_CREATOR_MAP");
 		
 		public final String sql;
 
@@ -131,10 +177,18 @@ public class LabelStoreConnector {
 		try {
 			if(clear) {
 				{
-					ResultSet res = conn.getMetaData().getTables(null, null, "LABEL_STORE", null);
+					ResultSet res = conn.getMetaData().getTables(null, null, "GENERATOR_LABEL_STORE", null);
 					if(res.next()) {
-						Logger.info("DROP TABLE LABEL_STORE");
-						getStatement(SQL.DROP_TABLE_LABEL_STORE).executeUpdate();
+						Logger.info("DROP TABLE GENERATOR_LABEL_STORE");
+						getStatement(SQL.DROP_TABLE_GENERATOR_LABEL_STORE).executeUpdate();
+					}
+				}
+				
+				{
+					ResultSet res = conn.getMetaData().getTables(null, null, "USER_LABEL_STORE", null);
+					if(res.next()) {
+						Logger.info("DROP TABLE USER_LABEL_STORE");
+						getStatement(SQL.DROP_TABLE_USER_LABEL_STORE).executeUpdate();
 					}
 				}
 				
@@ -160,12 +214,26 @@ public class LabelStoreConnector {
 						Logger.info("DROP TABLE ID_LOCATION_MAP");
 						getStatement(SQL.DROP_TABLE_ID_LOCATION_MAP).executeUpdate();
 					}
-				}	
+				}
+				
+				{
+					ResultSet res = conn.getMetaData().getTables(null, null, "ID_CREATOR_MAP", null);
+					if(res.next()) {
+						Logger.info("DROP TABLE ID_CREATOR_MAP");
+						getStatement(SQL.DROP_TABLE_ID_CREATOR_MAP).executeUpdate();
+					}
+				}
 			}
 			{
-				ResultSet res = conn.getMetaData().getTables(null, null, "LABEL_STORE", null);
+				ResultSet res = conn.getMetaData().getTables(null, null, "GENERATOR_LABEL_STORE", null);
 				if(!res.next()) {
-					getStatement(SQL.CREATE_TABLE_LABEL_STORE).executeUpdate();
+					getStatement(SQL.CREATE_TABLE_GENERATOR_LABEL_STORE).executeUpdate();
+				}
+			}
+			{
+				ResultSet res = conn.getMetaData().getTables(null, null, "USER_LABEL_STORE", null);
+				if(!res.next()) {
+					getStatement(SQL.CREATE_TABLE_USER_LABEL_STORE).executeUpdate();
 				}
 			}
 			{
@@ -185,10 +253,17 @@ public class LabelStoreConnector {
 				if(!res.next()) {
 					getStatement(SQL.CREATE_TABLE_ID_LOCATION_MAP).executeUpdate();
 				}
-			}	
+			}
+			{
+				ResultSet res = conn.getMetaData().getTables(null, null, "ID_CREATOR_MAP", null);
+				if(!res.next()) {
+					getStatement(SQL.CREATE_TABLE_ID_CREATOR_MAP).executeUpdate();
+				}
+			}
 			getStatement(SQL.CREATE_IDX_ID_SAMPLE_MAP_SAMPLE).executeUpdate();
 			getStatement(SQL.CREATE_IDX_ID_LABEL_MAP_LABEL).executeUpdate();
 			getStatement(SQL.CREATE_IDX_ID_LOCATION_MAP_LOCATION).executeUpdate();
+			getStatement(SQL.CREATE_IDX_ID_CREATOR_MAP_CREATOR).executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -207,14 +282,33 @@ public class LabelStoreConnector {
 		return statementMap.computeIfAbsent(sql, this::createStatement);
 	}
 
-	public void insert(int id, int label, int reliability, int location, int time) {
+	public void insertGeneratorLabel(int id, int label, float reliability, int location, int time, float start, float end) {
 		try {
-			PreparedStatement stmt = getStatement(SQL.INSERT_LABEL_STORE);		
+			PreparedStatement stmt = getStatement(SQL.INSERT_GENERATOR_LABEL_STORE);		
 			stmt.setInt(1, id);		
 			stmt.setInt(2, label);
-			stmt.setInt(3, reliability);
+			stmt.setFloat(3, reliability);
 			stmt.setInt(4, location);
 			stmt.setInt(5, time);
+			stmt.setFloat(6, start);
+			stmt.setFloat(7, end);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void insertUserLabel(int id, int label, int location, int time, float start, float end, int creator, int creation_time) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.INSERT_USER_LABEL_STORE);		
+			stmt.setInt(1, id);		
+			stmt.setInt(2, label);
+			stmt.setInt(3, location);
+			stmt.setInt(4, time);
+			stmt.setFloat(5, start);
+			stmt.setFloat(6, end);
+			stmt.setInt(7, creator);
+			stmt.setInt(8, creation_time);
 			stmt.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -222,21 +316,48 @@ public class LabelStoreConnector {
 	}
 
 	@FunctionalInterface
-	public interface LabelRowConsumer {
-	    void accept(int id, int label, short reliability, int location, int time);
+	public interface GeneratorLabelRowConsumer {
+	    void accept(int id, int label, float reliability, int location, int time, float start, float end);
 	}
 		
-	public void forEach(LabelRowConsumer consumer) {		
+	public void forEachGeneratorLabel(GeneratorLabelRowConsumer consumer) {		
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_ALL);
+			PreparedStatement stmt = getStatement(SQL.QUERY_GENERATOR_LABEL_ALL);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				int id = res.getInt(1);
 				int label = res.getInt(2);
-				short reliability = res.getShort(3);
+				float reliability = res.getFloat(3);
 				int location = res.getInt(4);
 				int time = res.getInt(5);
-				consumer.accept(id, label, reliability, location, time);
+				float start = res.getFloat(6);
+				float end = res.getFloat(7);
+				consumer.accept(id, label, reliability, location, time, start, end);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	@FunctionalInterface
+	public interface UserLabelRowConsumer {
+	    void accept(int id, int label, int location, int time, float start, float end, int creator, int creation_time);
+	}
+	
+	public void forEachUserLabel(UserLabelRowConsumer consumer) {		
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_USER_LABEL_ALL);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				int id = res.getInt(1);
+				int label = res.getInt(2);
+				int location = res.getInt(3);
+				int time = res.getInt(4);
+				float start = res.getFloat(5);
+				float end = res.getFloat(6);
+				int creator = res.getInt(7);
+				int creation_time = res.getInt(8);
+				consumer.accept(id, label, location, time, start, end, creator, creation_time);
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -389,7 +510,58 @@ public class LabelStoreConnector {
 				String location = res.getString(1);
 				return location;
 			} else {
-				throw new RuntimeException("location by id not found");
+				throw new RuntimeException("location by id not found: " + id);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}		
+	}
+	
+	private int getIdByCreatorInternal(String creator) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_ID_BY_CREATOR);
+			stmt.setString(1, creator);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				int id = res.getInt(1);
+				return id;
+			} else {
+				return -1;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}		
+	}
+	
+	public int getOrCreateIdByCreator(String creator) {
+		int id = getIdByCreatorInternal(creator);
+		if(id >= 0) {
+			return id;
+		}
+		try {
+			PreparedStatement stmt = getStatement(SQL.INSERT_ID_CREATOR);		
+			stmt.setString(1, creator);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			Logger.warn(e);
+		}
+		id = getIdByCreatorInternal(creator);
+		if(id >= 0) {
+			return id;
+		}
+		throw new RuntimeException("internal error");
+	}
+	
+	public String getCreatorById(int id) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_CREATOR_BY_ID);
+			stmt.setInt(1, id);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				String creator = res.getString(1);
+				return creator;
+			} else {
+				throw new RuntimeException("creator by id not found: " + id);
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -418,6 +590,20 @@ public class LabelStoreConnector {
 	public void forEachLabel(IndexStringRow consumer) {		
 		try {
 			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_LABEL);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				int id = res.getInt(1);
+				String location = res.getString(2);
+				consumer.accept(id, location);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void forEachCreator(IndexStringRow consumer) {		
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_CREATOR);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				int id = res.getInt(1);

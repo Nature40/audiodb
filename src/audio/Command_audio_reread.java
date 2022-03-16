@@ -9,6 +9,6 @@ public class Command_audio_reread implements Command {
 			throw new RuntimeException("no paramer allowed");
 		}
 		Broker broker = new Broker();
-		broker.sampleManager().rescan(true);
+		broker.sampleManager().refresh(true);
 	}
 }
