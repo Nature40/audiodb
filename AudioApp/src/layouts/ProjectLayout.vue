@@ -13,10 +13,19 @@
         />
 
         <q-toolbar-title>
-          AudioApp - {{project}}
+          <span v-if="$route.path === '/projects/' + project + '/main'">
+            Audio view
+          </span>
+          <span v-if="$route.path === '/projects/' + project + '/task'">
+            Task submission
+          </span>     
+          <span v-if="$route.path === '/projects/' + project + '/tasks'">
+            Task status
+          </span>                
         </q-toolbar-title>
 
-        <div>AudioApp v2</div>
+        <div class="text-amber-4">AudioApp v2</div>
+        <div class="text-grey-5" style="margin-left: 10px;">[{{project}}]</div>
       </q-toolbar>
     </q-header>
 
@@ -28,7 +37,7 @@
       <q-list separator>
         <q-item clickable :to="'/projects'" active-class="active-item">
           <q-item-section avatar>
-            <q-icon name="settings_input_component" />
+            <q-icon name="arrow_back" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Project selection</q-item-label>
@@ -38,7 +47,7 @@
 
         <q-item clickable :to="'/projects/' + project + '/main'" active-class="active-item">
           <q-item-section avatar>
-            <q-icon name="home" />
+            <q-icon name="campaign" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Audio view</q-item-label>
@@ -48,7 +57,7 @@
 
         <q-item clickable :to="'/projects/' + project + '/task'" active-class="active-item">
           <q-item-section avatar>
-            <q-icon name="work" />
+            <q-icon name="create_new_folder" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Task submission</q-item-label>
@@ -58,7 +67,7 @@
 
         <q-item clickable :to="'/projects/' + project + '/tasks'" active-class="active-item">
           <q-item-section avatar>
-            <q-icon name="work" />
+            <q-icon name="list_alt" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Task status</q-item-label>

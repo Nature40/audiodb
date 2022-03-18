@@ -15,6 +15,7 @@ import org.tinylog.Logger;
 import audio.AudioProjectConfig;
 import audio.MetaCreator;
 
+@Description("Traverse root_data_path and for all WAV files without YAML file in root_path create a new YAML file.")
 public class Task_create_yaml extends Task {
 
 	private Path root_path;

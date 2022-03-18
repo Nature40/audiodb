@@ -1,11 +1,22 @@
 <template>
   <q-page class="fit column content-center">
     <q-toolbar class="bg-grey-3">
-      <q-select rounded outlined v-model="descriptorName" :options="descriptorNames" label="Selected task" style="min-width: 200px;"/>
+      <q-select rounded outlined v-model="descriptorName" :options="descriptorNames" label="Selected task" style="min-width: 200px;">
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps">
+            <q-item-section>
+              <q-item-label><b>{{scope.opt}}</b> <span style="color: grey; padding-left: 20px;">{{descriptors[scope.opt].description}}</span></q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
+      </q-select>
     </q-toolbar>
     <div v-if="descriptor !== undefined">
-      <q-btn @click="execute">
-        Execute task {{descriptor.name}}
+      <div v-if="descriptor.description !== undefined">
+        {{descriptor.description}}
+      </div>
+      <q-btn @click="execute" icon="keyboard_return" style="margin-left: 200px; margin-top: 50px;">
+        (Execute task) {{descriptor.name}}
       </q-btn>
     </div>
 

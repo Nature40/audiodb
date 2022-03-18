@@ -29,15 +29,21 @@ public class Tasks {
 		public final String name;
 		public final Class<? extends Task> taskClass;
 		public final Constructor<? extends Task> constructor;
+		public final String description;
 
 		public Descriptor(String name, Class<? extends Task> taskClass) {
 			this.name = name;
 			this.taskClass = taskClass;
 			try {
-				constructor = taskClass.getDeclaredConstructor();
+				this.constructor = taskClass.getDeclaredConstructor();
 			} catch (NoSuchMethodException | SecurityException e) {
 				throw new RuntimeException(e);
 			}
+			if(taskClass.isAnnotationPresent(Description.class)) {
+				this.description = taskClass.getAnnotation(Description.class).value();
+			} else {
+				this.description = null;
+			}			
 		}
 
 		public Task newInstance() {

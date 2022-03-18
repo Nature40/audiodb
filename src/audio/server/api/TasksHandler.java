@@ -61,7 +61,7 @@ public class TasksHandler extends AbstractHandler {
 			}
 		}
 	}
-	
+
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		switch(request.getMethod()) {
 		case "GET":
@@ -74,7 +74,7 @@ public class TasksHandler extends AbstractHandler {
 			throw new RuntimeException("no call");
 		}
 	}
-	
+
 	private static void taskToJSON(Task task, JSONWriter json) {
 		Ctx ctx = task.geCtx();
 		json.object();
@@ -106,6 +106,10 @@ public class TasksHandler extends AbstractHandler {
 				json.object();
 				json.key("name");
 				json.value(name);
+				if(descriptor.description != null) {
+					json.key("description");
+					json.value(descriptor.description);
+				}
 				json.endObject();
 			});
 			json.endObject();			
@@ -120,7 +124,7 @@ public class TasksHandler extends AbstractHandler {
 		}
 		json.endObject();
 	}
-	
+
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONObject jsonAction = jsonReq.getJSONObject("action");

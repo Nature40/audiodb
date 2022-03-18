@@ -1,8 +1,8 @@
 <template>
   <q-page class="fit column content-center">
     <q-toolbar class="bg-grey-3">
-      <q-btn @click="refresh">
-        refresh task status
+      <q-btn @click="refresh" icon="refresh" title="Refresh task status.">
+        
       </q-btn>
     </q-toolbar>
     <div>
@@ -80,8 +80,8 @@ export default defineComponent({
   },
   
   async mounted() {
-
-   },  
+    this.refresh();
+  },  
 })
 </script>
 
@@ -102,6 +102,19 @@ td:nth-child(3) {
 
 td:nth-child(4) {
   color: blue;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #00000007;
+}
+
+tbody tr:hover {
+  background-color: #ffff9944;
+  cursor: pointer;
+}
+
+thead {
+  background-color: #0000002e;
 }
 
 </style>

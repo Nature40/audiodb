@@ -46,7 +46,7 @@ public class AudioCache {
 			Logger.info("insert " + infile + "   " + overwrite_sampling_rate);
 			entry = new Entry(infile, osr);
 		} else {
-			Logger.info("get pos " + index);
+			//Logger.info("get chache pos " + index);
 			entry = vec.remove(index);
 		}
 		entry.lifecycleLock.readLock().lock();

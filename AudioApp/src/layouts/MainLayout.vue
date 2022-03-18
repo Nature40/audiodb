@@ -13,10 +13,10 @@
         />
 
         <q-toolbar-title>
-          AudioApp
+          Project selection
         </q-toolbar-title>
 
-        <div>AudioApp v2</div>
+        <div class="text-amber-4">AudioApp v2</div>
       </q-toolbar>
     </q-header>
 

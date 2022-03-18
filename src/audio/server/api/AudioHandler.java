@@ -73,6 +73,7 @@ public class AudioHandler {
 			}
 			response.setContentLengthLong(fileLen);
 			try(FileInputStream in = new FileInputStream(file)) {
+				Logger.info("send full  " + file);
 				IO.copy(in, response.getOutputStream());
 			} catch(EofException e) {
 				Logger.info("remote connection closed");
@@ -107,6 +108,7 @@ public class AudioHandler {
 				}
 				long rangeLen = rangeEnd - rangeStart + 1;
 				try(FileInputStream in = new FileInputStream(file)) {
+					Logger.info("send range " + rangeStart + " .. " + rangeEnd + "  " + file);
 					if(rangeStart != 0) {					
 						in.skip(rangeStart);
 					}
@@ -118,11 +120,11 @@ public class AudioHandler {
 					response.setHeader("Content-Range", "bytes "+ rangeStart +"-" + rangeEnd + "/" + fileLen);
 					IO.copy(in, response.getOutputStream(), rangeLen);
 				} catch(EofException e) {
-					Logger.info("remote connection closed");
+					Logger.trace("remote connection closed");
 				} catch (IOException e) {
 					Throwable cause = e.getCause();
 					if(cause != null && cause instanceof TimeoutException) {
-						Logger.info(cause.getMessage());
+						Logger.trace(cause.getMessage());
 					} else {
 						throw e;
 					}
