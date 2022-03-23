@@ -14,13 +14,15 @@ public class RoleManager {
 	private AtomicInteger ci = new AtomicInteger(0);
 	
 	public final Role role_create_account;
+	public final Role role_manage_account;
 	public final Role role_admin;
 	public final Role role_readOnly;
 	public final Role role_reviewedOnly;
 
 	public RoleManager() {
 		role_create_account = addRole("create_account");
-		role_admin = addRole("admin", role_create_account);
+		role_manage_account = addRole("manage_account", role_create_account);
+		role_admin = addRole("admin", role_manage_account);
 		role_readOnly = addRole("readOnly");
 		role_reviewedOnly = addRole("reviewedOnly");
 	}
@@ -32,20 +34,6 @@ public class RoleManager {
 		return role;
 	}
 
-	@Deprecated
-	public synchronized Role addRole(String roleName, String... roleNames) {
-		int len = roleNames.length;
-		Role[] containedRoles = new Role[len];
-		for (int i = 0; i < len; i++) {
-			Role role = getRole(roleNames[i]);
-			if(role == null) {
-				throw new RuntimeException("role not found");
-			}
-			containedRoles[i] = role;
-		}
-		return addRole(roleName, containedRoles);
-	}
-	
 	public synchronized Role addRole(String roleName, Role... containedRoles) {
 		int index = ci.getAndIncrement();
 		Role role = new Role(index, roleName, containedRoles);

@@ -17,10 +17,9 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;
 
-import com.opencsv.CSVWriter;
-
 import audio.Broker;
 import audio.Sample;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import util.AudioTimeUtil;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -132,32 +131,24 @@ public class TimeseriesHandler extends AbstractHandler {
 
 	private void process(Vec<String> indices, HttpServletResponse response) throws IOException {
 		response.setContentType("text/csv;charset=utf-8");		
-		try(CSVWriter writer = new CSVWriter(
-				response.getWriter(), 
-				CSVWriter.DEFAULT_SEPARATOR, 
-				CSVWriter.DEFAULT_QUOTE_CHARACTER,
-				CSVWriter.DEFAULT_ESCAPE_CHARACTER,
-				CSVWriter.DEFAULT_LINE_END
-				)) {
+		try (CsvWriter csv = CsvWriter.builder().build(response.getWriter())) {
 			String[] header = new String[HEADER_META_ROWS + indices.size()];
 			header[0] = "plotID";
 			header[1] = "datetime";
-
 			for (int i = 0; i < indices.size(); i++) {
 				header[HEADER_META_ROWS + i] = indices.get(i);
 			}
-
-			writer.writeNext(header, false);
-			process(writer, indices);
-		}	
+			csv.writeRow(header);		    
+			process(csv, indices);	    
+		}
 	}
 
-	private void process(CSVWriter writer, Vec<String> indices) {
+	private void process(CsvWriter csv, Vec<String> indices) {
 		/*broker.samples().sampleMap.values().stream().parallel().limit(20).forEach(sample -> {
 			processSample(writer, sample, indices);
 		});*/
 		for(Sample sample : broker.samples().sampleMap.values()) {
-			processSample(writer, sample, indices);
+			processSample(csv, sample, indices);
 		}
 	}
 
@@ -184,11 +175,11 @@ public class TimeseriesHandler extends AbstractHandler {
 		return rows;
 	}
 
-	private void processSample(CSVWriter writer, Sample sample, Vec<String> indices) {		
+	private void processSample(CsvWriter csv, Sample sample, Vec<String> indices) {		
 		Vec<String[]> rows = processSample(sample, indices);
-		synchronized (writer) {
+		synchronized (csv) {
 			for(String[] row:rows) {
-				writer.writeNext(row, false);
+				csv.writeRow(row);
 			}			
 		}
 	}

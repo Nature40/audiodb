@@ -2,13 +2,13 @@ package audio;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 
@@ -26,7 +26,7 @@ public class AccountManager {
 	private final Path accountsPath;
 	private String salt = null;
 
-	private volatile List<Account> accounts = new ArrayList<Account>();
+	private volatile Vec<Account> accounts = new Vec<Account>();
 
 	public static final Comparator<byte[]> BYTES_COMPARATOR = new Comparator<byte[]>() {
 		@Override
@@ -117,7 +117,7 @@ public class AccountManager {
 		YamlMap yamlMap = YamlUtil.readYamlMap(accountsPath);
 		String salt = yamlMap.getString("salt");
 		List<YamlMap> accountList = yamlMap.optList("accounts").asMaps();
-		List<Account> accounts = accountList.stream().map(m -> Account.ofYAML(m)).collect(Collectors.toList());
+		Vec<Account> accounts = accountList.stream().map(m -> Account.ofYAML(m)).collect(Vec.collector());
 		if(salt.length() < 8) {
 			throw new RuntimeException("invalid salt");
 		}
@@ -132,13 +132,13 @@ public class AccountManager {
 	}
 
 	public synchronized void addAccount(Account account, boolean write) {
-		List<Account> accOld = accounts;
+		Vec<Account> accOld = accounts;
 		for(Account a:accOld) {
 			if(a.username.equals(account.username)) {
 				throw new RuntimeException("account already exists: " + account.username);
 			}
 		}
-		ArrayList<Account> acc2 = new ArrayList<Account>(accOld);
+		Vec<Account> acc2 = accOld.copy();
 		acc2.add(account);
 		this.accounts = acc2;
 		if(write) {
@@ -147,9 +147,24 @@ public class AccountManager {
 		refreshWebAuthn();
 	}
 
+	public synchronized void removeAccount(Account account, boolean write) {
+		Vec<Account> accOld = accounts;
+		Vec<Account> acc2 = new Vec<Account>();
+		for(Account a:accOld) {
+			if(!a.username.equals(account.username)) {
+				acc2.add(a);
+			}
+		}		
+		this.accounts = acc2;
+		refreshWebAuthn();
+		if(write) {
+			write();
+		}		
+	}
+
 	public void setAccount(Account account, boolean write) {
-		List<Account> accOld = accounts;
-		ArrayList<Account> acc2 = new ArrayList<Account>();
+		Vec<Account> accOld = accounts;
+		Vec<Account> acc2 = new Vec<Account>();
 		for(Account a:accOld) {
 			if(!a.username.equals(account.username)) {
 				acc2.add(a);
@@ -193,6 +208,12 @@ public class AccountManager {
 	public Account loadByCredentialId(byte[] credentialId) {
 		return webAuthnCredentialIdMap.get(credentialId);
 	}
+
+	public void forEach(Consumer<Account> action) {
+		accounts.forEach(action);		
+	}
+
+
 
 
 }

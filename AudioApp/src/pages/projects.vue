@@ -1,5 +1,5 @@
 <template>
-  <q-page class="flex flex-center" style="color: black;">
+  <q-page class="flex justify-center" style="color: black;">
     <div>
     <b>Select one project:</b>
     <br>
@@ -10,9 +10,12 @@
       no projects found
     </div>
     <div v-else>
-      <div v-for="project in projects" :key="project.id">
-        <br><router-link :to="toProjectHash(project)"> -->{{project.id}}</router-link>
-      </div>
+      <q-list bordered separator>
+        <q-item clickable v-ripple v-for="project in projects" :key="project.id" :to="toProjectHash(project)">
+          <q-item-section avatar><q-icon name="arrow_right_alt" /></q-item-section>
+          <q-item-section>{{project.id}}</q-item-section>
+        </q-item>
+      </q-list>
     </div>
     </div>
     

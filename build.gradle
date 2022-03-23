@@ -1,7 +1,7 @@
 // gradle version 7.0.2, in eclipse gradle version 7.0.1 
 
 plugins { 
-  id "com.github.ben-manes.versions" version "0.39.0" // update check task: dependencyUpdates  https://github.com/ben-manes/gradle-versions-plugin
+  id "com.github.ben-manes.versions" version "0.42.0" // update check task: dependencyUpdates  https://github.com/ben-manes/gradle-versions-plugin
 }
 
 /*
@@ -50,8 +50,8 @@ repositories {
 }
 
 dependencies {
-	implementation group: 'org.tinylog', name: 'tinylog-impl', version: '2.4.1'
-	runtimeOnly group: 'org.tinylog', name: 'slf4j-tinylog', version: '2.4.1'
+	implementation group: 'org.tinylog', name: 'tinylog-impl', version: '2.5.0-M1.1'
+	runtimeOnly group: 'org.tinylog', name: 'slf4j-tinylog', version: '2.5.0-M1.1'
   	
 	implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '11.0.8'
 	implementation group: 'org.eclipse.jetty', name: 'jetty-security', version: '11.0.8'
@@ -59,9 +59,8 @@ dependencies {
 	implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '11.0.8'
 	implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: '11.0.8' // ALPN support for Java 8
 	
-	implementation group: 'org.json', name: 'json', version: '20211205'
+	implementation group: 'org.json', name: 'json', version: '20220320'
 	implementation group: 'org.yaml', name: 'snakeyaml', version: '1.30'
-	implementation group: 'com.opencsv', name: 'opencsv', version: '5.5.2'
 	implementation group: 'de.siegmar', name: 'fastcsv', version: '2.1.0'
 	
 	implementation group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
@@ -75,14 +74,14 @@ dependencies {
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.2'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.2'
 	
-	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.18.1.RELEASE'
+	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.19.1.RELEASE'
 	
 	implementation group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 	implementation group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
 	
-	implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.16.0'
+	implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.17.0'
 	
-	implementation group: 'com.h2database', name: 'h2', version: '2.0.202'
+	implementation group: 'com.h2database', name: 'h2', version: '2.1.210'
 	
 	implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'	
 }
