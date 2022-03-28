@@ -107,6 +107,11 @@ export default defineComponent({
   },
 
   methods: {
+    
+    refresh() {
+
+    },
+
     async webauthn_register() {
       try {
         var textEncoder = new TextEncoder("utf-8");

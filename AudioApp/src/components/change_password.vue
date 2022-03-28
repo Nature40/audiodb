@@ -84,15 +84,15 @@ export default defineComponent({
         this.busy = true;       
         var action = {action: 'change_password'};
         if(this.current_password !== undefined && this.current_password !== null && this.current_password.length >= 8 && this.new_password !== undefined && this.new_password !== null && this.new_password.length >= 8) {
-          console.log(this.salt);
-          console.log(this.user_name);
-          console.log(this.current_password);
+          //console.log(this.salt);
+          //console.log(this.user_name);
+          //console.log(this.current_password);
           var current_hash = sha3_512(this.salt + this.user_name + this.salt + this.current_password + this.salt);
-          console.log(current_hash);
+          //console.log(current_hash);
           action.current_hash = current_hash;
-          console.log(this.new_password);
+          //console.log(this.new_password);
           var new_hash = sha3_512(this.salt + this.user_name + this.salt + this.new_password + this.salt);
-          console.log(new_hash);
+          //console.log(new_hash);
           action.new_hash = new_hash;
         }
         var response = await this.$api.post('accounts', {actions: [action]})

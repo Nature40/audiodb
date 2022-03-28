@@ -25,6 +25,7 @@
         </q-toolbar-title>
 
         <div class="text-amber-4">AudioApp v2</div>
+        <q-btn icon="logout" title="Log out" padding="xs" flat round color="grey" :href="$store.getters['api']('logout')"></q-btn>
       </q-toolbar>
     </q-header>
 
@@ -52,7 +53,7 @@
             <q-item-label caption>User account details</q-item-label>
           </q-item-section>          
         </q-item>
-        <q-item clickable tag="a" :to="'/accounts'" active-class="active-item">
+        <q-item clickable tag="a" :to="'/accounts'" active-class="active-item" v-if="role_create_account || role_manage_account || role_list_account">
           <q-item-section avatar>
             <q-icon name="people" />
           </q-item-section>
@@ -71,7 +72,8 @@
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref } from 'vue';
+import {mapState} from 'vuex';
 
 export default defineComponent({
   name: 'MainLayout',
@@ -82,6 +84,15 @@ export default defineComponent({
     };
   },
 
+  computed: {
+    ...mapState({
+      identity: state => state.identity.data,
+      role_create_account: state => state.identity.create_account,      
+      role_manage_account: state => state.identity.manage_account, 
+      role_list_account: state => state.identity.list_account, 
+    }),  
+  },  
+
   components: {
   },
 
@@ -91,7 +102,8 @@ export default defineComponent({
     }
   },
 
-  mounted() {
+  async mounted() {
+    this.$store.dispatch('identity/init'); 
     //this.$nextTick(() => this.toggleLeftDrawer());
   },
 })

@@ -26,6 +26,7 @@
 
         <div class="text-amber-4">AudioApp v2</div>
         <div class="text-grey-5" style="margin-left: 10px;">[{{project}}]</div>
+        <q-btn icon="logout" title="Log out" padding="xs" flat round color="grey" :href="$store.getters['api']('logout')"></q-btn>
       </q-toolbar>
     </q-header>
 

@@ -8,6 +8,9 @@ state: {
   error: undefined,
   readOnly: true,
   reviewedOnly: false,
+  create_account: false,
+  manage_account: false,
+  list_account: false,
 },
 getters: {
   isLoading: state => {
@@ -35,8 +38,13 @@ mutations: {
     state.data = data;
     state.loading = false;
     state.error = undefined;
+    console.log(data);
+    console.log(state.data);
     state.readOnly = state.data.roles.includes('readOnly');    
     state.reviewedOnly = state.data.roles.includes('reviewedOnly'); 
+    state.create_account = state.data.roles.includes('create_account'); 
+    state.manage_account = state.data.roles.includes('manage_account'); 
+    state.list_account = state.create_account || state.manage_account;
   },
   setError(state, error) {
     state.loading = false;

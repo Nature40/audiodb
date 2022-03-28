@@ -1,7 +1,7 @@
 <template>
   <q-page class="flex justify-center" style="color: black;">
     <div>
-      <table class="accounts-table">
+      <table class="accounts-table" v-if="role_list_account">
         <thead>
           <tr>
             <th>Account</th>
@@ -14,15 +14,15 @@
             <td>{{account.name}}</td>
             <td><q-badge v-for="role in account.roles" :key="role" class="role">{{role}}</q-badge></td>
             <td>
-              <q-btn flat round color="primary" icon="edit" @click="edit_account(account)" title="Edit account." />
-              <q-btn flat round color="red" icon="delete_forever" @click="delete_account(account)" title="Delete account." />
+              <q-btn v-if="role_manage_account" flat round color="primary" icon="edit" @click="edit_account(account)" title="Edit account." />
+              <q-btn v-if="role_manage_account" flat round color="red" icon="delete_forever" @click="delete_account(account)" title="Delete account." />
             </td>
           </tr>
         </tbody>
       </table>
       <div style="padding: 20px;"></div>
-      <q-btn @click="$refs.CreateAccount.show = true;" icon="person_add" title="Open dialog box to create a new account." padding="xs">Create new Account</q-btn>
-      <create-account ref="CreateAccount" :salt="salt" @changed="refresh"/>
+      <q-btn v-if="role_create_account" @click="$refs.CreateAccount.show = true;" icon="person_add" title="Open dialog box to create a new account." padding="xs">Create new Account</q-btn>
+      <create-account ref="CreateAccount" :salt="salt" @changed="refresh" />
     </div>   
 
     <edit-account ref="EditAccount" :salt="salt" @changed="refresh"/> 
@@ -31,7 +31,7 @@
 
 <script>
 import { defineComponent } from 'vue';
-//import {mapState} from 'vuex';
+import {mapState} from 'vuex';
 import CreateAccount from 'components/create_account';
 import EditAccount from 'components/edit_account';
 
@@ -50,18 +50,26 @@ export default defineComponent({
     };  
   },
 
-  computed: {
+  computed: {      
+    ...mapState({
+      identity: state => state.identity.data,
+      role_create_account: state => state.identity.create_account,      
+      role_list_account: state => state.identity.list_account, 
+      role_manage_account: state => state.identity.manage_account,
+    }),  
   },
 
   methods: {
     async refresh() {
-      try {
-        var response = await this.$api.get('accounts');
-        this.accounts = response.data.accounts;
-        this.salt = response.data.salt; 
-      } catch(e) {
-        console.log(e);
-        this.$q.notify({message: 'Error loading data.', type: 'negative'});
+      if(this.role_list_account) {
+        try {
+          var response = await this.$api.get('accounts');
+          this.accounts = response.data.accounts;
+          this.salt = response.data.salt; 
+        } catch(e) {
+          console.log(e);
+          this.$q.notify({message: 'Error loading data.', type: 'negative'});
+        }
       }
     },
     async delete_account(account) {
@@ -94,11 +102,14 @@ export default defineComponent({
   },
   
   watch: {
-
+    role_list_account() {
+      this.refresh();
+    },
   },
-  
+
   async mounted() {
-    this.refresh();   
+    this.$store.dispatch('identity/init');    
+    this.refresh();  
   },
 })
 </script>
