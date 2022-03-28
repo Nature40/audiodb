@@ -1,4 +1,4 @@
-package audio;
+package audio.role;
 
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,6 +18,8 @@ public class RoleManager {
 	public final Role role_admin;
 	public final Role role_readOnly;
 	public final Role role_reviewedOnly;
+	
+	public final RoleMask roleMask_list_account;
 
 	public RoleManager() {
 		role_create_account = addRole("create_account");
@@ -25,6 +27,7 @@ public class RoleManager {
 		role_admin = addRole("admin", role_manage_account);
 		role_readOnly = addRole("readOnly");
 		role_reviewedOnly = addRole("reviewedOnly");
+		roleMask_list_account = RoleMask.ofRolesSelf(role_manage_account, role_create_account);
 	}
 
 	public synchronized Role addRole(String roleName) {
@@ -67,14 +70,18 @@ public class RoleManager {
 				Logger.info("role not found - add role: " + roleName);
 				role = addRole(roleName);
 			}
-			role.populate(bitSet);		
+			role.populateRecursive(bitSet);		
 		}
 		return bitSet;
-	}
+	}	
 
 	public String[] getRoleNames(BitSet roleBits) {
 		String[] roleNames = roleBits.stream().mapToObj(i -> this.roles.get(i).name).toArray(String[]::new);
 		return roleNames;
+	}
+
+	public boolean isLoweringRole(Role role) {
+		return role == role_readOnly || role == role_reviewedOnly;
 	}
 
 }

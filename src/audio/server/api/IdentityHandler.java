@@ -57,6 +57,8 @@ public class IdentityHandler extends AbstractHandler {
 		json.key("player_samplingRate");
 		json.value(config.player_samplingRate);
 		json.endObject(); // audio_config
+		json.key("salt");
+		json.value(broker.accountManager().salt());		
 		json.endObject(); // full JSON
 	}
 }

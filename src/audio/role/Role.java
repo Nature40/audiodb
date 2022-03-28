@@ -1,9 +1,6 @@
-package audio;
+package audio.role;
 
 import java.util.BitSet;
-
-
-import org.tinylog.Logger;
 
 public class Role {
 
@@ -44,14 +41,16 @@ public class Role {
 			throw new RuntimeException("role included in account: " + name);
 		}
 	}
+	
+	public void populateSelf(BitSet bitSet) {
+		bitSet.set(index);		
+	}
 
-	public void populate(BitSet bitSet) {
-		//Logger.info("populate role: " + name);
-		//new RuntimeException().printStackTrace();
-		bitSet.set(index);
+	public void populateRecursive(BitSet bitSet) {
+		populateSelf(bitSet);
 		if(roles != null) {
 			for(Role role:roles) {
-				role.populate(bitSet);
+				role.populateRecursive(bitSet);
 			}
 		}
 	}

@@ -3,7 +3,7 @@
       <q-card style="width: 1000px;">
         <q-bar>
           <q-icon name="person_add"/>
-          <div>Create new account</div>
+          <div>Edit account</div>
           <q-space />
           <q-btn dense flat icon="close" v-close-popup>
             <q-tooltip>Close</q-tooltip>
@@ -11,12 +11,12 @@
         </q-bar>     
 
         <q-card-section>
-          <q-input square outlined v-model="user_name" label="User name" error-message="Missing user name." :error="!valid_user_name"/>
+          User name: {{user_name}}
           <q-input 
             square 
             outlined 
             v-model="password" 
-            label="Password" 
+            label="Leave empty to keep current password." 
             error-message="Please use at least 8 characters." 
             :error="!valid_password" 
           >
@@ -43,7 +43,7 @@
 
         <q-card-actions align="right">
           <q-spinner-radio v-show="busy"/>
-          <q-btn flat color="primary" label="Create" @click="onApply" :disable="busy && !(valid_user_name && valid_password)" />
+          <q-btn flat color="primary" label="Submit" @click="onApply" :disable="busy" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -55,7 +55,7 @@ import {mapState} from 'vuex';
 import { sha3_512 } from 'js-sha3';
 
 export default defineComponent({
-  name: 'create_account',
+  name: 'edit_account',
   props: ['salt'],
   setup () {
     const show = ref(false);
@@ -75,10 +75,7 @@ export default defineComponent({
   computed: {
     ...mapState({
 
-    }),
-    valid_user_name() {
-      return this.user_name;
-    },  
+    }), 
     valid_password() {
       return this.password && this.password.length >= 8;
     },           
@@ -86,26 +83,30 @@ export default defineComponent({
   methods: {
     async onApply() {
       try {
-        this.busy = true;
-        var hash = sha3_512(this.salt + this.user_name + this.salt + this.password + this.salt);
-        console.log(hash);
-        var action = {action: 'create_account', user: this.user_name, hash: hash};
+        this.busy = true;       
+        var action = {action: 'edit_account', user: this.user_name};
+        if(this.password !== undefined && this.password !== null && this.password.length >= 8) {
+          var hash = sha3_512(this.salt + this.user_name + this.salt + this.password + this.salt);
+          console.log(hash);
+          action.hash = hash;
+        }
         if(this.selectedRoles !== undefined && this.selectedRoles !== null && this.selectedRoles.length > 0) {
           action.roles = this.selectedRoles;
+        } else {
+          action.roles = [];
         }
         var response = await this.$api.post('accounts', {actions: [action]})
         this.show = false;
-        this.$q.notify({message: 'Account created.', type: 'positive'});
+        this.$q.notify({message: 'Account edited.', type: 'positive'});
       } catch(e) {
         console.log(e);
-        this.$q.notify({message: 'Error creating account.', type: 'negative'});
+        this.$q.notify({message: 'Error editing account.', type: 'negative'});
       } finally {
         this.busy = false;
         this.$emit('changed');
       }
     },
     refresh() {
-
     },
     getNonce(len) {
       var rnd = new Uint32Array(len);
@@ -124,9 +125,7 @@ export default defineComponent({
   },
   watch: {
     show() {
-      this.user_name = '';
       this.password = '';
-      this.selectedRoles = [];
       if(this.show) {
         this.refresh();
       }

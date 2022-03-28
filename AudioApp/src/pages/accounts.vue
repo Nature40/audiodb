@@ -14,6 +14,7 @@
             <td>{{account.name}}</td>
             <td><q-badge v-for="role in account.roles" :key="role" class="role">{{role}}</q-badge></td>
             <td>
+              <q-btn flat round color="primary" icon="edit" @click="edit_account(account)" title="Edit account." />
               <q-btn flat round color="red" icon="delete_forever" @click="delete_account(account)" title="Delete account." />
             </td>
           </tr>
@@ -22,7 +23,9 @@
       <div style="padding: 20px;"></div>
       <q-btn @click="$refs.CreateAccount.show = true;" icon="person_add" title="Open dialog box to create a new account." padding="xs">Create new Account</q-btn>
       <create-account ref="CreateAccount" :salt="salt" @changed="refresh"/>
-    </div>    
+    </div>   
+
+    <edit-account ref="EditAccount" :salt="salt" @changed="refresh"/> 
   </q-page>
 </template>
 
@@ -30,12 +33,14 @@
 import { defineComponent } from 'vue';
 //import {mapState} from 'vuex';
 import CreateAccount from 'components/create_account';
+import EditAccount from 'components/edit_account';
 
 export default defineComponent({
   name: 'Accounts',
 
   components: {
     CreateAccount,
+    EditAccount,
   },  
   
   data() {
@@ -68,7 +73,7 @@ export default defineComponent({
       }).onOk(async () => {
         try {
           var action = {action: 'delete_account', user: account.name};
-          var response = await this.$api.post('accounts', {actions: [action]})
+          var response = await this.$api.post('accounts', {actions: [action]});
           this.$q.notify({message: 'Account deleted.', type: 'positive'});
         } catch(e) {
           console.log(e);
@@ -77,6 +82,14 @@ export default defineComponent({
           this.refresh();
         }
       });
+    },
+    async edit_account(account) {
+      let roles = account.roles === undefined ? [] : account.roles.slice();
+      console.log(roles);
+      this.$refs.EditAccount.user_name = account.name;      
+      this.$refs.EditAccount.selectedRoles = roles;
+      this.$refs.EditAccount.show = true;
+
     },
   },
   
@@ -107,7 +120,7 @@ export default defineComponent({
     color: #ffffff;
 }
 
-accounts-table th,
+.accounts-table th,
 .accounts-table td {
     padding: 0px 15px;
 }

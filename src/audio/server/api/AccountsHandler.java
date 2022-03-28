@@ -13,8 +13,8 @@ import org.tinylog.Logger;
 
 import audio.Account;
 import audio.Broker;
-import audio.Role;
-import audio.RoleManager;
+import audio.role.Role;
+import audio.role.RoleManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -63,6 +63,7 @@ public class AccountsHandler extends AbstractHandler {
 
 	public void handlePOST(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		HttpSession session = request.getSession(false);
+		Account sessionAccount = (Account) session.getAttribute("account");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
 		RoleManager roleManager = broker.roleManager();
 		roleManager.role_readOnly.checkHasNot(roleBits);
@@ -113,6 +114,47 @@ public class AccountsHandler extends AbstractHandler {
 				broker.accountManager().removeAccount(account, true);				
 				break;
 			}
+			case "edit_account": {
+				broker.roleManager().role_manage_account.checkHas(roleBits);
+				Logger.info("edit_account action");
+				String user = jsonAction.getString("user");
+				if(user.isBlank()) {
+					throw new RuntimeException("invalid user name");
+				}
+				Account account = broker.accountManager().getAccount(user);
+				if(account == null) {
+					throw new RuntimeException("Account not found.");
+				}
+				
+				byte[] hash_bytes = jsonAction.has("hash") ? jsonAction.getString("hash").getBytes() : account.hash_bytes;
+				Vec<String> vec = new Vec<String>();
+				if(jsonAction.has("roles")) {
+					JSONArray jsonRoles = jsonAction.getJSONArray("roles");					
+					for(int r = 0; r < jsonRoles.length(); r++) {
+						String roleName = jsonRoles.getString(r);
+						Role role = roleManager.getRole(roleName);
+						if(role != null && (role.has(roleBits) || roleManager.isLoweringRole(role))) {
+							vec.add(role.name);
+						}
+					}
+				}
+				Account accountEdited = Account.ofHash(user, hash_bytes, vec.toArray(String[]::new));
+				if(account.webAuthnAccount() != null) {
+					accountEdited = Account.withWebAuthn(accountEdited, account.webAuthnAccount());
+				}
+				broker.accountManager().setAccount(accountEdited, true);			
+				break;
+			}
+			case "change_password": {
+				Logger.info("change_password action");
+				//sessionAccount
+				String current_hash = jsonAction.getString("current_hash");
+				String new_hash = jsonAction.getString("new_hash");
+				sessionAccount.checkHash(current_hash.getBytes());
+				Account accountEdited = Account.withHash(sessionAccount, new_hash.getBytes());
+				broker.accountManager().setAccount(accountEdited, true);			
+				break;
+			}
 			default:
 				throw new RuntimeException("unknown action: " + actionName);
 			}
@@ -129,7 +171,7 @@ public class AccountsHandler extends AbstractHandler {
 	public void handleGET(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		HttpSession session = request.getSession(false);
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
-		broker.roleManager().role_admin.checkHas(roleBits);		
+		broker.roleManager().roleMask_list_account.checkIntersects(roleBits);
 
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());

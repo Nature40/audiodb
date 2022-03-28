@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import audio.labeling.LabelingListManager;
 import audio.review.ReviewListManager;
+import audio.role.RoleManager;
 import audio.task.Tasks;
 import photo2.PhotoDB2;
 import util.yaml.YamlMap;

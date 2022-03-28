@@ -7,37 +7,37 @@ import com.github.aelstad.keccakj.fips202.SHA3_512;
 import util.yaml.YamlMap;
 
 public class Account {
-	
+
 	public final String username;
 	public final byte[] hash_bytes;
 	public final String[] roles;
 	private final WebAuthnAccount webAuthnAccount;
-	
+
 	private Account(String username, byte[] hash_bytes, String[] roles, WebAuthnAccount webAuthnAccount) {
 		this.username = username;
 		this.hash_bytes = hash_bytes;
 		this.roles = roles;
 		this.webAuthnAccount = webAuthnAccount;
 	}
-	
+
 	public static Account ofPassword(String username, String password, String salt, String[] roles) {
 		byte[] hash_bytes = doHash(username, password, salt);
 		return new Account(username, hash_bytes, roles, null);
 	}
-	
+
 	public static Account ofHash(String username, byte[] hash_bytes, String[] roles) {
 		return new Account(username, hash_bytes, roles, null);
 	}
-	
+
 	public static Account ofEmpty(String username, String[] roles) {
 		byte[] hash_bytes = new byte[] {};
 		return new Account(username, hash_bytes, roles, null);
 	}
-	
+
 	public static Account withWebAuthn(Account account, WebAuthnAccount webAuthnAccount) {
 		return new Account(account.username, account.hash_bytes, account.roles, webAuthnAccount); 
 	}
-	
+
 	public static byte[] doHash(String username, String password, String salt) {
 		byte[] user_bytes = username.getBytes();
 		byte[] password_bytes = password.getBytes();
@@ -51,7 +51,7 @@ public class Account {
 		byte[] digest = md.digest();
 		return Hex.bytesToHex(digest).getBytes();
 	}
-	
+
 	public static Account ofYAML(YamlMap yamlMap) {
 		String user = yamlMap.getString("user");
 		byte[] hash = Hex.hexToBytes(yamlMap.getString("hash"));
@@ -63,7 +63,7 @@ public class Account {
 		}		
 		return new Account(user, hash, roles, webAuthnAccount);
 	}
-	
+
 	public LinkedHashMap<String, Object> toMap() {
 		LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
 		map.put("user", username);
@@ -74,10 +74,24 @@ public class Account {
 		}
 		return map;
 	}
-	
+
 	public WebAuthnAccount webAuthnAccount() {
 		return webAuthnAccount;
 	}
 
+	public void checkHash(byte[] current_hash) {
+		if(current_hash == null || hash_bytes.length != current_hash.length) {
+			throw new RuntimeException("hash error");
+		}
+		for (int i = 0; i < hash_bytes.length; i++) {
+			if(hash_bytes[i] != current_hash[i]) {
+				throw new RuntimeException("hash error");
+			}
+		}
+	}
 
+	public static Account withHash(Account account, byte[] hash) {
+		return new Account(account.username, hash, account.roles, account.webAuthnAccount);
+		
+	}
 }
