@@ -5,6 +5,7 @@ photo:
   projects:
 
   - project: myproject
-    root_path: 'photo_data'
+    root_path: 'photo_meta'
+    root_data_path: 'photo_data'
     classification_definition_csv: photo_classification_definitions.csv
     review_list_path: 'photo_review_lists'

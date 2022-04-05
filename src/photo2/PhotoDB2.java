@@ -208,7 +208,7 @@ public class PhotoDB2 {
 
 					//Logger.info(path);
 					try {
-						String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); 
+						String image_rel_path = projectConfig.root_path.relativize(root.resolve(image_file)).toString(); // root relative to root_path, so not relative to root_data_path
 						//Logger.info("read " + meta_rel_path);
 						//Logger.info("read+" + id);	
 
@@ -505,7 +505,7 @@ public class PhotoDB2 {
 					return null;
 				}
 				Logger.info("locked " + locked + "  " + meta_rel_path + "    " + image_rel_path);
-				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_path.resolve(image_rel_path), location, date, last_modified, locked);
+				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_data_path.resolve(image_rel_path), location, date, last_modified, locked);
 			}
 			return null;
 		} catch (SQLException e) {

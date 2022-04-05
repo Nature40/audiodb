@@ -3,40 +3,51 @@ package photo2;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-
 import org.tinylog.Logger;
 
 import util.yaml.YamlMap;
 
 public final class PhotoProjectConfig {
 	
-	private static final PhotoProjectConfig DEFAULT = new PhotoProjectConfig();
+	public static final PhotoProjectConfig DEFAULT = new PhotoProjectConfig(new Builder());
 	
 	public final String project;
 	public final Path root_path;
+	public final Path root_data_path;
 	public final Path classification_definition_csv; // nullable
 	public final Path review_list_path; // nullable
 	
-	private PhotoProjectConfig() {
-		project = null; // project name is needed
-		root_path = null; // root_path is needed
-		classification_definition_csv = null; // optional
-		review_list_path = null; // optional
+	public static class Builder {
+		public String project = "default_project"; // project name is needed
+		public Path root_path = Paths.get("data"); // root_path is needed
+		public Path root_data_path = null; // optional; if null -> root_path is used as data file directory
+		public Path classification_definition_csv = null;  // nullable
+		public Path review_list_path = null;  // nullable
+		
+		public Builder() {}
+		
+		public Builder(YamlMap yamlMap) {
+			project = yamlMap.optString("project", project);
+			yamlMap.optFunString("root_path", s -> root_path = Paths.get(s));
+			yamlMap.optFunString("root_data_path", s -> root_data_path = Paths.get(s));
+			yamlMap.optFunString("classification_definition_csv", s -> classification_definition_csv = Paths.get(s));
+			yamlMap.optFunString("review_list_path", s -> review_list_path = Paths.get(s));
+		}
 	}
 	
-	public PhotoProjectConfig(String project, Path root_path, Path classification_definition_csv, Path review_list_path) {
-		this.project = project;
-		this.root_path = root_path;
-		this.classification_definition_csv = classification_definition_csv;
-		this.review_list_path = review_list_path;
+	public PhotoProjectConfig(Builder builder) {
+		project = builder.project;
+		root_path = builder.root_path;
+		root_data_path = builder.root_data_path == null ? builder.root_path : builder.root_data_path;
+		classification_definition_csv = builder.classification_definition_csv;
+		review_list_path = builder.review_list_path;
+		Logger.info(this);
 	}
-	
-	public static PhotoProjectConfig ofYAML(YamlMap yamlMap) {
-		String project = yamlMap.getString("project");
-		Path root_path = Paths.get(yamlMap.getString("root_path"));
-		Path classification_definition_csv = yamlMap.contains("classification_definition_csv") ? Paths.get(yamlMap.getString("classification_definition_csv")) : null;
-		Path review_list_path = yamlMap.contains("review_list_path") ? Paths.get(yamlMap.getString("review_list_path")) : null;
 
-		return new PhotoProjectConfig(project, root_path, classification_definition_csv, review_list_path);
+	@Override
+	public String toString() {
+		return "PhotoProjectConfig [project=" + project + ", root_path=" + root_path + ", root_data_path="
+				+ root_data_path + ", classification_definition_csv=" + classification_definition_csv
+				+ ", review_list_path=" + review_list_path + "]";
 	}
 }

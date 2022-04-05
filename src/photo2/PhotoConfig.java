@@ -17,8 +17,9 @@ public class PhotoConfig {
 
 	public static PhotoConfig ofYAML(YamlMap yamlMap) {
 		HashMap<String, PhotoProjectConfig> pm = new LinkedHashMap<String, PhotoProjectConfig>();
-		for(YamlMap m : yamlMap.optList("projects").asMaps()) {
-			PhotoProjectConfig photoProjectConfig = PhotoProjectConfig.ofYAML(m);
+		for(YamlMap m : yamlMap.optList("projects").asMaps()) {	
+			PhotoProjectConfig photoProjectConfig = new PhotoProjectConfig(new PhotoProjectConfig.Builder(m));			
+			
 			if(photoProjectConfig.project == null) {
 				throw new RuntimeException("missing project name in photo config");
 			}
