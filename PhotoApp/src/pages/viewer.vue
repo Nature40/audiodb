@@ -9,7 +9,7 @@
 <q-page v-if="photo !== undefined" class="column wrap  items-center ">
     <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;">
       Selected image <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
-      <span class="time-text">{{locationText}} | {{dateText}}</span>
+      <span class="time-text"><span v-if="locationText !== undefined">{{locationText}}</span><span v-else>{{locationTextPrev}}</span> | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
       <!--<q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>-->
@@ -163,6 +163,7 @@ export default {
     customClassificationText: undefined,
     /*hideIncorrectBoxes: true,*/
     show_box_mode: 'no_incorrect',
+    locationTextPrev: '---',
   }),  
 
   computed: {
@@ -219,7 +220,7 @@ export default {
     },
     locationText() {
       if(this.photoMeta === undefined || this.photoMeta.data === undefined) {
-        return '---';
+        return undefined;
       }
       return this.photoMeta.data.location;
     },
@@ -227,12 +228,22 @@ export default {
       if(this.photoMeta === undefined || this.photoMeta.date === undefined) {
         return "0000-00-00 00:00";
       }
-      var date = this.photoMeta.date;     
-      return date.getUTCFullYear() +
-        '-' + pad(date.getUTCMonth() + 1) +
-        '-' + pad(date.getUTCDate()) +
-        ' ' + pad(date.getUTCHours()) +
-        ':' + pad(date.getUTCMinutes());
+      var date = this.photoMeta.date;
+      if(isFinite(date.getUTCFullYear())) {     
+        return date.getUTCFullYear() +
+          '-' + pad(date.getUTCMonth() + 1) +
+          '-' + pad(date.getUTCDate()) +
+          ' ' + pad(date.getUTCHours()) +
+          ':' + pad(date.getUTCMinutes()) +
+          ':' + pad(date.getUTCSeconds());
+      } else {
+        return '0000' +
+          '-' + '00' +
+          '-' + '00' +
+          ' ' + '00' +
+          ':' + '00' +
+          ':' + '00';
+      }
     },
     detections() {
       if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.detections === undefined) {
@@ -534,6 +545,11 @@ export default {
     photoMeta() {
       this.redrawImageOverlay();
     },
+    locationText() {
+      if(this.locationText !== undefined) {
+        this.locationTextPrev = '='.repeat(this.locationText.length);
+      }
+    }
   },
 
   async mounted() {

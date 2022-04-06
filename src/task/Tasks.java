@@ -1,10 +1,11 @@
-package audio.task;
+package task;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
@@ -15,11 +16,11 @@ import org.reflections.Reflections;
 import org.tinylog.Logger;
 
 import audio.Broker;
-import audio.task.Task.Ctx;
+import task.Task.Ctx;
 
 public class Tasks {
 
-	private static HashMap<String, Descriptor> descriptorMap;
+	private static TreeMap<String, Descriptor> descriptorMap;
 
 	private final Broker broker;	
 	private ConcurrentHashMap<String, Task> taskMap;
@@ -29,7 +30,8 @@ public class Tasks {
 		public final String name;
 		public final Class<? extends Task> taskClass;
 		public final Constructor<? extends Task> constructor;
-		public final String description;
+		public final String description; // nullable
+		public final String[] tags; // nullable
 
 		public Descriptor(String name, Class<? extends Task> taskClass) {
 			this.name = name;
@@ -43,7 +45,21 @@ public class Tasks {
 				this.description = taskClass.getAnnotation(Description.class).value();
 			} else {
 				this.description = null;
-			}			
+			}	
+			if(taskClass.isAnnotationPresent(Tag.class)) {
+				Tag[] annotations = taskClass.getAnnotationsByType(Tag.class);
+				if(annotations != null && annotations.length > 0) {
+					String[] res = new String[annotations.length];
+					for (int i = 0; i < annotations.length; i++) {
+						res[i] = annotations[i].value();
+					}
+					this.tags = res;
+				} else {
+					this.tags = null;
+				}
+			} else {
+				this.tags = null;
+			}	
 		}
 
 		public Task newInstance() {
@@ -58,21 +74,25 @@ public class Tasks {
 
 	private static final String TASK_PREFIX = "Task_";
 	private static final int TASK_PREFIX_LEN = TASK_PREFIX.length();
+	
+	private static final String[] TASK_PACKAGES = new String[] {"audio.task", "photo2.task"};
 
 	static {
-		descriptorMap = new HashMap<String, Descriptor>();
-		Set<Class<? extends Task>> taskClasses = new Reflections("audio.task").getSubTypesOf(Task.class);
-		for(Class<? extends Task> taskClass : taskClasses) {
-			Logger.info(taskClass);
-			String name = taskClass.getSimpleName();			
-			if(name.startsWith(TASK_PREFIX)) {
-				name = name.substring(TASK_PREFIX_LEN);
-			}
-			Descriptor descriptor = new Descriptor(name, taskClass);
-			if(descriptorMap.containsKey(name)) {
-				Logger.warn("overwrite existing name " + name + "  of  " + descriptorMap.get(name).taskClass + "  to  " + taskClass);
-			}
-			descriptorMap.put(name, descriptor);
+		descriptorMap = new TreeMap<String, Descriptor>();
+		for(String taskPackage :  TASK_PACKAGES) {
+			Set<Class<? extends Task>> taskClasses = new Reflections(taskPackage).getSubTypesOf(Task.class);
+			for(Class<? extends Task> taskClass : taskClasses) {
+				Logger.info(taskClass);
+				String name = taskClass.getSimpleName();			
+				if(name.startsWith(TASK_PREFIX)) {
+					name = name.substring(TASK_PREFIX_LEN);
+				}
+				Descriptor descriptor = new Descriptor(name, taskClass);
+				if(descriptorMap.containsKey(name)) {
+					Logger.warn("overwrite existing name " + name + "  of  " + descriptorMap.get(name).taskClass + "  to  " + taskClass);
+				}
+				descriptorMap.put(name, descriptor);
+			}	
 		}
 	}
 

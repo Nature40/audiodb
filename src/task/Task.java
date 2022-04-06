@@ -1,4 +1,4 @@
-package audio.task;
+package task;
 
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicLong;
@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import org.tinylog.Logger;
 
 import audio.Broker;
-import audio.task.Tasks.Descriptor;
+import task.Tasks.Descriptor;
 
 public abstract class Task extends RecursiveAction implements Comparable<Task> {
 

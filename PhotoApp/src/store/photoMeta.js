@@ -23,7 +23,7 @@ export default {
     setData(state, data) {
       state.loading = false;
       state.data = data;
-      state.date = new Date(state.data.date);
+      state.date = new Date(Date.parse(state.data.date + 'Z'));
     },
 
     setError(state, error) {

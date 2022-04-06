@@ -10,12 +10,12 @@ import org.json.JSONWriter;
 import org.tinylog.Logger;
 
 import audio.Broker;
-import audio.task.Task;
-import audio.task.Task.Ctx;
-import audio.task.Tasks;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import task.Task;
+import task.Tasks;
+import task.Task.Ctx;
 import util.Web;
 
 public class TasksHandler extends AbstractHandler {
@@ -109,6 +109,14 @@ public class TasksHandler extends AbstractHandler {
 				if(descriptor.description != null) {
 					json.key("description");
 					json.value(descriptor.description);
+				}
+				if(descriptor.tags != null) {
+					json.key("tags");
+					json.array();
+					for(String tag : descriptor.tags) {
+						json.value(tag);
+					}
+					json.endArray();
 				}
 				json.endObject();
 			});

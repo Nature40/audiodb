@@ -1,4 +1,4 @@
-package audio.task;
+package task;
 
 import java.util.function.Consumer;
 

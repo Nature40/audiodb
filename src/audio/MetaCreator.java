@@ -31,8 +31,8 @@ public class MetaCreator {
 
 	public static boolean createYaml(File file, Path yamlPath) {
 		try {
-			Riff riff = new Riff(file);
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
+			Riff riff = new Riff(file);
 			m.put("AudioSens", "v1.1");
 			m.put("file", file.getName());
 			addRiffMeta(riff, m);

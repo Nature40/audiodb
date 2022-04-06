@@ -77,7 +77,16 @@ public class PhotoDB2 {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+		
+		readDefinitions();
+		
+		refresh();		
 
+		this.reviewListManager = new ReviewListManager(this);
+		reviewListManager.init();
+	}
+	
+	public synchronized void refresh() {
 		Timer.start("scanRemoved");
 		try {
 			scanRemoved();
@@ -100,16 +109,10 @@ public class PhotoDB2 {
 			Logger.info(Timer.stop("traverse"));
 		}
 
-		readDefinitions();
-
-
 		updateThumbs();
-
-		this.reviewListManager = new ReviewListManager(this);
-		reviewListManager.init();
 	}
 
-	private void scanRemoved() throws IOException {
+	private synchronized void scanRemoved() throws IOException {
 		try {
 			SqlConnector sqlconnector = tlsqlconnector.get();
 			PreparedStatement stmt = sqlconnector.stmt_query_all_meta_path;
@@ -198,7 +201,10 @@ public class PhotoDB2 {
 				YamlMap yamlMap = YamlUtil.readYamlMap(metaPath);
 				if(yamlMap.contains("PhotoSens") /*&& yamlMap.getString("PhotoSens").equals("v1.0")*/) {
 					String image_file = yamlMap.getString("file");
-					String location = yamlMap.getString("location");
+					String location = yamlMap.optString("location");
+					if(location == null) {
+						location = "missing";
+					}
 					LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
 
 					PhotoMeta photoMeta = new PhotoMeta(yamlMap);
@@ -396,6 +402,10 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public class Interrupter {
+		public volatile boolean interrupted = false;
+	}
 
 	public void foreachIdNotLocked(Consumer<String> consumer) {
 		try {
@@ -406,6 +416,33 @@ public class PhotoDB2 {
 				String id = res.getString(1);
 				//Logger.info(id);
 				consumer.accept(id);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void foreachIdNotLocked(Consumer<String> consumer, Interrupter interrupter) {
+		try {
+			if(interrupter.interrupted) {
+				return;
+			}
+			SqlConnector sqlconnector = tlsqlconnector.get();
+			PreparedStatement stmt = sqlconnector.stmt_query_all_ids_not_locked;
+			ResultSet res = stmt.executeQuery();
+			if(interrupter.interrupted) {
+				return;
+			}
+			while(res.next()) {
+				if(interrupter.interrupted) {
+					return;
+				}
+				String id = res.getString(1);
+				//Logger.info(id);
+				consumer.accept(id);
+				if(interrupter.interrupted) {
+					return;
+				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -512,8 +549,16 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	private volatile Interrupter interrupterUpdateThumbs;
 
-	public void updateThumbs() {
+	public synchronized void updateThumbs() {
+		if(this.interrupterUpdateThumbs != null) {
+			this.interrupterUpdateThumbs.interrupted = true;
+			this.interrupterUpdateThumbs = null;
+		}
+		Interrupter interrupterLocalUpdateThumbs = new Interrupter();
+		this.interrupterUpdateThumbs = interrupterLocalUpdateThumbs;
 		new Thread(() -> {
 			foreachIdNotLocked(photo_id -> {
 				try {
@@ -534,6 +579,9 @@ public class PhotoDB2 {
 							Logger.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
 							while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
 								try {
+									if(interrupterLocalUpdateThumbs.interrupted) {
+										return;
+									}
 									Thread.sleep(100);
 								} catch (InterruptedException e) {
 									Logger.warn(e);
@@ -541,6 +589,9 @@ public class PhotoDB2 {
 							}
 							//Logger.info(ForkJoinPool.commonPool().getQueuedSubmissionCount());
 							//Logger.info("start " + parallelism + "  " + ForkJoinPool.commonPool().getPoolSize() + "  " + ForkJoinPool.commonPool().getRunningThreadCount());
+							if(interrupterLocalUpdateThumbs.interrupted) {
+								return;
+							}
 							thumbManager.submitScaled(cacheFilename, photo, reqWidth, reqHeight);					
 							//Logger.info("done");
 						}
@@ -549,7 +600,7 @@ public class PhotoDB2 {
 					Logger.warn(e);
 					e.printStackTrace();
 				}
-			});			
+			}, interrupterLocalUpdateThumbs);			
 		}).start();
 	}
 

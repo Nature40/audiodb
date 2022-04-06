@@ -1,4 +1,4 @@
-package audio.task;
+package photo2.task;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,11 +12,14 @@ import java.time.LocalDateTime;
 
 import org.tinylog.Logger;
 
-import audio.AudioProjectConfig;
-import audio.MetaCreator;
+import photo2.PhotoProjectConfig;
+import task.Description;
+import task.Tag;
+import task.Task;
 
-@Description("Traverse root_data_path and for all WAV files without YAML file in root_path create a new YAML file.")
-public class Task_create_yaml extends Task {
+@Tag("photo")
+@Description("Traverse root_data_path and for all jpg files without YAML file in root_path create a new YAML file.")
+public class Task_photo_create_yaml extends Task {
 
 	private Path root_path;
 	private Path root_data_path;
@@ -32,9 +35,13 @@ public class Task_create_yaml extends Task {
 
 	@Override
 	protected void init() throws Exception {
-		AudioProjectConfig config = ctx.broker.config().audioConfig;
-		root_path = config.root_path;
-		root_data_path = config.root_data_path;
+		PhotoProjectConfig[] values = ctx.broker.config().photoConfig.projectMap.values().toArray(PhotoProjectConfig[]::new);
+		if(values.length < 1) {
+			throw new RuntimeException("missing photo project");
+		}
+		PhotoProjectConfig photoProjectConfig = values[0];
+		root_path = photoProjectConfig.root_path;
+		root_data_path = photoProjectConfig.root_data_path;
 		root_path_same_root_data_path = root_path == root_data_path;
 	}
 
@@ -58,7 +65,7 @@ public class Task_create_yaml extends Task {
 				File file = path.toFile();
 				if(file.isDirectory()) {
 					counter += traverseFolder(path);					
-				} else if(file.isFile()) {
+				} else if(file.isFile()) {					
 					boolean ret = traverseFile(path, file);
 					if(ret) {
 						counter++;
@@ -91,7 +98,7 @@ public class Task_create_yaml extends Task {
 	protected boolean traverseFile(Path path, File file) {
 		//Logger.info("file " + path);
 		String filename = file.getName();
-		if(filename.endsWith(".wav") || filename.endsWith(".WAV")) {
+		if((filename.endsWith(".jpg") || filename.endsWith(".JPG")) && !(filename.contains(".jpg.") || filename.contains(".JPG."))) {
 			try {
 				long fileSize = Files.size(path);
 				if(fileSize > 0) {
@@ -99,8 +106,9 @@ public class Task_create_yaml extends Task {
 					//Logger.info("yamlPath " + yamlPath);
 					File yamlFile = yamlPath.toFile();
 					if(!yamlFile.exists()) {
+						String missingLocation = path.getParent().toString();
 						yamlFile.getParentFile().mkdirs();
-						return MetaCreator.createYaml(file, yamlPath);
+						return MetaCreator.createYaml(file, yamlPath, missingLocation);
 					} else {
 						//Logger.info("already exists " + path);
 					}	
