@@ -25,7 +25,7 @@ public class MetaCreator {
 	public static boolean createYaml(File file, Path yamlPath, String missingLocation) {
 		try {
 			String filename = file.getName();
-			Logger.info(filename);			
+			//Logger.info(filename);			
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
 			//Riff riff = new Riff(file);
 			m.put("PhotoSens", "v1.0");
@@ -36,9 +36,9 @@ public class MetaCreator {
 				Matcher matcher = FILE_TIME_PATTERN.matcher(filename);
 				if(matcher.find()) {
 					String fileTime = matcher.group(1);
-					Logger.info(fileTime);
+					//Logger.info(fileTime);
 					LocalDateTime datetime = LocalDateTime.parse(fileTime, FILE_TIME_FORMATTER);
-					Logger.info(datetime);
+					//Logger.info(datetime);
 					m.put("date", datetime.format(ISO_FORMATTER));				
 				}
 			} catch(Exception e) {

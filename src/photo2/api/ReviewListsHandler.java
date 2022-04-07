@@ -11,21 +11,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;
+import org.tinylog.Logger;
 
 import audio.Broker;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import photo2.Photo2;
-import photo2.PhotoDB2;
 import photo2.SqlConnector;
 import photo2.SqlConnector.SQL;
+import photo2.Photo2;
+import photo2.PhotoDB2;
 import util.JsonUtil;
 import util.Web;
 import util.collections.vec.Vec;
@@ -132,7 +131,7 @@ public class ReviewListsHandler {
 				}
 
 				PreparedStatement insStmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_ENTRY);
-				photodb.foreachId(project, null, photoId -> {
+				photodb.foreachIdSortDate(project, null, photoId -> {
 					Photo2 photo = photodb.getPhoto2NotLocked(photoId);
 					if(photo != null) {
 						String location = photo.location;

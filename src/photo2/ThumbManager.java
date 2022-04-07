@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,16 +23,14 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.util.IO;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
+import org.tinylog.Logger;
 
-import audio.Broker;
+import jakarta.servlet.http.HttpServletResponse;
 import util.SpiUtil;
 import util.Timer;
 

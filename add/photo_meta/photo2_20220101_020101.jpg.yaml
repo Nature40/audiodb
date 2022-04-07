@@ -1,9 +1,10 @@
 PhotoSens: v1.0
-file: photo2.jpg
+file: photo2_20220101_020101.jpg
 log:
 - {action: create yaml, date: '2022-02-22T17:03:23'}
 - {action: generate jpg metadata, date: '2022-02-22T17:03:46'}
 location: photo_data
+date: '2022-01-01T02:01:01'
 width: 40
 height: 30
 detections:

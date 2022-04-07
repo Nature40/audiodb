@@ -9,14 +9,12 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
-
 
 import org.tinylog.Logger;
 
@@ -44,12 +42,7 @@ public class PhotoDB2 {
 
 	private Map<String, Vec<ClassificationDefinition>> classificationDefinitionsMap;
 
-	ThreadLocal<SqlConnector> tlsqlconnector = new ThreadLocal<SqlConnector>() {
-		@Override
-		public SqlConnector initialValue() {
-			return new SqlConnector(conn);
-		}		
-	};	
+	ThreadLocal<SqlConnector> tlsqlconnector;
 
 	public PhotoDB2(Broker broker) {
 		this.broker = broker;
@@ -57,9 +50,9 @@ public class PhotoDB2 {
 		this.thumbManager = new ThumbManager(this);
 		try {
 			this.conn = DriverManager.getConnection("jdbc:h2:./photo_cache");
+			tlsqlconnector = new SqlConnector.TlPhConnector(conn);
 			//Logger.info("transaction isolation level: " + this.conn.getTransactionIsolation());
 			//Logger.info("auto-commit mode: " + this.conn.getAutoCommit());
-			Statement stmt = conn.createStatement();
 
 			/*ResultSet res = conn.getMetaData().getTables(null, null, "PHOTO", null);
 			if(res.next()) {
@@ -69,10 +62,10 @@ public class PhotoDB2 {
 
 			ResultSet res1 = conn.getMetaData().getTables(null, null, "PHOTO", null);
 			if(!res1.next()) {
-				Logger.info("CREATE TABLE");
-				stmt.executeUpdate(SqlConnector.SQL_CREATE_TABLE);
-				stmt.executeUpdate("CREATE INDEX IF NOT EXISTS IDX_LOCATION ON PHOTO (LOCATION)");
-				stmt.executeUpdate("CREATE INDEX IF NOT EXISTS IDX_PROJECT ON PHOTO (PROJECT)");
+				Logger.info("CREATE TABLE");	
+				tlsqlconnector.get().getStatement(SQL.CREATE_TABLE).executeUpdate();				
+				tlsqlconnector.get().getStatement(SQL.CREATE_IDX_LOCATION).executeUpdate();				
+				tlsqlconnector.get().getStatement(SQL.CREATE_IDX_PROJECT).executeUpdate();
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -115,7 +108,7 @@ public class PhotoDB2 {
 	private synchronized void scanRemoved() throws IOException {
 		try {
 			SqlConnector sqlconnector = tlsqlconnector.get();
-			PreparedStatement stmt = sqlconnector.stmt_query_all_meta_path;
+			PreparedStatement stmt = sqlconnector.getStatement(SQL.QUERY_ALL_META_PATH);
 			ResultSet res = stmt.executeQuery();
 			int removeCount = 0;
 			while(res.next()) {
@@ -127,8 +120,9 @@ public class PhotoDB2 {
 				if(projectConfig == null) {
 					Logger.info("no config for project, remove meta data");					
 					try {
-						sqlconnector.stmt_delete_project.setString(1, project);
-						sqlconnector.stmt_delete_project.executeUpdate();
+						PreparedStatement stmt_delete_project = sqlconnector.getStatement(SQL.DELETE_PROJECT);
+						stmt_delete_project.setString(1, project);
+						stmt_delete_project.executeUpdate();
 					} catch (SQLException e) {
 						Logger.warn(e);
 					}
@@ -137,8 +131,9 @@ public class PhotoDB2 {
 					//Logger.info("check " + meta_path);
 					if(!meta_path.toFile().exists()) {
 						Logger.info("remove from DB " + meta_path);
-						sqlconnector.stmt_delete_photo.setString(1, id);
-						sqlconnector.stmt_delete_photo.executeUpdate();
+						PreparedStatement stmt_delete_photo = sqlconnector.getStatement(SQL.DELETE_PHOTO);
+						stmt_delete_photo.setString(1, id);
+						stmt_delete_photo.executeUpdate();
 						removeCount++;
 					}
 				}
@@ -219,30 +214,30 @@ public class PhotoDB2 {
 						//Logger.info("read+" + id);	
 
 						if(this.contains(id)) {
-							SqlConnector sqlconnector = tlsqlconnector.get();
-							sqlconnector.stmt_update_photo.setString(1, projectConfig.project);
-							sqlconnector.stmt_update_photo.setString(2, meta_rel_path);
-							sqlconnector.stmt_update_photo.setString(3, image_rel_path);
-							sqlconnector.stmt_update_photo.setString(4, location);
-							sqlconnector.stmt_update_photo.setObject(5, date);
-							sqlconnector.stmt_update_photo.setLong(6, last_modified);
-							sqlconnector.stmt_update_photo.setBoolean(7, locked);
-							sqlconnector.stmt_update_photo.setString(8, id);
-							sqlconnector.stmt_update_photo.executeUpdate();
+							PreparedStatement stmt_update_photo = tlsqlconnector.get().getStatement(SQL.UPDATE_PHOTO);
+							stmt_update_photo.setString(1, projectConfig.project);
+							stmt_update_photo.setString(2, meta_rel_path);
+							stmt_update_photo.setString(3, image_rel_path);
+							stmt_update_photo.setString(4, location);
+							stmt_update_photo.setObject(5, date);
+							stmt_update_photo.setLong(6, last_modified);
+							stmt_update_photo.setBoolean(7, locked);
+							stmt_update_photo.setString(8, id);
+							stmt_update_photo.executeUpdate();
 							if(stats != null) {
 								stats[1]++;
 							}
 						} else {
-							SqlConnector sqlconnector = tlsqlconnector.get();
-							sqlconnector.stmt_insert_file.setString(1, id);
-							sqlconnector.stmt_insert_file.setString(2, projectConfig.project);
-							sqlconnector.stmt_insert_file.setString(3, meta_rel_path);
-							sqlconnector.stmt_insert_file.setString(4, image_rel_path);
-							sqlconnector.stmt_insert_file.setString(5, location);
-							sqlconnector.stmt_insert_file.setObject(6, date);
-							sqlconnector.stmt_insert_file.setLong(7, last_modified);
-							sqlconnector.stmt_insert_file.setBoolean(8, locked);
-							sqlconnector.stmt_insert_file.executeUpdate();
+							PreparedStatement stmt_insert_file = tlsqlconnector.get().getStatement(SQL.INSERT_FILE);
+							stmt_insert_file.setString(1, id);
+							stmt_insert_file.setString(2, projectConfig.project);
+							stmt_insert_file.setString(3, meta_rel_path);
+							stmt_insert_file.setString(4, image_rel_path);
+							stmt_insert_file.setString(5, location);
+							stmt_insert_file.setObject(6, date);
+							stmt_insert_file.setLong(7, last_modified);
+							stmt_insert_file.setBoolean(8, locked);
+							stmt_insert_file.executeUpdate();
 							if(stats != null) {
 								stats[0]++;
 							}
@@ -256,10 +251,10 @@ public class PhotoDB2 {
 			}	
 		} else {
 			try {
-				SqlConnector sqlconnector = tlsqlconnector.get();
+				PreparedStatement stmt_delete_photo = tlsqlconnector.get().getStatement(SQL.DELETE_PHOTO);
 				Logger.info("remove from DB " + metaPath);
-				sqlconnector.stmt_delete_photo.setString(1, id);
-				sqlconnector.stmt_delete_photo.executeUpdate();
+				stmt_delete_photo.setString(1, id);
+				stmt_delete_photo.executeUpdate();
 
 			} catch (SQLException e) {
 				Logger.warn(e);
@@ -281,13 +276,34 @@ public class PhotoDB2 {
 
 	public void foreachId(String project, String location, Consumer<String> consumer) {
 		try {
-			SqlConnector sqlconnector = tlsqlconnector.get();
 			PreparedStatement stmt;
 			if(location == null) {
-				stmt = sqlconnector.stmt_query_ids;
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED);
 				stmt.setString(1, project);
 			} else {
-				stmt = sqlconnector.stmt_query_ids_with_location;
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_WITH_LOCATION);
+				stmt.setString(1, project);
+				stmt.setString(2, location);
+			}
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id = res.getString(1);
+				//Logger.info(id);
+				consumer.accept(id);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void foreachIdSortDate(String project, String location, Consumer<String> consumer) {
+		try {
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_SORT_DATE);
+				stmt.setString(1, project);
+			} else {
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_WITH_LOCATION_SORT_DATE);
 				stmt.setString(1, project);
 				stmt.setString(2, location);
 			}
@@ -390,8 +406,7 @@ public class PhotoDB2 {
 
 	public void foreachId(Consumer<String> consumer) {
 		try {
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			PreparedStatement stmt = sqlconnector.stmt_query_all_ids;
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_ALL_IDS);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
@@ -409,8 +424,7 @@ public class PhotoDB2 {
 
 	public void foreachIdNotLocked(Consumer<String> consumer) {
 		try {
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			PreparedStatement stmt = sqlconnector.stmt_query_all_ids_not_locked;
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_ALL_IDS_NOT_LOCKED);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
@@ -427,8 +441,7 @@ public class PhotoDB2 {
 			if(interrupter.interrupted) {
 				return;
 			}
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			PreparedStatement stmt = sqlconnector.stmt_query_all_ids_not_locked;
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_ALL_IDS_NOT_LOCKED);
 			ResultSet res = stmt.executeQuery();
 			if(interrupter.interrupted) {
 				return;
@@ -458,9 +471,9 @@ public class PhotoDB2 {
 				String expl = explRes.getString(1);
 				Logger.info("\n\n" + expl + "\n\n");
 			}*/
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			sqlconnector.stmt_qery_locations.setString(1, project);
-			ResultSet res = sqlconnector.stmt_qery_locations.executeQuery();
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_LOCATIONS);
+			stmt.setString(1, project);
+			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String location = res.getString(1);
 				consumer.accept(location);
@@ -483,9 +496,9 @@ public class PhotoDB2 {
 
 	public boolean contains(String id) {
 		try {
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			sqlconnector.stmt_query_id_exist.setString(1, id);
-			ResultSet res = sqlconnector.stmt_query_id_exist.executeQuery();
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_ID_EXIST);
+			stmt.setString(1, id);
+			ResultSet res = stmt.executeQuery();
 			if(res.next()) {
 				int count = res.getInt(1);
 				if(count == 0) {
@@ -502,10 +515,10 @@ public class PhotoDB2 {
 
 	public boolean isUpToDate(String id, long last_modified) {
 		try {
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			sqlconnector.stmt_query_photo_is_up_to_date.setString(1, id);
-			sqlconnector.stmt_query_photo_is_up_to_date.setLong(2, last_modified);
-			ResultSet res = sqlconnector.stmt_query_photo_is_up_to_date.executeQuery();
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_PHOTO_IS_UP_TO_DATE);
+			stmt.setString(1, id);
+			stmt.setLong(2, last_modified);
+			ResultSet res = stmt.executeQuery();
 			if(res.next()) {
 				return res.getBoolean(1);
 			} else {
@@ -518,9 +531,9 @@ public class PhotoDB2 {
 
 	public Photo2 getPhoto2NotLocked(String id) {
 		try {
-			SqlConnector sqlconnector = tlsqlconnector.get();
-			sqlconnector.stmt_query_photo.setString(1, id);
-			ResultSet res = sqlconnector.stmt_query_photo.executeQuery();
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_PHOTO);
+			stmt.setString(1, id);
+			ResultSet res = stmt.executeQuery();
 			if(res.next()) {
 				String id2 = res.getString(1);
 				if(!id.equals(id2)) {

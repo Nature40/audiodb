@@ -11,8 +11,7 @@ import java.util.function.LongConsumer;
 
 import org.tinylog.Logger;
 
-public class SampleManagerConnector {
-	
+public class SampleManagerConnector {	
 
 	public static enum SQL {
 		DROP_TABLE("DROP TABLE IF EXISTS SAMPLE"),

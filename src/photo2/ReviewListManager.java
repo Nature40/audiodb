@@ -7,14 +7,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
 import org.tinylog.Logger;
 
 import photo2.CsvTable.CsvCell;
 import photo2.SqlConnector.SQL;
 
-public class ReviewListManager {
-	
+public class ReviewListManager {	
 
 	private final PhotoDB2 photodb;
 

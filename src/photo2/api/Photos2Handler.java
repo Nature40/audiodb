@@ -71,7 +71,7 @@ public class Photos2Handler {
 			json.object();
 			json.key("photos");
 			json.array();		
-			photodb.foreachId(project, location, id -> {
+			photodb.foreachIdSortDate(project, location, id -> {
 				json.value(id);
 			});		
 			json.endArray();
