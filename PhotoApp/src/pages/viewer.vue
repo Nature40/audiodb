@@ -11,7 +11,7 @@
       Selected image <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
       <span class="time-text"><span v-if="locationText !== undefined">{{locationText}}</span><span v-else>{{locationTextPrev}}</span> | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
-      <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
+      <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong', 'darken', 'darken strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
       <!--<q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>-->
       <!--<q-checkbox size="xs" v-model="hideIncorrectBoxes" val="xs" label="hide incorrect boxes" />-->
       <q-btn-toggle
@@ -205,6 +205,10 @@ export default {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=2&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
         } else if(this.processing === 'lighten strong') {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=3&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
+        } else if(this.processing === 'darken') {
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.75&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;  
+        } else if(this.processing === 'darken strong') {
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.5&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;                   
         } else {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
         }
@@ -213,6 +217,10 @@ export default {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=2';
         } else if(this.processing === 'lighten strong') {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=3';
+        } else if(this.processing === 'darken') {
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.75';          
+        } else if(this.processing === 'darken strong') {
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.5';           
         } else {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg');
         }
