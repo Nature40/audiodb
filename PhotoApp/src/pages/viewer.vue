@@ -28,6 +28,7 @@
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
+      <!--<q-img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>-->
       <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay" @mousedown="onMouseDownImage" @mousemove="onMouseMoveImage" @mouseup="onMouseUpImage" @mouseenter="onMouseEnterImage" @mouseleave="onMouseLeaveImage"/>
       <q-spinner-gears color="primary" size="4em" v-show="imageLoading" style="position: absolute; top: 0px; right: 0px;"/>
       <span v-show="!imageLoading && imageError" style="color: red;">ERROR loading image.</span>
