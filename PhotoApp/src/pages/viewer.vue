@@ -8,7 +8,7 @@
 
 <q-page v-if="photo !== undefined" class="column wrap  items-center ">
     <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;">
-      Selected image <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
+      <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
       <span class="time-text"><span v-if="locationText !== undefined">{{locationText}}</span><span v-else>{{locationTextPrev}}</span> | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong', 'darken', 'darken strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
@@ -24,7 +24,8 @@
           {label: 'No incorrect', value: 'no_incorrect'},
           {label: 'None', value: 'none'}
         ]"
-      />      
+      />
+      <a :href="imageURL" target="_blank" title="Open current image at new tab to view details."><q-icon size="md" name="image_search" /></a>
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
