@@ -2,7 +2,7 @@ package audio;
 
 import java.io.File;
 import java.nio.file.Path;
-
+import java.util.regex.Matcher;
 
 import org.tinylog.Logger;
 
@@ -24,6 +24,7 @@ public class Sample2 implements GeneralSample {
 	private long samples = -2;
 	private double sampleRate = Double.NEGATIVE_INFINITY;
 	private Vec<Label> labels = null;
+	private double duration = Double.NEGATIVE_INFINITY;
 
 	public Sample2(String id, String project, Path metaPath, Path samplePath, String location, long timestamp, String device) {
 		this.id = id;
@@ -95,6 +96,44 @@ public class Sample2 implements GeneralSample {
 		return Double.isFinite(sampleRate());
 	}
 
+	public double duration() {
+		if(duration == Double.NEGATIVE_INFINITY) {
+			duration = meta().optDouble("Duration", Double.NaN);
+		}
+		return duration;
+	}
+
+	/**
+	 * return nullable
+	 * @return 
+	 */
+	public String comment() {
+		return meta().optString("Comment");
+	}
+
+	/**
+	 * return nullable
+	 * @return 
+	 */
+	public String getUTC() {
+		String comment = comment();
+		if(comment == null) {
+			return null;
+		}
+		try {
+			final Matcher offsetMatcher = MetaCreator.UTC_OFFSET_PATTERN.matcher(comment);
+			if(offsetMatcher.matches() && offsetMatcher.groupCount() == 1) {
+				String offsetText = offsetMatcher.group(1);
+				return "UTC" + offsetText;
+			} else {
+				return null;
+			}
+		} catch(Exception e) {
+			Logger.warn(e);
+			return null;
+		}
+	}
+
 	public Vec<Label> getLabels() {
 		if(this.labels == null) {
 			Vec<Label> labels = new Vec<Label>();
@@ -106,7 +145,7 @@ public class Sample2 implements GeneralSample {
 		}
 		return this.labels;
 	}
-	
+
 	public void setLabels(Vec<Label> labels) {	
 		Logger.info("setLabels");
 		this.labels = labels;

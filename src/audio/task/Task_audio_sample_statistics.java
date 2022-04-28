@@ -29,13 +29,17 @@ public class Task_audio_sample_statistics extends Task {
 		Path output_path = output_file.toPath();
 
 		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("samples.csv"))) {
-			csv.writeRow("location", "time", "sample", "device");	
+			csv.writeRow("location", "time", "sample", "device", "duration", "time_zone");	
 			ctx.broker.sampleManager().forEach(sample -> {
 				String location = sample.location;
 				String timeName = AudioTimeUtil.ofAudiotime(sample.timestamp).toString();
 				String samplePath = sample.samplePath.toString();
 				String device = sample.device;
-				csv.writeRow(location, timeName, samplePath, device);
+				double d = sample.duration();
+				String duration = Double.isFinite(d) ? "" + d : "NA";
+				String utc_ = sample.getUTC();
+				String utc = utc_ == null ? "" : utc_;
+				csv.writeRow(location, timeName, samplePath, device, duration, utc);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);
