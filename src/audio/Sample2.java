@@ -1,16 +1,23 @@
 package audio;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.nio.file.Path;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 
 import org.tinylog.Logger;
 
+import net.jpountz.xxhash.StreamingXXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Sample2 implements GeneralSample {
+	
+	private static final long XXH64_SEED = 0xe951bd6bc02a275fl;
+	private static final XXHashFactory XXH64_FACTORY = XXHashFactory.fastestInstance();
 
 	public final String id;
 	public final String project;
@@ -151,5 +158,46 @@ public class Sample2 implements GeneralSample {
 		this.labels = labels;
 		YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
 		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());		
+	}
+
+	public String getFileHash(boolean createIfMissing) {
+		File file = samplePath.toFile();
+		if(meta().contains("file_size")) {
+			long metaFileSize = meta().getLong("file_size");
+			long fileSize = file.length();
+			if(metaFileSize != fileSize) {
+				throw new RuntimeException("unexpected file size " + fileSize + "  in  " + samplePath.toString());
+			}
+		} else {
+			try {
+				long fileSize = file.length();
+				meta().getInternalMap().put("file_size", fileSize); // write later
+			} catch(Exception e) {
+				Logger.warn(e);
+			}
+		}
+		String xxh64 = meta().optString("XXH64");
+		if(xxh64 == null) {
+			Logger.info(samplePath);		
+			try(RandomAccessFile raf = new RandomAccessFile(file, "r")) {				
+				StreamingXXHash64 xx = XXH64_FACTORY.newStreamingHash64(XXH64_SEED);
+				final int BUF_SIZE = 1024*1024;
+				byte[] buf = new byte[BUF_SIZE];
+				int readCount = raf.read(buf, 0, BUF_SIZE);
+				while(readCount >= 0) {
+					if(readCount > 0) {
+						xx.update(buf, 0, readCount);
+					}
+					readCount = raf.read(buf, 0, BUF_SIZE);
+				}
+				long hash = xx.getValue();
+				xxh64 = Long.toHexString(hash);
+				meta().getInternalMap().put("XXH64", xxh64);
+				YamlUtil.writeSafeYamlMap(metaPath, meta().getInternalMap());
+			} catch (Exception e) {
+				Logger.warn(e);
+			}
+		}
+		return xxh64;
 	}
 }

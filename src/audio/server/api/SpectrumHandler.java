@@ -2,18 +2,15 @@ package audio.server.api;
 
 import java.io.IOException;
 
-import jakarta.servlet.http.HttpServletResponse;
-
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.jtransforms.fft.FloatFFT_1D;
+import org.tinylog.Logger;
 
 import audio.Broker;
 import audio.GeneralSample;
-import audio.Sample;
 import audio.processing.SampleProcessor;
 import audio.server.Renderer;
+import jakarta.servlet.http.HttpServletResponse;
 import util.Web;
 import util.image.ImageRGBA;
 import util.image.Lut;
@@ -104,9 +101,11 @@ public class SpectrumHandler {
 		}
 
 		if(shrink_factor > 1) {
+			Logger.info("render3Shrink");
 			//image = render3Shrink(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, shrink_factor);
 			image = render3Shrink(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, shrink_factor);
 		} else if(renderWidth <= 0) {
+			Logger.info("render3");
 			//image = render3(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max);
 			image = render3(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max);
 			//image = render3denoise(fullShorts, window, step, cols, cutoff, threshold, intensity_max);
@@ -114,13 +113,16 @@ public class SpectrumHandler {
 			step = window;
 			cols = ((sampleProcessor.dataLength - window) / step) + 1;
 			if(cols <= renderWidth) {
+				Logger.info("render3");
 				//image = render3(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max);
 				image = render3(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max);
 			} else {
+				Logger.info("render3width");
 				//image = render3width(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, renderWidth);
 				image = render3width(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, renderWidth);
 			}
 		} else {
+			Logger.info("render3width");
 			//image = render3width(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, renderWidth);
 			image = render3width(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, renderWidth);
 		}
@@ -232,9 +234,17 @@ public class SpectrumHandler {
 		ImageRGBA image = new ImageRGBA(cols, cutoff_range);
 		int[] dst = image.getRawArray();
 		float[] a = new float[n];
-		for (int pos = 0; pos < cols; pos++) {			
+		for (int pos = 0; pos < cols; pos++) {
+			/*int min = Short.MAX_VALUE;
+			int max = Short.MIN_VALUE;*/
 			for (int i = 0; i < n; i++) {
 				a[i] = fullShorts[pos*step + i] * weight[i];
+				/*if(fullShorts[pos*step + i] < min) {
+					min = fullShorts[pos*step + i];
+				}
+				if(fullShorts[pos*step + i] > max) {
+					max = fullShorts[pos*step + i];
+				}*/
 			}
 			fft.realForward(a);
 			/*float vmax = 0;
@@ -245,11 +255,39 @@ public class SpectrumHandler {
 				}
 			}
 			Logger.info("vmax " + vmax + "   " + Math.log(vmax) + "vmax " + vmax/n + "   " + Math.log(vmax/n));*/
+			float vmax = 0;
 			for (int i = cutoff_lower; i < cutoff_upper; i++) {
 				float v = a[i*2]*a[i*2]+a[i*2+1]*a[i*2+1];
 				int c = Renderer.colInferno[Lut.match256f(lut, v)];
 				dst[(cutoff_upper - i - 1) * cols + pos] = c;
+				vmax += v;
 			}
+			
+			int ivmax = (int) (vmax / 100000000f);
+			int max = ivmax >= cutoff_range ? cutoff_range - 1 : ivmax;
+			///Logger.info(vmax  + "  " + ivmax + "  " + max);
+			for (int i = 0; i <= max; i++) {		
+				int p = dst[i * cols + pos];
+				int r = (((p >> 16) & 0xff) >> 1) + (((p >> 16) & 0xff) >> 2) + (((p >> 16) & 0xff) >> 3) + 34;
+				int g = (((p >> 8) & 0xff) >> 1) + (((p >> 8) & 0xff) >> 2) + (((p >> 8) & 0xff) >> 3) + 34;
+				int b = ((p & 0xff) >> 1) + ((p & 0xff) >> 2) + ((p & 0xff) >> 3) + 34;
+				dst[i * cols + pos] = 0xff000000 | (r<<16) | (g<<8) | b;
+			}
+			
+			/*min -= Short.MIN_VALUE;
+			max -= Short.MIN_VALUE;
+			int range = ((int) Short.MAX_VALUE) - ((int) Short.MIN_VALUE);
+			int spectrum_range = cutoff_upper - cutoff_lower;
+			min = (min * spectrum_range) / range;
+			max = (max * spectrum_range) / range;
+			//Logger.info("min " + min + " max " + max + "  range " + range);
+			for (int i = min; i < max; i++) {		
+				int p = dst[i * cols + pos];
+				int r = (((p >> 16) & 0xff) >> 1) + (((p >> 16) & 0xff) >> 2) + (((p >> 16) & 0xff) >> 3) + 34;
+				int g = (((p >> 8) & 0xff) >> 1) + (((p >> 8) & 0xff) >> 2) + (((p >> 8) & 0xff) >> 3) + 34;
+				int b = ((p & 0xff) >> 1) + ((p & 0xff) >> 2) + ((p & 0xff) >> 3) + 34;
+				dst[i * cols + pos] = 0xff000000 | (r<<16) | (g<<8) | b;
+			}*/
 		}
 
 		return image;

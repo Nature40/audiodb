@@ -20,6 +20,24 @@
         <q-badge color="yellow-14" text-color="accent" label="no audio sample selected"/> 
       </div>
       <q-space></q-space>
+      <q-btn-dropdown
+        v-if="audioURL != undefined && sample != undefined"
+        icon="file_download"
+        @click="onMainClick"
+        style="margin-right: 5px;"
+        size="xs"
+        fab-mini
+        padding="0px"
+        dense
+        title="Download audio file."
+      >
+        <div class="column no-wrap q-pa-md">
+          <b>Download audio file.</b>
+          <span v-if="sampleRate !== playerSampleRate"><br><a :href="audioURL" :download="sample.id"><q-icon name="file_download" size="sm" />current sample rate</a></span>
+          <span><br><a :href="audioOriginalURL" :download="sample.id"><q-icon name="file_download" size="sm" />original</a></span>
+        </div>
+      </q-btn-dropdown>
+
       <q-btn @click="$refs.settings.show = true;" icon="tune" title="Settings" padding="xs"></q-btn>
       <audio-settings ref="settings"/>
     </q-toolbar>
@@ -411,13 +429,21 @@ export default defineComponent({
     },
     audioURL() {
       if(!this.sample) {
-        return;
+        return undefined;
       }
       const baseURL = this.$api.defaults.baseURL;
       var url = baseURL + 'samples2/' + this.sample.id + '/audio';
       if(this.sampleRate !== this.playerSampleRate) {
         url += '?overwrite_sampling_rate=' + this.playerSampleRate;
       }
+      return url;
+    },
+    audioOriginalURL() {
+      if(!this.sample) {
+        return undefined;
+      }
+      const baseURL = this.$api.defaults.baseURL;
+      var url = baseURL + 'samples2/' + this.sample.id + '/audio';
       return url;
     },
     staticLinesCanvasPosY() {

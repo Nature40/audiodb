@@ -35,6 +35,11 @@ public class MetaCreator {
 			Riff riff = new Riff(file);
 			m.put("AudioSens", "v1.1");
 			m.put("file", file.getName());
+			try {
+				m.put("file_size", file.length());
+			} catch(Exception e) {
+				Logger.warn(e);
+			}
 			addRiffMeta(riff, m);
 			Vec<Object> logList = new Vec<Object>();
 			LinkedHashMap<String, Object> logO = new LinkedHashMap<String, Object>();
@@ -94,7 +99,7 @@ public class MetaCreator {
 			}
 		}
 	}
-	
+
 	private static void addCommentMeta(Riff riff, Map<String, Object> m) {
 		if(riff.comments != null) {
 			try {
