@@ -1,49 +1,25 @@
 package task;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-import org.json.JSONObject;
 import org.tinylog.Logger;
-
-import audio.Broker;
-import task.Tasks.Descriptor;
 
 public abstract class Task extends RecursiveAction implements Comparable<Task> {
 
-	public enum State {
-		INITIAL,
-		READY,
-		RUNNING,
-		ERROR,
-		DONE
-	}
-
-	public static class Ctx {
-
-		public final Descriptor descriptor;
-		public final JSONObject json;
-		public final String id;
-		public final Broker broker;
-
-		public Ctx(Descriptor descriptor, JSONObject json, String id, Broker broker) {
-			this.descriptor = descriptor;
-			this.json = json;
-			this.id = id;
-			this.broker = broker;
-		}
-	}
-	
 	private static final AtomicLong counter = new AtomicLong(0);
 
 	protected Ctx ctx;
 	private volatile State state = State.INITIAL;
+	private volatile boolean softCanceled = false;
 	public final long cnt = counter.getAndIncrement();
 	public final long tstart = System.currentTimeMillis();
+	public final LocalDateTime startDateTime = LocalDateTime.now();
 	public long tend = -1;
 	private volatile String message = "";
-	private BoundedLog boundedLog = new BoundedLog(1000);
+	private BoundedLog boundedLog = new BoundedLog(1000);	
 
 	public final void setCtxAndInit(Ctx ctx) throws Exception {
 		this.ctx = ctx;
@@ -121,5 +97,17 @@ public abstract class Task extends RecursiveAction implements Comparable<Task> {
 		long minutesPart = minutes % 60;
 		String s = hours + ":" +  String.format("%02d", minutesPart) + ":" + String.format("%02d", secondsPart);
 		return s;
+	}
+	
+	public void softCancel() {
+		softCanceled = true;
+	}
+
+	public boolean isSoftCanceled() {
+		return softCanceled;
+	}
+
+	public boolean isCancelable() {
+		return this.getClass().isAnnotationPresent(Cancelable.class);
 	}
 }

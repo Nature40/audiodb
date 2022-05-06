@@ -1,9 +1,6 @@
 package task;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,8 +12,8 @@ import org.json.JSONObject;
 import org.reflections.Reflections;
 import org.tinylog.Logger;
 
+import audio.Account;
 import audio.Broker;
-import task.Task.Ctx;
 
 public class Tasks {
 
@@ -24,53 +21,6 @@ public class Tasks {
 
 	private final Broker broker;	
 	private ConcurrentHashMap<String, Task> taskMap;
-
-	public static class Descriptor {
-
-		public final String name;
-		public final Class<? extends Task> taskClass;
-		public final Constructor<? extends Task> constructor;
-		public final String description; // nullable
-		public final String[] tags; // nullable
-
-		public Descriptor(String name, Class<? extends Task> taskClass) {
-			this.name = name;
-			this.taskClass = taskClass;
-			try {
-				this.constructor = taskClass.getDeclaredConstructor();
-			} catch (NoSuchMethodException | SecurityException e) {
-				throw new RuntimeException(e);
-			}
-			if(taskClass.isAnnotationPresent(Description.class)) {
-				this.description = taskClass.getAnnotation(Description.class).value();
-			} else {
-				this.description = null;
-			}	
-			if(taskClass.isAnnotationPresent(Tag.class)) {
-				Tag[] annotations = taskClass.getAnnotationsByType(Tag.class);
-				if(annotations != null && annotations.length > 0) {
-					String[] res = new String[annotations.length];
-					for (int i = 0; i < annotations.length; i++) {
-						res[i] = annotations[i].value();
-					}
-					this.tags = res;
-				} else {
-					this.tags = null;
-				}
-			} else {
-				this.tags = null;
-			}	
-		}
-
-		public Task newInstance() {
-			try {
-				Task task = constructor.newInstance();
-				return task;
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-				throw new RuntimeException(e);
-			}
-		}
-	}
 
 	private static final String TASK_PREFIX = "Task_";
 	private static final int TASK_PREFIX_LEN = TASK_PREFIX.length();
@@ -115,7 +65,7 @@ public class Tasks {
 		this.taskMap = new ConcurrentHashMap<String, Task>();
 	}
 
-	public String submit(JSONObject json) {
+	public String submit(JSONObject json, Account account) {
 		String taskName = json.optString("task", null);
 		if(taskName == null) {
 			throw new RuntimeException("missing task parameter in task");
@@ -132,7 +82,7 @@ public class Tasks {
 			ret = taskMap.putIfAbsent(id, task);
 		} while(ret != null);
 		try {
-			Ctx ctx = new Ctx(descriptor, json, id, broker);
+			Ctx ctx = new Ctx(descriptor, json, id, broker, account);
 			task.setCtxAndInit(ctx);
 			ForkJoinPool.commonPool().execute(task);
 		} catch (Exception e) {

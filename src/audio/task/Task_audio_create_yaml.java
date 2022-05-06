@@ -14,12 +14,14 @@ import org.tinylog.Logger;
 
 import audio.AudioProjectConfig;
 import audio.MetaCreator;
+import task.Cancelable;
 import task.Description;
 import task.Tag;
 import task.Task;
 
 @Tag("audio")
 @Description("Traverse root_data_path and for all WAV files without YAML file in root_path create a new YAML file.")
+@Cancelable
 public class Task_audio_create_yaml extends Task {
 
 	private Path root_path;
@@ -48,6 +50,9 @@ public class Task_audio_create_yaml extends Task {
 	}
 
 	private long traverseFolder(Path folder) {
+		if(isSoftCanceled()) {
+			throw new RuntimeException("canceled");
+		}
 		//Logger.info("folder " + folder);
 		LocalDateTime start = LocalDateTime.now();
 		long counter = 0;
@@ -59,6 +64,9 @@ public class Task_audio_create_yaml extends Task {
 		try {
 			DirectoryStream<Path> dirStream = Files.newDirectoryStream(folder);
 			for(Path path: dirStream) {
+				if(isSoftCanceled()) {
+					throw new RuntimeException("canceled");
+				}
 				File file = path.toFile();
 				if(file.isDirectory()) {
 					counter += traverseFolder(path);					

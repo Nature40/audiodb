@@ -2,7 +2,7 @@
   <q-dialog v-model="show" full-width>
       <q-card v-if="show">
         <q-bar>
-          <q-icon name="image"/>
+          <q-icon name="event_note"/>
           <div>Task console</div>
           <div v-if="submitting" class="text-primary">
             <q-spinner color="primary" />
@@ -26,14 +26,20 @@
         <div>
           {{task}}
         </div>
-        <div>
-          Id: {{id}}
+        <div style="font-size: 0.75em;">
+          Id: <span style="font-style: italic; color: grey;">{{id}}</span>
         </div>
         <div>
-          Runtime: {{runtime}}
+          Identity: <span style="font-style: italic; color: grey;">{{identity}}</span>
+        </div>        
+        <div>
+          Start: <span style="color: grey;">{{start}}</span> 
         </div>
         <div>
-          State: {{state}}
+          Runtime: <span style="color: blue;">{{runtime}}</span>
+        </div>
+        <div>
+          State: <span style="color: black; font-weight: bold;">{{state}}</span> <q-btn v-if="cancelable && state === 'RUNNING'" @click="onCancel" icon="clear" dense>Cancel</q-btn>
         </div>
         <div>
           Message: {{message}}
@@ -64,10 +70,13 @@ export default defineComponent({
       submittingError: false, 
       task: undefined,
       id: undefined,
+      identity: undefined,
+      start: undefined,
       runtime: undefined,
       state: undefined,
       message: undefined,
       name: undefined,
+      cancelable: false,
       log: undefined,
     };
   },
@@ -83,11 +92,14 @@ export default defineComponent({
         var urlPath = 'tasks/' + this.id;
         var response = await this.$api.get(urlPath);
         const data = response.data;
+        this.identity = data.identity;
+        this.start = data.start;
         this.runtime = data.runtime;
         this.state = data.state;
         this.message = data.message;
         this.name = data.name;
         this.log = data.log;
+        this.cancelable = data.cancelable;
         if(this.show) {
           setTimeout( () => this.refresh(this.id), 250); 
         }
@@ -120,6 +132,15 @@ export default defineComponent({
       this.show = true;
       this.id = id;
       this.refresh(id);
+    },
+    async onCancel() {
+      try {
+        var urlPath = 'tasks/' + this.id;
+        var data = {action: {action: 'cancel'}};
+        var response = await this.$api.post(urlPath, data);
+      } catch(e) {
+        console.log(e);
+      }
     },
   },
   watch: {

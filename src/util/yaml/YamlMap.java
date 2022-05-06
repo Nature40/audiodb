@@ -67,7 +67,7 @@ public class YamlMap {
 	 * @return
 	 */
 	public boolean contains(String name) {
-		return map.containsKey(name) && map.get(name)!=null;
+		return map.containsKey(name) && map.get(name) != null;
 	}
 
 	public String getString(String name) {

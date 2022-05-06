@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import org.tinylog.Logger;
 
 import de.siegmar.fastcsv.writer.CsvWriter;
+import task.Cancelable;
 import task.Description;
 import task.Tag;
 import task.Task;
@@ -14,10 +15,14 @@ import util.AudioTimeUtil;
 
 @Tag("audio")
 @Description("Create statistics about sample time and location.")
+@Cancelable
 public class Task_audio_sample_statistics extends Task {
 
 	@Override
 	public void run() {
+		if(isSoftCanceled()) {
+			throw new RuntimeException("canceled");
+		}
 		
 		String output_folder = "output";
 		File output_file = new File(output_folder);
@@ -31,6 +36,9 @@ public class Task_audio_sample_statistics extends Task {
 		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("samples.csv"))) {
 			csv.writeRow("location", "time", "sample", "device", "duration", "time_zone");	
 			ctx.broker.sampleManager().forEach(sample -> {
+				if(isSoftCanceled()) {
+					throw new RuntimeException("canceled");
+				}
 				String location = sample.location;
 				String timeName = AudioTimeUtil.ofAudiotime(sample.timestamp).toString();
 				String samplePath = sample.samplePath.toString();

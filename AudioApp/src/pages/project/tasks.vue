@@ -10,8 +10,10 @@
         <thead>
           <tr>
             <th>Id</th>
+            <th>Identity</th>
             <th>Task</th>
             <th>State</th>
+            <th>Start</th>
             <th>Runtime</th>
             <th>Message</th>  
           </tr>
@@ -19,8 +21,10 @@
         <tbody>
           <tr v-for="task in tasks" :key="task.id" @click="view(task.id);">
             <td>{{task.id}}</td>
+            <td>{{task.identity}}</td>
             <td>{{task.task}}</td>
             <td>{{task.state}}</td>
+            <td>{{task.start}}</td>
             <td>{{task.runtime}}</td>
             <td>{{task.message}}</td>
           </tr>
@@ -88,19 +92,30 @@ export default defineComponent({
 <style scoped>
 
 td:nth-child(1) {
+  font-style: italic;
   color: grey;
+  font-size: 0.75em;
 }
 
 td:nth-child(2) {
-  color: black;
+  font-style: italic;
+  color: grey;
 }
 
 td:nth-child(3) {
   color: black;
-  font-weight: bold;
 }
 
 td:nth-child(4) {
+  color: black;
+  font-weight: bold;
+}
+
+td:nth-child(5) {
+  color: grey;
+}
+
+td:nth-child(6) {
   color: blue;
 }
 

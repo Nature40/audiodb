@@ -3,6 +3,7 @@ package audio;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 
@@ -161,23 +162,25 @@ public class Sample2 implements GeneralSample {
 	}
 
 	public String getFileHash(boolean createIfMissing) {
-		File file = samplePath.toFile();
-		if(meta().contains("file_size")) {
-			long metaFileSize = meta().getLong("file_size");
-			long fileSize = file.length();
-			if(metaFileSize != fileSize) {
-				throw new RuntimeException("unexpected file size " + fileSize + "  in  " + samplePath.toString());
-			}
-		} else {
-			try {
+		YamlMap meta = meta();
+		Map<String, Object> map = meta.getInternalMap();
+		String xxh64 = meta.optString("XXH64");
+		if(xxh64 == null && createIfMissing) {
+			File file = samplePath.toFile();
+			if(meta.contains("file_size")) {
+				long metaFileSize = meta.getLong("file_size");
 				long fileSize = file.length();
-				meta().getInternalMap().put("file_size", fileSize); // write later
-			} catch(Exception e) {
-				Logger.warn(e);
+				if(metaFileSize != fileSize) {
+					throw new RuntimeException("unexpected file size " + fileSize + "  in  " + samplePath.toString());
+				}
+			} else {
+				try {
+					long fileSize = file.length();
+					map.put("file_size", fileSize); // write later
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
 			}
-		}
-		String xxh64 = meta().optString("XXH64");
-		if(xxh64 == null) {
 			Logger.info(samplePath);		
 			try(RandomAccessFile raf = new RandomAccessFile(file, "r")) {				
 				StreamingXXHash64 xx = XXH64_FACTORY.newStreamingHash64(XXH64_SEED);
@@ -192,8 +195,8 @@ public class Sample2 implements GeneralSample {
 				}
 				long hash = xx.getValue();
 				xxh64 = Long.toHexString(hash);
-				meta().getInternalMap().put("XXH64", xxh64);
-				YamlUtil.writeSafeYamlMap(metaPath, meta().getInternalMap());
+				map.put("XXH64", xxh64);
+				YamlUtil.writeSafeYamlMap(metaPath, map);
 			} catch (Exception e) {
 				Logger.warn(e);
 			}

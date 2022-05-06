@@ -1,7 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 
 import org.eclipse.jetty.server.Request;
 import org.json.JSONObject;
@@ -12,9 +12,10 @@ import org.tinylog.Logger;
 import audio.Broker;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
+import task.Ctx;
 import task.Task;
 import task.Tasks;
-import task.Task.Ctx;
+import util.AudioTimeUtil;
 
 public class TaskHandler {
 
@@ -80,8 +81,14 @@ public class TaskHandler {
 		json.value(task.getState());
 		json.key("message");
 		json.value(task.getMessage());
+		json.key("start");
+		json.value(AudioTimeUtil.DATE_SPACE_TIME_FORMATTER.format(task.startDateTime));
 		json.key("runtime");
 		json.value(task.getRuntimeText());
+		json.key("identity");
+		json.value(task.geCtx().account == null ? "unknown" : task.geCtx().account.username);		
+		json.key("cancelable");
+		json.value(task.isCancelable());		
 		json.key("log");
 		json.array();
 		task.foreachLog(json::value);
@@ -100,6 +107,9 @@ public class TaskHandler {
 		JSONObject jsonAction = jsonReq.getJSONObject("action");
 		String actionName = jsonAction.getString("action");
 		switch(actionName) {
+		case "cancel":
+			task.softCancel();
+			break;
 		default:
 			throw new RuntimeException("unknown action:" + actionName);
 		}	

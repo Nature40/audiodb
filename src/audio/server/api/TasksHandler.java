@@ -9,13 +9,16 @@ import org.json.JSONTokener;
 import org.json.JSONWriter;
 import org.tinylog.Logger;
 
+import audio.Account;
 import audio.Broker;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import task.Ctx;
 import task.Task;
 import task.Tasks;
-import task.Task.Ctx;
+import util.AudioTimeUtil;
 import util.Web;
 
 public class TasksHandler extends AbstractHandler {
@@ -84,8 +87,12 @@ public class TasksHandler extends AbstractHandler {
 		json.value(ctx.descriptor.name);
 		json.key("state");
 		json.value(task.getState().toString());
+		json.key("start");
+		json.value(AudioTimeUtil.DATE_SPACE_TIME_FORMATTER.format(task.startDateTime));
 		json.key("runtime");
 		json.value(task.getRuntimeText());
+		json.key("identity");
+		json.value(task.geCtx().account == null ? "unknown" : task.geCtx().account.username);
 		json.key("message");
 		json.value(task.getMessage());
 		json.endObject();		
@@ -118,6 +125,8 @@ public class TasksHandler extends AbstractHandler {
 					}
 					json.endArray();
 				}
+				json.key("cancelable");
+				json.value(descriptor.cancelable);
 				json.endObject();
 			});
 			json.endObject();			
@@ -134,13 +143,15 @@ public class TasksHandler extends AbstractHandler {
 	}
 
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
+		HttpSession session = request.getSession(false);
+		Account sessionAccount = (Account) session.getAttribute("account");
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONObject jsonAction = jsonReq.getJSONObject("action");
 		String actionName = jsonAction.getString("action");
 		switch(actionName) {
 		case "submit": {
 			JSONObject jsonTask = jsonAction.getJSONObject("task");
-			String id = tasks.submit(jsonTask);
+			String id = tasks.submit(jsonTask, sessionAccount);
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
