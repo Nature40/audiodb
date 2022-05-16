@@ -99,6 +99,8 @@ public class ProjectHandler {
 		json.value(config.player_samplingRate);
 		json.key("player_fft_window");
 		json.value(config.player_fft_window);
+		json.key("player_fft_window_step_factor");
+		json.value(config.player_fft_window_step_factor);		
 		json.key("player_time_expansion_factor");
 		json.value(config.player_time_expansion_factor);
 		if(config.player_static_lines_frequency != null) {

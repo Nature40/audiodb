@@ -263,31 +263,31 @@ public class SpectrumHandler {
 				vmax += v;
 			}
 			
-			int ivmax = (int) (vmax / 100000000f);
-			int max = ivmax >= cutoff_range ? cutoff_range - 1 : ivmax;
-			///Logger.info(vmax  + "  " + ivmax + "  " + max);
-			for (int i = 0; i <= max; i++) {		
-				int p = dst[i * cols + pos];
-				int r = (((p >> 16) & 0xff) >> 1) + (((p >> 16) & 0xff) >> 2) + (((p >> 16) & 0xff) >> 3) + 34;
-				int g = (((p >> 8) & 0xff) >> 1) + (((p >> 8) & 0xff) >> 2) + (((p >> 8) & 0xff) >> 3) + 34;
-				int b = ((p & 0xff) >> 1) + ((p & 0xff) >> 2) + ((p & 0xff) >> 3) + 34;
-				dst[i * cols + pos] = 0xff000000 | (r<<16) | (g<<8) | b;
-			}
-			
-			/*min -= Short.MIN_VALUE;
-			max -= Short.MIN_VALUE;
-			int range = ((int) Short.MAX_VALUE) - ((int) Short.MIN_VALUE);
-			int spectrum_range = cutoff_upper - cutoff_lower;
-			min = (min * spectrum_range) / range;
-			max = (max * spectrum_range) / range;
-			//Logger.info("min " + min + " max " + max + "  range " + range);
-			for (int i = min; i < max; i++) {		
-				int p = dst[i * cols + pos];
-				int r = (((p >> 16) & 0xff) >> 1) + (((p >> 16) & 0xff) >> 2) + (((p >> 16) & 0xff) >> 3) + 34;
-				int g = (((p >> 8) & 0xff) >> 1) + (((p >> 8) & 0xff) >> 2) + (((p >> 8) & 0xff) >> 3) + 34;
-				int b = ((p & 0xff) >> 1) + ((p & 0xff) >> 2) + ((p & 0xff) >> 3) + 34;
-				dst[i * cols + pos] = 0xff000000 | (r<<16) | (g<<8) | b;
-			}*/
+//			int ivmax = (int) (vmax / 100000000f);
+//			int max = ivmax >= cutoff_range ? cutoff_range - 1 : ivmax;
+//			///Logger.info(vmax  + "  " + ivmax + "  " + max);
+//			for (int i = 0; i <= max; i++) {		
+//				int p = dst[i * cols + pos];
+//				int r = (((p >> 16) & 0xff) >> 1) + (((p >> 16) & 0xff) >> 2) + (((p >> 16) & 0xff) >> 3) + 34;
+//				int g = (((p >> 8) & 0xff) >> 1) + (((p >> 8) & 0xff) >> 2) + (((p >> 8) & 0xff) >> 3) + 34;
+//				int b = ((p & 0xff) >> 1) + ((p & 0xff) >> 2) + ((p & 0xff) >> 3) + 34;
+//				dst[i * cols + pos] = 0xff000000 | (r<<16) | (g<<8) | b;
+//			}
+//			
+//			/*min -= Short.MIN_VALUE;
+//			max -= Short.MIN_VALUE;
+//			int range = ((int) Short.MAX_VALUE) - ((int) Short.MIN_VALUE);
+//			int spectrum_range = cutoff_upper - cutoff_lower;
+//			min = (min * spectrum_range) / range;
+//			max = (max * spectrum_range) / range;
+//			//Logger.info("min " + min + " max " + max + "  range " + range);
+//			for (int i = min; i < max; i++) {		
+//				int p = dst[i * cols + pos];
+//				int r = (((p >> 16) & 0xff) >> 1) + (((p >> 16) & 0xff) >> 2) + (((p >> 16) & 0xff) >> 3) + 34;
+//				int g = (((p >> 8) & 0xff) >> 1) + (((p >> 8) & 0xff) >> 2) + (((p >> 8) & 0xff) >> 3) + 34;
+//				int b = ((p & 0xff) >> 1) + ((p & 0xff) >> 2) + ((p & 0xff) >> 3) + 34;
+//				dst[i * cols + pos] = 0xff000000 | (r<<16) | (g<<8) | b;
+//			}*/
 		}
 
 		return image;

@@ -13,6 +13,8 @@ state: {
   default_player_spectrum_threshold: undefined,
   player_fft_window: undefined,
   default_player_fft_window: undefined,
+  player_fft_window_step_factor: 1,
+  default_player_fft_window_step_factor: 1,
   player_fft_step: undefined,
   //player_fft_cutoff: undefined,
   player_fft_cutoff_lower_frequency: 0,
@@ -53,8 +55,10 @@ mutations: {
     state.default_player_spectrum_threshold = state.player_spectrum_threshold;
     state.player_fft_window = project.player_fft_window;
     state.default_player_fft_window = state.player_fft_window;
+    state.player_fft_window_step_factor =  project.player_fft_window_step_factor;
+    state.default_player_fft_window_step_factor = state.player_fft_window_step_factor;
     //state.player_fft_step = state.player_fft_window / 4;
-    state.player_fft_step = state.player_fft_window;
+    state.player_fft_step = state.player_fft_window * state.player_fft_window_step_factor;
     var half = state.player_fft_window / 2;
     state.player_fft_cutoff = half > 800 ? 800 : half;
     state.player_fft_intensity_max = project.player_fft_intensity_max;
@@ -78,7 +82,7 @@ mutations: {
     if(settings.player_fft_window !== undefined) {
       state.player_fft_window = settings.player_fft_window;
       //state.player_fft_step = state.player_fft_window / 4;
-      state.player_fft_step = state.player_fft_window;
+      state.player_fft_step = state.player_fft_window * state.player_fft_window_step_factor;
       //var half = state.player_fft_window / 2;
       //state.player_fft_cutoff = half > 800 ? 800 : half;  
     }
