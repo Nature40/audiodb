@@ -72,23 +72,34 @@ public class SpectrumHandler {
 			double endSecond = Web.getDouble(request, "end", Double.NaN);
 			endSample = Double.isFinite(endSecond) ? sampleProcessor.secondsToPos(endSecond) : sampleProcessor.getFrameLength() - 1;
 		}
+		
+		int step = 256;
+		//int step = 512;
+		//int step = 1024;
+		step = Web.getInt(request, "step", step);
+		
+		if(endSample - startSample + 1 < step * (shrink_factor - 1) + window) {
+			throw new RuntimeException("endSample - startSample + 1 < step * (shrink_factor - 1) + window   " + (endSample - startSample + 1) + "   " + (step * (shrink_factor - 1) + window));
+		}
+		
 		//Logger.info("start " + startSample + "  end " + endSample);
 		sampleProcessor.loadData(0, startSample, endSample);
 		short[] fullShorts = sampleProcessor.data;
 		/*Logger.info(fullShorts.length + "  " + window);
 		for (int i = 0; i < fullShorts.length; i++) {
 			fullShorts[i] = i%2 == 0 ? Short.MAX_VALUE : -Short.MAX_VALUE;
-		}*/
-
-		int step = 256;
-		//int step = 512;
-		//int step = 1024;
-		step = Web.getInt(request, "step", step);
+		}*/		
 
 		float intensity_max = 23f;
 		intensity_max = Web.getFloat(request, "intensity_max", intensity_max);
+		
+		if(sampleProcessor.dataLength < step * (shrink_factor - 1) + window) {
+			throw new RuntimeException("sampleProcessor.dataLength < step * (shrink_factor - 1) + window " + sampleProcessor.dataLength + "   " + (step * (shrink_factor - 1) + window));
+		}
 
-		int cols = ((sampleProcessor.dataLength - window) / (step * shrink_factor)) + 1;
+		//int cols = ((sampleProcessor.dataLength - window) / (step * shrink_factor)) + 1;
+		//int cols = ((sampleProcessor.dataLength - (window * shrink_factor)) / (step * shrink_factor)) + 1;
+		int cols = ((sampleProcessor.dataLength - step * (shrink_factor - 1) - window) / (step * shrink_factor)) + 1;
 
 		ImageRGBA image;
 		int renderWidth = 0;

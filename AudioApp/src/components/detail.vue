@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="show" full-width @contextmenu="onContextmenu">
-      <q-card v-if="show">
+      <q-card v-if="show" id="card">
         <q-bar>
           <q-icon name="image"/>
           <div>Detail view</div>
@@ -121,6 +121,8 @@ export default defineComponent({
       selectableLabels: undefined,
       mousePixelPosX: undefined,
       mousePixelPosY: undefined,
+      spectrogramImageMaxPixelLenUnaligned: 2048,
+      spectrogramImageMaxSampleLenUnaligned: 134217728,
     };
   },
   computed: {
@@ -197,7 +199,39 @@ export default defineComponent({
     },
     staticLinesCanvasPosY() {
       return this.sampleRate === undefined || this.player_fft_window === undefined || this.player_static_lines_frequency === undefined || this.player_static_lines_frequency.length === 0 ? undefined : this.player_static_lines_frequency.map(staticLineFrequency => Math.round((staticLineFrequency * this.player_fft_window) / this.sampleRate));
-    },             
+    },
+    subsetMaxSampleLen() {
+      const mOne = this.spectrogramImageMaxSampleLenUnaligned - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window;
+      if(mOne < 0) {
+        return 0;
+      }
+      const pixelCountFloat = mOne / (this.player_fft_step * this.player_spectrum_shrink_Factor);
+      const pixelCount = Math.floor(pixelCountFloat) + 1;
+      return ((pixelCount < this.spectrogramImageMaxPixelLenUnaligned ? pixelCount :  this.spectrogramImageMaxPixelLenUnaligned) - 1) * this.player_fft_step + this.player_fft_window;
+    },
+    start_sample() {
+      if(this.samplePos === undefined)  {
+        return 0;
+      }
+      let pos = this.samplePos;
+      if(pos >= (this.sample.samples - this.subsetMaxSampleLen)) {
+        pos = this.sample.samples - this.subsetMaxSampleLen;
+      }
+      if(pos < 0) {
+        pos = 0;
+      }
+      return pos;
+    },
+    end_sample() {
+      let pos = this.start_sample + (this.subsetMaxSampleLen - 1);
+      if(pos > (this.sample.samples - 1)) {
+        pos = this.sample.samples - 1;
+      }
+      if(pos < 0) {
+        pos = 0;
+      }        
+      return pos;
+    },            
   },
   methods: {
     refresh() {
@@ -208,7 +242,7 @@ export default defineComponent({
         this.loading = true;
         this.error = false;
         var baseURL = this.$api.defaults.baseURL;
-        var sampleLen = 2048*400;
+        /*var sampleLen = 2048*400;
         var start_sample = this.samplePos;
         if(start_sample < 0) {
           start_sample = 0;
@@ -217,14 +251,14 @@ export default defineComponent({
           start_sample = this.sample.samples - sampleLen;
         }
         var end_sample = start_sample + sampleLen;
-         if(end_sample < 0) {
+        if(end_sample < 0) {
           end_sample = 0;
         }
         if(end_sample >= (this.sample.samples - sampleLen)) {
           end_sample = this.sample.samples - sampleLen;
-        }
+        }*/
         var image = new Image();
-        image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + this.spectrogramSettingsQuery;
+        image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + this.start_sample + '&end_sample=' + this.end_sample + this.spectrogramSettingsQuery;
         await image.decode();        
         this.image = image;
         this.canvasWidth = this.image.width;
@@ -256,8 +290,8 @@ export default defineComponent({
       if(this.labels !== undefined) {
         for(var i = 0; i < this.labels.length; i++) {
           var label = this.labels[i];
-          var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate - this.samplePos) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
-          var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate - this.samplePos) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+          var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate - this.start_sample) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+          var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate - this.start_sample) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
           //console.log(labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
           if(0 <= labelPixelXmax && this.canvasWidth >= labelPixelXmin) {
             //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
@@ -311,7 +345,7 @@ export default defineComponent({
         this.mouseEndX = x;
         this.labelStartX = this.pixelPosToSamplePos(this.mouseStartX);
         this.labelEndX = this.pixelPosToSamplePos(this.mouseEndX);
-        console.log(this.samplePos + '  ' + x + '  ' + this.pixelPosToSamplePos(x));
+        console.log(this.start_sample + '  ' + x + '  ' + this.pixelPosToSamplePos(x));
         this.mouseStartX = undefined;
         this.mouseEndX = undefined;
         this.repaint();
@@ -322,16 +356,16 @@ export default defineComponent({
       this.mousePixelPosY = undefined;
     },
     pixelPosToSamplePos(x) {
-      if(this.samplePos === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
+      if(this.start_sample === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
         return undefined;
       }
-      return this.samplePos + x * (this.player_fft_step * this.player_spectrum_shrink_Factor);
+      return this.start_sample + x * (this.player_fft_step * this.player_spectrum_shrink_Factor);
     },
     samplePosToPixelPos(x) {
-      if(this.samplePos === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
+      if(this.start_sample === undefined || x === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor) {
         return undefined;
       }
-      return (x - this.samplePos) / (this.player_fft_step * this.player_spectrum_shrink_Factor);      
+      return (x - this.start_sample) / (this.player_fft_step * this.player_spectrum_shrink_Factor);      
     },
     onContextmenu(e) {
       e.preventDefault();      
@@ -358,7 +392,13 @@ export default defineComponent({
   watch: {
     show() {
       if(this.show) {
-        this.refresh();
+        this.$nextTick( () => {
+          const card = document.getElementById('card');
+          if(card !== undefined && card.clientWidth) {
+            this.spectrogramImageMaxPixelLenUnaligned = card.clientWidth;
+          }
+          this.refresh();
+        });
       }
     },
     labels() {

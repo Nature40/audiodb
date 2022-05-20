@@ -23,7 +23,6 @@
       <q-btn-dropdown
         v-if="audioURL != undefined && sample != undefined"
         icon="file_download"
-        @click="onMainClick"
         style="margin-right: 5px;"
         size="xs"
         fab-mini
@@ -99,15 +98,21 @@
           option-value="name"
           emit-value
           clearable
+          ref="selectLabel"
         >
           <template v-slot:append>
-            <q-icon name="apps" @click.stop="labelSelectDialogShow = true;" />
+            <q-icon name="apps" @click.stop.prevent="onClickLabelSelectDialogShow" />
             <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
-              <div class="q-pt-none column wrap justify-start content-around fit" style="background-color: white;"> 
-              <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name);"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
-                <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
-                <span v-else>{{labelDefinition.name}}</span>
-              </q-badge>
+              <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
+                <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
+                  <q-tooltip>Close</q-tooltip>
+                </q-btn>
+
+
+                <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name);"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
+                  <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
+                  <span v-else>{{labelDefinition.name}}</span>
+                </q-badge>
               </div>
             </q-dialog>            
           </template>
@@ -371,12 +376,6 @@ export default defineComponent({
       player_time_expansion_factor: state => state.project.player_time_expansion_factor,
       player_static_lines_frequency: state => state.project.player_static_lines_frequency, 
     }),
-    /*player_fft_cutoff_lower_frequency() {
-      return 5000;
-    },
-    player_fft_cutoff_upper_frequency() {
-      return 10000;
-    },*/
     player_fft_cutoff_lower() {
       let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sampleRate);
       return c < 0 ? 0 : c > (this.player_fft_window / 2) - 1 ? (this.player_fft_window / 2) - 1 : c;
@@ -398,28 +397,45 @@ export default defineComponent({
     selectedSampleId() {
       return this.$route.query.sample;
     },
-    /*spectrogramImageMaxSampleLen() {
-      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
-    },*/
-    spectrogramImageMaxPixelLen() {
-      const p = Math.trunc((this.spectrogramImageMaxSampleLenUnaligned - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
-      return p < this.spectrogramImageMaxPixelLenUnaligned ? p : this.spectrogramImageMaxPixelLenUnaligned;      
-    },
-    spectrogramImageMaxSampleLen() {
-      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
-    },
+
     spectrogramFullPixelLen() {
       if(this.sampleLen === undefined) {
         return 0;
       }
-      var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
-      return p < 0 ? 0 : p;
+      const mOne = this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window;
+      if(mOne < 0) {
+        return 0;
+      }
+      const pixelCountFloat = mOne / (this.player_fft_step * this.player_spectrum_shrink_Factor);
+      const pixelCount = Math.floor(pixelCountFloat) + 1;
+      return pixelCount;
     },
     spectrogramFullSampleLen() {
       if(this.spectrogramFullPixelLen < 1) {
         return 0;
       }
       return (this.spectrogramFullPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
+    },
+    spectrogramImageMaxPixelLen() {
+      const mOne = this.spectrogramImageMaxSampleLenUnaligned - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window;
+      if(mOne < 0) {
+        return 0;
+      }
+      const pixelCountFloat = mOne / (this.player_fft_step * this.player_spectrum_shrink_Factor);
+      const pixelCount = Math.floor(pixelCountFloat) + 1;
+      return pixelCount < this.spectrogramImageMaxPixelLenUnaligned ? pixelCount : this.spectrogramImageMaxPixelLenUnaligned;     
+    },
+    spectrogramImageMaxSampleLenInSequence() {
+      if(this.spectrogramImageMaxPixelLen < 1) {
+        return 0;
+      }
+      return this.spectrogramImageMaxPixelLen * (this.player_fft_step * this.player_spectrum_shrink_Factor);
+    },
+    spectrogramImageMaxSampleLenSelf() {
+      if(this.spectrogramImageMaxPixelLen < 1) {
+        return 0;
+      }
+      return (this.spectrogramImageMaxPixelLen - 1) * (this.player_fft_step * this.player_spectrum_shrink_Factor) + this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window;
     },
     spectrogramImagesLen() {
       return Math.ceil(this.spectrogramFullPixelLen / this.spectrogramImageMaxPixelLen);
@@ -502,7 +518,6 @@ export default defineComponent({
       var s10 = Math.trunc(s/10);
       var s1 = s%10;
       return '' + s10 + '' + s1;
-      return (s < 10 ? '0' : '') + s.toFixed(3);
     },
     durationMS() {
       if(this.duration === undefined) {
@@ -715,24 +730,28 @@ export default defineComponent({
       if(this.spectrogramImages[imageIndex] === undefined) {
         try {
           var baseURL = this.$api.defaults.baseURL;
-          var start_sample = imageIndex * this.spectrogramImageMaxSampleLen;
-          var end_sample = start_sample + (this.spectrogramImageMaxSampleLen - 1);
+          //console.log('imageIndex:   ' + imageIndex);
+          var start_sample = imageIndex * this.spectrogramImageMaxSampleLenInSequence;
+          var end_sample = start_sample + (this.spectrogramImageMaxSampleLenSelf - 1);
           if(end_sample >= this.spectrogramFullSampleLen) {
             end_sample = this.spectrogramFullSampleLen - 1;
             //var p = Math.trunc((this.sampleLen - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window) / (this.player_fft_step * this.player_spectrum_shrink_Factor)) + 1;
           }
-          var image = new Image();
-          image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + this.spectrogramSettingsQuery;
-          await image.decode();
-          if(id != this.spectrogramId) {
-            return;
-          }
-          var imageBitmap = await createImageBitmap(image);
-          if(id != this.spectrogramId) {
-            return;
-          }
-          this.spectrogramImages[imageIndex] = imageBitmap;
-          this.paintSpectrogramRequested = true;
+          //console.log(start_sample + '  ' + this.spectrogramFullSampleLen);
+          //if(start_sample < this.spectrogramFullSampleLen && end_sample - start_sample + 1 >= this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) + this.player_fft_window) {
+            var image = new Image();
+            image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + start_sample + '&end_sample=' + end_sample + this.spectrogramSettingsQuery;
+            await image.decode();
+            if(id != this.spectrogramId) {
+              return;
+            }
+            var imageBitmap = await createImageBitmap(image);
+            if(id != this.spectrogramId) {
+              return;
+            }
+            this.spectrogramImages[imageIndex] = imageBitmap;
+            this.paintSpectrogramRequested = true;
+          //}
           this.spectrogramImagesLoadedCount++;          
           var next = this.imageNextIndex;
           this.imageNextIndex = undefined;
@@ -1069,6 +1088,9 @@ export default defineComponent({
         this.saveLabelsError = true;
         console.log(e);
       }
+    },
+    onClickLabelSelectDialogShow() {
+      this.labelSelectDialogShow = true;
     },
   },
 

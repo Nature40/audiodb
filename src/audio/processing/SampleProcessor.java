@@ -113,7 +113,7 @@ public class SampleProcessor {
 			int frameLength = (int) in.getFrameLength();
 
 			if(end < start) {
-				throw new RuntimeException("invalid interval");
+				throw new RuntimeException("invalid interval  " + start + "    " + end);
 			}
 
 			this.dataLength = end - start + 1;
