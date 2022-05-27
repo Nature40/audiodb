@@ -15,9 +15,10 @@
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
         <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true" title="Move to next sample on the browsed list of samples"/>
       </div>
-      <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">
-        <q-badge color="grey-4" text-color="grey-14" label="<== use the 'browse'-button on the left"/> 
-        <q-badge color="yellow-14" text-color="accent" label="no audio sample selected"/> 
+      <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">        
+        <q-badge color="transparent" text-color="grey-14" class="text-h6"><q-icon name="west" left/>Click 'browse'-button on the left.</q-badge> 
+        <q-badge color="yellow-14" text-color="accent" class="text-h6" style="margin-left: 30px; margin-right: 30px;"><q-icon name="event_note" left/>No audio sample selected.</q-badge> 
+        <q-badge color="transparent" text-color="grey-14" class="text-h6">To get usage information click '?'-button on the right. <q-icon name="east" right/></q-badge>  
       </div>
       <q-space></q-space>
       <q-btn-dropdown
@@ -39,6 +40,64 @@
 
       <q-btn @click="$refs.settings.show = true;" icon="tune" title="Settings" padding="xs"></q-btn>
       <audio-settings ref="settings"/>
+      <q-btn @click="dialoghelpShow = true;" icon="help" dense flat style="margin-left: 10px;" title="Get help."></q-btn>
+      <q-dialog
+        v-model="dialoghelpShow"
+        :maximized="dialoghelpMaximizedToggle"
+        transition-show="slide-down"
+        transition-hide="slide-up"
+      >
+        <q-card class="bg-grey-3 text-black">
+          <q-bar>
+            <q-icon name="help_outline" />
+            <div>Help</div>
+            <q-space />
+            <q-btn dense flat icon="window" @click="dialoghelpMaximizedToggle = false" v-show="dialoghelpMaximizedToggle">
+              <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+            </q-btn>
+            <q-btn dense flat icon="crop_square" @click="dialoghelpMaximizedToggle = true" v-show="!dialoghelpMaximizedToggle">
+              <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+            </q-btn>
+            <q-btn dense flat icon="close" v-close-popup>
+              <q-tooltip>Close</q-tooltip>
+            </q-btn>
+          </q-bar>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Move in time</div>
+              <i><b>Current position</b> is marked by the vertical line in the middle of the spectrogram.</i>
+              <ol>
+                <li><b>Place</b> mouse cursor at spectrogram.</li>
+                <li><b>Press and hold</b> left mouse button.</li>
+                <li><b>Move</b> mouse cursor left or right by holding left mouse button.</li>
+                <li><b>Release</b> left mouse button.</li>
+              </ol>            
+          </q-card-section>
+
+           <q-card-section class="q-pt-none">
+            <div class="text-h6">Labeling</div>
+              <ol>
+                <li><b>Place</b> time position to label start by moving in time.</li>
+                <li><b>Click</b> '+'-button at the top right to mark label start.</li>
+                <li><b>Move</b> time position to label end by moving in time.</li>
+                <li><b>Click</b> 'set end'-button at the top right to mark label end.</li>
+                <li><b>Select</b> label names at the top middle.</li>
+                <li><b>Click</b> 'save new segment'-button at the top right to write new label to database.</li>
+              </ol>            
+          </q-card-section>
+          
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">-> Detail view</div>
+            <ol>
+              <li><b>Place</b> mouse cursor on spectrogram at desired time position.</li>
+              <li><b>Click</b> right mouse button to open detail view.</li>
+              <li><b>Click</b> '?'-button at detail view top right for further help.</li>
+              <li>(At detail view click 'x'-button on the top right to come back to main view.)</li>
+              <li>(Or press 'Esc'-key to come back to main view.)</li>
+            </ol>
+          </q-card-section>
+        </q-card>
+      </q-dialog>      
     </q-toolbar>
     <q-separator/>
     <q-toolbar class="bg-grey-3" :class="sampleVisibility">
@@ -359,6 +418,8 @@ export default defineComponent({
       saveLabelsError: false,
       labelSelectDialogShow: false,
       removeTimeSegmentShow: false,
+      dialoghelpShow: false,
+      dialoghelpMaximizedToggle: false,
     };
   },
   

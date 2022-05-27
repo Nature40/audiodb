@@ -42,7 +42,7 @@ public class SpectrumHandler {
 			cutoff_lower = cutoff_lower_max;
 		}
 		
-		int cutoff_upper_max = window/2;
+		int cutoff_upper_max = window / 2;
 		int cutoff_upper = Web.getInt(request, "cutoff", 320);
 		if(cutoff_upper < 1) {
 			Logger.warn("cutoff out of bounds: " + cutoff_upper + "  set to " + 1);
@@ -144,7 +144,7 @@ public class SpectrumHandler {
 	private ImageRGBA render2(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold) {
 		Logger.info("render2 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 		float[][] transformed = new float[cols][n];
 		float minv = Float.MAX_VALUE;
 		float maxv = -Float.MAX_VALUE;
@@ -188,7 +188,7 @@ public class SpectrumHandler {
 	private ImageRGBA render3(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv) {
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		/*float energy = 0;
 		for (int i = 0; i < n; i++) {
@@ -230,7 +230,7 @@ public class SpectrumHandler {
 		int cutoff_range = cutoff_upper - cutoff_lower;
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		/*float energy = 0;
 		for (int i = 0; i < n; i++) {
@@ -307,7 +307,7 @@ public class SpectrumHandler {
 	private ImageRGBA render3denoise(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv) {
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
 		ImageRGBA image = new ImageRGBA(cols, cutoff_upper);
@@ -347,7 +347,7 @@ public class SpectrumHandler {
 	private ImageRGBA render3width(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv, int width) {
 		Logger.info("render3width step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		float[][] target = new float[width][cutoff_upper];
 
@@ -386,7 +386,7 @@ public class SpectrumHandler {
 		int cutoff_range = cutoff_upper - cutoff_lower;
 		Logger.info("render3width step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		float[][] target = new float[width][cutoff_range];
 
@@ -425,7 +425,7 @@ public class SpectrumHandler {
 	private ImageRGBA render3Shrink(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold, float maxv, int shrinkFactor) {
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
 		ImageRGBA image = new ImageRGBA(cols, cutoff_upper);
@@ -460,7 +460,7 @@ public class SpectrumHandler {
 		int cutoff_range = cutoff_upper - cutoff_lower;
 		//Logger.info("render3 step " + step + "  cols " + cols);
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);
 
 		float[] lut = Lut.getLogLUT256fLogMinMax(threshold, maxv);
 		ImageRGBA image = new ImageRGBA(cols, cutoff_range);

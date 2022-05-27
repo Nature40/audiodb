@@ -224,7 +224,13 @@ export default defineComponent({
     }),
     valid_lines_frequency() {
       let u = this.user_player_static_lines_frequency;
-      if(u === undefined || u === null || u.trim() === '' ) {
+      console.log(u);
+      console.log(u === undefined);
+      if(u === undefined || u === null ) {
+        return true;
+      }
+      u = u + '';
+      if(u.trim() === '' ) {
         return true;
       }
       let us = u.split(',').map(text => text.trim());
@@ -241,6 +247,7 @@ export default defineComponent({
       if(u === undefined || u === null) {
         return [];
       }
+      u = u + '';
       u = u.trim();
       if(u === '' ) {
         return [];

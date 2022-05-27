@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="show" full-width @contextmenu="onContextmenu">
+  <q-dialog v-model="show" maximized @contextmenu="onContextmenu">
       <q-card v-if="show" id="card">
         <q-bar>
           <q-icon name="image"/>
@@ -12,6 +12,54 @@
             Error at processing or network connection.
           </div>          
           <q-space />
+          <q-btn @click="dialoghelpShow = true;" icon="help_outline" dense flat style="margin-left: 10px;" title="Get help."></q-btn>
+          <q-dialog
+            v-model="dialoghelpShow"
+            :maximized="dialoghelpMaximizedToggle"
+            transition-show="slide-down"
+            transition-hide="slide-up"
+          >
+            <q-card class="bg-grey-3 text-black">
+              <q-bar>
+                <q-icon name="help_outline" />
+                <div>Help</div>
+                <q-space />
+                <q-btn dense flat icon="window" @click="dialoghelpMaximizedToggle = false" v-show="dialoghelpMaximizedToggle">
+                  <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+                </q-btn>
+                <q-btn dense flat icon="crop_square" @click="dialoghelpMaximizedToggle = true" v-show="!dialoghelpMaximizedToggle">
+                  <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+                </q-btn>
+                <q-btn dense flat icon="close" v-close-popup>
+                  <q-tooltip>Close</q-tooltip>
+                </q-btn>
+              </q-bar>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Detail labeling</div>
+                <ol>
+                  <li><b>Place</b> mouse cursor at spectrogram segment start position.</li>
+                  <li><b>Press and hold</b> left mouse button.</li> 
+                  <li><b>Move</b> mouse cursor to segment end position by holding left mouse button.</li>
+                  <li><b>Release</b> left mouse button.</li>
+                  <li><b>Select</b> correct label if not selected already.</li>
+                  <li><b>Click</b> right mouse button to save the new segment.</li>
+                </ol>
+              </q-card-section>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Move in time</div>
+                <ol>
+                  <li><b>Place</b> mouse cursor at spectrogram.</li>
+                  <li><b>Press and hold</b> shift key.</li> 
+                  <li><b>Press and hold</b> left mouse button and hold shift key.</li>
+                  <li>(Shift key can be released now.)</li> 
+                  <li><b>Move</b> mouse cursor left or right by holding left mouse button.</li>
+                  <li><b>Release</b> left mouse button to start loading moved spectrogram.</li>
+                </ol>
+              </q-card-section>              
+            </q-card>
+          </q-dialog>          
           <q-btn dense flat icon="close" v-close-popup>
             <q-tooltip>Close</q-tooltip>
           </q-btn>
@@ -40,9 +88,49 @@
             </template>          
           </q-select>
           <q-btn icon="push_pin" label="Save new segment" size="xs" padding="xs" margin="xs" title="Save new time segment with currently selected labels" @click="onNewTimeSegmentSave" :disabled="labelStartX === undefined || labelEndX === undefined"/>
+
           <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;">
-          Place mouse cursor at spectrogram segment start position, press and hold left mouse button, move mouse cursor to segment end position, release left mouse button,<br> select correct label, click right mouse button to save the new segment.          
+          Place mouse cursor at spectrogram segment start position, press and hold left mouse button, 
+          <br>move mouse cursor to segment end position, release left mouse button,
+          <br> select correct label, click right mouse button to save the new segment.          
           </q-badge>
+
+          <q-space />
+
+          <q-btn @click="onMovePrevSamples" icon="arrow_left" padding="xs" :loading="loading"></q-btn>
+          <span>{{(start_sample / this.sample.sample_rate).toFixed(3)}} - {{( (end_sample + 1) / this.sample.sample_rate).toFixed(3)}}</span>
+          <q-btn @click="onMoveNextSamples" icon="arrow_right" padding="xs" :loading="loading"></q-btn>
+          <q-checkbox
+            v-model="hideLabels"
+            label="Hide labels"
+            color="red"
+          />
+          <q-btn icon="architecture" round padding="xs" style="margin-left: 20px" title="Change spectrogram overlap ratio.">
+            <q-menu @hide="onOverlapMenuHide">
+              <q-list style="min-width: 100px">
+                <q-item style="min-width: 100px; padding: 20px;">
+                  <q-item-section>
+                    <q-item-label>Spectrogram overlap</q-item-label>
+                    <q-item-label caption style="padding-bottom: 20px;"> 
+                      <q-slider 
+                        style="min-width: 200px;"
+                        v-model="userWindowOverlapPercent"
+                        :min="0"
+                        :max="95"
+                        :step="1"
+                        label
+                        :label-value="userWindowOverlapPercent + '%'"
+                        label-always
+                        switch-label-side
+                        @change="userWindowOverlapPercentChanged = true"
+                      />
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+             
+            </q-menu>
+          </q-btn>          
         </q-toolbar>     
 
         <!--<q-card-section>-->
@@ -111,8 +199,12 @@ export default defineComponent({
       canvasWidth: 100,
       canvasHeight: 300,
       image: undefined,
+      imageStartSample: undefined,
       loading: false, 
       error: false,
+      mouseModus: undefined,
+      mouseMoveTimeStartX: undefined,
+      mouseMoveTimeEndX: undefined,
       mouseStartX: undefined, 
       mouseEndX: undefined,
       labelStartX: undefined,
@@ -123,6 +215,12 @@ export default defineComponent({
       mousePixelPosY: undefined,
       spectrogramImageMaxPixelLenUnaligned: 2048,
       spectrogramImageMaxSampleLenUnaligned: 134217728,
+      windowOverlapFactor: 4,
+      userWindowOverlapPercent: 75,
+      userWindowOverlapPercentChanged: false,
+      hideLabels: false,
+      dialoghelpShow: false,
+      dialoghelpMaximizedToggle: false,      
     };
   },
   computed: {
@@ -150,7 +248,8 @@ export default defineComponent({
       if(this.player_fft_window === undefined) {
         return undefined;
       }
-      return this.player_fft_window / 4;
+      const step = Math.round(this.player_fft_window / this.windowOverlapFactor);
+      return (step < 1) ? 1 : (step > this.player_fft_window ? this.player_fft_window : step);
     },
     player_spectrum_shrink_Factor() {
       return 1;
@@ -200,14 +299,17 @@ export default defineComponent({
     staticLinesCanvasPosY() {
       return this.sampleRate === undefined || this.player_fft_window === undefined || this.player_static_lines_frequency === undefined || this.player_static_lines_frequency.length === 0 ? undefined : this.player_static_lines_frequency.map(staticLineFrequency => Math.round((staticLineFrequency * this.player_fft_window) / this.sampleRate));
     },
-    subsetMaxSampleLen() {
+    subsetMaxPixelCount() {
       const mOne = this.spectrogramImageMaxSampleLenUnaligned - this.player_fft_step * (this.player_spectrum_shrink_Factor - 1) - this.player_fft_window;
       if(mOne < 0) {
         return 0;
       }
       const pixelCountFloat = mOne / (this.player_fft_step * this.player_spectrum_shrink_Factor);
       const pixelCount = Math.floor(pixelCountFloat) + 1;
-      return ((pixelCount < this.spectrogramImageMaxPixelLenUnaligned ? pixelCount :  this.spectrogramImageMaxPixelLenUnaligned) - 1) * this.player_fft_step + this.player_fft_window;
+      return pixelCount < this.spectrogramImageMaxPixelLenUnaligned ? pixelCount :  this.spectrogramImageMaxPixelLenUnaligned;
+    },
+    subsetMaxSampleLen() {
+      return (this.subsetMaxPixelCount - 1) * this.player_fft_step + this.player_fft_window;
     },
     start_sample() {
       if(this.samplePos === undefined)  {
@@ -231,6 +333,10 @@ export default defineComponent({
         pos = 0;
       }        
       return pos;
+    },
+    moveSampleStep() {
+      const pixels = Math.floor(this.subsetMaxPixelCount / 2);
+      return pixels * this.player_fft_step * this.player_spectrum_shrink_Factor;
     },            
   },
   methods: {
@@ -259,8 +365,9 @@ export default defineComponent({
         }*/
         var image = new Image();
         image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + this.start_sample + '&end_sample=' + this.end_sample + this.spectrogramSettingsQuery;
-        await image.decode();        
+        await image.decode();   
         this.image = image;
+        this.imageStartSample = this.start_sample;        
         this.canvasWidth = this.image.width;
         this.canvasHeight = this.image.height;
         this.loading = false;
@@ -281,17 +388,27 @@ export default defineComponent({
       }
       var ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let sampleStart = this.start_sample;
+      let pixelDelta = 0;
       if(this.image !== undefined) {
         //console.log('drawImage'); 
         //console.log(this.image);
-        ctx.drawImage(this.image, 0, 0);          
+        if(this.mouseModus === 'move_time') {
+          const moveTimeSampleStartX = this.pixelPosToSamplePos(this.mouseMoveTimeStartX);
+          const moveTimeSampleEndX = this.pixelPosToSamplePos(this.mouseMoveTimeEndX);
+          const diff = moveTimeSampleEndX - moveTimeSampleStartX;
+          sampleStart = this.start_sample - diff;
+          console.log('move_time repaint');
+        }
+        pixelDelta = this.samplePosToPixelPos(this.imageStartSample) - this.samplePosToPixelPos(sampleStart);
+        ctx.drawImage(this.image, pixelDelta, 0);          
       }
 
-      if(this.labels !== undefined) {
+      if(!this.hideLabels && this.labels !== undefined) {
         for(var i = 0; i < this.labels.length; i++) {
           var label = this.labels[i];
-          var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate - this.start_sample) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
-          var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate - this.start_sample) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+          var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate - sampleStart) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+          var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate - sampleStart) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
           //console.log(labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
           if(0 <= labelPixelXmax && this.canvasWidth >= labelPixelXmin) {
             //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
@@ -307,17 +424,27 @@ export default defineComponent({
       } 
       if(this.labelStartPixelX !== undefined && this.labelEndPixelX !== undefined) {
         ctx.fillStyle = 'rgba(255,255,0,0.3)';
-        ctx.fillRect(this.labelStartPixelX, 0, this.labelEndPixelX - this.labelStartPixelX + 1, this.canvasHeight);
+        const delta = this.mouseModus === 'move_time' ? pixelDelta : 0;
+        ctx.fillRect(this.labelStartPixelX + delta, 0, this.labelEndPixelX - this.labelStartPixelX + 1, this.canvasHeight);
       }      
     },
     onMousedown(e) {
       if(e.buttons == 1) {
-        //console.log('onMousedown');
-        //console.log(e);
-        const x = e.offsetX;
-        this.mouseStartX = x;
-        this.mouseEndX = x;
-        this.repaint();
+        if(e.shiftKey) {
+          console.log('shift');
+          this.mouseModus = 'move_time';
+          const x = e.offsetX;
+          this.mouseMoveTimeStartX = x;
+          this.mouseMoveTimeEndX = x;
+        } else {
+          this.mouseModus = 'set_label';
+          //console.log('onMousedown');
+          //console.log(e);
+          const x = e.offsetX;
+          this.mouseStartX = x;
+          this.mouseEndX = x;
+          this.repaint();
+        }
       }
     },
     onMousemove(e) {
@@ -325,20 +452,26 @@ export default defineComponent({
       const y = e.offsetY;
       this.mousePixelPosX = x;
       this.mousePixelPosY = this.canvasHeight - 1 - y;
-      if(e.buttons == 1) {
-        if(this.mouseStartX !== undefined) {
-          //console.log('onMousemove');
-          //console.log(e);          
+      if(this.mouseModus === 'set_label' && e.buttons == 1) {
+        if(this.mouseStartX !== undefined) {        
           this.mouseEndX = x;
         }
       } else {
         this.mouseStartX = undefined;
         this.mouseEndX = undefined;
       }
+      if(this.mouseModus === 'move_time' && e.buttons == 1) {
+        if(this.mouseMoveTimeStartX !== undefined) {        
+          this.mouseMoveTimeEndX = x;
+        }
+      } else {
+        this.mouseMoveTimeStartX = undefined;
+        this.mouseMoveTimeEndX = undefined;
+      }
       this.repaint();
     },
     onMouseup(e) {
-      if(this.mouseStartX !== undefined) {
+      if(this.mouseModus === 'set_label' && this.mouseStartX !== undefined) {
         console.log('onMouseup');
         //console.log(e);
         const x = e.offsetX;
@@ -350,6 +483,22 @@ export default defineComponent({
         this.mouseEndX = undefined;
         this.repaint();
       }
+      if(this.mouseModus === 'move_time' && this.mouseMoveTimeStartX !== undefined) {
+        const x = e.offsetX;
+        this.mouseMoveTimeEndX = x;
+        const moveTimeSampleStartX = this.pixelPosToSamplePos(this.mouseMoveTimeStartX);
+        const moveTimeSampleEndX = this.pixelPosToSamplePos(this.mouseMoveTimeEndX);
+        const diff = moveTimeSampleEndX - moveTimeSampleStartX;
+        if(diff !== 0) {
+          this.samplePos = this.start_sample - diff;
+          this.mouseModus = undefined;
+          this.refresh();
+          this.repaint();
+        }
+        this.mouseMoveTimeStartX = undefined;
+        this.mouseMoveTimeEndX = undefined;
+      }
+      this.mouseModus = undefined;
     },
     onMouseleave() {
       this.mousePixelPosX = undefined;
@@ -388,6 +537,24 @@ export default defineComponent({
       this.labelStartX = undefined;
       this.labelEndX = undefined;
     },
+    onOverlapMenuHide() {
+      if(this.userWindowOverlapPercentChanged) {
+        console.log('hidden');
+        this.userWindowOverlapPercentChanged = false;
+        this.windowOverlapFactor = (100 / (100 - this.userWindowOverlapPercent));
+        this.refresh();
+      }
+    },
+    onMovePrevSamples() {
+      this.samplePos = this.start_sample - this.moveSampleStep;
+      this.refresh();
+      this.repaint();
+    },
+    onMoveNextSamples() {
+      this.samplePos = this.start_sample + this.moveSampleStep;
+      this.refresh();
+      this.repaint();
+    },
   },
   watch: {
     show() {
@@ -402,6 +569,9 @@ export default defineComponent({
       }
     },
     labels() {
+      this.repaint();
+    },
+    hideLabels() {
       this.repaint();
     },
   },

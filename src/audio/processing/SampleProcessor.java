@@ -3,6 +3,8 @@ package audio.processing;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
@@ -16,9 +18,10 @@ import org.tinylog.Logger;
 import org.jtransforms.fft.FloatFFT_1D;
 
 import audio.GeneralSample;
+import de.siegmar.fastcsv.writer.CsvWriter;
 
 public class SampleProcessor {
-	
+
 
 	public static final int n = 1024;
 	public static final int n2 = n / 2;
@@ -163,8 +166,9 @@ public class SampleProcessor {
 	public static float[] getGaussianWeights(int n) {
 		double upper = n;
 		double mean = (upper - 1d) / 2d;
+		double sigma = upper / 5d;
 
-		Gaussian gaussian = new Gaussian(mean, upper / 5d);
+		Gaussian gaussian = new Gaussian(mean, sigma);
 
 		int len = (int) upper;
 		int mid = len / 2;
@@ -174,8 +178,51 @@ public class SampleProcessor {
 
 		for (int i = 0; i < len; i++) {
 			weight[i] = (float) (gaussian.value(i) / vmid);
+			//weight[i] *= weight[i];
 		}
+		//Logger.info(Arrays.toString(weight));
+		/*try(CsvWriter csv = CsvWriter.builder().build(Paths.get("output","weights.csv"))) {
+			csv.writeRow("weight");
+			for(float w : weight) {
+				csv.writeRow(Float.toString(w));
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		return weight;
+	}
+	
+	public static float[] getGaussianWeights(int n, int step) {
+		double upper = n;
+		double mean = (upper - 1d) / 2d;
+		//double sigma = upper / 5d;
+		//double sigma = step;
+		double f = ((double)n) / ((double)step);
+		double sigma = f >= 16d ? (step * 2d) : f > 4d ? step : (step / 2d);
 
+		Gaussian gaussian = new Gaussian(mean, sigma);
+
+		int len = (int) upper;
+		int mid = len / 2;
+		float[] weight = new float[len];
+
+		double vmid = gaussian.value(mid);
+
+		for (int i = 0; i < len; i++) {
+			weight[i] = (float) (gaussian.value(i) / vmid);
+			//weight[i] *= weight[i];
+		}
+		//Logger.info(Arrays.toString(weight));
+		/*try(CsvWriter csv = CsvWriter.builder().build(Paths.get("output","weights.csv"))) {
+			csv.writeRow("weight");
+			for(float w : weight) {
+				csv.writeRow(Float.toString(w));
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
 		return weight;
 	}
 
@@ -183,7 +230,7 @@ public class SampleProcessor {
 		fqCols = ((dataLength - n) / step) + 1;
 		float[][] fq = new float[fqCols][n];
 		FloatFFT_1D fft = new FloatFFT_1D(n);
-		float[] weight = SampleProcessor.getGaussianWeights(n);		
+		float[] weight = SampleProcessor.getGaussianWeights(n, step);		
 		float[] a = new float[n];
 		for (int pos = 0; pos < fqCols; pos++) {			
 			for (int i = 0; i < n; i++) {
