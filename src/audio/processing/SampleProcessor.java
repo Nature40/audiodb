@@ -3,8 +3,6 @@ package audio.processing;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Paths;
-import java.util.Arrays;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
@@ -13,12 +11,9 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.apache.commons.math3.analysis.function.Gaussian;
-
-import org.tinylog.Logger;
 import org.jtransforms.fft.FloatFFT_1D;
 
 import audio.GeneralSample;
-import de.siegmar.fastcsv.writer.CsvWriter;
 
 public class SampleProcessor {
 
@@ -153,7 +148,7 @@ public class SampleProcessor {
 				byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 			}
 			byteBuffer.asShortBuffer().get(fullShorts);				
-			this.data = fullShorts;
+			this.data = fullShorts;			
 
 			sampleRateN2 = sampleRate / n / 2d;
 			binFactor = sampleRateN2 / 1000d;

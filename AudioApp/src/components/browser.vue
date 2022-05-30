@@ -1,11 +1,50 @@
 <template>
-  <q-dialog v-model="show">
+  <q-dialog v-model="show" :maximized="dialogMaximizedToggle">
     <q-layout view="Lhh lpR fff" container class="bg-white" style="min-width: 1000px;">
       <q-header class="bg-white text-black">                
       <q-bar>
         <q-icon name="menu_book"/>
         <div>Browser</div>
         <q-space />
+        <q-btn @click="dialoghelpShow = true;" icon="help_outline" dense flat style="margin-left: 10px;" title="Get help."></q-btn>
+        <q-dialog
+          v-model="dialoghelpShow"
+          :maximized="dialoghelpMaximizedToggle"
+          transition-show="slide-down"
+          transition-hide="slide-up"
+        >
+          <q-card class="bg-grey-3 text-black">
+            <q-bar>
+              <q-icon name="help_outline" />
+              <div>Help</div>
+              <q-space />
+              <q-btn dense flat icon="window" @click="dialoghelpMaximizedToggle = false" v-show="dialoghelpMaximizedToggle">
+                <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+              </q-btn>
+              <q-btn dense flat icon="crop_square" @click="dialoghelpMaximizedToggle = true" v-show="!dialoghelpMaximizedToggle">
+                <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+              </q-btn>
+              <q-btn dense flat icon="close" v-close-popup>
+                <q-tooltip>Close</q-tooltip>
+              </q-btn>
+            </q-bar>
+
+            <q-card-section class="q-pt-none">
+              <div class="text-h6">Select audio sample</div>
+              <ol>
+                <li>Select location.</li>
+                <li>Select time.</li> 
+                <li>Select audio sample</li>
+              </ol>
+            </q-card-section>            
+          </q-card>
+        </q-dialog>
+        <q-btn dense flat icon="window" @click="dialogMaximizedToggle = false" v-show="dialogMaximizedToggle">
+          <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+        </q-btn>
+        <q-btn dense flat icon="crop_square" @click="dialogMaximizedToggle = true" v-show="!dialogMaximizedToggle">
+          <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+        </q-btn>                
         <q-btn dense flat icon="close" v-close-popup>
           <q-tooltip>Close</q-tooltip>
         </q-btn>
@@ -176,6 +215,9 @@ export default defineComponent({
       requestMetaError: false,
       movePrevSelectedSampleRequested: false,
       moveNextSelectedSampleRequested: false,
+      dialoghelpShow: false,
+      dialoghelpMaximizedToggle: false,
+      dialogMaximizedToggle: false,
     };
   },
   computed: {

@@ -1,7 +1,7 @@
 <template>
   <q-page class="fit column content-center">
     <q-toolbar class="bg-grey-3">
-      <q-btn @click="$refs.browser.show = true;" icon="menu_book" title="Browse"  padding="xs"></q-btn>
+      <q-btn @click="$refs.browser.show = true;" icon="menu_book" title="Select audio sample."  padding="xs"></q-btn>
       <audio-browser ref="browser"/>
       <q-space></q-space>
       <div v-if="sample !== undefined">
@@ -15,7 +15,7 @@
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
         <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true" title="Move to next sample on the browsed list of samples"/>
       </div>
-      <div :style="{visibility: sample === undefined ? 'visible' : 'hidden',}">        
+      <div v-if="sample === undefined">        
         <q-badge color="transparent" text-color="grey-14" class="text-h6"><q-icon name="west" left/>Click 'browse'-button on the left.</q-badge> 
         <q-badge color="yellow-14" text-color="accent" class="text-h6" style="margin-left: 30px; margin-right: 30px;"><q-icon name="event_note" left/>No audio sample selected.</q-badge> 
         <q-badge color="transparent" text-color="grey-14" class="text-h6">To get usage information click '?'-button on the right. <q-icon name="east" right/></q-badge>  
@@ -64,6 +64,15 @@
           </q-bar>
 
           <q-card-section class="q-pt-none">
+            <div class="text-h6">Select audio sample</div>
+              <i><b>Current audio sample</b> is printed at the top middle.</i>
+              <ol>
+                <li><b>Click</b> 'browse'-button an the top left.</li>
+                <li><b>Click</b> '?'-button at browse view top right for further help.</li>
+              </ol>            
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
             <div class="text-h6">Move in time</div>
               <i><b>Current position</b> is marked by the vertical line in the middle of the spectrogram.</i>
               <ol>
@@ -102,7 +111,7 @@
     <q-separator/>
     <q-toolbar class="bg-grey-3" :class="sampleVisibility">
       <!--<q-space></q-space>-->
-      <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" :title="audioPlaying?'Pause audio':'Play audio'" padding="xs"></q-btn>
+      <q-btn @click="if(audioPlaying) {onAudioPauseButton();} else {onAudioPlayButton();}" :icon="audioPlaying?'pause':'play_arrow'" :title="audioPlaying?'Pause audio.':'Play audio.'" padding="xs"></q-btn>
       <div v-if="labels !== undefined && labels.length > 0 && newSegmentStart === undefined" class="q-ml-lg row">
         <span>Segment</span> 
         <q-btn icon="fast_rewind" padding="xs" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} onMovePrevLabel();" title="Move to previous label segment within this samples"/>

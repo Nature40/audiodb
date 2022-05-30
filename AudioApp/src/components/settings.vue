@@ -1,10 +1,51 @@
 <template>
-  <q-dialog v-model="show" style="width: 1000px;">
+  <q-dialog v-model="show" style="width: 1000px;" :maximized="dialogMaximizedToggle">
       <q-card style="width: 1000px;">
         <q-bar>
           <q-icon name="tune"/>
           <div>Settings</div>
           <q-space />
+          <q-btn @click="dialoghelpShow = true;" icon="help_outline" dense flat style="margin-left: 10px;" title="Get help."></q-btn>
+          <q-dialog
+            v-model="dialoghelpShow"
+            :maximized="dialoghelpMaximizedToggle"
+            transition-show="slide-down"
+            transition-hide="slide-up"
+          >
+            <q-card class="bg-grey-3 text-black">
+              <q-bar>
+                <q-icon name="help_outline" />
+                <div>Help</div>
+                <q-space />
+                <q-btn dense flat icon="window" @click="dialoghelpMaximizedToggle = false" v-show="dialoghelpMaximizedToggle">
+                  <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+                </q-btn>
+                <q-btn dense flat icon="crop_square" @click="dialoghelpMaximizedToggle = true" v-show="!dialoghelpMaximizedToggle">
+                  <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+                </q-btn>
+                <q-btn dense flat icon="close" v-close-popup>
+                  <q-tooltip>Close</q-tooltip>
+                </q-btn>
+              </q-bar>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Change settings</div>                
+                <ol>
+                  <li>Change individual settings</li>
+                  <li>To apply the changes, Click 'apply'-button.</li> 
+                  <li>To discard changes, click 'close'-button or press 'Esc'-key or click outside of the settings-box.</li>
+                  <li>To revert to default value of an individual settings, click the reset-button at that setting.</li>
+                  <li>Changes are applied at the current session only. Page refresh discards all changes in settings.</li>
+                </ol>
+              </q-card-section>            
+            </q-card>
+          </q-dialog>
+          <q-btn dense flat icon="window" @click="dialogMaximizedToggle = false" v-show="dialogMaximizedToggle">
+            <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+          </q-btn>
+          <q-btn dense flat icon="crop_square" @click="dialogMaximizedToggle = true" v-show="!dialogMaximizedToggle">
+            <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+          </q-btn>          
           <q-btn dense flat icon="close" v-close-popup>
             <q-tooltip>Close</q-tooltip>
           </q-btn>
@@ -200,7 +241,10 @@ export default defineComponent({
       user_player_static_lines_frequency: '',
       user_player_fft_cutoff_range: {min: 1000, max: 5000},
       user_player_fft_cutoff_range_min: 0,
-      user_player_fft_cutoff_range_max: 192000,      
+      user_player_fft_cutoff_range_max: 192000,
+      dialoghelpShow: false,
+      dialoghelpMaximizedToggle: false,
+      dialogMaximizedToggle: false,            
     };
   },
   computed: {

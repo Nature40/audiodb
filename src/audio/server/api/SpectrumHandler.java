@@ -11,6 +11,7 @@ import audio.GeneralSample;
 import audio.processing.SampleProcessor;
 import audio.server.Renderer;
 import jakarta.servlet.http.HttpServletResponse;
+import util.Timer;
 import util.Web;
 import util.image.ImageRGBA;
 import util.image.Lut;
@@ -83,7 +84,9 @@ public class SpectrumHandler {
 		}
 		
 		//Logger.info("start " + startSample + "  end " + endSample);
+		Timer.start("load audio");
 		sampleProcessor.loadData(0, startSample, endSample);
+		Logger.info(Timer.stop("load audio"));
 		short[] fullShorts = sampleProcessor.data;
 		/*Logger.info(fullShorts.length + "  " + window);
 		for (int i = 0; i < fullShorts.length; i++) {
@@ -111,6 +114,7 @@ public class SpectrumHandler {
 			isMaxWidth = true;
 		}
 
+		Timer.start("render image");
 		if(shrink_factor > 1) {
 			Logger.info("render3Shrink");
 			//image = render3Shrink(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, shrink_factor);
@@ -137,8 +141,11 @@ public class SpectrumHandler {
 			//image = render3width(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, renderWidth);
 			image = render3width(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, renderWidth);
 		}
+		Logger.info(Timer.stop("render image"));
 
+		Timer.start("send image");
 		image.writePngCompressed(response.getOutputStream());
+		Logger.info(Timer.stop("send image"));
 	}
 
 	private ImageRGBA render2(short[] fullShorts, int n, int step, int cols, int cutoff_upper, float threshold) {

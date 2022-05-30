@@ -97,13 +97,14 @@
 
           <q-space />
 
-          <q-btn @click="onMovePrevSamples" icon="arrow_left" padding="xs" :loading="loading"></q-btn>
+          <q-btn @click="onMovePrevSamples" icon="arrow_left" padding="xs" :loading="loading" title="Move backward in time."></q-btn>
           <span>{{(start_sample / this.sample.sample_rate).toFixed(3)}} - {{( (end_sample + 1) / this.sample.sample_rate).toFixed(3)}}</span>
-          <q-btn @click="onMoveNextSamples" icon="arrow_right" padding="xs" :loading="loading"></q-btn>
+          <q-btn @click="onMoveNextSamples" icon="arrow_right" padding="xs" :loading="loading" title="Move forward in time."></q-btn>
           <q-checkbox
             v-model="hideLabels"
             label="Hide labels"
             color="red"
+            title="If checked, don't show marked intervals of existing labels on the spectrogram to better view the spectrogram details."
           />
           <q-btn icon="architecture" round padding="xs" style="margin-left: 20px" title="Change spectrogram overlap ratio.">
             <q-menu @hide="onOverlapMenuHide">
