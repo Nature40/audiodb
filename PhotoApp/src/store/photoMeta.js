@@ -2,7 +2,7 @@ export default {
   namespaced: true,
 
   state: () => ({
-    data: [],
+    data: undefined,
     loading: false,
     error: undefined,
     date: undefined,
@@ -23,7 +23,7 @@ export default {
     setData(state, data) {
       state.loading = false;
       state.data = data;
-      state.date = new Date(Date.parse(state.data.date + 'Z'));
+      state.date = data === undefined ? undefined : new Date(Date.parse(data.date + 'Z'));
     },
 
     setError(state, error) {
@@ -35,7 +35,7 @@ export default {
   actions: {
     async refresh({rootState, commit, rootGetters}) {
       commit('setLoading')
-      commit('setData', []);
+      commit('setData', undefined);
       if(rootState.photo.photo !== undefined) {
         var params = {};
         params.detections = true;

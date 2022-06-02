@@ -166,6 +166,7 @@ export default {
     /*hideIncorrectBoxes: true,*/
     show_box_mode: 'no_incorrect',
     locationTextPrev: '---',
+    detectionsOfPhoto: undefined,
   }),  
 
   computed: {
@@ -256,10 +257,9 @@ export default {
       }
     },
     detections() {
-      if(this.photoMeta === undefined || this.photoMeta.data === undefined || this.photoMeta.data.detections === undefined) {
-        return [];
+      if(this.photoMeta === undefined || this.photoMeta.data === undefined) {
+        return undefined;
       }
-      //if(this.hideIncorrectBoxes) {
       if(this.show_box_mode === 'no_incorrect') {
         return this.photoMeta.data.detections.filter(detection => {
           let classifications = detection.classifications;
@@ -342,20 +342,22 @@ export default {
           ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
           ctx.lineWidth = 3;
           ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-          this.detections.forEach((detection, index) => {
-            if(detection.bbox !== undefined) {
-              //console.log(detection.bbox);
-              let xmin = detection.bbox[0] * width;
-              let ymin = detection.bbox[1] * height;
-              let boxwidth = detection.bbox[2] * width;
-              let boxheight = detection.bbox[3] * height;
-              if(this.userBox !== undefined || index !== this.selectedDetectionIndex) {
-              ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+          if(this.detections !== undefined) {
+            this.detections.forEach((detection, index) => {
+              if(detection.bbox !== undefined) {
+                //console.log(detection.bbox);
+                let xmin = detection.bbox[0] * width;
+                let ymin = detection.bbox[1] * height;
+                let boxwidth = detection.bbox[2] * width;
+                let boxheight = detection.bbox[3] * height;
+                if(this.userBox !== undefined || index !== this.selectedDetectionIndex) {
+                ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
+                }
+                //ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
               }
-              //ctx.strokeRect(xmin, ymin, boxwidth, boxheight);
-            }
-          });
-          if(this.userBox === undefined && this.selectedDetectionIndex !== undefined) {
+            });
+          }
+          if(this.userBox === undefined && this.selectedDetection !== undefined) {
             let detection = this.selectedDetection;
             if(detection.bbox !== undefined) {
               //console.log(detection.bbox);
@@ -446,9 +448,9 @@ export default {
           this.userBox = undefined;
           if(this.hasNextDetection) {
             this.moveNextDetection();
-          } else if(this.hasNext){
+          }/* else if(this.hasNext){
             this.move(+1);
-          }
+          }*/
         } finally {
           this.photoMetaRefresh();
         }
@@ -521,13 +523,45 @@ export default {
   },
   
   watch: {
-    detections() {
-      if(this.detections !== undefined && this.detections.length > 0) {
-        this.selectedDetectionIndex = 0;
-      } else {
-        this.selectedDetectionIndex = undefined;
+    /*detections() {
+      console.log('detections');
+      console.log(this.detections);
+      if(this.detectionsOfPhoto !== this.photo) {
+        console.log('detections new');
+        console.log(this.detections);
+        this.detectionsOfPhoto = this.photo;
+        if(this.detections !== undefined && this.detections.length > 0) {
+          console.log('detections set 0');
+          this.selectedDetectionIndex = 0;
+        } else {
+          this.selectedDetectionIndex = undefined;
+        }
       }
       this.redrawImageOverlay();
+    },*/
+    detections() {
+      this.$nextTick(() => {
+        if(this.detections !== undefined) {
+          console.log('detections');
+          console.log(this.detections);
+          console.log(this.detectionsOfPhoto);
+          console.log(this.photo);
+          if(this.detectionsOfPhoto === this.photo) {
+            if(this.selectedDetectionIndex === undefined) {
+              this.selectedDetectionIndex = 0;
+            } 
+            if(this.detections.length === 0) {
+              this.selectedDetectionIndex = undefined;
+            } else if(this.selectedDetectionIndex >= this.detections.length) {
+              this.selectedDetectionIndex = 0;
+            }
+          } else {
+            this.detectionsOfPhoto = this.photo;
+            this.selectedDetectionIndex = this.detections.length === 0 ? undefined : 0;
+          }
+        }
+        this.redrawImageOverlay();
+      });
     },
     selectedDetection() {
       this.userBox = undefined;
@@ -550,6 +584,7 @@ export default {
       this.redrawImageOverlay();
     },
     photo() {
+      //this.selectedDetectionIndex = undefined;
       this.redrawImageOverlay();
     },
     photoMeta() {
