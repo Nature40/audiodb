@@ -57,7 +57,18 @@
                   <li><b>Move</b> mouse cursor left or right by holding left mouse button.</li>
                   <li><b>Release</b> left mouse button to start loading moved spectrogram.</li>
                 </ol>
-              </q-card-section>              
+              </q-card-section>
+              
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Zoom in/out</div>
+                <i>Low overlap, e.g. 0%, leads to a small low detail spectrogram.
+                <br>High overlap, e.g. 90%, leads to a large high detail spectrogram.</i>
+                <ol>
+                  <li><b>Click</b> 'overlap'-button on the top right.</li>
+                  <li><b>Move</b> slider for low/high FFT window overlap.</li> 
+                  <li><b>Click</b> outside of the box to apply changes.</li>
+                </ol>
+              </q-card-section>                 
             </q-card>
           </q-dialog>          
           <q-btn dense flat icon="close" v-close-popup>

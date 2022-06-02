@@ -37,7 +37,43 @@
                   <li>To revert to default value of an individual settings, click the reset-button at that setting.</li>
                   <li>Changes are applied at the current session only. Page refresh discards all changes in settings.</li>
                 </ol>
-              </q-card-section>            
+              </q-card-section>
+              
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Sampling window (spectrogram)</div>                
+                <i>Window size of fast Fourier transform (FFT).</i>
+              </q-card-section>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Intensity range of interest (spectrogram)</div>
+                <i>Minimum and maximum of frequency intensity.</i>
+                <br>Intensity values lower than minimum are mapped to black.
+                <br>Intensity values higher than maximum are mapped to white.
+              </q-card-section>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Frequency range of interest (spectrogram)</div>
+                <i>Minimum and maximum of frequencies included in spectrogram.</i>
+              </q-card-section>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Time contraction factor (spectrogram)</div>
+                <i>Spectrograms of long audio can be shrinked.</i>
+                <br>Value of 1 is the regular spectrogram.
+                <br>For e.g. value of 20, in one pixel column 20 pixels of regular spectrogram are combined.
+              </q-card-section>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Frequency orientation lines (spectrogram)</div>
+                <i>Draw lines at specified frequencies on the spectrogram for orientation.</i>
+              </q-card-section>
+
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Time expansion factor (audio playback)</div>
+                <i>Slowdown audio playback.</i>
+                <br>Value of 1 is actual playback speed.
+                <br>Value of e.g. 10 may be suitable for ultrasonic bat recordings.
+              </q-card-section>              
             </q-card>
           </q-dialog>
           <q-btn dense flat icon="window" @click="dialogMaximizedToggle = false" v-show="dialogMaximizedToggle">
@@ -53,7 +89,7 @@
 
         <q-card-section>
           <q-badge color="grey-6">
-            Sampling window 
+            Sampling window (spectrogram)
             <q-btn
               dense
               color="blue-10"
@@ -81,7 +117,7 @@
         <q-separator/>
         <q-card-section>
           <q-badge color="grey-6">
-            Intensity range of interest
+            Intensity range of interest (spectrogram)
             <q-btn
               dense
               color="blue-10"
@@ -109,7 +145,7 @@
         <q-separator/>
         <q-card-section>
           <q-badge color="grey-6">
-            Frequency range of interest (kHz)
+            Frequency range of interest kHz (spectrogram)
             <q-btn
               dense
               color="blue-10"
@@ -137,7 +173,7 @@
         <q-separator/>
         <q-card-section>
           <q-badge color="grey-6">
-            Spectrogram time contraction factor 
+            Time contraction factor (spectrogram) 
             <q-btn
               dense
               color="blue-10"
@@ -161,10 +197,27 @@
             snap
           />
         </q-card-section>
+         <q-separator/>
+        <q-card-section>
+          <q-badge color="grey-6">
+            Frequency orientation lines (spectrogram)
+            <q-btn
+              dense
+              color="blue-10"
+              size="xs"
+              icon-right="undo"
+              :label="default_player_static_lines_frequency === undefined ? '-' : default_player_static_lines_frequency.join(', ')"
+              title="reset to default"
+              @click="user_player_static_lines_frequency = default_player_static_lines_frequency"
+              style="margin-left: 10px;"
+            />
+          </q-badge>
+          <q-input square outlined v-model="user_player_static_lines_frequency" label="Comma separated list of frequencies in Hz." error-message="Error in input: One or multiple comma separated numbers are needed, or empty input." :error="!valid_lines_frequency"/>
+        </q-card-section>
         <q-separator/>
         <q-card-section>
           <q-badge color="grey-6">
-            Player time expansion factor 
+            Time expansion factor (audio playback)
             <q-btn
               dense
               color="blue-10"
@@ -188,24 +241,7 @@
             markers
             snap
           />
-        </q-card-section>                        
-        <q-separator/>
-        <q-card-section>
-          <q-badge color="grey-6">
-            Player Frequency orientation lines.
-            <q-btn
-              dense
-              color="blue-10"
-              size="xs"
-              icon-right="undo"
-              :label="default_player_static_lines_frequency === undefined ? '-' : default_player_static_lines_frequency.join(', ')"
-              title="reset to default"
-              @click="user_player_static_lines_frequency = default_player_static_lines_frequency"
-              style="margin-left: 10px;"
-            />
-          </q-badge>
-          <q-input square outlined v-model="user_player_static_lines_frequency" label="Comma separated list of frequencies in Hz." error-message="Error in input: One or multiple comma separated numbers are needed, or empty input." :error="!valid_lines_frequency"/>
-        </q-card-section>
+        </q-card-section>          
 
         <q-separator />
 

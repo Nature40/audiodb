@@ -30,13 +30,28 @@
             </q-bar>
 
             <q-card-section class="q-pt-none">
+              <div class="text-h6">Browse audio samples</div>
+              <i>The collection of audio samples is filtered by location and by time.</i>
+              <br><i>The table lists all audio samples of the current subset.</i>
+              <br><i>On large subsets click the prev-page/next-page-buttons to view all audio samples.</i>
+              <br><i>It is recommended to select both, one location and one time, to get small subsets in the table.</i>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+              <div class="text-h6">Location</div>
+              <i>Select one location from the list or none for all locations.</i>
+            </q-card-section>
+            
+            <q-card-section class="q-pt-none">
+              <div class="text-h6">Time</div>
+              <i>Select one date from the list or none for all dates.</i>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
               <div class="text-h6">Select audio sample</div>
-              <ol>
-                <li>Select location.</li>
-                <li>Select time.</li> 
-                <li>Select audio sample</li>
-              </ol>
-            </q-card-section>            
+              <i>Click on a table row to view that audio sample in the audio viewer.</i>
+              <br><i>In audio viewer, there are prev-sample/next-sample-buttons which refer to the position in this current subset table.</i>
+            </q-card-section>
           </q-card>
         </q-dialog>
         <q-btn dense flat icon="window" @click="dialogMaximizedToggle = false" v-show="dialogMaximizedToggle">

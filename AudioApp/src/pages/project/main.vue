@@ -66,6 +66,7 @@
           <q-card-section class="q-pt-none">
             <div class="text-h6">Select audio sample</div>
               <i><b>Current audio sample</b> is printed at the top middle.</i>
+              <br><i>If needed, download audio file by click on download-button at top right.</i>
               <ol>
                 <li><b>Click</b> 'browse'-button an the top left.</li>
                 <li><b>Click</b> '?'-button at browse view top right for further help.</li>
@@ -75,28 +76,53 @@
           <q-card-section class="q-pt-none">
             <div class="text-h6">Move in time</div>
               <i><b>Current position</b> is marked by the vertical line in the middle of the spectrogram.</i>
+              <br><br>
+              <p>By spectrogram:</p>
               <ol>
                 <li><b>Place</b> mouse cursor at spectrogram.</li>
                 <li><b>Press and hold</b> left mouse button.</li>
                 <li><b>Move</b> mouse cursor left or right by holding left mouse button.</li>
                 <li><b>Release</b> left mouse button.</li>
-              </ol>            
+              </ol>
+              
+              <p>By time slider:</p>
+              <ol>
+                <li><b>Click</b> on the time slider scale to move to that position.</li>
+                <li>Or <b>Press and hold</b> left mouse button on the time slider scale and move mouse to move in time.</li>
+              </ol>
+
+              <p>By label segment:</p>
+              <ol>
+              <li><b>Click</b> previous- or next-button on the select control on the top left to move to a label segment.</li>
+              <li>Or choose a segment by click on the segment control on the top left.</li>
+              </ol>             
           </q-card-section>
 
-           <q-card-section class="q-pt-none">
+          <q-card-section class="q-pt-none">
             <div class="text-h6">Labeling</div>
-              <ol>
-                <li><b>Place</b> time position to label start by moving in time.</li>
-                <li><b>Click</b> '+'-button at the top right to mark label start.</li>
-                <li><b>Move</b> time position to label end by moving in time.</li>
-                <li><b>Click</b> 'set end'-button at the top right to mark label end.</li>
-                <li><b>Select</b> label names at the top middle.</li>
-                <li><b>Click</b> 'save new segment'-button at the top right to write new label to database.</li>
-              </ol>            
+            <ol>
+              <li><b>Place</b> time position to label start by moving in time.</li>
+              <li><b>Click</b> '+'-button at the top right to mark label start.</li>
+              <li><b>Move</b> time position to label end by moving in time.</li>
+              <li><b>Click</b> 'set end'-button at the top right to mark label end.</li>
+              <li><b>Select</b> label names at the top middle.</li>
+              <li><b>Click</b> 'save new segment'-button at the top right to write new label to database.</li>
+            </ol>            
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Verifying labels</div>
+            <i>Machine generated labels can be verified by experts.</i>
+            <ol>
+              <li><b>Select</b> a label segment.</li>
+              <li><b>Click</b> on the correct generated labels at the top middle.</li>
+              <li><b>Select</b> additional label names from the select control if correct labels are not generated.</li>
+              <li><b>Click</b> 'save'-button to write new label to database.</li>
+            </ol>            
           </q-card-section>
           
           <q-card-section class="q-pt-none">
-            <div class="text-h6">-> Detail view</div>
+            <div class="text-h6">Detail view</div>
             <ol>
               <li><b>Place</b> mouse cursor on spectrogram at desired time position.</li>
               <li><b>Click</b> right mouse button to open detail view.</li>
@@ -104,6 +130,26 @@
               <li>(At detail view click 'x'-button on the top right to come back to main view.)</li>
               <li>(Or press 'Esc'-key to come back to main view.)</li>
             </ol>
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Playing audio</div>
+            <p><i>Note: In Mozilla Firefox web browser sound output works unreliably. You may switch to Google Chrome.</i></p>
+            <p><i>Change playback speed at settings.</i></p>
+            <ol>
+              <li>Move in time to desired start position.</li>
+              <li><b>Click</b> 'play'-button on top left to start audio.</li>
+              <li><b>Click</b> 'pause'-button on top left to stop audio.</li>
+            </ol>
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Settings</div>
+              <i><b>Current audio sample</b> is printed at the top middle.</i>
+              <ol>
+                <li><b>Click</b> 'settings'-button an the top right.</li>
+                <li><b>Click</b> '?'-button at settings view top right for further help.</li>
+              </ol>            
           </q-card-section>
         </q-card>
       </q-dialog>      
