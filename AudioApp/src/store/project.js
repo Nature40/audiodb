@@ -29,6 +29,9 @@ state: {
   default_player_time_expansion_factor: undefined,
   player_static_lines_frequency: [4000, 12000],
   default_player_static_lines_frequency: undefined,
+
+  detail_fft_window_overlap_percent: 0.75,
+  default_detail_fft_window_overlap_percent: 0.75,  
 },
 getters: {
   isLoading: state => {
@@ -59,8 +62,8 @@ mutations: {
     state.default_player_fft_window_step_factor = state.player_fft_window_step_factor;
     //state.player_fft_step = state.player_fft_window / 4;
     state.player_fft_step = state.player_fft_window * state.player_fft_window_step_factor;
-    var half = state.player_fft_window / 2;
-    state.player_fft_cutoff = half > 800 ? 800 : half;
+    //var half = state.player_fft_window / 2;
+    //state.player_fft_cutoff = half > 800 ? 800 : half;
     state.player_fft_intensity_max = project.player_fft_intensity_max;
     state.default_player_fft_intensity_max = state.player_fft_intensity_max;
     state.player_spectrum_shrink_Factor = 1;
@@ -73,6 +76,9 @@ mutations: {
     state.default_player_fft_cutoff_lower_frequency = state.player_fft_cutoff_lower_frequency;
     state.player_fft_cutoff_upper_frequency = project.player_fft_cutoff_upper_frequency;
     state.default_player_fft_cutoff_upper_frequency = state.player_fft_cutoff_upper_frequency;
+
+    state.detail_fft_window_overlap_percent = project.detail_fft_window_overlap_percent;
+    state.default_detail_fft_window_overlap_percent = state.detail_fft_window_overlap_percent;
   },
   setError(state, error) {
     state.loading = false;
@@ -106,6 +112,10 @@ mutations: {
     }
     if(settings.player_static_lines_frequency !== undefined) {
       state.player_static_lines_frequency = settings.player_static_lines_frequency.length === 0 ? undefined : settings.player_static_lines_frequency;    
+    }
+
+    if(settings.detail_fft_window_overlap_percent !== undefined) {
+      state.detail_fft_window_overlap_percent = settings.detail_fft_window_overlap_percent;    
     }
   },
 },

@@ -117,6 +117,10 @@ public class ProjectHandler {
 			sampleManager.tlSampleManagerConnector.get().forEachLocation(location -> json.value(location));
 			json.endArray();
 		}
+		
+		json.key("detail_fft_window_overlap_percent");
+		json.value(config.detail_fft_window_overlap_percent);
+		
 		if(fSamplesTableCount) {
 			int samples_table_count = sampleManager.tlSampleManagerConnector.get().getTableSize();
 			json.key("samples_table_count");

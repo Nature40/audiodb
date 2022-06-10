@@ -239,11 +239,12 @@ export default defineComponent({
     ...mapState({
       player_fft_cutoff_lower_frequency: state => state.project.player_fft_cutoff_lower_frequency,
       player_fft_cutoff_upper_frequency: state => state.project.player_fft_cutoff_upper_frequency,    
-      //player_fft_step: state => state.project.player_fft_step,
       player_fft_window: state => state.project.player_fft_window,      
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
-      player_static_lines_frequency: state => state.project.player_static_lines_frequency,     
+      player_static_lines_frequency: state => state.project.player_static_lines_frequency,    
+      
+      detail_fft_window_overlap_percent: state => state.project.detail_fft_window_overlap_percent, 
     }),
     player_fft_cutoff_lower() {
       let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sample.sample_rate);
@@ -585,6 +586,13 @@ export default defineComponent({
     },
     hideLabels() {
       this.repaint();
+    },
+    detail_fft_window_overlap_percent: {
+      immediate: true,
+      handler() {
+        this.userWindowOverlapPercent = this.detail_fft_window_overlap_percent;
+        this.onOverlapMenuHide();
+      },
     },
   },
   async mounted() {

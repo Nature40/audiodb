@@ -28,6 +28,9 @@ public final class AudioProjectConfig {
 	public final float[] player_static_lines_frequency;
 	public final double player_fft_cutoff_lower_frequency;
 	public final double player_fft_cutoff_upper_frequency;
+	
+	public final double detail_fft_window_overlap_percent;
+	
 	public final int audio_cache_max_files;
 
 	public static class Builder {
@@ -47,6 +50,9 @@ public final class AudioProjectConfig {
 		public float[] player_static_lines_frequency = null;
 		public double player_fft_cutoff_lower_frequency = 0;
 		public double player_fft_cutoff_upper_frequency = 192000;
+		
+		public double detail_fft_window_overlap_percent = 75d;
+		
 		public int audio_cache_max_files = 20;
 
 		public Builder() {}
@@ -66,7 +72,10 @@ public final class AudioProjectConfig {
 			player_time_expansion_factor = yamlMap.optInt("player_time_expansion_factor", player_time_expansion_factor);
 			yamlMap.optFunList("player_static_lines_frequency", yamlList -> player_static_lines_frequency = yamlList.asFloatArray());
 			player_fft_cutoff_lower_frequency = yamlMap.optDouble("player_fft_cutoff_lower_frequency", player_fft_cutoff_lower_frequency);
-			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);			
+			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);
+			
+			detail_fft_window_overlap_percent = yamlMap.optDouble("detail_fft_window_overlap_percent", detail_fft_window_overlap_percent);
+			
 			audio_cache_max_files = yamlMap.optInt("audio_cache_max_files", audio_cache_max_files);
 		}
 	}
@@ -88,6 +97,9 @@ public final class AudioProjectConfig {
 		player_static_lines_frequency = builder.player_static_lines_frequency;
 		player_fft_cutoff_lower_frequency = builder.player_fft_cutoff_lower_frequency;
 		player_fft_cutoff_upper_frequency = builder.player_fft_cutoff_upper_frequency;
+		
+		detail_fft_window_overlap_percent = builder.detail_fft_window_overlap_percent;
+		
 		audio_cache_max_files = builder.audio_cache_max_files;
 		Logger.info(this);
 	}
@@ -104,6 +116,8 @@ public final class AudioProjectConfig {
 				+ ", player_static_lines_frequency=" + Arrays.toString(player_static_lines_frequency)
 				+ ", player_fft_cutoff_lower_frequency=" + player_fft_cutoff_lower_frequency
 				+ ", player_fft_cutoff_upper_frequency=" + player_fft_cutoff_upper_frequency
-				+ ", audio_cache_max_files=" + audio_cache_max_files + "]";
+				+ ", detail_fft_window_overlap_percent=" + detail_fft_window_overlap_percent + ", audio_cache_max_files="
+				+ audio_cache_max_files + "]";
 	}
+
 }
