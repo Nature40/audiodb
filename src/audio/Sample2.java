@@ -4,21 +4,17 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 
 import org.tinylog.Logger;
 
 import net.jpountz.xxhash.StreamingXXHash64;
-import net.jpountz.xxhash.XXHashFactory;
+import util.HashUtil;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Sample2 implements GeneralSample {
-	
-	private static final long XXH64_SEED = 0xe951bd6bc02a275fl;
-	private static final XXHashFactory XXH64_FACTORY = XXHashFactory.fastestInstance();
 
 	public final String id;
 	public final String project;
@@ -182,19 +178,8 @@ public class Sample2 implements GeneralSample {
 				}
 			}
 			Logger.info(samplePath);		
-			try(RandomAccessFile raf = new RandomAccessFile(file, "r")) {				
-				StreamingXXHash64 xx = XXH64_FACTORY.newStreamingHash64(XXH64_SEED);
-				final int BUF_SIZE = 1024*1024;
-				byte[] buf = new byte[BUF_SIZE];
-				int readCount = raf.read(buf, 0, BUF_SIZE);
-				while(readCount >= 0) {
-					if(readCount > 0) {
-						xx.update(buf, 0, readCount);
-					}
-					readCount = raf.read(buf, 0, BUF_SIZE);
-				}
-				long hash = xx.getValue();
-				xxh64 = Long.toHexString(hash);
+			try {
+				xxh64 = HashUtil.getFileHashString(file);
 				map.put("XXH64", xxh64);
 				YamlUtil.writeSafeYamlMap(metaPath, map);
 			} catch (Exception e) {

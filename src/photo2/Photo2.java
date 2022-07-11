@@ -1,11 +1,15 @@
 package photo2;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.tinylog.Logger;
+
 import photo2.api.PhotoMeta;
+import util.HashUtil;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
@@ -64,5 +68,37 @@ public class Photo2 {
 	public String toString() {
 		return "Photo2 [id=" + id + ", metaPath=" + metaPath + ", imagePath=" + imagePath + ", location=" + location
 				+ ", date=" + date + ", last_modified=" + last_modified + ", locked=" + locked + "]";
+	}
+
+	public String getFileHash(boolean createIfMissing) {
+		YamlMap meta = getMeta();
+		Map<String, Object> map = meta.getInternalMap();
+		String xxh64 = meta.optString("XXH64");
+		if(xxh64 == null && createIfMissing) {
+			File file = imagePath.toFile();
+			if(meta.contains("file_size")) {
+				long metaFileSize = meta.getLong("file_size");
+				long fileSize = file.length();
+				if(metaFileSize != fileSize) {
+					throw new RuntimeException("unexpected file size " + fileSize + "  in  " + imagePath.toString());
+				}
+			} else {
+				try {
+					long fileSize = file.length();
+					map.put("file_size", fileSize); // write later
+				} catch(Exception e) {
+					Logger.warn(e);
+				}
+			}
+			Logger.info(imagePath);		
+			try {
+				xxh64 = HashUtil.getFileHashString(file);
+				map.put("XXH64", xxh64);
+				YamlUtil.writeSafeYamlMap(metaPath, map);
+			} catch (Exception e) {
+				Logger.warn(e);
+			}
+		}
+		return xxh64;
 	}
 }

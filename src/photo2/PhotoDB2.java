@@ -3,6 +3,7 @@ package photo2;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -31,7 +32,7 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class PhotoDB2 {
-	
+
 
 	private final Broker broker;
 	public final PhotoConfig config;
@@ -70,15 +71,15 @@ public class PhotoDB2 {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
-		
+
 		readDefinitions();
-		
+
 		refresh();		
 
 		this.reviewListManager = new ReviewListManager(this);
 		reviewListManager.init();
 	}
-	
+
 	public synchronized void refresh() {
 		Timer.start("scanRemoved");
 		try {
@@ -176,6 +177,8 @@ public class PhotoDB2 {
 					Logger.warn("unknown entity: " + path);
 				}
 			}
+		} catch(NoSuchFileException e) {
+			Logger.warn("missing path: " + root);
 		} catch(Exception e) {
 			Logger.warn("error in " + root + "   " + e);
 		}
@@ -200,7 +203,16 @@ public class PhotoDB2 {
 					if(location == null) {
 						location = "missing";
 					}
-					LocalDateTime date = yamlMap.optLocalDateTime("date"); // nullable
+					LocalDateTime date = null;
+					try {
+						date = yamlMap.optLocalDateTime("date"); // nullable
+					} catch (Exception e) {
+						Logger.warn(e.getMessage());
+					}
+					/*LocalDateTime date = null;
+					if(yamlMap.contains("date") && !yamlMap.getString("date").equals("unknown")) { // fix for misplaced 'unknown' entries
+						date = yamlMap.getLocalDateTime("date");
+					}*/
 
 					PhotoMeta photoMeta = new PhotoMeta(yamlMap);
 					boolean locked = photoMeta.isClassifiedAsPerson();
@@ -274,6 +286,12 @@ public class PhotoDB2 {
 		}
 	}
 
+	/**
+	 * 
+	 * @param project
+	 * @param location nullable
+	 * @param consumer
+	 */
 	public void foreachId(String project, String location, Consumer<String> consumer) {
 		try {
 			PreparedStatement stmt;
@@ -295,7 +313,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void foreachIdSortDate(String project, String location, Consumer<String> consumer) {
 		try {
 			PreparedStatement stmt;
@@ -317,7 +335,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@FunctionalInterface
 	public interface ReviewListSetConsumer {
 		void accept(String id, String name);
@@ -327,7 +345,7 @@ public class PhotoDB2 {
 	public interface ReviewListConsumer {
 		void accept(String id, String set, String name);
 	}
-	
+
 	public void foreachReviewListSetByProject(String project, ReviewListSetConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
@@ -362,7 +380,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void foreachReviewListBySet(String set, ReviewListConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
@@ -417,7 +435,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public class Interrupter {
 		public volatile boolean interrupted = false;
 	}
@@ -435,7 +453,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void foreachIdNotLocked(Consumer<String> consumer, Interrupter interrupter) {
 		try {
 			if(interrupter.interrupted) {
@@ -562,7 +580,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private volatile Interrupter interrupterUpdateThumbs;
 
 	public synchronized void updateThumbs() {
@@ -659,7 +677,7 @@ public class PhotoDB2 {
 	public SqlConnector getSqlConnector() {
 		return tlsqlconnector.get();		
 	}
-	
+
 	public void deleteReviewList(String reviewListId) {
 		SqlConnector sqlConnector = getSqlConnector();
 		try {
@@ -678,7 +696,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void deleteReviewListSet(String setId) {
 		SqlConnector sqlConnector = getSqlConnector();
 		try {

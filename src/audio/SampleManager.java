@@ -2,6 +2,7 @@ package audio;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -78,6 +79,8 @@ public class SampleManager {
 					Logger.warn("unknown entity: " + sub_path);
 				}
 			}
+		} catch(NoSuchFileException e) {
+			Logger.warn("missing  " + traversing_path);
 		} catch(Exception e) {
 			Logger.warn("error in " + traversing_path + "   " + e);
 		}

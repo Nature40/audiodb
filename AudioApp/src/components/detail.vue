@@ -590,6 +590,7 @@ export default defineComponent({
     detail_fft_window_overlap_percent: {
       immediate: true,
       handler() {
+        this.userWindowOverlapPercentChanged = true;
         this.userWindowOverlapPercent = this.detail_fft_window_overlap_percent;
         this.onOverlapMenuHide();
       },
