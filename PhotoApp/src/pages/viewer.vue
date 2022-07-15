@@ -9,7 +9,7 @@
 <q-page v-if="photo !== undefined" class="column wrap  items-center ">
     <div class="row items-center" style="padding-top: 5px; padding-bottom: 5px;">
       <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
-      <span class="time-text"><span v-if="locationText !== undefined">{{locationText}}</span><span v-else>{{locationTextPrev}}</span> | {{dateText}}</span>
+      <span class="time-text" :class="{ 'expert-classified': isExpertClassified }"><span v-if="locationText !== undefined">{{locationText}}</span><span v-else>{{locationTextPrev}}</span> | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
       <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong', 'darken', 'darken strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
       <!--<q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>-->
@@ -97,6 +97,8 @@
       />
       <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification" />
       <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn></span>
+      <span style="padding-left: 200px;"></span>
+      <q-btn style="color: red;" icon="remove_done" title="Set image as empty. (no animals visible)" @click="onSubmitNoAnimals">no animals</q-btn>
     </div>
     <div v-if="userBox === undefined && selectedDetection !== undefined">
       <table class="blueTable">
@@ -277,6 +279,26 @@ export default {
         return [];
       }
     },
+    isExpertClassified() {
+      if(this.photoMeta === undefined || this.photoMeta.data === undefined) {
+        return false;
+      }
+      let hasExpertClassification = this.photoMeta.data.detections.some(detection => {
+        let classifications = detection.classifications;
+        if(!classifications) {
+            return false;
+        }
+        console.log(JSON.stringify(classifications));
+        let hasExpert = classifications.some(classification => {
+          if(!classification.classificator) {
+            return false;
+          }
+          return classification.classificator === 'Expert';
+        });
+        return hasExpert;
+      });
+      return hasExpertClassification;
+    },
     selectedDetection() {
       if(this.detections === undefined || this.selectedDetectionIndex === undefined || this.selectedDetectionIndex >= this.detections.length || this.selectedDetectionIndex < 0) {
         return undefined;
@@ -431,7 +453,7 @@ export default {
     },
     async onSubmitClassification() {
       if(this.photo !== undefined && ((this.classificationSelectMode === 'list' && this.selectedClassification !== undefined) || (this.classificationSelectMode === 'custom' && this.customClassificationText !== undefined && this.customClassificationText !== null && this.customClassificationText !== ''))) {
-        var action = {action: "set_classification"};
+        var action = {action: 'set_classification'};
         if(this.classificationSelectMode === 'list') {
           action.classification = this.selectedClassification.name;
         } else if(this.classificationSelectMode === 'custom') {
@@ -444,6 +466,25 @@ export default {
         }
         var content = {actions: [action]}; 
         try {
+          var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
+          this.userBox = undefined;
+          if(this.hasNextDetection) {
+            this.moveNextDetection();
+          }/* else if(this.hasNext){
+            this.move(+1);
+          }*/
+        } finally {
+          this.photoMetaRefresh();
+        }
+      }
+    },
+    async onSubmitNoAnimals() {
+      if(this.photo !== undefined) {
+        try {
+          var action = {action: 'set_classification'};
+          action.classification = 'Empty box';
+          action.bbox = [0, 0, 1, 1];
+          var content = {actions: [action]};
           var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
           this.userBox = undefined;
           if(this.hasNextDetection) {
@@ -660,6 +701,10 @@ table.blueTable tfoot .links a{
   color: #FFFFFF;
   padding: 2px 8px;
   border-radius: 5px;
+}
+
+.expert-classified {
+  color: #7AC124;;
 }
 
 </style>
