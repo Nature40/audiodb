@@ -13,6 +13,10 @@ public class Detection {
 		this.classifications = classifications;
 	}
 	
+	public Detection() {
+		this(null);
+	}
+	
 	public Detection(float[] bbox) {
 		this(bbox, new Vec<YamlMap>());
 	}

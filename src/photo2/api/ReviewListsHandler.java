@@ -80,6 +80,36 @@ public class ReviewListsHandler {
 
 	private AtomicInteger reviewListIdPrefixCounter = new AtomicInteger();
 
+	private String getCategoryName(String groupBy, String classification, String location) {
+		switch(groupBy) {
+		case "classification":
+			return classification;
+		case "location":
+			return location;
+		case "classification_location":
+			return classification + '_' + location;
+		case "location_classification":
+			return location + '_' + classification;
+		default:
+			throw new RuntimeException("unknown group by");
+		}		
+	}
+
+	private String getListName(String groupBy, String classification, String location) {
+		switch(groupBy) {
+		case "classification":
+			return classification;
+		case "location":
+			return location;
+		case "classification_location":
+			return classification + " (location: " + location + ")";
+		case "location_classification":
+			return location + " (classification: " + classification + ")";
+		default:
+			throw new RuntimeException("unknown group by");
+		}		
+	}
+
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
 
 
@@ -97,12 +127,13 @@ public class ReviewListsHandler {
 			switch(actionName) {
 			case "create_review_list": {
 				String setName_ = jsonAction.optString("set_name", null);
-				String filterClassificator = jsonAction.getString("prefilter_classificator");
-				float filterConf = jsonAction.getFloat("prefilter_threshold");
-				String classClassificator = jsonAction.getString("classification_classificator");
-				float classConf = jsonAction.getFloat("classification_threshold");
+				String filterClassificator = jsonAction.optString("prefilter_classificator", null);
+				float filterConf = jsonAction.optFloat("prefilter_threshold");
+				String classClassificator = jsonAction.optString("classification_classificator", null);
+				float classConf = jsonAction.optFloat("classification_threshold");
 				boolean sortedByRanking = jsonAction.optBoolean("sorted_by_ranking", false);
-				boolean categorizeClassificationLocation = jsonAction.optBoolean("categorize_classification_location", false);
+				boolean omitExpertClassified = jsonAction.optBoolean("omit_expert_classified", false);
+				String groupBy = jsonAction.optString("group_by", null);
 				Logger.info("create_review_list");
 				HashMap<String, Integer> occurringListCategry = new HashMap<String, Integer>();				
 				//String username = account.username;
@@ -138,14 +169,18 @@ public class ReviewListsHandler {
 						PhotoMeta photoMeta = new PhotoMeta(photo.getMeta());
 						Vec<Detection> detections = photoMeta.getDetections();
 						Map<String, CollectorEntry> collectorMap = new HashMap<String, CollectorEntry>();
-						detections.forEach(detection -> {
-							collectClassifications(photo, detection, collectorMap, filterClassificator, filterConf, classClassificator, classConf);					
-						});
+						if(detections.isEmpty()) {
+							collectClassifications(photo, new Detection(null), collectorMap, filterClassificator, filterConf, classClassificator, classConf, omitExpertClassified);
+						} else {
+							detections.forEach(detection -> {
+								collectClassifications(photo, detection, collectorMap, filterClassificator, filterConf, classClassificator, classConf, omitExpertClassified);					
+							});
+						}
 						for(CollectorEntry collectorEntry : collectorMap.values()) {
 							try {
-								String listCategory = categorizeClassificationLocation ? collectorEntry.classification + '_' + location : collectorEntry.classification;
+								String listCategory = getCategoryName(groupBy, collectorEntry.classification, location);
 								String reviewListId = setId + "__" + listCategory;
-								String reviewListName = categorizeClassificationLocation ? collectorEntry.classification + " (loc: " + location + ")" : collectorEntry.classification;
+								String reviewListName = getListName(groupBy, collectorEntry.classification, location);
 								float ranking = collectorEntry.ranking;
 								Integer pos = occurringListCategry.get(listCategory);
 								if(pos == null) {
@@ -268,42 +303,68 @@ public class ReviewListsHandler {
 		}
 	}
 
-	private static void collectClassifications(Photo2 photo, Detection detection, Map<String, CollectorEntry> collectorMap, String filterClassificator, float filterConf, String classClassificator, float classConf) {
+	private static void collectClassifications(Photo2 photo, Detection detection, Map<String, CollectorEntry> collectorMap, String filterClassificator, float filterConf, String classClassificator, float classConf, boolean omitExpertClassified) {
+		Logger.info(photo.id);
 		Vec<YamlMap> classifications = detection.classifications;
-		if(classifications.isEmpty()) {
+		/*if(classifications.isEmpty()) {
 			return;
+		}*/
+		if(omitExpertClassified) {
+			if(classifications.some(classificationEntry -> {
+				String classificator = classificationEntry.optString("classificator");
+				return "Expert".equals(classificator);
+			})) {
+				return;
+			}
 		}
-		YamlMap megaDetectorClassification = classifications.findLast(classificationEntry -> {
-			String classificator = classificationEntry.optString("classificator");
-			return filterClassificator.equals(classificator);
-		});
-		if(megaDetectorClassification == null) {
-			return;
+		if(filterClassificator != null) {
+			Logger.info("filter");
+			YamlMap prefilterClassification = classifications.findLast(classificationEntry -> {
+				String classificator = classificationEntry.optString("classificator");
+				return filterClassificator.equals(classificator);
+			});
+			if(prefilterClassification == null) {
+				return;
+			}
+			if(Float.isFinite(filterConf)) {
+				float prefilterConf = prefilterClassification.optFloat("conf");
+				if(!Float.isFinite(prefilterConf) || prefilterConf < filterConf) {
+					return;
+				}
+			}
 		}
-		YamlMap netClassification = classifications.findLast(classificationEntry -> {
-			String classificator = classificationEntry.optString("classificator");
-			return classClassificator.equals(classificator);
-		});
-		if(netClassification == null) {
-			return;
-		}
-		float megaDetectorConf = megaDetectorClassification.optFloat("conf");
-		if(!Float.isFinite(megaDetectorConf) || megaDetectorConf < filterConf) {
-			return;
-		}
-		String netClass = netClassification.optString("classification");
-		if(netClass == null) {
-			return;
-		}
-		float netConf = netClassification.optFloat("conf");
-		if(!Float.isFinite(netConf) || netConf < classConf) {
-			return;
-		}
-		float ranking = netConf;
-		CollectorEntry collectorEntry = collectorMap.get(netClass);
-		if(collectorEntry == null || ranking > collectorEntry.ranking) {
-			collectorEntry = new CollectorEntry(photo, netClass, ranking);
-			collectorMap.put(netClass, collectorEntry);
+		Logger.info("filter pass");
+
+		if(classClassificator != null) {		
+			YamlMap netClassification = classifications.findLast(classificationEntry -> {
+				String classificator = classificationEntry.optString("classificator");
+				return classClassificator.equals(classificator);
+			});
+			if(netClassification == null) {
+				return;
+			}
+
+			String netClass = netClassification.optString("classification", "unnamed");
+			float netConf = netClassification.optFloat("conf");
+			if(Float.isFinite(classConf)) {
+				if(!Float.isFinite(netConf) || netConf < classConf) {
+					return;
+				}
+			}
+			float ranking = netConf;
+			CollectorEntry collectorEntry = collectorMap.get(netClass);
+			if(collectorEntry == null || ranking > collectorEntry.ranking) {
+				collectorEntry = new CollectorEntry(photo, netClass, ranking);
+				collectorMap.put(netClass, collectorEntry);
+			}
+		} else {
+			String netClass = "unnamed";
+			float ranking = Float.NaN;
+			CollectorEntry collectorEntry = collectorMap.get(netClass);
+			if(collectorEntry == null || ranking > collectorEntry.ranking) {
+				collectorEntry = new CollectorEntry(photo, netClass, ranking);
+				collectorMap.put(netClass, collectorEntry);
+			}
 		}
 	}
 }

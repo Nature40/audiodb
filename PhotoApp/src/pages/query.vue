@@ -103,6 +103,18 @@ import {mapState, mapGetters, mapActions} from 'vuex'
 
 import manageReviewListSetsDialog from '../components/manage-review-list-sets-dialog'
 
+const entryCompareFn = function(a, b) {
+  const nameA = a.name.toUpperCase();
+  const nameB = b.name.toUpperCase();
+  if (nameA < nameB) {
+    return -1;
+  }
+  if (nameA > nameB) {
+    return 1;
+  }
+  return 0;
+}
+
 export default {
   name: 'query',
 
@@ -139,9 +151,9 @@ export default {
         return [];
       }
       if(this.selectedReviewListSet === undefined) {
-        return this.review_lists_unfiltered;
+        return this.review_lists_unfiltered.slice().sort(entryCompareFn);
       }
-      return this.review_lists_unfiltered.filter(entry => entry.set === this.selectedReviewListSet.id);
+      return this.review_lists_unfiltered.filter(entry => entry.set === this.selectedReviewListSet.id).sort(entryCompareFn);
     },
   },
 

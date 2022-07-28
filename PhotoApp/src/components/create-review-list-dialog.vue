@@ -43,28 +43,35 @@
 
     <q-page-container>
       <q-page padding>
+        <b>Name</b>
         <q-input v-model="set_name" label="Review list set name" placeholder="automatic generated set name" stack-label dense bottom-slots>
           <template v-slot:hint>
             (For existing set name, old set will be overwritten.)
-        </template>
+          </template>
         </q-input>
         <hr>
         <b>Prefilter</b>
         <span class="row">
         <q-input outlined v-model="prefilter_classificator" label="Prefilter classificator" stack-label dense />
-        <q-input outlined v-model="prefilter_threshold" label="Prefilter confidence threshold" stack-label dense type="number" />
+        <q-input outlined v-model="prefilter_threshold" label="Prefilter confidence threshold" stack-label dense type="number" v-if="prefilter_classificator"/>
+        <span v-if="prefilter_classificator && !prefilter_threshold">(no threshold)</span>
+        <span v-if="!prefilter_classificator">(not applied)</span>
         </span>
         <hr>
-        <b>Classification</b>
+        <b>Classification filter</b>
         <span class="row">
         <q-input outlined v-model="classification_classificator" label="Classification classificator" stack-label dense />
-        <q-input outlined v-model="classification_threshold" label="Classification confidence threshold" stack-label dense  type="number" />
+        <q-input outlined v-model="classification_threshold" label="Classification confidence threshold" stack-label dense  type="number"  v-if="classification_classificator"/>
+        <span v-if="classification_classificator && !classification_threshold">(no threshold)</span>
+        <span v-if="!classification_classificator">(not applied)</span>
         </span>
         <hr>
-        <b>Options</b>
-        <br><q-checkbox v-model="sorted_by_ranking" label="Sort by ranking" />
-        <br><q-checkbox v-model="categorize_classification_location" label="Catgerize by classification and location" />
+        <b>Groups</b>
+        <br><q-select label="Group into review list sets by" v-model="groupByOption" :options="groupByOptions" outlined stack-label dense options-dense title="The Classification of selected classification filter is used." />        
         <hr>
+        <b>Options</b>
+        <br><q-checkbox v-model="sorted_by_ranking" label="Sort by classification confidence" dense title="The Classification of selected classification filter is used."/>
+        <br><q-checkbox v-model="omit_expert_classified" label="Omit expert classified detections" dense title="All detections that are already labeled by expert are not included in resulting lists." />
       </q-page>
     </q-page-container>
   </q-layout>
@@ -87,9 +94,16 @@ export default {
     classification_classificator: 'EfficientNetB3',
     classification_threshold: 0.8,
     sorted_by_ranking: true,
-    categorize_classification_location: false,
     loading: undefined,
     loadingError: undefined,
+    groupByOptions: [
+      {label: 'classification', value: 'classification'},
+      {label: 'location', value: 'location'},
+      {label: 'classification and location', value: 'classification_location'},
+      {label: 'location and classification', value: 'location_classification'},
+    ],
+    groupByOption: undefined,
+    omit_expert_classified: false,    
   }),  
 
   computed: {
@@ -120,12 +134,23 @@ export default {
       if(this.set_name !== undefined && this.set_name !== null && this.set_name.length > 0) {
         action.set_name = this.set_name;
       }
-      action.prefilter_classificator = this.prefilter_classificator;
-      action.prefilter_threshold = this.prefilter_threshold;
-      action.classification_classificator = this.classification_classificator;
-      action.classification_threshold = this.classification_threshold;
+      if(this.prefilter_classificator) {
+        action.prefilter_classificator = this.prefilter_classificator;
+        if(this.prefilter_threshold) {
+          action.prefilter_threshold = this.prefilter_threshold;
+        }
+      }
+      if(this.classification_classificator) {
+        action.classification_classificator = this.classification_classificator;
+        if(this.classification_threshold) {
+          action.classification_threshold = this.classification_threshold;
+        }
+      }
+      if(this.groupByOption) {
+        action.group_by = this.groupByOption.value;
+      }
       action.sorted_by_ranking = this.sorted_by_ranking;
-      action.categorize_classification_location = this.categorize_classification_location;
+      action.omit_expert_classified = this.omit_expert_classified;
       var content = {actions: [action]}; 
       let params = {project: this.project};     
       try {
@@ -144,6 +169,7 @@ export default {
   },  
 
   async mounted() {
+    this.groupByOption = this.groupByOptions[0];
   },
 }
 </script>
