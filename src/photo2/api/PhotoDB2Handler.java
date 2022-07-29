@@ -122,7 +122,8 @@ public class PhotoDB2Handler extends AbstractHandler {
 				json.endArray();
 				json.key("review_lists");
 				json.array();
-				photodb.foreachReviewListByProject(project, (id, set, name) -> {
+				photodb.foreachReviewListByProject(project, (id, set, name) -> {					
+					int count = photodb.reviewListEntryByIdEntriesCount(id);					
 					json.object();
 					json.key("id");
 					json.value(id);
@@ -132,6 +133,8 @@ public class PhotoDB2Handler extends AbstractHandler {
 					json.value(set);
 					json.key("name");
 					json.value(name);
+					json.key("count");
+					json.value(count);
 					json.endObject();
 				});
 				json.endArray();

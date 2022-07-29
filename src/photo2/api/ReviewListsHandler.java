@@ -112,7 +112,6 @@ public class ReviewListsHandler {
 
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
 
-
 		HttpSession session = request.getSession(false);
 		//Account account = (Account) session.getAttribute("account");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
@@ -149,7 +148,6 @@ public class ReviewListsHandler {
 				}
 				final String setName = setName_;				
 				String setId = project + "__" + setName;
-
 
 				try {
 					PreparedStatement stmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_COLLECTION);

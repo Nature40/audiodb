@@ -99,6 +99,7 @@
       <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn></span>
       <span style="padding-left: 200px;"></span>
       <q-btn style="color: red;" icon="remove_done" title="Set image as empty. (no animals visible)" @click="onSubmitNoAnimals">no animals</q-btn>
+      <q-toggle v-model="review_status" checked-icon="check" color="green" unchecked-icon="clear">*TODO* review status *TODO*</q-toggle>
     </div>
     <div v-if="userBox === undefined && selectedDetection !== undefined">
       <table class="blueTable">
@@ -169,6 +170,7 @@ export default {
     show_box_mode: 'no_incorrect',
     locationTextPrev: '---',
     detectionsOfPhoto: undefined,
+    review_status: undefined,
   }),  
 
   computed: {

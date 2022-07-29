@@ -72,7 +72,7 @@
         </template>
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
-            {{scope.opt.name}}
+            {{scope.opt.name}}  <span style="color: grey; padding-left: 10px;">{{scope.opt.count}}</span>
           </q-item>
         </template>
         <template v-slot:selected-item="scope">

@@ -33,7 +33,6 @@ import util.yaml.YamlUtil;
 
 public class PhotoDB2 {
 
-
 	private final Broker broker;
 	public final PhotoConfig config;
 	public final ThumbManager thumbManager;
@@ -380,6 +379,8 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
+	
+
 
 	public void foreachReviewListBySet(String set, ReviewListConsumer consumer) {
 		try {
@@ -415,6 +416,24 @@ public class PhotoDB2 {
 				String photo = res.getString(2);
 				String name = res.getString(3);
 				consumer.accept(pos, photo, name);				
+			}
+		} catch (SQLException e) {
+			Logger.warn(e);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public int reviewListEntryByIdEntriesCount(String reviewListId) {
+		try {
+			SqlConnector sqlConnector = getSqlConnector();
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.COUNT_REVIEW_LIST_ENTRY_BY_REVIEW_LIST);
+			stmt.setString(1, reviewListId);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				int count = res.getInt(1);
+				return count;
+			} else {
+				throw new RuntimeException("internal error");
 			}
 		} catch (SQLException e) {
 			Logger.warn(e);
