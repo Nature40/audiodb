@@ -9,7 +9,7 @@
   <q-layout view="Lhh lpR fff" container class="bg-white text-black">
     <q-header class="bg-grey-2 text-black">
       <q-toolbar>
-        <q-icon name="create_new_folder" style="font-size: 2em;" class="text-grey-7"/>
+        <q-icon name="playlist_add" style="font-size: 2em;" class="text-grey-7"/>
         <q-toolbar-title>
           Create review list set
         </q-toolbar-title>
@@ -49,7 +49,7 @@
             (For existing set name, old set will be overwritten.)
           </template>
         </q-input>
-        <hr>
+        <hr style="margin-bottom: 20px;">
         <b>Prefilter</b>
         <span class="row">
         <q-input outlined v-model="prefilter_classificator" label="Prefilter classificator" stack-label dense />
@@ -57,7 +57,7 @@
         <span v-if="prefilter_classificator && !prefilter_threshold">(no threshold)</span>
         <span v-if="!prefilter_classificator">(not applied)</span>
         </span>
-        <hr>
+        <hr style="margin-bottom: 20px;">
         <b>Classification filter</b>
         <span class="row">
         <q-input outlined v-model="classification_classificator" label="Classification classificator" stack-label dense />
@@ -65,13 +65,15 @@
         <span v-if="classification_classificator && !classification_threshold">(no threshold)</span>
         <span v-if="!classification_classificator">(not applied)</span>
         </span>
-        <hr>
+        <hr style="margin-bottom: 20px;">
         <b>Groups</b>
-        <br><q-select label="Group into review list sets by" v-model="groupByOption" :options="groupByOptions" outlined stack-label dense options-dense title="The Classification of selected classification filter is used." />        
-        <hr>
+        <br><q-select label="Group into review lists by" v-model="groupByOption" :options="groupByOptions" outlined stack-label dense options-dense title="The Classification of selected classification filter is used." />        
+        <hr style="margin-bottom: 20px;">
         <b>Options</b>
-        <br><q-checkbox v-model="sorted_by_ranking" label="Sort by classification confidence" dense title="The Classification of selected classification filter is used."/>
-        <br><q-checkbox v-model="omit_expert_classified" label="Omit expert classified detections" dense title="All detections that are already labeled by expert are not included in resulting lists." />
+        <!--<br><q-checkbox v-model="omit_expert_classified" label="Omit expert classified detections" dense title="All detections that are already labeled by expert are not included in resulting lists." />-->
+        <br><q-checkbox v-model="omit_expert_classified" label="Unreviewed images only (Omit images with expert classifications.)" dense title="Images with at least one expert classification are not included in resulting lists. With this option, images that are not already reviewed by experts are listed only." />
+
+        <br><q-checkbox v-model="sorted_by_ranking" label="Sort by classification confidence" dense title="The Classification of selected classification filter is used." style="padding-top: 10px;"/>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -130,7 +132,7 @@ export default {
       this.shown = true;
     }, 
     async onSubmitCreateReviewList() {
-      var action = {action: "create_review_list"};
+      var action = {action: "create_review_list_set"};
       if(this.set_name !== undefined && this.set_name !== null && this.set_name.length > 0) {
         action.set_name = this.set_name;
       }

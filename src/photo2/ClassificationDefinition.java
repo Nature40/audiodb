@@ -37,9 +37,7 @@ public class ClassificationDefinition {
 		
 		@Override
 		public void accept(ClassificationDefinition t) {
-			t.toJSON(json);
-			
-		}
-		
+			t.toJSON(json);			
+		}		
 	}
 }

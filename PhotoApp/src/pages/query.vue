@@ -68,7 +68,7 @@
       </q-select>      
       <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" label="Review list" dense options-dense options-selected-class="text-deep-blue" style="min-width: 400px;">
         <template v-slot:prepend>
-          <q-icon name="rule" />
+          <q-icon name="playlist_play" />
         </template>
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">

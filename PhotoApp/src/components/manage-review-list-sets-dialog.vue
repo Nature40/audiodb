@@ -42,12 +42,14 @@
 
     <q-page-container>
       <q-page padding>
-        <q-btn push icon="create_new_folder" @click="$refs.createReviewListDialog.show()">Add new review list set</q-btn>
+        <q-btn push icon="playlist_add" @click="$refs.createReviewListDialog.show()">Add new review list set</q-btn>
         <create-review-list-dialog ref="createReviewListDialog" @closed="$emit('refresh')"/>
-        <hr>
+        <hr style="margin-bottom: 20px;">
+        <b>Review list sets:</b>
+        <br><br>
         <q-table
+          v-if="review_list_sets !== undefined && review_list_sets.length > 0"
           class="my-sticky-header-column-table"
-          title="Review list sets"
           :data="review_list_sets"
           :columns="columns"
           row-key="id"
@@ -58,10 +60,16 @@
           dense
         >
         </q-table>
-        <hr>
-        Actions for selected sets:
+        <div v-else>
+          <b>No review list sets available. You may create new review list sets!</b>
+        </div>
+        
+        <hr style="margin-bottom: 20px;">
+        <b>Actions for selected sets:</b>
         <br>
-        <q-btn push icon="delete_forever" @click="onRemove" :disabled="selectedEmpty">remove</q-btn>
+        <q-btn push icon="refresh" @click="onRefreshSets" :disabled="selectedEmpty" text-color="green" style="margin-top: 20px;">regenerate lists of selected sets</q-btn>
+        <br>
+        <q-btn push icon="delete_forever" @click="onRemove" :disabled="selectedEmpty" text-color="red" style="margin-top: 20px;">remove selected sets</q-btn>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -128,9 +136,9 @@ export default {
     show() {
       this.selected = [];
       this.shown = true;
-    }, 
-    async onRemove() {
-      var action = {action: "remove_review_list"};
+    },
+    async onRefreshSets() {
+      var action = {action: "refresh_review_list_set"};
       action.sets = this.selected.map(set => set.id);
       var content = {actions: [action]}; 
       let params = {project: this.project};     
@@ -148,7 +156,28 @@ export default {
         this.selected = [];
         this.$emit('refresh');
       }
-    },           
+    },     
+    async onRemove() {
+      var action = {action: "remove_review_list_set"};
+      action.sets = this.selected.map(set => set.id);
+      var content = {actions: [action]}; 
+      let params = {project: this.project};     
+      try {
+        this.loading = "Processing";
+        this.loadingError = undefined;
+        var response = await this.apiPOST(['photodb2', 'review_lists'], content, {params});
+        this.loading = undefined;
+        this.loadingError = undefined;
+      } catch {
+        this.loading = undefined;
+        this.loadingError = 'Proccessing error';
+        console.log("error");
+      } finally {
+        this.selected = [];
+        this.$emit('refresh');
+      }
+    },          
+
   },  
 
   async mounted() {

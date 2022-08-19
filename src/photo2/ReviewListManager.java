@@ -50,7 +50,7 @@ public class ReviewListManager {
 			SqlConnector sqlConnector = photodb.getSqlConnector();
 			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_ENTRY).executeUpdate();
 			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST).executeUpdate();
-			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_COLLECTION).executeUpdate();			
+			sqlConnector.getStatement(SQL.DELETE_REVIEW_LIST_COLLECTION).executeUpdate();		
 			photodb.foreachProject(projectConfig -> {
 				refreshProject(projectConfig);
 			});
@@ -78,6 +78,7 @@ public class ReviewListManager {
 					stmt.setString(1, projectConfig.project + "__" + "file");
 					stmt.setString(2, projectConfig.project);
 					stmt.setString(3, "file");
+					stmt.setString(4, "path=" + projectConfig.review_list_path);
 					stmt.executeUpdate();
 				} catch (SQLException e) {
 					throw new RuntimeException(e);

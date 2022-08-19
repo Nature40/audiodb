@@ -337,7 +337,7 @@ public class PhotoDB2 {
 
 	@FunctionalInterface
 	public interface ReviewListSetConsumer {
-		void accept(String id, String name);
+		void accept(String id, String project, String name, String recipe);
 	}
 
 	@FunctionalInterface
@@ -353,8 +353,29 @@ public class PhotoDB2 {
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String id = res.getString(1);
-				String name = res.getString(2);
-				consumer.accept(id, name);				
+				String project2 = res.getString(2);
+				String name = res.getString(3);
+				String recipe = res.getString(4);
+				consumer.accept(id, project2, name, recipe);				
+			}
+		} catch (SQLException e) {
+			Logger.warn(e);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void forReviewListSetById(String id, ReviewListSetConsumer consumer) {
+		try {
+			SqlConnector sqlConnector = getSqlConnector();
+			PreparedStatement stmt = sqlConnector.getStatement(SQL.QUERY_REVIEW_LIST_COLLECTION_BY_ID);
+			stmt.setString(1, id);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				String id2 = res.getString(1);
+				String project = res.getString(2);
+				String name = res.getString(3);
+				String recipe = res.getString(4);
+				consumer.accept(id2, project, name, recipe);				
 			}
 		} catch (SQLException e) {
 			Logger.warn(e);
@@ -569,6 +590,40 @@ public class PhotoDB2 {
 	public Photo2 getPhoto2NotLocked(String id) {
 		try {
 			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_PHOTO);
+			stmt.setString(1, id);
+			ResultSet res = stmt.executeQuery();
+			if(res.next()) {
+				String id2 = res.getString(1);
+				if(!id.equals(id2)) {
+					throw new RuntimeException("internal error: " + id + "   " + id2);
+				}
+				String project = res.getString(2);
+				PhotoProjectConfig projectConfig = config.projectMap.get(project);
+				if(projectConfig == null) {
+					throw new RuntimeException("no config for project");
+				}
+				String meta_rel_path = res.getString(3);
+				String image_rel_path = res.getString(4);
+				String location = res.getString(5);
+				Timestamp timestamp = res.getTimestamp(6);
+				LocalDateTime date = timestamp == null ? null : timestamp.toLocalDateTime();
+				long last_modified = res.getLong(7);
+				boolean locked = res.getBoolean(8);
+				if(locked) {
+					return null;
+				}
+				Logger.info("locked " + locked + "  " + meta_rel_path + "    " + image_rel_path);
+				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_data_path.resolve(image_rel_path), location, date, last_modified, locked);
+			}
+			return null;
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public Photo2 getReviewSetById(String id) {
+		try {
+			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_REVIEW_LIST_COLLECTION_BY_ID);
 			stmt.setString(1, id);
 			ResultSet res = stmt.executeQuery();
 			if(res.next()) {

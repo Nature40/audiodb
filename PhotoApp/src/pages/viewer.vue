@@ -95,11 +95,13 @@
         placeholder="name"
         title="Type custom classification. Use only if classifications from the list of classifications are not suitable." 
       />
-      <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification" />
-      <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn></span>
-      <span style="padding-left: 200px;"></span>
-      <q-btn style="color: red;" icon="remove_done" title="Set image as empty. (no animals visible)" @click="onSubmitNoAnimals">no animals</q-btn>
-      <q-toggle v-model="review_status" checked-icon="check" color="green" unchecked-icon="clear">*TODO* review status *TODO*</q-toggle>
+      <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification(undefined)" text-color="green" />
+      <q-btn icon="close_fullscreen" title="Misaligned box - Too large or small box" round @click="onSubmitClassification('Misaligned box')" text-color="red" />
+      <q-btn icon="minimize" title="Empty box - No animal shown in box" round @click="onSubmitClassification('Empty box')" text-color="red" />
+      <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn>
+      </span>
+      <!--<span style="padding-left: 200px;"></span>
+      <q-btn style="color: red;" icon="remove_done" title="Set image as empty. (no animals visible)" @click="onSubmitNoAnimals">no animals</q-btn>-->
     </div>
     <div v-if="userBox === undefined && selectedDetection !== undefined">
       <table class="blueTable">
@@ -170,7 +172,6 @@ export default {
     show_box_mode: 'no_incorrect',
     locationTextPrev: '---',
     detectionsOfPhoto: undefined,
-    review_status: undefined,
   }),  
 
   computed: {
@@ -453,10 +454,12 @@ export default {
           }
       });
     },
-    async onSubmitClassification() {
-      if(this.photo !== undefined && ((this.classificationSelectMode === 'list' && this.selectedClassification !== undefined) || (this.classificationSelectMode === 'custom' && this.customClassificationText !== undefined && this.customClassificationText !== null && this.customClassificationText !== ''))) {
+    async onSubmitClassification(optionalClassification) {
+      if(this.photo !== undefined && (optionalClassification !== undefined || (this.classificationSelectMode === 'list' && this.selectedClassification !== undefined) || (this.classificationSelectMode === 'custom' && this.customClassificationText !== undefined && this.customClassificationText !== null && this.customClassificationText !== ''))) {
         var action = {action: 'set_classification'};
-        if(this.classificationSelectMode === 'list') {
+        if(optionalClassification !== undefined) {
+          action.classification = optionalClassification;
+        } else if(this.classificationSelectMode === 'list') {
           action.classification = this.selectedClassification.name;
         } else if(this.classificationSelectMode === 'custom') {
           action.classification = this.customClassificationText;
