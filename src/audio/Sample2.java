@@ -188,4 +188,13 @@ public class Sample2 implements GeneralSample {
 		}
 		return xxh64;
 	}
+
+	public double getTemperature() {
+		YamlMap meta = meta();
+		double temperature = meta.optDouble("temperature");
+		if(!Double.isFinite(temperature)) {
+			temperature = MetaCreator.getTemperature(comment());		
+		}
+		return temperature;
+	}
 }

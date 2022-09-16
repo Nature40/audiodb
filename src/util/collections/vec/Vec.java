@@ -159,6 +159,7 @@ public class Vec<T> implements List<T> {
 		return size == 0;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void growForOne() {
 		if (items == DEFAULT_SIZED_EMPTY_ARRAY) {
 			items = (T[]) new Object[10];
@@ -202,6 +203,7 @@ public class Vec<T> implements List<T> {
 		int len = size;
 		int minGrow = len + (len >> 1) + 1;
 		int growSize =  minSize <= minGrow ? minGrow : minSize;
+		@SuppressWarnings("unchecked")
 		T[] newItems = (T[]) new Object[growSize];
 		System.arraycopy(items, 0, newItems, 0, len);
 		items = newItems;
@@ -210,6 +212,7 @@ public class Vec<T> implements List<T> {
 
 	@Override
 	public boolean addAll(Collection<? extends T> c) {
+		@SuppressWarnings("unchecked")
 		T[] a = (T[]) c.toArray();
 		int addLen = a.length;
 		int newSize = size + addLen;
@@ -233,6 +236,7 @@ public class Vec<T> implements List<T> {
 	}
 
 	public void addAllFast(Collection<? extends T> c) {
+		@SuppressWarnings("unchecked")
 		T[] a = (T[]) c.toArray();
 		int addLen = a.length;
 		int newSize = size + addLen;
@@ -255,6 +259,7 @@ public class Vec<T> implements List<T> {
 	}
 
 	public void addNoGrow(Collection<? extends T> c) {
+		@SuppressWarnings("unchecked")
 		T[] a = (T[]) c.toArray();
 		int addLen = a.length;
 		int newSize = size + addLen;
@@ -324,6 +329,7 @@ public class Vec<T> implements List<T> {
 	public <R> R[] mapArray(Function<? super T, R> mapper) {
 		int len = size;
 		T[] data = items;
+		@SuppressWarnings("unchecked")
 		R[] result = (R[]) new Object[len];
 		for (int i = 0; i < len; i++) {
 			result[i] = mapper.apply(data[i]);
@@ -390,12 +396,12 @@ public class Vec<T> implements List<T> {
 		protected int len;
 		protected Predicate<? super E> predicate;
 		
-		public Filtered(E[] a, Predicate<? super E> predicate) {
+		/*public Filtered(E[] a, Predicate<? super E> predicate) {
 			this.a = Objects.requireNonNull(a);
 			this.pos = 0;
 			this.len = a.length;
 			this.predicate = predicate;
-		}
+		}*/
 		
 		public Filtered(E[] a, int index, int size, Predicate<? super E> predicate) {
 			this.a = Objects.requireNonNull(a);
@@ -550,6 +556,7 @@ public class Vec<T> implements List<T> {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object o) {
 		if (o == this) {
@@ -851,6 +858,7 @@ public class Vec<T> implements List<T> {
 		size++;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean addAll(int index, Collection<? extends T> c) {
 		return addAll(index, (T[]) c.toArray());

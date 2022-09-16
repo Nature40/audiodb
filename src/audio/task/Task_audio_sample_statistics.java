@@ -34,7 +34,7 @@ public class Task_audio_sample_statistics extends Task {
 		Path output_path = output_file.toPath();
 
 		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("samples.csv"))) {
-			csv.writeRow("location", "time", "sample", "device", "duration", "time_zone");	
+			csv.writeRow("location", "time", "sample", "device", "duration", "time_zone", "temperature");	
 			ctx.broker.sampleManager().forEach(sample -> {
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");
@@ -47,7 +47,9 @@ public class Task_audio_sample_statistics extends Task {
 				String duration = Double.isFinite(d) ? "" + d : "NA";
 				String utc_ = sample.getUTC();
 				String utc = utc_ == null ? "" : utc_;
-				csv.writeRow(location, timeName, samplePath, device, duration, utc);
+				double temperature_ = sample.getTemperature();
+				String temperature = Double.isFinite(temperature_) ? Double.toString(temperature_) : "";
+				csv.writeRow(location, timeName, samplePath, device, duration, utc, temperature);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);

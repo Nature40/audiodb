@@ -36,8 +36,8 @@
         <span v-if="loading"><q-spinner-gears color="primary" size="2em"/> {{loading}}</span>  
         <span v-if="loadingError"> {{loadingError}}</span>       
         <q-space />
-        <q-btn flat label="Create" class="text-teal" @click="onSubmitCreateReviewList" :disabled="loading" />
-        <q-btn flat label="Cancel" v-close-popup :disabled="loading" />
+        <q-btn flat label="Create" class="text-teal" @click="onSubmitCreateReviewList" :disabled="loading" title="Create your specified image list set. This may take some time."/>
+        <q-btn flat label="Cancel" v-close-popup :disabled="loading" title="Discard creating image list set."/>
       </q-toolbar>
     </q-footer>
 
@@ -52,16 +52,16 @@
         <hr style="margin-bottom: 20px;">
         <b>Prefilter</b>
         <span class="row">
-        <q-input outlined v-model="prefilter_classificator" label="Prefilter classificator" stack-label dense />
-        <q-input outlined v-model="prefilter_threshold" label="Prefilter confidence threshold" stack-label dense type="number" v-if="prefilter_classificator"/>
+        <q-input outlined v-model="prefilter_classificator" label="Prefilter classificator" stack-label dense title="Name of classificator."/>
+        <q-input outlined v-model="prefilter_threshold" label="Prefilter confidence threshold" stack-label dense type="number" v-if="prefilter_classificator" min="0" max="1" step=".1" title="Discard confidence values lower than this number between 0 and 1."/>
         <span v-if="prefilter_classificator && !prefilter_threshold">(no threshold)</span>
         <span v-if="!prefilter_classificator">(not applied)</span>
         </span>
         <hr style="margin-bottom: 20px;">
         <b>Classification filter</b>
         <span class="row">
-        <q-input outlined v-model="classification_classificator" label="Classification classificator" stack-label dense />
-        <q-input outlined v-model="classification_threshold" label="Classification confidence threshold" stack-label dense  type="number"  v-if="classification_classificator"/>
+        <q-input outlined v-model="classification_classificator" label="Classification classificator" stack-label dense title="Name of classificator."/>
+        <q-input outlined v-model="classification_threshold" label="Classification confidence threshold" stack-label dense  type="number"  v-if="classification_classificator" min="0" max="1" step=".1" title="Discard confidence values lower than this number between 0 and 1."/>
         <span v-if="classification_classificator && !classification_threshold">(no threshold)</span>
         <span v-if="!classification_classificator">(not applied)</span>
         </span>

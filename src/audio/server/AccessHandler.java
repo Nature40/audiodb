@@ -65,6 +65,7 @@ public class AccessHandler extends AbstractHandler {
 					jwsList.add(map);
 				}
 				ctx.put("jws", jwsList);
+				ctx.put("jws_section", !jwsList.isEmpty());
 				TemplateUtil.getTemplate("login.mustache", true).execute(ctx, response.getWriter());
 			} else {
 				HttpSession session = request.getSession(true);

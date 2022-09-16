@@ -9,6 +9,7 @@
           icon="menu"
           aria-label="Menu"
           @click="leftDrawerOpen = !leftDrawerOpen"
+          title="Show or hide sidebar with list of PhotoApp pages."
         />
 
         <q-toolbar-title>
@@ -19,7 +20,7 @@
           </span>
         </q-toolbar-title>
 
-        <div>v1.0</div>
+        <div>v1.1</div>
       </q-toolbar>
     </q-header>
 
@@ -29,13 +30,13 @@
       content-class="bg-grey-1"
     >
       <q-scroll-area class="fit">
-      <q-item clickable :active="true" v-ripple to="/query">
+      <q-item clickable :active="true" v-ripple to="/query" title="Specify a subset of images that are then listed on the browser page.">
         <q-item-section avatar><q-icon name="search" /></q-item-section><q-item-section>Query</q-item-section>
       </q-item>
-      <q-item clickable :active="true" v-ripple to="/browser">
+      <q-item clickable :active="true" v-ripple to="/browser" title="Show a gallery of the image subset selected on the query page.">
         <q-item-section avatar><q-icon name="view_module" /></q-item-section><q-item-section>Browser</q-item-section>
       </q-item>
-      <q-item clickable :active="true" v-ripple to="/viewer">
+      <q-item clickable :active="true" v-ripple to="/viewer" title="Show an image selected on the browser page.">
         <q-item-section avatar><q-icon name="crop_original" /></q-item-section><q-item-section>Viewer</q-item-section>
       </q-item>
       </q-scroll-area>

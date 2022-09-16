@@ -99,17 +99,21 @@ public class MetaCreator {
 			}
 		}
 	}
-
+	
 	private static void addCommentMeta(Riff riff, Map<String, Object> m) {
-		if(riff.comments != null) {
+		addCommentMeta(riff.comments, m);
+	}
+
+	private static void addCommentMeta(String comments, Map<String, Object> m) {
+		if(comments != null) {
 			try {
-				final Matcher datetimeMatcher = DATETIME_PATTERN.matcher(riff.comments);
+				final Matcher datetimeMatcher = DATETIME_PATTERN.matcher(comments);
 				if(datetimeMatcher.matches() && datetimeMatcher.groupCount() == 1) {
 					String datetimeText = datetimeMatcher.group(1);
 					LocalDateTime localDateTime = LocalDateTime.parse(datetimeText, AUDIO_FORMATTER);
 					long timestamp = AudioTimeUtil.toAudiotime(localDateTime);
 					try {
-						final Matcher offsetMatcher = UTC_OFFSET_PATTERN.matcher(riff.comments);
+						final Matcher offsetMatcher = UTC_OFFSET_PATTERN.matcher(comments);
 						if(offsetMatcher.matches() && offsetMatcher.groupCount() == 1) {
 							String offsetText = offsetMatcher.group(1);
 							if(!offsetText.isEmpty()) {
@@ -130,7 +134,7 @@ public class MetaCreator {
 			}
 
 			try {
-				final Matcher matcher = GAIN_SETTING_PATTERN.matcher(riff.comments);
+				final Matcher matcher = GAIN_SETTING_PATTERN.matcher(comments);
 				if(matcher.matches() && matcher.groupCount() == 1) {
 					String text = matcher.group(1);						
 					m.put("gain_setting", text);
@@ -140,7 +144,7 @@ public class MetaCreator {
 			}
 
 			try {
-				final Matcher matcher = BATTERY_STATE_PATTERN.matcher(riff.comments);
+				final Matcher matcher = BATTERY_STATE_PATTERN.matcher(comments);
 				if(matcher.matches() && matcher.groupCount() == 1) {
 					String text = matcher.group(1);						
 					m.put("battery_state", text);
@@ -148,19 +152,32 @@ public class MetaCreator {
 			} catch(Exception e) {
 				Logger.warn(e);
 			}
-
-			try {
-				final Matcher matcher = TEMPERATURE_PATTERN.matcher(riff.comments);
-				if(matcher.matches() && matcher.groupCount() == 1) {
-					String text = matcher.group(1);
-					double value = Double.parseDouble(text);
-					m.put("temperature", value);
-				}
-			} catch(Exception e) {
-				Logger.warn(e);
+			
+			double temperature = getTemperature(comments);
+			if(Double.isFinite(temperature)) {
+				m.put("temperature", temperature);
 			}
 
-			m.put("Comment", riff.comments);
+			m.put("Comment", comments);
 		}		
-	}	
+	}
+	
+	public static double getTemperature(String comments) {
+		if(comments == null) {
+			return Double.NaN;
+		}
+		try {
+			final Matcher matcher = TEMPERATURE_PATTERN.matcher(comments);
+			if(matcher.matches() && matcher.groupCount() == 1) {
+				String text = matcher.group(1);
+				double value = Double.parseDouble(text);
+				return value;
+			} else {
+				return Double.NaN;
+			}
+		} catch(Exception e) {
+			Logger.warn(e);
+			return Double.NaN;
+		}
+	}
 }

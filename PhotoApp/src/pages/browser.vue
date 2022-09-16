@@ -2,7 +2,7 @@
 <div style="overflow: auto" class="fit">
 
 <q-page class="flex flex-center" v-if="photos.length === 0">
-No photos selected in query.
+No image selected on the query page.
 </q-page>  
 
 <!--<div style="overflow: auto" class="fit" v-if="photos.length > 0">

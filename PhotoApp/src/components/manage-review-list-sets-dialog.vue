@@ -67,9 +67,29 @@
         <hr style="margin-bottom: 20px;">
         <b>Actions for selected sets:</b>
         <br>
-        <q-btn push icon="refresh" @click="onRefreshSets" :disabled="selectedEmpty" text-color="green" style="margin-top: 20px;">regenerate lists of selected sets</q-btn>
+        <q-btn 
+          push 
+          icon="refresh" 
+          @click="onRefreshSets" 
+          :disabled="selectedEmpty" 
+          text-color="green" 
+          style="margin-top: 20px;" 
+          title="Refresh creation of image sets with current images and current meta data."
+        >
+          regenerate lists of selected sets
+        </q-btn>
         <br>
-        <q-btn push icon="delete_forever" @click="onRemove" :disabled="selectedEmpty" text-color="red" style="margin-top: 20px;">remove selected sets</q-btn>
+        <q-btn 
+          push 
+          icon="delete_forever" 
+          @click="onRemove" 
+          :disabled="selectedEmpty" 
+          text-color="red" 
+          style="margin-top: 20px;"
+          title="Delete image sets. Contained images are not deleted."
+        >
+          remove selected sets
+        </q-btn>
       </q-page>
     </q-page-container>
   </q-layout>

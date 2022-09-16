@@ -3,7 +3,7 @@
 <div style="overflow: auto" class="fit">
 
 <q-page class="flex flex-center" v-if="photo === undefined">
-  No photo selected.
+  No image selected on the browser page.
 </q-page>
 
 <q-page v-if="photo !== undefined" class="column wrap  items-center ">
@@ -11,7 +11,7 @@
       <q-btn :disable="!hasPrev" @click="move(-1)" icon="chevron_left" title="Move to previous image." :style="hasPrev ? {} : {color: 'grey'}"></q-btn>
       <span class="time-text" :class="{ 'expert-classified': isExpertClassified }"><span v-if="locationText !== undefined">{{locationText}}</span><span v-else>{{locationTextPrev}}</span> | {{dateText}}</span>
       <q-btn :disable="!hasNext" @click="move(+1)" icon="chevron_right" title="Move to next image." :style="hasNext ? {} : {color: 'grey'}"></q-btn>
-      <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong', 'darken', 'darken strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout/>
+      <q-select v-model="processing" :options="['original', 'lighten', 'lighten strong', 'darken', 'darken strong']" label="Processing" dense options-dense style="width: 200px;" rounded standout title="Change image exposure."/>
       <!--<q-select v-model="scaling" :options="['fast', 'high quality']" label="Scaling" dense options-dense style="width: 200px;" rounded standout/>-->
       <!--<q-checkbox size="xs" v-model="hideIncorrectBoxes" val="xs" label="hide incorrect boxes" />-->
       <q-btn-toggle
@@ -24,13 +24,20 @@
           {label: 'No incorrect', value: 'no_incorrect'},
           {label: 'None', value: 'none'}
         ]"
+        title="Show all boxes or omit invalidated boxes or hide all boxes."
+      />
+      <q-toggle
+        v-model="showCurrentDetectionOnly"
+        :disable="show_box_mode === 'none'"
+        icon="anchor"
+        title="Show current selected detection box only."
       />
       <a :href="imageURL" target="_blank" title="Open current image at new tab to view details."><q-icon size="md" name="image_search" /></a>
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
       <!--<q-img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>-->
-      <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay" @mousedown="onMouseDownImage" @mousemove="onMouseMoveImage" @mouseup="onMouseUpImage" @mouseenter="onMouseEnterImage" @mouseleave="onMouseLeaveImage"/>
+      <canvas style="position: absolute; top: 0px; left: 0px;" ref="image_overlay" @mousedown="onMouseDownImage" @mousemove="onMouseMoveImage" @mouseup="onMouseUpImage" @mouseenter="onMouseEnterImage" @mouseleave="onMouseLeaveImage" @contextmenu="onContextMenuImage" title="Create new Box: Press and hold left mouse-button and move mouse. Discard box: Press right mouse-button."/>
       <q-spinner-gears color="primary" size="4em" v-show="imageLoading" style="position: absolute; top: 0px; right: 0px;"/>
       <span v-show="!imageLoading && imageError" style="color: red;">ERROR loading image.</span>
     </div>
@@ -96,9 +103,10 @@
         title="Type custom classification. Use only if classifications from the list of classifications are not suitable." 
       />
       <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification(undefined)" text-color="green" />
-      <q-btn icon="close_fullscreen" title="Misaligned box - Too large or small box" round @click="onSubmitClassification('Misaligned box')" text-color="red" />
-      <q-btn icon="minimize" title="Empty box - No animal shown in box" round @click="onSubmitClassification('Empty box')" text-color="red" />
-      <span style="color: green;" v-show="userBox !== undefined">Add new box and classification <q-btn @click="userBox = undefined;" style="color: red; height: 40px;">x</q-btn>
+      <q-btn v-show="userBox === undefined" icon="close_fullscreen" title="Store as misaligned box - too large or too small box." round @click="onSubmitClassification('Misaligned box')" text-color="red" />
+      <q-btn v-show="userBox === undefined" icon="minimize" title="Store as empty box - no animal shown in box." round @click="onSubmitClassification('Empty box')" text-color="red" />
+      <span style="color: green;" v-show="userBox !== undefined">
+        (new box and classification) <q-btn @click="userBox = undefined;" style="color: red; height: 40px;" title="Discard new box and classification.">x</q-btn>
       </span>
       <!--<span style="padding-left: 200px;"></span>
       <q-btn style="color: red;" icon="remove_done" title="Set image as empty. (no animals visible)" @click="onSubmitNoAnimals">no animals</q-btn>-->
@@ -172,6 +180,9 @@ export default {
     show_box_mode: 'no_incorrect',
     locationTextPrev: '---',
     detectionsOfPhoto: undefined,
+    lastSelectedDetectionIndexModeAll: undefined,
+    lastSelectedDetectionIndexModeNoIncorrect: undefined,
+    showCurrentDetectionOnly: false,
   }),  
 
   computed: {
@@ -276,7 +287,7 @@ export default {
             return classification !== 'incorrect box' && classification !== 'Empty box' && classification !== 'Misaligned box';
           }          
         });
-      } else if(this.show_box_mode === 'all') {
+      } else if(this.show_box_mode === 'all') {        
         return this.photoMeta.data.detections;
       } else {
         return [];
@@ -367,7 +378,7 @@ export default {
           ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
           ctx.lineWidth = 3;
           ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-          if(this.detections !== undefined) {
+          if(this.detections !== undefined && !this.showCurrentDetectionOnly) {
             this.detections.forEach((detection, index) => {
               if(detection.bbox !== undefined) {
                 //console.log(detection.bbox);
@@ -472,12 +483,17 @@ export default {
         var content = {actions: [action]}; 
         try {
           var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
+          if(this.userBox !== undefined && this.detections !== undefined && this.detections.length > 0) {
+            this.selectedDetectionIndex = this.detections.length - 1; // Move at least near to the new detection, the end of old detections list.
+          }
           this.userBox = undefined;
           if(this.hasNextDetection) {
-            this.moveNextDetection();
-          }/* else if(this.hasNext){
-            this.move(+1);
-          }*/
+            if(this.show_box_mode === 'no_incorrect' && (action.classification === 'Misaligned box' || action.classification === 'Empty box')) {
+              // nothing
+            } else {
+              this.moveNextDetection();
+            }
+          }
         } finally {
           this.photoMetaRefresh();
         }
@@ -530,6 +546,13 @@ export default {
         this.redrawImageOverlay();
       }
       console.log(e);
+    },
+    onContextMenuImage(e) {
+      e.preventDefault();
+      this.userBox = undefined;
+      this.redrawImageOverlay();
+      console.log(e);
+       return false;
     },
     onMouseMoveImage(e) {
       if(e.buttons === 1)  { // left mouse button
@@ -599,7 +622,7 @@ export default {
             if(this.detections.length === 0) {
               this.selectedDetectionIndex = undefined;
             } else if(this.selectedDetectionIndex >= this.detections.length) {
-              this.selectedDetectionIndex = 0;
+              this.selectedDetectionIndex = this.detections.length - 1;
             }
           } else {
             this.detectionsOfPhoto = this.photo;
@@ -623,6 +646,8 @@ export default {
       this.selectedClassification = df;
     },
     imageURL() {
+      this.lastSelectedDetectionIndexModeAll = undefined;
+      this.lastSelectedDetectionIndexModeNoIncorrect = undefined;
       this.imageLoading = true;
       this.redrawImageOverlay();
     },
@@ -640,7 +665,33 @@ export default {
       if(this.locationText !== undefined) {
         this.locationTextPrev = '='.repeat(this.locationText.length);
       }
-    }
+    },
+    show_box_mode(newMode, oldMode) {
+      const currentSelectedDetectionIndex = this.selectedDetectionIndex;
+
+      if(newMode === 'all') {
+        if(this.lastSelectedDetectionIndexModeAll !== undefined) {
+          this.selectedDetectionIndex = this.lastSelectedDetectionIndexModeAll;
+        }
+      } else if(newMode === 'no_incorrect') {
+        if(this.lastSelectedDetectionIndexModeAll !== undefined) {
+          this.selectedDetectionIndex = this.lastSelectedDetectionIndexModeNoIncorrect;
+        }
+      } else {
+        // nothing
+      }
+
+      if(oldMode === 'all') {
+        this.lastSelectedDetectionIndexModeAll = currentSelectedDetectionIndex;
+      } else if(oldMode === 'no_incorrect') {
+        this.lastSelectedDetectionIndexModeNoIncorrect = currentSelectedDetectionIndex;
+      } else {
+        // nothing
+      }      
+    },
+    showCurrentDetectionOnly() {
+      this.redrawImageOverlay();
+    },
   },
 
   async mounted() {

@@ -4,7 +4,20 @@
     <div v-if="projects === undefined">
       loading projects
     </div>
-    <q-select v-else rounded outlined bottom-slots v-model="selectedProject" :options="projects" label="Project" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+    <q-select 
+      v-else 
+      rounded 
+      outlined 
+      bottom-slots 
+      v-model="selectedProject" 
+      :options="projects" 
+      label="Project" 
+      dense 
+      options-dense 
+      options-selected-class="text-deep-blue" 
+      style="min-width: 200px;"
+      title="Select one project of images."
+    >
       <template v-slot:prepend>
         <q-icon name="menu_book" />
       </template>
@@ -34,13 +47,26 @@
           {label: 'Query', value: 'query', icon: 'manage_search'},
           {label: 'Review List', value: 'review_list', icon: 'assignment'},
         ]"
+        title="Select working images by subset query or by image lists."
       />
     </div>
     
     <hr style="min-width: 500px;">
     
     <div class="column items-center" v-if="selectedQueryMode === 'query'">
-      <q-select rounded outlined bottom-slots v-model="selectedLocation" :options="locations" label="Location" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+      <q-select 
+        rounded 
+        outlined 
+        bottom-slots 
+        v-model="selectedLocation" 
+        :options="locations" 
+        label="Location" 
+        dense 
+        options-dense 
+        options-selected-class="text-deep-blue" 
+        style="min-width: 200px;"
+        title="Select one location of images."
+      >
         <template v-slot:prepend>
           <q-icon name="location_on" />
         </template>
@@ -61,12 +87,37 @@
     
     <div class="column items-center" v-if="selectedQueryMode === 'review_list'">
       <div class="row">
-      <q-select rounded outlined bottom-slots v-model="selectedReviewListSet" :options="review_list_sets" option-label="name" label="Review list set" dense options-dense options-selected-class="text-deep-blue" style="min-width: 200px;">
+      <q-select 
+        rounded 
+        outlined 
+        bottom-slots 
+        v-model="selectedReviewListSet" 
+        :options="review_list_sets" 
+        option-label="name" 
+        label="Review list set" 
+        dense 
+        options-dense 
+        options-selected-class="text-deep-blue" 
+        style="min-width: 200px;"
+        title="Select one set of image lists."
+      >
         <template v-slot:prepend>
           <q-icon name="folder" />
         </template>
       </q-select>      
-      <q-select rounded outlined bottom-slots v-model="selectedReviewList" :options="review_lists" label="Review list" dense options-dense options-selected-class="text-deep-blue" style="min-width: 400px;">
+      <q-select 
+        rounded 
+        outlined 
+        bottom-slots 
+        v-model="selectedReviewList" 
+        :options="review_lists" 
+        label="Review list" 
+        dense 
+        options-dense 
+        options-selected-class="text-deep-blue" 
+        style="min-width: 400px;"
+        title="Select one image list."
+      >
         <template v-slot:prepend>
           <q-icon name="playlist_play" />
         </template>
@@ -79,7 +130,7 @@
           {{scope.opt.name}}
         </template>        
         <template v-slot:after>
-          <q-btn push color="grey-7" round icon="edit_note" @click="$refs.manageReviewListSetsDialog.show()" />
+          <q-btn push color="grey-7" round icon="edit_note" @click="$refs.manageReviewListSetsDialog.show()" title="Manage image list sets."/>
           <manage-review-list-sets-dialog ref="manageReviewListSetsDialog" @closed="refreshProjectMeta" @refresh="refreshProjectMeta"/>          
         </template>
       </q-select>
