@@ -58,7 +58,7 @@
 
         <q-item clickable :to="'/projects/' + project + '/task'" active-class="active-item">
           <q-item-section avatar>
-            <q-icon name="create_new_folder" />
+            <q-icon name="rocket_launch" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Task submission</q-item-label>

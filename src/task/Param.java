@@ -9,13 +9,16 @@ import java.lang.annotation.Target;
 
 @Retention(RUNTIME)
 @Target(TYPE)
-@Repeatable(Tag.Tags.class)
-public @interface Tag {
-	String value();
+@Repeatable(Param.Params.class)
+public @interface Param {
+	String name();
+	task.Descriptor.Param.Type type();
+	String preset();
+	String description();
 	
 	@Retention(RUNTIME)
-	@Target(TYPE)
-    @interface Tags {
-		Tag[] value();
-    }
+	@Target(TYPE) 
+	@interface Params {
+		Param[] value();
+	}	
 }

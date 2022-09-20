@@ -10,20 +10,20 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@quasar/extras": "^1.13.3",
+    "@quasar/extras": "^1.15.3",
     "@vue/devtools": "^5.3.4",
     "axios": "^0.26.1",
     "cbor-js": "^0.1.0",
     "core-js": "^3.21.1",
     "js-sha3": "^0.8.0",
-    "quasar": "^2.6.1",
+    "quasar": "^2.8.2",
     "vue": "^3.2.31",
     "vue-router": "^4.0.14",
     "vuex": "^4.0.1"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.17.0",
-    "@quasar/app": "^3.3.3",
+    "@quasar/app-webpack": "^3.6.0",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-vue": "^7.20.0",

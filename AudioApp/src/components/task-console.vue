@@ -100,7 +100,7 @@ export default defineComponent({
         this.name = data.name;
         this.log = data.log;
         this.cancelable = data.cancelable;
-        if(this.show) {
+        if(this.show && this.state !== 'ERROR' && this.state !== 'DONE') {
           setTimeout( () => this.refresh(this.id), 250); 
         }
       }

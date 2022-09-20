@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import task.Ctx;
+import task.Descriptor.Param;
 import task.Task;
 import task.Tasks;
 import util.AudioTimeUtil;
@@ -127,6 +128,25 @@ public class TasksHandler extends AbstractHandler {
 				}
 				json.key("cancelable");
 				json.value(descriptor.cancelable);
+				if(descriptor.params != null) {
+					json.key("params");
+					json.array();
+					for(Param param : descriptor.params) {
+						json.object();
+						json.key("name");
+						json.value(param.name);
+						json.key("type");
+						json.value(param.type);
+						json.key("preset");
+						json.value(param.preset);
+						if(param.description != null) {
+							json.key("description");
+							json.value(param.description);
+						}
+						json.endObject();
+					}
+					json.endArray();
+				}
 				json.endObject();
 			});
 			json.endObject();			
