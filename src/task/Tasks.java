@@ -64,6 +64,16 @@ public class Tasks {
 		this.broker = broker;
 		this.taskMap = new ConcurrentHashMap<String, Task>();
 	}
+	
+	private static final String idCharacters = "0123456789abcdefghijklmnopqrstuvwxyz";
+	private static final int idCharactersLen = idCharacters.length();
+	private static String createID() {
+		String id = "";
+		for (int i = 0; i < 16; i++) {
+			id += idCharacters.charAt((int) (Math.abs(ThreadLocalRandom.current().nextLong()) % idCharactersLen));
+		}
+		return id;
+	}
 
 	public String submit(JSONObject json, Account account) {
 		String taskName = json.optString("task", null);
@@ -78,7 +88,8 @@ public class Tasks {
 		String id = null;
 		Task ret = null;
 		do {
-			id = Long.toHexString(ThreadLocalRandom.current().nextLong());
+			//id = Long.toHexString(ThreadLocalRandom.current().nextLong());
+			id = createID();
 			ret = taskMap.putIfAbsent(id, task);
 		} while(ret != null);
 		try {

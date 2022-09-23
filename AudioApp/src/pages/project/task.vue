@@ -43,9 +43,28 @@
         </table>
         <!--<hr>-->
       </div>
-      <q-btn @click="execute" icon="rocket_launch" style="margin-left: 200px; margin-top: 20px;" rounded>
+      <q-btn @click="execute" icon="rocket_launch" style="margin-left: 200px; margin-top: 20px;" rounded title="Submit currently selected task with current parameters to execution on the server.">
         Submit task
       </q-btn>
+      <div v-if="args.length > 0" style="margin-top: 20px;">
+        <!--<hr>-->
+        <span style="color: #000000d1; font-size: 1.5em;">Parameter description</span>
+        <table style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>Parameter</th> 
+              <th>Description</th> 
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="arg in args" :key="arg.name">
+              <td>{{arg.name}}</td>
+              <td>{{arg.description}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <!--<hr>-->
+      </div>      
     </div>
 
     

@@ -23,7 +23,7 @@
           </q-btn>
         </q-bar>
         <q-separator />
-        <div>
+        <div style="font-size: 0.75em; font-style: italic; color: grey;">
           {{task}}
         </div>
         <div style="font-size: 0.75em;">
@@ -45,6 +45,15 @@
           Message: {{message}}
         </div>
         <hr>
+        <div v-if="results != undefined">
+          <b>Results:</b>
+          <div v-for="(result, i) in results" :key="i">
+            <span v-if="result.type === 'text'">{{result.text}}</span>
+            <span v-else-if="result.type === 'file'"><a :href="$store.getters['api']('tasks' + '/' + id + '/' + 'files' + '/' + i + '/' + result.filename)" target="_blank">{{result.filename}}</a></span>
+            <span v-else>Unknown type: {{result.type}}</span>
+          </div>
+          <hr>
+        </div>
         <div  class="text-grey-6">
         <div v-for="(s, i) in log" :key="i">{{s}}</div>
         </div>
@@ -75,6 +84,7 @@ export default defineComponent({
       runtime: undefined,
       state: undefined,
       message: undefined,
+      results: undefined,
       name: undefined,
       cancelable: false,
       log: undefined,
@@ -97,6 +107,7 @@ export default defineComponent({
         this.runtime = data.runtime;
         this.state = data.state;
         this.message = data.message;
+        this.results = data.results;
         this.name = data.name;
         this.log = data.log;
         this.cancelable = data.cancelable;

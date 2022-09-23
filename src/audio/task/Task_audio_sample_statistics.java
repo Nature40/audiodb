@@ -13,6 +13,7 @@ import task.Descriptor.Param.Type;
 import task.Param;
 import task.Tag;
 import task.Task;
+import task.TaskResult;
 import util.AudioTimeUtil;
 import util.collections.vec.Vec;
 
@@ -35,7 +36,7 @@ public class Task_audio_sample_statistics extends Task {
 			throw new RuntimeException("canceled");
 		}
 
-		String output_folder = "output";
+		String output_folder = "output" + "/" + this.ctx.id;
 		File output_file = new File(output_folder);
 		if(!output_file.mkdirs()) {
 			if(!output_file.exists()) {
@@ -54,7 +55,8 @@ public class Task_audio_sample_statistics extends Task {
 		String filename = this.ctx.getParamString("filename");
 		validateFilenameThrow(filename);
 
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve(filename))) {
+		Path output_target = output_path.resolve(filename);
+		try (CsvWriter csv = CsvWriter.builder().build(output_target)) {
 			Vec<String> cols = new Vec<String>();
 
 			if(col_location) {
@@ -117,12 +119,16 @@ public class Task_audio_sample_statistics extends Task {
 					row.add(temperature);
 				}
 				csv.writeRow(row);
-			});		    
+			});
+			setResult(
+					TaskResult.ofText("CSV-file produced."),
+					TaskResult.ofFile(output_target)
+					);
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
 	}
-	
+
 	public static void validateFilenameThrow(String filename) {
 		if(filename == null) {
 			throw new RuntimeException("filename null");

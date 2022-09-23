@@ -19,7 +19,8 @@ public abstract class Task extends RecursiveAction implements Comparable<Task> {
 	public final LocalDateTime startDateTime = LocalDateTime.now();
 	public long tend = -1;
 	private volatile String message = "";
-	private BoundedLog boundedLog = new BoundedLog(1000);	
+	private BoundedLog boundedLog = new BoundedLog(1000);
+	private TaskResult[] results = null;
 
 	public final void setCtxAndInit(Ctx ctx) throws Exception {
 		this.ctx = ctx;
@@ -109,5 +110,30 @@ public abstract class Task extends RecursiveAction implements Comparable<Task> {
 
 	public boolean isCancelable() {
 		return this.getClass().isAnnotationPresent(Cancelable.class);
+	}
+	
+	public void setResult(TaskResult ...results) {
+		this.results = results;
+	}
+
+	public boolean hasResults() {
+		TaskResult[] r = results;
+		return r != null && r.length > 0;
+	}
+	
+	public void visitResults(TaskResult.Visitor visitor) {
+		visitor.visit(results);
+	}
+
+	public TaskResult getResult(int resultNumber) {
+		TaskResult[] rs = results;
+		if(rs == null || resultNumber < 0 || rs.length <= resultNumber) {
+			throw new RuntimeException("no result with number: " + resultNumber);
+		}
+		TaskResult r = rs[resultNumber];
+		if(r == null) {
+			throw new RuntimeException("no result with number: " + resultNumber);
+		}
+		return r;
 	}
 }

@@ -16,8 +16,9 @@ WHITE='\033[0;97m'
 NC='\033[0m' # No Color
 echo -e ""
 echo -e "${WHITE}--------------------------------------------------------------------------------------------------${NC}"
-echo -e "${RED}!! only proceed if you stopped a running AudioDB instance !!${NC}"
-echo -e "${GREEN}Do you want to download the latest AudioDB release package, backup changed files and performe update?${NC}"
+echo -e "${RED}!! only proceed if you stopped a running AudioDB/PhotoDB instance !!${NC}"
+echo -e "${GREEN}Do you want to download the latest AudioDB/PhotoDB release package, backup changed files and performe update?${NC}"
+echo -e "${WHITE}After update it may be needed to run the ./clear_cache.sh script for AudioDB/PhotoDB to work properly.${NC}"
 echo -e "${WHITE}--------------------------------------------------------------------------------------------------${NC}"
 select yn in "Yes" "No" "Cancel"; do
     case $yn in

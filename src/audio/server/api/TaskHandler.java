@@ -1,7 +1,6 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
 
 import org.eclipse.jetty.server.Request;
 import org.json.JSONObject;
@@ -14,6 +13,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import task.Ctx;
 import task.Task;
+import task.TaskResult;
+import task.TaskResult.File;
+import task.TaskResult.Text;
 import task.Tasks;
 import util.AudioTimeUtil;
 
@@ -21,10 +23,12 @@ public class TaskHandler {
 
 	private final Broker broker;
 	private final Tasks tasks;
+	private final TaskFilesHandler taskFilesHandler;
 
 	public TaskHandler(Broker broker) {
 		this.broker = broker;
 		this.tasks = broker.tasks();
+		this.taskFilesHandler = new TaskFilesHandler(broker);
 	}
 
 	public void handle(Task task, String target, Request request, HttpServletResponse response) throws IOException, ServletException {
@@ -39,8 +43,16 @@ public class TaskHandler {
 				}
 				String name = i < 0 ? target.substring(1) : target.substring(1, i);
 				String next = i < 0 ? "/" : target.substring(i);
-				//taskHanlder.handle(name, next, baseRequest, request, response);
-				throw new RuntimeException("no page");
+				switch(name) {
+				case "files": {
+					taskFilesHandler.handle(task, next, request, response);
+					break;
+				}
+				default: {
+					//taskHanlder.handle(name, next, baseRequest, request, response);
+					throw new RuntimeException("no page");	
+				}
+				}
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -67,7 +79,7 @@ public class TaskHandler {
 			throw new RuntimeException("no call");
 		}
 	}
-	
+
 	private static void taskToJSON(Task task, JSONWriter json) {
 		Ctx ctx = task.geCtx();
 		json.object();
@@ -88,7 +100,33 @@ public class TaskHandler {
 		json.key("identity");
 		json.value(task.geCtx().account == null ? "unknown" : task.geCtx().account.username);		
 		json.key("cancelable");
-		json.value(task.isCancelable());		
+		json.value(task.isCancelable());
+		if(task.hasResults()) {
+			json.key("results");
+			json.array();
+			task.visitResults(new TaskResult.Visitor() {
+				@Override
+				public void text(Text text) {
+					json.object();
+					json.key("type");
+					json.value("text");	
+					json.key("text");
+					json.value(text.text);	
+					json.endObject();
+				}
+				@Override
+				public void file(File file) {
+					json.object();
+					json.key("type");
+					json.value("file");	
+					json.key("filename");
+					json.value(file.filename);	
+					json.endObject();
+
+				}
+			});
+			json.endArray();
+		}		
 		json.key("log");
 		json.array();
 		task.foreachLog(json::value);
