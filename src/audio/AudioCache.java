@@ -84,7 +84,7 @@ public class AudioCache {
 						changed = true;
 						tempFile.deleteOnExit();
 						try {	
-							Logger.info(tempFile);	
+							Logger.info("create overwrite sampling rate " + tempFile);	
 							AudioHandler.createOverwriteSamplingRate(infile, tempFile, (float) overwrite_sampling_rate);
 						} catch (UnsupportedAudioFileException e) {
 							throw new RuntimeException(e);

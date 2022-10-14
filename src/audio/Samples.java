@@ -12,6 +12,7 @@ import org.tinylog.Logger;
 
 import audio.server.Webserver;
 
+@Deprecated
 public class Samples {
 
 	private final Path root_path;

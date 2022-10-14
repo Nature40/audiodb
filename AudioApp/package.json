@@ -10,24 +10,24 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@quasar/extras": "^1.15.3",
+    "@quasar/extras": "^1.15.4",
     "@vue/devtools": "^5.3.4",
-    "axios": "^0.26.1",
+    "axios": "^1.1.2",
     "cbor-js": "^0.1.0",
-    "core-js": "^3.21.1",
+    "core-js": "^3.25.5",
     "js-sha3": "^0.8.0",
-    "quasar": "^2.8.2",
-    "vue": "^3.2.31",
-    "vue-router": "^4.0.14",
+    "quasar": "^2.9.2",
+    "vue": "^3.2.40",
+    "vue-router": "^4.1.5",
     "vuex": "^4.0.1"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.17.0",
-    "@quasar/app-webpack": "^3.6.0",
+    "@babel/eslint-parser": "^7.19.1",
+    "@quasar/app-webpack": "^3.6.1",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-vue": "^7.20.0",
-    "eslint-webpack-plugin": "^2.6.0"
+    "eslint-webpack-plugin": "^2.7.0"
   },
   "browserslist": [
     "last 10 Chrome versions",

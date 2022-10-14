@@ -32,7 +32,7 @@ public class Tasks {
 		for(String taskPackage :  TASK_PACKAGES) {
 			Set<Class<? extends Task>> taskClasses = new Reflections(taskPackage).getSubTypesOf(Task.class);
 			for(Class<? extends Task> taskClass : taskClasses) {
-				Logger.info(taskClass);
+				//Logger.info(taskClass);
 				String name = taskClass.getSimpleName();			
 				if(name.startsWith(TASK_PREFIX)) {
 					name = name.substring(TASK_PREFIX_LEN);

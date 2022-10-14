@@ -58,6 +58,7 @@ import audio.server.api.SamplesHandler;
 import audio.server.api.TasksHandler;
 import audio.server.api.TimeseriesHandler;
 import audio.server.api.WebAuthnHandler;
+import audio.server.api.WorklistsHandler;
 import photo2.api.PhotoDB2Handler;
 
 public class Webserver {
@@ -120,7 +121,7 @@ public class Webserver {
 		Broker broker = new Broker();
 		Config config = broker.config();
 
-		Logger.info("starting server");
+		//Logger.info("starting server");
 
 		Server server = new Server();
 		if(config.enableHttps()) {
@@ -156,6 +157,7 @@ public class Webserver {
 		handlerList.addHandler(createContext("/audio", true, audio()));
 		handlerList.addHandler(createContext("/samples", true, new SamplesHandler(broker)));
 		handlerList.addHandler(createContext("/samples2", true, new Samples2Handler(broker)));
+		handlerList.addHandler(createContext("/worklists", true, new WorklistsHandler(broker)));
 		handlerList.addHandler(createContext("/review_lists", true, new Review_listsHandler(broker)));
 		handlerList.addHandler(createContext("/review_statistics", true, new ReviewStatisticsHandler(broker)));
 		handlerList.addHandler(createContext("/review_statistics_detailed", true, new ReviewStatisticsDetailedHandler(broker)));
@@ -181,8 +183,10 @@ public class Webserver {
 		//sessionHandler.setHandler(createContext("", true, handlerList));
 		//server.setHandler(sessionHandler);
 		server.start();
+		Logger.info("");
+		Logger.info("***   Server started   ***");
 		server.join();
-		Logger.info("server stopped");
+		Logger.info("***   Server stopped   ***");
 	}
 
 	private static ContextHandler createContext(String contextPath, boolean allowNullPathInfo, Handler handler) {

@@ -11,6 +11,7 @@ import util.collections.vec.SyncVec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
+@Deprecated
 public class LabelingList {
 	
 	

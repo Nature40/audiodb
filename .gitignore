@@ -27,11 +27,13 @@
 /.project
 /accounts.yaml
 /config.yaml
+/config.yaml_OLD
 /config_bats.yaml
 /keystore.jks
 /label_definitions.yaml
 /label_definitions.yaml_OLD
-label_definitions.yaml_OLD3
+/label_definitions.yaml_OLD3
+/label_definitions.yaml_OLD4
 /photo_cache.mv.db
 /photo_cache.trace.db
 /photo_class.csv
@@ -64,3 +66,5 @@ review_lists_n1
 /photo_data_insects_meta
 /photo_data_fotofallen_test
 /photo_data_fotofallen_test_meta
+/Motten_FVA_1__221004fva_eval
+/Motten_FVA_1__221004fva_eval_meta

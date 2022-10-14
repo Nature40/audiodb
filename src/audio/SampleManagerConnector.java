@@ -460,7 +460,7 @@ public class SampleManagerConnector {
 
 	public void forEachPaged(SampleRowConsumer consumer, int limit, int offset) {		
 		try {
-			explain(SQL.QUERY_ALL_PAGED);
+			//explain(SQL.QUERY_ALL_PAGED);
 			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_PAGED);
 			stmt.setInt(1, limit);
 			stmt.setInt(2, offset);

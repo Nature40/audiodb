@@ -8,6 +8,7 @@ import audio.review.ReviewedLabel.Reviewed;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
+@Deprecated
 public class ReviewListEntry {
 	
 	public final String sample_id;

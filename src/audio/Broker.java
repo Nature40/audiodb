@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.Yaml;
 import audio.labeling.LabelingListManager;
 import audio.review.ReviewListManager;
 import audio.role.RoleManager;
+import audio.worklist.WorklistStore;
 import photo2.PhotoDB2;
 import task.Tasks;
 import util.yaml.YamlMap;
@@ -49,6 +50,10 @@ public class Broker {
 	private Tasks tasks;
 	private volatile Tasks tasksVolatile;
 	private Object tasksLock = new Object();
+	
+	private WorklistStore worklistStore;
+	private volatile WorklistStore worklistStoreVolatile;
+	private Object worklistStoreLock = new Object();
 
 	public Broker() {
 		//samples(); // preload sample metadata
@@ -259,6 +264,27 @@ public class Broker {
 			r = new Tasks(this);
 			tasksVolatile = r;
 			tasks = r;
+			return r;
+		}
+	}
+	
+	public WorklistStore worklistStore() {		
+		return worklistStore != null ? worklistStore : loadWorklistStore();
+	}
+
+	private WorklistStore loadWorklistStore() {
+		WorklistStore r = worklistStoreVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (worklistStoreLock) {
+			r = worklistStoreVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new WorklistStore(this);
+			worklistStoreVolatile = r;
+			worklistStore = r;
 			return r;
 		}
 	}

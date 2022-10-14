@@ -13,6 +13,7 @@ import audio.Label;
 import audio.Sample;
 import audio.Samples;
 
+@Deprecated
 public class LabelingListManager {
 	private 
 

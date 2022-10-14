@@ -13,10 +13,9 @@ import audio.Label;
 import audio.Sample;
 import audio.Samples;
 
+@Deprecated
 public class ReviewListManager {
-	private 
-
-	ConcurrentSkipListMap<String, ReviewList> reviewListMap = new ConcurrentSkipListMap<>();
+	private ConcurrentSkipListMap<String, ReviewList> reviewListMap = new ConcurrentSkipListMap<>();
 	private final Path root;
 
 	public ReviewListManager(Path root) {

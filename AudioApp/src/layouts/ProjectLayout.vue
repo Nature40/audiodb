@@ -16,6 +16,9 @@
           <span v-if="$route.path === '/projects/' + project + '/main'">
             Audio view
           </span>
+          <span v-if="$route.path === '/projects/' + project + '/list'">
+            Work lists
+          </span>          
           <span v-if="$route.path === '/projects/' + project + '/task'">
             Task submission
           </span>     
@@ -56,6 +59,16 @@
           </q-item-section>
         </q-item>
 
+        <q-item clickable :to="'/projects/' + project + '/list?list=list'" active-class="active-item">
+          <q-item-section avatar>
+            <q-icon name="format_list_numbered" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Work lists</q-item-label>
+            <q-item-label caption>Lists of audio samples</q-item-label>
+          </q-item-section>
+        </q-item>         
+
         <q-item clickable :to="'/projects/' + project + '/task'" active-class="active-item">
           <q-item-section avatar>
             <q-icon name="rocket_launch" />
@@ -74,7 +87,7 @@
             <q-item-label>Task status</q-item-label>
             <q-item-label caption>List status of submitted tasks</q-item-label>
           </q-item-section>
-        </q-item>
+        </q-item>       
       </q-list>
     </q-drawer>
 

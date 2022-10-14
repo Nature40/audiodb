@@ -46,8 +46,8 @@ public class LabelsHandler {
 			if(i == 1) {
 				throw new RuntimeException("no name: "+target);
 			}			
-			String name = i < 0 ? target.substring(1) : target.substring(1, i);
-			String next = i < 0 ? "/" : target.substring(i);
+			//String name = i < 0 ? target.substring(1) : target.substring(1, i);
+			//String next = i < 0 ? "/" : target.substring(i);
 			throw new RuntimeException("no call");
 		}		
 	}

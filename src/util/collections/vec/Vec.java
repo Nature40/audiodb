@@ -86,8 +86,6 @@ public class Vec<T> implements List<T> {
 		return new ReverseIterableVecView<T>(this);
 	}
 
-
-
 	@Override
 	public void forEach(Consumer<? super T> action) {
 		int len = size;
@@ -799,6 +797,57 @@ public class Vec<T> implements List<T> {
 		int len = size;
 		T[] data = items;
 		for(int i  = len - 1; i >= 0; i--) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return e;
+			}
+		}		
+		return null;
+	}
+	
+	public T find(int firstIndex, Predicate<? super T> predicate) {
+		int first = firstIndex >= 0 ? firstIndex : 0;
+		int len = size;
+		T[] data = items;
+		for (int i = first; i < len; i++) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return e;
+			}
+		}		
+		return null;
+	}
+	
+	public T findLast(int lastIndex, Predicate<? super T> predicate) {
+		int last = lastIndex < size ? lastIndex : (size - 1);
+		T[] data = items;
+		for(int i  = last; i >= 0; i--) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return e;
+			}
+		}		
+		return null;
+	}
+	
+	public T find(int firstIndex, int lastIndex, Predicate<? super T> predicate) {
+		int first = firstIndex >= 0 ? firstIndex : 0;
+		int last = lastIndex < size ? lastIndex : (size - 1);
+		T[] data = items;
+		for (int i = first; i <= last; i++) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return e;
+			}
+		}		
+		return null;
+	}
+	
+	public T findLast(int firstIndex, int lastIndex, Predicate<? super T> predicate) {
+		int first = firstIndex >= 0 ? firstIndex : 0;
+		int last = lastIndex < size ? lastIndex : (size - 1);
+		T[] data = items;
+		for(int i  = last; i >= first; i--) {
 			T e = data[i];
 			if(predicate.test(e)) {
 				return e;

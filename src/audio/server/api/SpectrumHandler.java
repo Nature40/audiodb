@@ -120,7 +120,7 @@ public class SpectrumHandler {
 			//image = render3Shrink(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max, shrink_factor);
 			image = render3Shrink(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max, shrink_factor);
 		} else if(renderWidth <= 0) {
-			Logger.info("render3");
+			//Logger.info("render3");
 			//image = render3(fullShorts, window, step, cols, cutoff_upper, threshold, intensity_max);
 			image = render3(fullShorts, window, step, cols, cutoff_lower, cutoff_upper, threshold, intensity_max);
 			//image = render3denoise(fullShorts, window, step, cols, cutoff, threshold, intensity_max);

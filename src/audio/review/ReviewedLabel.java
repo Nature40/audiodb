@@ -9,6 +9,7 @@ import util.JsonUtil;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
+@Deprecated
 public class ReviewedLabel {
 	public static enum Reviewed {
 		no,

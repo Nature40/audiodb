@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 import util.yaml.YamlMap;
 
+@Deprecated
 public class LabelingListEntry {
 	
 	public final String sample_id;

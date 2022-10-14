@@ -11,8 +11,8 @@ import util.collections.vec.SyncVec;
 import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
-public class ReviewList {
-	
+@Deprecated
+public class ReviewList {	
 	
 	private final Path path;
 	private final SyncVec<ReviewListEntry> entries = new SyncVec<ReviewListEntry>();

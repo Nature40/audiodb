@@ -14,6 +14,7 @@ const routes = [
     children: [
       { path: '/projects/:project/', component: () => import('pages/project/index.vue') },
       { path: '/projects/:project/main', component: () => import('pages/project/main.vue') },
+      { path: '/projects/:project/list', component: () => import('pages/project/list.vue') },
       { path: '/projects/:project/task', component: () => import('pages/project/task.vue') },
       { path: '/projects/:project/tasks', component: () => import('pages/project/tasks.vue') },
       {path: ':catchAll(.*)*', component: () => import('pages/error404.vue')},
