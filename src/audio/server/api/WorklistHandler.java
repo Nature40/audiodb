@@ -2,6 +2,7 @@ package audio.server.api;
 
 import java.io.IOException;
 
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONWriter;
 import org.tinylog.Logger;
@@ -65,7 +66,14 @@ public class WorklistHandler {
 	private void handleFirst(String worklistId, Request request, HttpServletResponse response) throws IOException {
 		Worklist worklist = worklistStore.getWorklistByd(worklistId);
 		if(worklist == null) {
-			throw new RuntimeException("worklist not found");
+			response.setStatus(HttpStatus.NOT_FOUND_404);
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("error");
+			json.value("worklist not found");
+			json.endObject();
+			return;
 		}
 		
 		int first = Web.getInt(request, "first", Integer.MIN_VALUE);
@@ -73,7 +81,14 @@ public class WorklistHandler {
 			return true;
 		});
 		if(worklistEntry == null) {
-			throw new RuntimeException("not found");
+			response.setStatus(HttpStatus.NOT_FOUND_404);
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("error");
+			json.value("end of list reached");
+			json.endObject();
+			return;
 		}
 		
 		worklist.getByIndex(0);		
@@ -97,7 +112,14 @@ public class WorklistHandler {
 	private void handleLast(String worklistId, Request request, HttpServletResponse response) throws IOException {
 		Worklist worklist = worklistStore.getWorklistByd(worklistId);
 		if(worklist == null) {
-			throw new RuntimeException("worklist not found");
+			response.setStatus(HttpStatus.NOT_FOUND_404);
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("error");
+			json.value("worklist not found");
+			json.endObject();
+			return;
 		}
 		
 		int last = Web.getInt(request, "last", Integer.MAX_VALUE);
@@ -105,7 +127,14 @@ public class WorklistHandler {
 			return true;
 		});
 		if(worklistEntry == null) {
-			throw new RuntimeException("not found");
+			response.setStatus(HttpStatus.NOT_FOUND_404);
+			response.setContentType("application/json");
+			JSONWriter json = new JSONWriter(response.getWriter());
+			json.object();
+			json.key("error");
+			json.value("beginning of list reached");
+			json.endObject();
+			return;
 		}
 		
 		worklist.getByIndex(0);		

@@ -20,7 +20,7 @@ public class WorklistStore {
 		Vec<WorklistEntry> vec = new Vec<WorklistEntry>();
 
 		broker.sampleManager().forEach(sample -> {
-			WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, 10);
+			WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 10, 20);
 			vec.add(e);
 		});
 

@@ -80,7 +80,7 @@ public class SpectrumHandler {
 		step = Web.getInt(request, "step", step);
 		
 		if(endSample - startSample + 1 < step * (shrink_factor - 1) + window) {
-			throw new RuntimeException("endSample - startSample + 1 < step * (shrink_factor - 1) + window   " + (endSample - startSample + 1) + "   " + (step * (shrink_factor - 1) + window));
+			throw new RuntimeException("endSample - startSample + 1 < step * (shrink_factor - 1) + window     (endSample - startSample + 1) = " + (endSample - startSample + 1) + "   (step * (shrink_factor - 1) + window =  " + (step * (shrink_factor - 1) + window));
 		}
 		
 		//Logger.info("start " + startSample + "  end " + endSample);

@@ -30,7 +30,7 @@ export default store(function (/* { ssrContext } */) {
     getters: {
       api: (state) => (...parts) => {
         var path = parts.join('/');
-        return isDev ? ('http://localhost:8080/' + path) : ('/' + path);
+        return isDev ? ('http://localhost:8080/' + path) : (window.location.origin + '/' + path);   //  window.location.origin as workaround for usage in  new URL(...)
       },
       apiGET: (state, getters) => (parts, config) => {
         var path = parts.join('/');
