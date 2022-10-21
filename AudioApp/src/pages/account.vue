@@ -2,6 +2,16 @@
   <q-page class="flex justify-center" style="color: black;">
     <div>
     Account
+    <div v-if="identityLoading" style="color: blue;">
+      Loading identity...
+    </div>
+      <div v-if="identity === undefined">
+        Identity not loaded.
+        <div v-if="identityError !== undefined" style="color: red;">
+          Error loading identity
+          <q-btn @click="refresh" v-if="!identityLoading">try again</q-btn>
+        </div>
+      </div>
     
       <q-list padding bordered separator v-if="identity">
         <q-item>
@@ -103,13 +113,15 @@ export default defineComponent({
   computed: {
     ...mapState({
       identity: state => state.identity.data,
+      identityLoading: state => state.identity.loading,
+      identityError: state => state.identity.error,
     }),
   },
 
   methods: {
     
     refresh() {
-
+      this.$store.dispatch('identity/refresh'); 
     },
 
     async webauthn_register() {

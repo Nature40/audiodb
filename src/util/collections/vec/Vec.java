@@ -192,6 +192,15 @@ public class Vec<T> implements List<T> {
 		}
 		items[size++] = e;
 	}
+	
+	public void add(IntFunction<T> supplier) {
+		if (items.length == size) {
+			growForOne();
+		}
+		int i = size++;		
+		T e = supplier.apply(i);
+		items[i] = e;
+	}
 
 	public void addNoGrow(T e) {		
 		items[size++] = e;

@@ -59,7 +59,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item clickable :to="'/projects/' + project + '/list?list=list'" active-class="active-item">
+        <q-item clickable :to="'/projects/' + project + '/list?list=all_generator_labels'" active-class="active-item">
           <q-item-section avatar>
             <q-icon name="format_list_numbered" />
           </q-item-section>

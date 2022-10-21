@@ -3,8 +3,15 @@
     <div>
     <b>Select one project:</b>
     <br>
+    <div v-if="projectsLoading" style="color: blue;">
+      Loading projects...
+    </div>
     <div v-if="projects === undefined">
       no projects loaded
+      <div v-if="projectsError !== undefined" style="color: red;">
+      error loading projects
+      <q-btn @click="refresh" v-if="!projectsLoading">try again</q-btn>
+      </div>
     </div>
     <div v-else-if="projects.length === 0">
       no projects found
@@ -32,13 +39,18 @@ export default defineComponent({
   computed: {
     ...mapState({
       projects: state => state.projects.data?.projects,
+      projectsLoading: state => state.projects.loading,
+      projectsError: state => state.projects.error,
     }),
   },
 
   methods: {
     toProjectHash(project) {
       return '/projects/' + project.id + '/main';
-    }
+    },
+    refresh() {
+      this.$store.dispatch('projects/refresh'); 
+    },
   },
   
   watch: {

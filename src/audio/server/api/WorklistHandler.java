@@ -105,6 +105,8 @@ public class WorklistHandler {
 		json.value(worklistEntry.start);
 		json.key("end");
 		json.value(worklistEntry.end);
+		json.key("title");
+		json.value(worklistEntry.title);
 
 		json.endObject();
 	}
@@ -151,6 +153,8 @@ public class WorklistHandler {
 		json.value(worklistEntry.start);
 		json.key("end");
 		json.value(worklistEntry.end);
+		json.key("title");
+		json.value(worklistEntry.title);		
 
 		json.endObject();
 	}

@@ -39,7 +39,7 @@ export default {
         var response = await rootState.api.get('projects');
         commit('setData', response.data);
       } catch(e) {
-        console.log(e);
+        //console.log(e);
         commit('setError', 'error');
       }
     },

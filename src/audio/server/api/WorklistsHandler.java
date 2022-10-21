@@ -62,10 +62,12 @@ public class WorklistsHandler extends AbstractHandler {
 
 		json.key("worklists");
 		json.array();
-		worklistStore.forEachWorklistId(worklistId -> {
+		worklistStore.forEachWorklist((worklistId, worklist) -> {
 			json.object();
 			json.key("id");
 			json.value(worklistId);
+			json.key("count");
+			json.value(worklist.size());
 			json.endObject();
 		});
 		json.endArray();
