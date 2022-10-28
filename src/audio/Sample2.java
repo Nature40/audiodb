@@ -1,6 +1,7 @@
 package audio;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -73,6 +74,7 @@ public class Sample2 implements GeneralSample {
 			samples = m.optLong("Samples", -1);
 			if(samples == -1) {
 				if(MetaCreator.supplementYaml(m.getInternalMap(), samplePath)) {
+					//Logger.info("write meta" + id);
 					YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
 					samples = m.optLong("Samples", -1);
 				} else {
@@ -179,6 +181,7 @@ public class Sample2 implements GeneralSample {
 			try {
 				xxh64 = HashUtil.getFileHashString(file);
 				map.put("XXH64", xxh64);
+				//Logger.info("write meta" + id);
 				YamlUtil.writeSafeYamlMap(metaPath, map);
 			} catch (Exception e) {
 				Logger.warn(e);
@@ -194,5 +197,25 @@ public class Sample2 implements GeneralSample {
 			temperature = MetaCreator.getTemperature(comment());		
 		}
 		return temperature;
+	}
+
+	public String getRawMeta() throws IOException {
+		return YamlUtil.readFileToString(metaPath);		
+	}
+
+	public void normaliseMeta() {
+		//Logger.info("process " + id);
+		boolean metaChanged = false;
+		Vec<Label> ll = getLabels();
+		if(Label.hasLabelDublicates(ll)) {
+			metaChanged  = true;
+			ll = Label.mergeLabelDublicates(ll);
+			this.labels = ll;
+		}
+		if(metaChanged) {
+			YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
+			YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
+			Logger.info("meta written " + metaPath);
+		}
 	}
 }

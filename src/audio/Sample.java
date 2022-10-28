@@ -68,7 +68,8 @@ public class Sample implements GeneralSample {
 	}
 
 	public synchronized void writeToFile() {		
-		YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
+		YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);	
+		//Logger.info("write meta" + id);
 		YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
 	}
 
@@ -129,17 +130,7 @@ public class Sample implements GeneralSample {
 	}
 
 	public synchronized boolean checkLabelDublicates() {
-		int len = labels.size();
-		for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
-			Label label = labels.get(outerIndex);
-			for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
-				Label label2 = labels.get(innerIndex);
-				if(label.start == label2.start && label.end == label2.end) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return Label.hasLabelDublicates(labels);
 	}
 
 	public synchronized void checkAndCorrectLabelDublicates() {

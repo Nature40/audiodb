@@ -60,6 +60,13 @@ public class LabelStore {
 					conn.insertUserLabel(sampleMapId, labelMapId, location, time, start, end, creatorMapId, creationTime);
 				}
 			}
+			try {
+				String rawMeta = sample.getRawMeta();
+				conn.insertMeta(sampleMapId, rawMeta);
+				Logger.info("inserted raw");
+			} catch (Exception e) {
+				Logger.warn(e);
+			}
 		});
 
 		String output_folder = "output";

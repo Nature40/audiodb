@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -12,6 +13,7 @@ import audio.worklist.WorklistStore;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.JsonUtil;
 
 public class WorklistsHandler extends AbstractHandler {
 	private final Broker broker;
@@ -66,6 +68,13 @@ public class WorklistsHandler extends AbstractHandler {
 			json.object();
 			json.key("id");
 			json.value(worklistId);
+			String[] path = worklistId.split("\\.");
+			int pathLen = path.length - 1;
+			if(pathLen > 0) {
+			Logger.info(worklistId + " -> " + Arrays.toString(path));
+			json.key("path");
+			JsonUtil.writeStringArray(json, path, pathLen);
+			}
 			json.key("count");
 			json.value(worklist.size());
 			json.endObject();

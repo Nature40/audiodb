@@ -138,7 +138,23 @@ public class LabelStoreConnector {
 
 		QUERY_CREATOR_BY_ID("SELECT CREATOR FROM ID_CREATOR_MAP WHERE ID = ?"),
 		
-		QUERY_ALL_CREATOR("SELECT ID, CREATOR FROM ID_CREATOR_MAP");
+		QUERY_ALL_CREATOR("SELECT ID, CREATOR FROM ID_CREATOR_MAP"),
+		
+		
+		DROP_TABLE_META_STORE("DROP TABLE IF EXISTS META_STORE"),
+		
+		CREATE_TABLE_META_STORE("CREATE TABLE IF NOT EXISTS META_STORE " +
+				"(" +
+				"SAMPLE INTEGER NOT NULL, " +
+				"META VARCHAR(1048576) NOT NULL " +
+				")"),
+
+		INSERT_META_STORE("INSERT INTO META_STORE " +
+				"(SAMPLE, META) " +
+				"VALUES " +
+				"(?, ?)"),
+		
+		QUERY_META_BY_SAMPLE("SELECT META FROM META_STORE WHERE SAMPLE = ?");
 		
 		public final String sql;
 
@@ -223,6 +239,14 @@ public class LabelStoreConnector {
 						getStatement(SQL.DROP_TABLE_ID_CREATOR_MAP).executeUpdate();
 					}
 				}
+				
+				{
+					ResultSet res = conn.getMetaData().getTables(null, null, "ID_META_STORE", null);
+					if(res.next()) {
+						Logger.info("DROP TABLE META_STORE");
+						getStatement(SQL.DROP_TABLE_META_STORE).executeUpdate();
+					}
+				}
 			}
 			{
 				ResultSet res = conn.getMetaData().getTables(null, null, "GENERATOR_LABEL_STORE", null);
@@ -258,6 +282,12 @@ public class LabelStoreConnector {
 				ResultSet res = conn.getMetaData().getTables(null, null, "ID_CREATOR_MAP", null);
 				if(!res.next()) {
 					getStatement(SQL.CREATE_TABLE_ID_CREATOR_MAP).executeUpdate();
+				}
+			}
+			{
+				ResultSet res = conn.getMetaData().getTables(null, null, "META_STORE", null);
+				if(!res.next()) {
+					getStatement(SQL.CREATE_TABLE_META_STORE).executeUpdate();
 				}
 			}
 			getStatement(SQL.CREATE_IDX_ID_SAMPLE_MAP_SAMPLE).executeUpdate();
@@ -610,6 +640,17 @@ public class LabelStoreConnector {
 				String location = res.getString(2);
 				consumer.accept(id, location);
 			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void insertMeta(int id, String meta) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.INSERT_META_STORE);		
+			stmt.setInt(1, id);		
+			stmt.setString(2, meta);
+			stmt.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

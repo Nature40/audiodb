@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 
 import org.json.JSONObject;
 import org.json.JSONWriter;
-
 import audio.review.ReviewedLabel;
 import util.JsonUtil;
 import util.collections.vec.Vec;
@@ -13,13 +12,49 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class Label {
+
+	public static enum LabelStatus {
+		OPEN,
+		DONE;
+
+		public static LabelStatus parse(String s) {
+			if(s == null) {
+				return null;				
+			}
+			switch(s) {
+			case "open": return OPEN;
+			case "done": return DONE;
+			default: return null;
+			}
+		}
+
+		public String toString() {
+			switch(this) {
+			case OPEN: return "open";
+			case DONE: return "done";
+			default: return null;
+			}
+		}
+
+		public static LabelStatus merge(LabelStatus a, LabelStatus b) {
+			if(a == null && b == null) {
+				return null;
+			}
+			if(a == LabelStatus.DONE && b == LabelStatus.DONE) {
+				return LabelStatus.DONE;
+			}
+			return LabelStatus.OPEN;
+		}
+	}
+
 	public final double start;
 	public final double end;
 	public final String comment;
 	public final Vec<GeneratorLabel> generatorLabels;
 	public Vec<UserLabel> userLabels;
 	public final Vec<ReviewedLabel> reviewedLabels;
-	
+	public LabelStatus labelStatus;
+
 	public static final Comparator<Label> INTERVAL_COMPARATOR = (a,b) -> {
 		int c = Double.compare(a.start, b.start);
 		if(c != 0) {
@@ -27,8 +62,8 @@ public class Label {
 		}
 		return Double.compare(a.end, b.end);
 	};
-	
-	private Label(double start, double end, String comment, Vec<GeneratorLabel> generatorLabels, Vec<UserLabel> userLabels, Vec<ReviewedLabel> reviewedLabels) {
+
+	private Label(double start, double end, String comment, Vec<GeneratorLabel> generatorLabels, Vec<UserLabel> userLabels, Vec<ReviewedLabel> reviewedLabels, LabelStatus labelStatus) {
 		this.start = start;
 		this.end = end;
 		this.comment = comment;
@@ -38,7 +73,7 @@ public class Label {
 	}
 
 	public Label(double start, double end) {
-		this(start, end, "", new Vec<GeneratorLabel>(), new Vec<UserLabel>(), new Vec<ReviewedLabel>());
+		this(start, end, "", new Vec<GeneratorLabel>(), new Vec<UserLabel>(), new Vec<ReviewedLabel>(), null);
 	}
 
 	public static Label ofJSON(JSONObject jsonLabel) {		
@@ -50,7 +85,8 @@ public class Label {
 		Vec<GeneratorLabel> generatorLabels = JsonUtil.optVec(jsonLabel, "generated_labels", GeneratorLabel::ofJSON);
 		Vec<UserLabel> userLabels = JsonUtil.optVec(jsonLabel, "labels", UserLabel::ofJSON);
 		Vec<ReviewedLabel> reviewedLabels = JsonUtil.optVec(jsonLabel, "reviewed_labels", ReviewedLabel::ofJSON);
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels);
+		LabelStatus labelstatus = LabelStatus.parse(jsonLabel.optString("label_status", null));
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus);
 	}
 
 	public void toJSON(JSONWriter json) {
@@ -66,6 +102,10 @@ public class Label {
 		JsonUtil.writeArray(json, "generated_labels", generatorLabels, GeneratorLabel::toJSON);
 		JsonUtil.writeArray(json, "labels", userLabels, UserLabel::toJSON);
 		JsonUtil.writeArray(json, "reviewed_labels", reviewedLabels, ReviewedLabel::toJSON);
+		if(labelStatus != null) {
+			json.key("label_status");
+			json.value(labelStatus.toString());
+		}
 		json.endObject();		
 	}
 
@@ -79,6 +119,9 @@ public class Label {
 		YamlUtil.putList(map, "generated_labels", generatorLabels, GeneratorLabel::toMap);
 		YamlUtil.putList(map, "labels", userLabels, UserLabel::toMap);
 		YamlUtil.putList(map, "reviewed_labels", reviewedLabels, ReviewedLabel::toMap);
+		if(labelStatus != null) {
+			map.put("label_status", labelStatus.toString());
+		}
 		return map;
 	}
 
@@ -91,26 +134,27 @@ public class Label {
 		Vec<GeneratorLabel> generatorLabels = YamlUtil.optVec(yamlMap, "generated_labels", GeneratorLabel::ofYAML);
 		Vec<UserLabel> userLabels = YamlUtil.optVec(yamlMap, "labels", UserLabel::ofYAML);
 		Vec<ReviewedLabel> reviewedLabels = YamlUtil.optVec(yamlMap, "reviewed_labels", ReviewedLabel::ofYAML);
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels);
+		LabelStatus labelstatus = LabelStatus.parse(yamlMap.optString("label_status", null));
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus);
 	}
 
 	public String[] getGeneratorLabelNames() {
 		return generatorLabels.mapArray(String[]::new, GeneratorLabel::name);
 	}
-	
+
 	public String[] getUserLabelNames() {
 		return userLabels.mapArray(String[]::new, UserLabel::name);
 	}
 
 	public Label withCreator(String username, String date) {
 		Vec<UserLabel> ul = this.userLabels.map(userLabel -> userLabel.withCreator(username, date));
-		return new Label(this.start, this.end, this.comment, this.generatorLabels, ul, this.reviewedLabels);
+		return new Label(this.start, this.end, this.comment, this.generatorLabels, ul, this.reviewedLabels, this.labelStatus);
 	}
-	
+
 	public boolean hasComment() {
 		return !comment.isEmpty();
 	}
-	
+
 	public void setReviewedLabel(ReviewedLabel reviewedLabel) {
 		int index = reviewedLabels.findIndexOf(r -> r.name.equals(reviewedLabel.name));
 		if(index < 0) {
@@ -119,7 +163,7 @@ public class Label {
 			reviewedLabels.setFast(index, reviewedLabel);
 		}
 	}
-	
+
 	public boolean isInterval(double label_start, double label_end) {
 		return (start - 0.001d) <= label_start && label_start <= (start + 0.001d) && (end - 0.001d) <= label_end && label_end <= (end + 0.001d);
 	}
@@ -153,16 +197,51 @@ public class Label {
 				reviewedLabels.add(reviewedLabel);
 			}
 		}
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels);
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, LabelStatus.merge(label.labelStatus, label2.labelStatus));
+	}
+
+	public synchronized void setUserLabels(Vec<UserLabel> userLabels) {
+		this.userLabels = userLabels.copy();		
+	}
+
+	public static boolean hasLabelDublicates(Vec<Label> labels) {
+		int len = labels.size();
+		for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
+			Label label = labels.get(outerIndex);
+			for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
+				Label label2 = labels.get(innerIndex);
+				if(label.start == label2.start && label.end == label2.end) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static Vec<Label> mergeLabelDublicates(Vec<Label> labels) {
+		Vec<Label> resultLabels = labels.copy();			
+		int len = resultLabels.size();
+		for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
+			Label label = resultLabels.get(outerIndex);
+			if(label != null) {
+				for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
+					Label label2 = resultLabels.get(innerIndex);
+					if(label2 != null && label.start == label2.start && label.end == label2.end) {
+						Label labelMerge = Label.merge(label, label2);
+						resultLabels.setFast(outerIndex, labelMerge);
+						resultLabels.setFast(innerIndex, null);
+					}
+				}
+			}
+		}
+		resultLabels = resultLabels.filter(label -> label != null);
+		return resultLabels;
 	}
 
 	@Override
 	public String toString() {
 		return "Label [start=" + start + ", end=" + end + ", comment=" + comment + ", generatorLabels="
-				+ generatorLabels + ", userLabels=" + userLabels + ", reviewedLabels=" + reviewedLabels + "]";
-	}
-
-	public synchronized void setUserLabels(Vec<UserLabel> userLabels) {
-		this.userLabels = userLabels.copy();		
+				+ generatorLabels + ", userLabels=" + userLabels + ", reviewedLabels=" + reviewedLabels
+				+ ", labelStatus=" + labelStatus + "]";
 	}
 }

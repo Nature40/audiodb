@@ -221,8 +221,6 @@
                 <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
                   <q-tooltip>Close</q-tooltip>
                 </q-btn>
-
-
                 <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name);"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
                   <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
                   <span v-else>{{labelDefinition.name}}</span>

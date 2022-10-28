@@ -109,6 +109,27 @@ public class JsonUtil {
 		}
 		json.endArray();
 	}
+	
+	public static <T> void writeStringArray(JSONWriter json, String[] a) {
+		json.array();
+		if(a != null) {
+			for(String e:a) {
+				json.value(e);
+			}
+		}
+		json.endArray();
+	}
+	
+	public static <T> void writeStringArray(JSONWriter json, String[] a, int maxLen) {
+		json.array();
+		if(a != null) {
+			int len = Math.min(a.length, maxLen);
+			for (int i = 0; i < len; i++) {
+				json.value(a[i]);
+			}
+		}
+		json.endArray();
+	}
 
 	public static <T> void writeArray(JSONWriter json, String name, Iterable<T> iterable, BiConsumer<T, JSONWriter> writer) {
 		json.key(name);

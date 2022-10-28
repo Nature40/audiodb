@@ -1,16 +1,17 @@
 <template>
   <q-page class="fit column content-center">
     <q-toolbar class="bg-grey-3" id="viewWidth">
-      <q-btn @click="replay()">Play</q-btn>
-      <q-btn @click="stop()">Stop</q-btn>
-        <q-space />
-        <q-btn @click="onPrev" :loading="indexActionLoading">Prev</q-btn>
-        Index  [<b>{{index}}</b>]
-        <q-btn @click="onNext" :loading="indexActionLoading">Next</q-btn>
-        <span v-if="indexActionError" style="color: red;">{{indexActionError}}</span>
-        <q-space />
-        <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select audio sample."  padding="xs">List [<b>{{listId}}</b>]</q-btn>
-        <list-manager ref="listmanager" @set_worklist="setWorklist($event)" />
+      <q-btn @click="stop()" icon="stop" padding="xs" push></q-btn>      
+      <q-btn @click="replay()" icon="play_arrow" padding="xs" push></q-btn>
+      <q-checkbox v-model="autoplay" label="autoplay" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autoplay ? 'black' : 'grey'}" />      
+      <q-space />
+      <q-btn @click="onPrev" icon="skip_previous" :loading="indexActionLoading" padding="xs" push></q-btn>
+        [[<b>{{Number.isFinite(index) ? (index + 1) : '-'}}</b>]]
+      <q-btn @click="onNext" icon="skip_next" :loading="indexActionLoading" padding="xs" push></q-btn>
+      <span v-if="indexActionError" style="color: red;">{{indexActionError}}</span>
+      <q-space />
+      <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select audio sample." push padding="xs" no-caps>List [<b>{{listId}}</b>]</q-btn>
+      <list-manager ref="listmanager" @set_worklist="setWorklist($event)" />
     </q-toolbar>
     <q-toolbar class="bg-grey-4" v-if="workingEntry !== undefined && sample !== undefined">
       <a :href="'#/projects/' + project + '/main?sample=' + sample.id" target="_blank" rel="noopener noreferrer" title="Open full audio sample view at new tab.">
@@ -24,7 +25,58 @@
       <span style="padding-left: 20px;">{{workingEntry.start}} - {{workingEntry.end}}</span>
       <span style="padding-left: 20px; color: grey;">{{Number.isFinite(currentTime) ? currentTime.toFixed(2) : '---'}}</span>
       <q-space />
-      <span style="padding-left: 20px;">{{workingEntry.title}}</span>
+
+
+      <q-select
+        filled
+        v-model="userSelectedLabelNames"
+        :options="labelDefinitions"
+        :label="userSelectedLabelNames === undefined || userSelectedLabelNames === null || userSelectedLabelNames.length === 0 ? '(none)' : 'Labels'"
+        style="min-width: 400px"
+        dense
+        multiple
+        @update:model-value="userSelectedLabelNamesChanged = true"
+        option-label="name"
+        option-value="name"
+        emit-value
+        clearable
+        ref="selectLabel"
+      >
+        <template v-slot:append>
+          <q-icon name="apps" @click.stop.prevent="labelSelectDialogShow = true" />
+          <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
+            <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
+              <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
+                <q-tooltip>Close</q-tooltip>
+              </q-btn>
+              <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name);"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
+                <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
+                <span v-else class="label-definition-r">{{labelDefinition.name}}</span>
+              </q-badge>
+            </div>
+          </q-dialog>            
+        </template>
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps">
+            <q-item-section>
+              <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>          
+      </q-select>
+
+      <q-btn push @click="onSubmit" no-caps>Submit</q-btn>
+      <q-checkbox v-model="statusDone" label="Set 'done'." title="On submit, set user label status to 'done'." unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: statusDone ? 'black' : 'grey'}" />      
+      <q-checkbox v-model="autonext" label="autonext" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autonext ? 'black' : 'grey'}" />      
+
+      <q-space />
+      <q-badge v-if="workingEntry.title"
+        color="grey-4" 
+        :text-color="userSelectedLabelNamesSet.has(workingEntry.title) ? 'green' : 'red'" class="q-ma-sm" @click="addLabel(workingEntry.title, !userSelectedLabelNamesSet.has(workingEntry.title));" 
+        style="cursor: pointer;"
+      >
+        {{workingEntry.title}}
+      </q-badge>
     </q-toolbar>
     <q-toolbar>      
       <q-space />
@@ -49,7 +101,11 @@
         </thead>
         <tbody>
           <tr v-for="(label, index) in sampleLabel.generated_labels" :key="index">
-            <td class="text-left">{{label.name}}</td>
+            <td class="text-left" style="cursor: pointer;" @click="addLabel(label.name, !userSelectedLabelNamesSet.has(label.name));">
+              <q-badge color="grey-1" :text-color="userSelectedLabelNamesSet.has(label.name) ? 'green' : 'red'" class="q-ma-sm">
+                {{label.name}}
+              </q-badge>
+            </td>
             <td class="text-left">{{label.reliability}}</td>
             <td class="text-left">{{label.generator}}</td>
             <td class="text-left">{{label.generation_date}}</td>
@@ -69,7 +125,11 @@
       </thead>
       <tbody>
         <tr v-for="(label, index) in sampleLabel.labels" :key="index">
-          <td class="text-left">{{label.name}}</td>
+          <td class="text-left" style="cursor: pointer;" @click="addLabel(label.name, !userSelectedLabelNamesSet.has(label.name));">
+            <q-badge color="grey-1" :text-color="userSelectedLabelNamesSet.has(label.name) ? 'green' : 'red'" class="q-ma-sm">
+              {{label.name}}
+            </q-badge>
+          </td>
           <td class="text-left">{{label.creator}}</td>
           <td class="text-left">{{label.creation_date}}</td>
         </tr>
@@ -106,6 +166,17 @@ export default defineComponent({
       audio: undefined,
       currentTime: undefined,
       loadingSpectrogram: false,
+      autoplay: false,
+      labelDefinitions: [],
+      labelDefinitionsLoading: false,
+      labelDefinitionsError: false,    
+      labelSelectDialogShow: false,
+      userSelectedLabelNames: undefined,
+      userSelectedLabelNamesChanged: false,  
+      autonext: true,
+      saveLabelsLoading: false,
+      saveLabelsError: false,
+      statusDone: true,           
     };
   },
   
@@ -124,7 +195,14 @@ export default defineComponent({
       return this.$route.query.list;
     },
     index() {
-      return parseInt(this.$route.query.index);
+      if(this.$route.query.index === undefined) {
+        return undefined;
+      }
+      const i = parseInt(this.$route.query.index);
+      if(!Number.isFinite(i)) {
+        return undefined;
+      }
+      return i - 1;
     },
     sampleRate() {
       return this.sample === undefined || this.sample.sample_rate === undefined ? undefined : this.sample.sample_rate;
@@ -150,6 +228,9 @@ export default defineComponent({
       const label = this.sample.labels.find(e => e.start === this.workingEntry.start && e.end === this.workingEntry.end);
       return label;
     },
+    userSelectedLabelNamesSet() {
+      return new Set(this.userSelectedLabelNames);
+    },    
   },
 
   methods: {
@@ -214,7 +295,7 @@ export default defineComponent({
       this.workingEntry = workingEntry;
       if(this.workingEntry !== undefined) {
         if(this.workingEntry.index !== this.index) {
-          this.$router.replace({path: this.$route.path, query: {...this.$route.query, index: this.workingEntry.index}});
+          this.$router.replace({path: this.$route.path, query: {...this.$route.query, index: (this.workingEntry.index + 1)}});
         }
       } else {
         if(this.$route.query.index !== undefined) {
@@ -251,13 +332,6 @@ export default defineComponent({
         if(this.sample !== undefined) {
           var apiUrl = this.$store.getters.api('samples2', this.sample.id, 'audio');
           var url = new URL(apiUrl);
-          /*if(this.audio !== undefined) {
-            this.audio.pause();
-            this.audio.ontimeupdate = undefined;
-            this.audio.oncanplay = undefined;
-            //this.audio.src = undefined;  // loads undefined
-            this.audio = undefined;
-          }*/
           if(this.audio === undefined) {
             this.audio = new Audio(url.href);
           } else {
@@ -274,7 +348,9 @@ export default defineComponent({
               this.audio.currentTime = this.workingEntry.start;
             }
           };
-          this.replay();
+          if(this.autoplay) {
+            this.replay();
+          }
         }
       } catch (e) {
         console.log(e);
@@ -285,8 +361,8 @@ export default defineComponent({
       try {
         this.loadingSpectrogram = true;
         if(this.sample !== undefined) {
-          var start_sample = this.workingEntry.start * this.sample.sample_rate;
-          var end_sample = this.workingEntry.end * this.sample.sample_rate;
+          var start_sample = Math.floor(this.workingEntry.start * this.sample.sample_rate);
+          var end_sample = Math.floor(this.workingEntry.end * this.sample.sample_rate);
           var apiUrl = this.$store.getters.api('samples2', this.sample.id, 'spectrogram');
           var url = new URL(apiUrl);
           url.searchParams.append('start_sample', start_sample);
@@ -365,7 +441,9 @@ export default defineComponent({
       if(this.audio !== undefined) {
         this.audio.pause();
         this.audio.oncanplay = undefined;
-        this.audio.currentTime = this.workingEntry.start;
+        if(this.workingEntry !== undefined) {
+          this.audio.currentTime = this.workingEntry.start;
+        }
       }
     },
     pixelLenToSampleCount(pixelLen, fft_step, shrink_Factor) {
@@ -410,6 +488,79 @@ export default defineComponent({
         console.log('done');
       }
     },
+    async refreshLabelDefinitions() {
+      this.labelDefinitions = [];
+      if(this.project !== undefined) {
+        try {
+          var urlPath = 'projects/' + this.project + "/label_definitions";
+          var params = {};
+          this.labelDefinitionsLoading = true;
+          this.labelDefinitionsError = false;
+          var response = await this.$api.get(urlPath, {params});
+          this.labelDefinitionsLoading = false;
+          this.labelDefinitionsError = false;
+          var d = response.data?.label_definitions;
+          if(d) {
+            var prev = '?';
+            for(var i=0; i<d.length; i++) {
+              var name = d[i].name;
+              var cur = name.length > 0 ? name[0] : '?';
+              if(prev !== cur) {
+                d[i].n = true;
+              }
+              prev = cur;              
+            }
+          }
+          this.labelDefinitions = d;          
+        } catch(e) {
+          this.labelDefinitionsLoading = false;
+          this.labelDefinitionsError = true;
+          console.log(e);
+        }
+      }
+    },
+    addLabel(name, addOrRemove) {
+      if(addOrRemove === undefined || addOrRemove) {
+        if(!this.userSelectedLabelNames) {
+          this.userSelectedLabelNames = [name];
+          this.userSelectedLabelNamesChanged = true;
+        } else if(!this.userSelectedLabelNamesSet.has(name)){
+          this.userSelectedLabelNames.push(name);
+          this.userSelectedLabelNamesChanged = true;
+        }
+      } else {
+        if(this.userSelectedLabelNames !== undefined && this.userSelectedLabelNamesSet.has(name)) {
+          const i = this.userSelectedLabelNames.indexOf(name);
+          if(i >= 0) {
+            this.userSelectedLabelNames.splice(i, 1);
+          }
+        }
+      }
+    },
+    async onSubmit() {
+      try {
+        var urlPath = 'samples2/' + this.workingEntry.sample;
+        var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
+        var action = {action: 'set_label_names', names: names, start: this.workingEntry.start, end: this.workingEntry.end};
+        action.set_label_status = this.statusDone ? 'done' : 'open';
+        var data = {actions: [action]};
+        this.saveLabelsLoading = true;
+        this.saveLabelsError = false;
+        var response = await this.$api.post(urlPath, data);
+        this.userSelectedLabelNamesChanged = false;
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = false;
+        this.runWorkingEntry_stage_1();
+        this.$q.notify({type: 'positive', message: 'Submitted.'});
+        if(this.autonext) {
+          this.onNext();
+        }
+      } catch(e) {
+        this.saveLabelsLoading = false;
+        this.saveLabelsError = true;
+        console.log(e);
+      }
+    },        
   },
 
   watch: {
@@ -424,12 +575,18 @@ export default defineComponent({
       } else {
         this.setWorkingEntry(undefined);
       }
-    }
-  },
-  
+    },
+    project: {
+      immediate: true,   
+      async handler() {
+        console.log('project changed');
+        this.refreshLabelDefinitions();
+      }
+    },
+  },  
   async mounted() {
     this.refreshWorkingEntry();
-  },  
+  },    
 })
 </script>
 
@@ -442,6 +599,16 @@ export default defineComponent({
 
 .no-blur {
   transition: all 0.25s ease-out;
+}
+
+.label-definition-n::first-letter {
+  color: black;
+  font-size: 120%;
+}
+
+.label-definition-r::first-letter {
+  color: rgb(97, 97, 97);
+  font-size: 120%;
 }
 
 </style>

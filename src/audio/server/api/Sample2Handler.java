@@ -192,6 +192,8 @@ public class Sample2Handler {
 					}
 				}
 				label.userLabels = newUserlabels;
+				String label_status = JsonUtil.optString(jsonAction, "set_label_status", null);
+				label.labelStatus = Label.LabelStatus.parse(label_status);
 				sample.setLabels(labels);
 				break;
 			}

@@ -18,10 +18,6 @@ public class WorklistStore {
 
 	public WorklistStore(Broker broker) {
 		this.broker = broker;
-		
-		addAllSamplesWorklist();
-		addAllGeneratorLabelsWorklist();
-		addNamedGeneratorLabelsWorklist();
 	}
 
 	public void forEachWorklistId(Consumer<String> action) {
@@ -74,8 +70,14 @@ public class WorklistStore {
 		mapvec.forEach((labelName, vec) -> {
 			Worklist worklist = new Worklist();
 			worklist.replace(vec);
-			String name = "generator_label__" + labelName; 
+			String name = "generator_label." + labelName; 
 			worklistMap.put(name, worklist);
 		});		
+	}
+
+	public void refresh() {		
+		addAllSamplesWorklist();
+		addAllGeneratorLabelsWorklist();
+		addNamedGeneratorLabelsWorklist();		
 	}
 }

@@ -43,7 +43,32 @@
           <q-btn dense flat icon="close" v-close-popup>
             <q-tooltip>Close</q-tooltip>
           </q-btn>
-        </q-bar>     
+        </q-bar>
+        
+        <q-card-section>
+          <q-select 
+            rounded 
+            outlined 
+            bottom-slots 
+            v-model="category" 
+            :options="categories" 
+            label="Category" 
+            dense 
+            options-dense 
+            options-selected-class="text-deep-blue" 
+            style="min-width: 400px;"
+            title="Select one category of worklists."
+          >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                {{scope.opt}}
+              </q-item>
+            </template>
+            <template v-slot:selected-item="scope">
+              {{scope.opt}}
+            </template>
+          </q-select>
+        </q-card-section>        
 
         <q-card-section>
           <q-select 
@@ -51,7 +76,7 @@
             outlined 
             bottom-slots 
             v-model="worklist" 
-            :options="worklists" 
+            :options="filteredWorklists" 
             label="Worklist" 
             dense 
             options-dense 
@@ -64,11 +89,11 @@
             </template>
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps">
-                {{scope.opt.id}}  <span style="color: grey; padding-left: 10px;">{{scope.opt.count}}</span>
+                {{toShortName(category, scope.opt.id)}}  <span style="color: grey; padding-left: 10px;">{{scope.opt.count}}</span>
               </q-item>
             </template>
             <template v-slot:selected-item="scope">
-              {{scope.opt.id}}
+              {{toShortName(category, scope.opt.id)}}
             </template>
           </q-select>
         </q-card-section>                 
@@ -87,7 +112,7 @@ import { defineComponent, ref } from 'vue';
 import {mapState} from 'vuex';
 
 export default defineComponent({
-  name: 'audio-settings',
+  name: 'list-manager',
   setup () {
     const show = ref(false);
     return {
@@ -98,16 +123,55 @@ export default defineComponent({
     return {
       dialoghelpShow: false,
       dialoghelpMaximizedToggle: false,
-      dialogMaximizedToggle: false,
+      dialogMaximizedToggle: true,
       actionLoading: false,
       actionError: undefined,
       worklists: [], 
-      worklist: undefined,                 
+      worklist: undefined,
+      category: '(all)',                 
     };
   },
   computed: {
     ...mapState({
     }),
+    categories() {
+      /*var c = {};
+      this.worklists.forEach(worklist => {
+        if(worklist.path !== undefined) {
+          var cur_c = c;
+          for (const e of worklist.path) {
+            var next_c = cur_c[e];
+            if(next_c === undefined) {
+              next_c = {};
+              cur_c[e] = next_c;
+            }
+            cur_c = next_c;
+          }
+        }
+      });
+      return c;*/
+      var cs = new Set();
+      cs.add('(all)');
+      cs.add('(none)');
+      this.worklists.forEach(worklist => {
+        if(worklist.path !== undefined) {
+          const c = worklist.path.join('.');
+          cs.add(c);
+        }/* else {
+          cs.add(null);
+        }*/
+      });
+      return Array.from(cs);
+    },
+    filteredWorklists() {
+      if(this.category === '(all)') {
+        return this.worklists;
+      }
+      if(this.category === '(none)') {
+        return this.worklists.filter(worklist => worklist.path === undefined);
+      }
+      return this.worklists.filter(worklist => worklist.path !== undefined && this.category === worklist.path.join('.'));
+    }
   },
   methods: {
     setActionStatus(loading, error) {
@@ -129,7 +193,18 @@ export default defineComponent({
     },
     onApply() {
       this.$emit('set_worklist', this.worklist);
-    },  
+    },
+    toShortName(category, id) {
+      if(category === '(all)' || category === '(none)') {
+        return id;
+      }
+      const prefix = category + '.';
+      if (id.startsWith(prefix)) {
+        return id.slice(prefix.length)
+      } else {
+          return id;
+      }
+    }  
   },
   watch: {
     show() {

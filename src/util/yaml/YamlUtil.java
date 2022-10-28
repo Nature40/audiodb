@@ -3,8 +3,10 @@ package util.yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -167,5 +169,9 @@ public class YamlUtil {
 		}
 		T[] a = list.mapArray(generator, mapper);
 		yamlMap.put(name, a);
+	}
+	
+	public static String readFileToString(Path path) throws IOException {
+		return Files.readString(path, StandardCharsets.UTF_8);
 	}
 }
