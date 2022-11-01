@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 
 import org.json.JSONObject;
 import org.json.JSONWriter;
+
 import audio.review.ReviewedLabel;
 import util.JsonUtil;
 import util.collections.vec.Vec;
@@ -28,6 +29,7 @@ public class Label {
 			}
 		}
 
+		@Override
 		public String toString() {
 			switch(this) {
 			case OPEN: return "open";
@@ -70,6 +72,7 @@ public class Label {
 		this.generatorLabels = generatorLabels;
 		this.userLabels = userLabels;
 		this.reviewedLabels = reviewedLabels;
+		this.labelStatus = labelStatus;
 	}
 
 	public Label(double start, double end) {
@@ -134,7 +137,8 @@ public class Label {
 		Vec<GeneratorLabel> generatorLabels = YamlUtil.optVec(yamlMap, "generated_labels", GeneratorLabel::ofYAML);
 		Vec<UserLabel> userLabels = YamlUtil.optVec(yamlMap, "labels", UserLabel::ofYAML);
 		Vec<ReviewedLabel> reviewedLabels = YamlUtil.optVec(yamlMap, "reviewed_labels", ReviewedLabel::ofYAML);
-		LabelStatus labelstatus = LabelStatus.parse(yamlMap.optString("label_status", null));
+		String ls = yamlMap.optString("label_status", null);
+		LabelStatus labelstatus = LabelStatus.parse(ls);
 		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus);
 	}
 
@@ -167,21 +171,25 @@ public class Label {
 	public boolean isInterval(double label_start, double label_end) {
 		return (start - 0.001d) <= label_start && label_start <= (start + 0.001d) && (end - 0.001d) <= label_end && label_end <= (end + 0.001d);
 	}
+	
+	public boolean isInterval(Label label2) {		
+		return label2 != null && isInterval(label2);
+	}
 
 	public synchronized void addReview(ReviewedLabel reviewedLabel) {
 		reviewedLabels.add(reviewedLabel);		
 	}
 
 	public static Label merge(Label label, Label label2) {
+		if(label.isInterval(label2)) {
+			throw new RuntimeException("not same interval label merge");
+		}
 		double start = label.start;
 		double end = label.end;
 		String comment = label.comment;
 		Vec<GeneratorLabel> generatorLabels = label.generatorLabels.copy();
 		Vec<UserLabel> userLabels = label.userLabels.copy();
 		Vec<ReviewedLabel> reviewedLabels = label.reviewedLabels.copy();
-		if(start != label2.start || end != label2.end) {
-			throw new RuntimeException("not same interval label merge");
-		}
 		for(GeneratorLabel generatorLabel : label2.generatorLabels) {
 			if(!generatorLabels.some(g -> g.equals(generatorLabel))) {
 				generatorLabels.add(generatorLabel);
@@ -210,7 +218,7 @@ public class Label {
 			Label label = labels.get(outerIndex);
 			for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
 				Label label2 = labels.get(innerIndex);
-				if(label.start == label2.start && label.end == label2.end) {
+				if(label.isInterval(label2)) {
 					return true;
 				}
 			}
@@ -226,7 +234,7 @@ public class Label {
 			if(label != null) {
 				for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
 					Label label2 = resultLabels.get(innerIndex);
-					if(label2 != null && label.start == label2.start && label.end == label2.end) {
+					if(label2 != null && label.isInterval(label2)) {
 						Label labelMerge = Label.merge(label, label2);
 						resultLabels.setFast(outerIndex, labelMerge);
 						resultLabels.setFast(innerIndex, null);

@@ -143,7 +143,7 @@ public class Sample implements GeneralSample {
 				if(label != null) {
 					for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
 						Label label2 = labels.get(innerIndex);
-						if(label2 != null && label.start == label2.start && label.end == label2.end) {
+						if(label.isInterval(label2)) {
 							Logger.info("merge");
 							Label labelMerge = Label.merge(label, label2);
 							labels.setFast(outerIndex, labelMerge);

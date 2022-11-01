@@ -162,13 +162,18 @@ public class Sample2Handler {
 			case "set_label_names": {
 				double a = jsonAction.getDouble("start");
 				double b = jsonAction.getDouble("end");
+				if(!(Double.isFinite(a) || Double.isFinite(b))) {
+					throw new RuntimeException("invalid label range parameter");
+				}
 				double start = Math.min(a, b);
 				double end = Math.max(a, b);
 				String[] names = JsonUtil.optStrings(jsonAction, "names");
 				Vec<Label> labels = sample.getLabels();
-				int labelIndex = labels.findIndexOf(l -> l.start == start && l.end == end);
+				int labelIndex = labels.findIndexOf(l -> l.isInterval(start, end));
 				if(labelIndex < 0) {
-					throw new RuntimeException("label not found");
+					//throw new RuntimeException("label not found");
+					Label label = new Label(start, end);
+					labelIndex = labels.addGetIndex(label);
 				}
 				Label label = sample.getLabels().get(labelIndex);
 				Vec<UserLabel> userLabels = label.userLabels;
@@ -223,7 +228,7 @@ public class Sample2Handler {
 				double start = Math.min(a, b);
 				double end = Math.max(a, b);
 				Vec<Label> labels = sample.getLabels();
-				int labelIndex = labels.findIndexOf(l -> l.start == start && l.end == end);
+				int labelIndex = labels.findIndexOf(l -> l.isInterval(start, end));
 				if(labelIndex < 0) {
 					throw new RuntimeException("label not found");
 				}

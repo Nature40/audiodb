@@ -15,6 +15,7 @@ public final class AudioProjectConfig {
 	public final String project;
 	public final Path root_path;
 	public final Path root_data_path;
+	public final Path worklist_path; // nullable	
 	public final Path device_inventory_file; // nullable
 	public final double player_spectrum_threshold;
 	public final double player_fft_intensity_max;
@@ -37,6 +38,7 @@ public final class AudioProjectConfig {
 		public String project = "default_project"; // project name is needed
 		public Path root_path = Paths.get("data"); // root_path is needed
 		public Path root_data_path = null; // optional; if null -> root_path is used as data file directory
+		public Path worklist_path = null;  // nullable		
 		public Path device_inventory_file = null;  // nullable
 		public double player_spectrum_threshold = 13.5;
 		public double player_fft_intensity_max = 23;
@@ -61,6 +63,7 @@ public final class AudioProjectConfig {
 			project = yamlMap.optString("project", project);
 			yamlMap.optFunString("root_path", s -> root_path = Paths.get(s));
 			yamlMap.optFunString("root_data_path", s -> root_data_path = Paths.get(s));
+			yamlMap.optFunString("worklist_path", s -> worklist_path = Paths.get(s));
 			yamlMap.optFunString("device_inventory_file", s -> device_inventory_file = Paths.get(s));
 			player_spectrum_threshold = yamlMap.optDouble("player_spectrum_threshold", player_spectrum_threshold);
 			player_fft_intensity_max = yamlMap.optDouble("player_fft_intensity_max", player_fft_intensity_max);
@@ -84,6 +87,7 @@ public final class AudioProjectConfig {
 		project = builder.project;
 		root_path = builder.root_path;
 		root_data_path = builder.root_data_path == null ? builder.root_path : builder.root_data_path;
+		worklist_path = builder.worklist_path;
 		device_inventory_file = builder.device_inventory_file;
 		player_spectrum_threshold = builder.player_spectrum_threshold;
 		player_fft_intensity_max = builder.player_fft_intensity_max;

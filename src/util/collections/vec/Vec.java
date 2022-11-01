@@ -193,6 +193,15 @@ public class Vec<T> implements List<T> {
 		items[size++] = e;
 	}
 	
+	public int addGetIndex(T e) {		
+		if (items.length == size) {
+			growForOne();
+		}
+		int i = size++;
+		items[i] = e;
+		return i;
+	}
+	
 	public void add(IntFunction<T> supplier) {
 		if (items.length == size) {
 			growForOne();
@@ -280,6 +289,10 @@ public class Vec<T> implements List<T> {
 			throw new IndexOutOfBoundsException();
 		}		
 		return this.items[index];       
+	}
+	
+	public T getOrNull(int index) {		
+		return this.size <= index || index < 0 ? null : this.items[index];       
 	}
 
 	public T getNoCheck(int index) {

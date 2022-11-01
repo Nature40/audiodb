@@ -114,4 +114,10 @@ public class GeneratorLabel {
 			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "GeneratorLabel [name=" + name + ", reliability=" + reliability + ", generator=" + generator
+				+ ", model_version=" + model_version + ", generation_date=" + generation_date + "]";
+	}
 }

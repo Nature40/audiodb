@@ -8,6 +8,7 @@
       <q-btn @click="onPrev" icon="skip_previous" :loading="indexActionLoading" padding="xs" push></q-btn>
         [[<b>{{Number.isFinite(index) ? (index + 1) : '-'}}</b>]]
       <q-btn @click="onNext" icon="skip_next" :loading="indexActionLoading" padding="xs" push></q-btn>
+      <q-checkbox v-model="skipdone" label="skipdone" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: skipdone ? 'black' : 'grey'}" />      
       <span v-if="indexActionError" style="color: red;">{{indexActionError}}</span>
       <q-space />
       <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select audio sample." push padding="xs" no-caps>List [<b>{{listId}}</b>]</q-btn>
@@ -43,7 +44,8 @@
         ref="selectLabel"
       >
         <template v-slot:append>
-          <q-icon name="apps" @click.stop.prevent="labelSelectDialogShow = true" />
+          <!--<q-icon name="edit" @click.stop.prevent="labelSelectDialogShow = true" />--> 
+          <q-icon name="apps" @click.stop.prevent="labelSelectDialogShow = true" />          
           <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
             <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
               <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
@@ -54,7 +56,7 @@
                 <span v-else class="label-definition-r">{{labelDefinition.name}}</span>
               </q-badge>
             </div>
-          </q-dialog>            
+          </q-dialog>                    
         </template>
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps">
@@ -65,7 +67,7 @@
         </template>          
       </q-select>
 
-      <q-btn push @click="onSubmit" no-caps>Submit</q-btn>
+      <q-btn push @click="onSubmit" no-caps :loading="saveLabelsLoading">Submit</q-btn>
       <q-checkbox v-model="statusDone" label="Set 'done'." title="On submit, set user label status to 'done'." unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: statusDone ? 'black' : 'grey'}" />      
       <q-checkbox v-model="autonext" label="autonext" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autonext ? 'black' : 'grey'}" />      
 
@@ -78,7 +80,7 @@
         {{workingEntry.title}}
       </q-badge>
     </q-toolbar>
-    <q-toolbar>      
+    <q-toolbar v-show="workingEntry !== undefined && sample !== undefined">      
       <q-space />
       <div style="position: relative;">
         <canvas ref="spectrogram" :class="{blur: loadingSpectrogram, 'no-blur': !loadingSpectrogram}" />
@@ -108,7 +110,7 @@
             </td>
             <td class="text-left">{{label.reliability}}</td>
             <td class="text-left">{{label.generator}}</td>
-            <td class="text-left">{{label.generation_date}}</td>
+            <td class="text-left">{{label.generation_date === undefined ? '-' : label.generation_date.slice(0,16)}}</td>
           </tr>
         </tbody>
       </q-markup-table>
@@ -131,14 +133,17 @@
             </q-badge>
           </td>
           <td class="text-left">{{label.creator}}</td>
-          <td class="text-left">{{label.creation_date}}</td>
+          <td class="text-left">{{label.creation_date === undefined ? '-' : label.creation_date.slice(0,16)}}</td>
         </tr>
       </tbody>
     </q-markup-table>
     </div>
     </q-toolbar>
-    <q-toolbar v-if="sampleLabel === undefined">
+    <q-toolbar v-if="workingEntry !== undefined && sampleLabel === undefined">
       No labels for worklist entry at sample.
+    </q-toolbar>
+    <q-toolbar v-if="workingEntry === undefined">
+      No list entry selected.
     </q-toolbar>
   </q-page>
 </template>
@@ -176,7 +181,8 @@ export default defineComponent({
       autonext: true,
       saveLabelsLoading: false,
       saveLabelsError: false,
-      statusDone: true,           
+      statusDone: true,
+      skipdone: true,           
     };
   },
   
@@ -247,6 +253,9 @@ export default defineComponent({
         if(Number.isFinite(this.index)) {
           params.last = this.index - 1;
         }
+        if(this.skipdone) {
+          params.skip_done = true;
+        }
         var response = await this.$api.get(urlPath, {params});
         this.setWorkingEntry(response.data);
         this.setActionStatus(false, undefined);
@@ -265,6 +274,9 @@ export default defineComponent({
         if(Number.isFinite(this.index)) {
           params.first = this.index + 1;
         }
+        if(this.skipdone) {
+          params.skip_done = true;
+        }        
         var response = await this.$api.get(urlPath, {params});
         this.setWorkingEntry(response.data);
         this.setActionStatus(false, undefined);
@@ -427,7 +439,7 @@ export default defineComponent({
       }
     },
     replay() {
-      if(this.audio !== undefined) {
+      if(this.workingEntry !== undefined && this.audio !== undefined) {
         this.audio.currentTime = this.workingEntry.start;
         this.audio.oncanplay = (event) => {
           this.audio.play();
@@ -559,6 +571,7 @@ export default defineComponent({
         this.saveLabelsLoading = false;
         this.saveLabelsError = true;
         console.log(e);
+        this.$q.notify({type: 'negative', message: 'Error submitting label. You may try again to submit.'});
       }
     },        
   },

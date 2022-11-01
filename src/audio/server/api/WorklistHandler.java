@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.util.function.Predicate;
 
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
@@ -8,6 +9,9 @@ import org.json.JSONWriter;
 import org.tinylog.Logger;
 
 import audio.Broker;
+import audio.Label;
+import audio.Label.LabelStatus;
+import audio.Sample2;
 import audio.worklist.Worklist;
 import audio.worklist.WorklistEntry;
 import audio.worklist.WorklistStore;
@@ -18,10 +22,30 @@ public class WorklistHandler {
 
 	private final Broker broker;
 	private final WorklistStore worklistStore;
+	
+	private final Predicate<WorklistEntry> SKIP_DONE_PREDICATE;
+	private static final Predicate<WorklistEntry> TRUE_PREDICATE = e -> true;
 
 	public WorklistHandler(Broker broker) {
 		this.broker = broker;
-		this.worklistStore = broker.worklistStore();
+		this.worklistStore = broker.worklistStore();		
+		
+		SKIP_DONE_PREDICATE = e -> {
+			Logger.info(e.sample);
+			Sample2 sample = broker.sampleManager().getById(e.sample);
+			if(sample == null) {
+				return false;
+			}
+			Logger.info(e.start + "  " + e.end);
+			Label label = sample.getLabel(e.start, e.end);
+			if(label == null) {
+				return true;
+			}
+			Logger.info(label);
+			Logger.info("|" + label.labelStatus + "|");
+			return label.labelStatus != LabelStatus.DONE;
+			
+		};		
 	}
 
 	public void handle(String worklistId, String target, Request request, HttpServletResponse response) throws IOException {
@@ -77,9 +101,14 @@ public class WorklistHandler {
 		}
 		
 		int first = Web.getInt(request, "first", Integer.MIN_VALUE);
-		WorklistEntry worklistEntry = worklist.find(first, e -> {
-			return true;
-		});
+		boolean skipDone = Web.getBoolean(request, "skip_done", false);
+		WorklistEntry worklistEntry = null;
+		if(skipDone) {
+			worklistEntry = worklist.find(first, SKIP_DONE_PREDICATE);			
+		} else {
+			worklistEntry = worklist.find(first, TRUE_PREDICATE);	
+		}
+
 		if(worklistEntry == null) {
 			response.setStatus(HttpStatus.NOT_FOUND_404);
 			response.setContentType("application/json");
@@ -90,8 +119,6 @@ public class WorklistHandler {
 			json.endObject();
 			return;
 		}
-		
-		worklist.getByIndex(0);		
 		
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());
@@ -124,10 +151,15 @@ public class WorklistHandler {
 			return;
 		}
 		
-		int last = Web.getInt(request, "last", Integer.MAX_VALUE);
-		WorklistEntry worklistEntry = worklist.findLast(last, e -> {
-			return true;
-		});
+		int last = Web.getInt(request, "last", Integer.MAX_VALUE);		
+		boolean skipDone = Web.getBoolean(request, "skip_done", false);
+		WorklistEntry worklistEntry = null;
+		if(skipDone) {
+			worklistEntry = worklist.findLast(last, SKIP_DONE_PREDICATE);			
+		} else {
+			worklistEntry = worklist.findLast(last, TRUE_PREDICATE);	
+		}
+
 		if(worklistEntry == null) {
 			response.setStatus(HttpStatus.NOT_FOUND_404);
 			response.setContentType("application/json");
@@ -138,8 +170,6 @@ public class WorklistHandler {
 			json.endObject();
 			return;
 		}
-		
-		worklist.getByIndex(0);		
 		
 		response.setContentType("application/json");
 		JSONWriter json = new JSONWriter(response.getWriter());

@@ -218,4 +218,11 @@ public class Sample2 implements GeneralSample {
 			Logger.info("meta written " + metaPath);
 		}
 	}
+
+	public Label getLabel(double start, double end) {
+		/*return getLabels().find(label -> {
+			return label.start == start && label.end == end;
+		});*/
+		return getLabels().find(label -> label.isInterval(start, end));
+	}
 }

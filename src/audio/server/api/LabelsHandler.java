@@ -122,9 +122,7 @@ public class LabelsHandler {
 			}
 			case "remove_label": {
 				Label label = Label.ofJSON(jsonAction.getJSONObject("label"));				
-				if(sample.getLabels().removeIf(l->{
-					return l.start == label.start && l.end == label.end;
-				})) {
+				if(sample.getLabels().removeIf(l -> l.isInterval(label))) {
 					// nothing
 				} else {
 					throw new RuntimeException("label to remove not found");
@@ -133,7 +131,7 @@ public class LabelsHandler {
 			}
 			case "replace_label": {
 				Label label = Label.ofJSON(jsonAction.getJSONObject("label"));				
-				int labelIndex = sample.getLabels().findIndexOf(l -> l.start == label.start && l.end == label.end);
+				int labelIndex = sample.getLabels().findIndexOf(l -> l.isInterval(label));
 				if(labelIndex < 0) {
 					throw new RuntimeException("label to replace not found");
 				} else {
@@ -144,7 +142,7 @@ public class LabelsHandler {
 			case "set_reviewed_label": {
 				double start = jsonAction.getDouble("start");
 				double end = jsonAction.getDouble("end");
-				int labelIndex = sample.getLabels().findIndexOf(l -> l.start == start && l.end == end);
+				int labelIndex = sample.getLabels().findIndexOf(l -> l.isInterval(start, end));
 				Label label = sample.getLabels().get(labelIndex);
 				
 				String reviewer = account.username;

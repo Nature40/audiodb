@@ -111,4 +111,9 @@ public class UserLabel {
 			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "UserLabel [name=" + name + ", creator=" + creator + ", creation_date=" + creation_date + "]";
+	}
 }

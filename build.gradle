@@ -62,6 +62,8 @@ dependencies {
 	implementation group: 'org.json', name: 'json', version: '20220924'
 	implementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
 	implementation group: 'de.siegmar', name: 'fastcsv', version: '2.2.0'
+	implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.0'  
+	implementation group: 'ch.randelshofer', name: 'fastdoubleparser', version: '0.3.0'	
 	
 	implementation group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
 	

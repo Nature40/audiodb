@@ -1,6 +1,7 @@
 package audio.review;
 
 import java.util.LinkedHashMap;
+import java.util.Objects;
 
 import org.json.JSONObject;
 import org.json.JSONWriter;
@@ -101,5 +102,18 @@ public class ReviewedLabel {
 	
 	public boolean isYes() {
 		return this.reviewed == Reviewed.yes;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ReviewedLabel other = (ReviewedLabel) obj;
+		return Objects.equals(name, other.name) && reviewed == other.reviewed
+				&& Objects.equals(reviewer, other.reviewer) && timestamp == other.timestamp;
 	}
 }

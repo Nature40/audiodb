@@ -19,10 +19,15 @@ public class Worklist {
 		}
 	}*/
 	
-	public void getByIndex(int index) {
+	/**
+	 * 
+	 * @param index
+	 * @return element or null if out of range
+	 */
+	public WorklistEntry getByIndex(int index) {
 		lock.readLock().lock();
 		try {
-			vec.get(index);
+			return vec.getOrNull(index);
 		} finally {
 			lock.readLock().unlock();
 		}
