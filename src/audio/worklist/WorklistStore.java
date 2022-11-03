@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -12,8 +11,6 @@ import org.tinylog.Logger;
 
 import audio.Broker;
 import audio.LabelStoreConnector;
-import de.siegmar.fastcsv.reader.CsvReader;
-import de.siegmar.fastcsv.reader.CsvReader.CsvReaderBuilder;
 import util.AbstractTable.ColumnReaderDouble;
 import util.AbstractTable.ColumnReaderString;
 import util.MapVec;

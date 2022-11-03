@@ -368,7 +368,7 @@
         <thead>
           <tr>
             <th class="text-left">Name</th>
-            <th class="text-left">Reliability</th>
+            <th class="text-left">Confidence</th>
             <th class="text-left">Generator</th>
             <th class="text-left">Generation date</th>
           </tr>
@@ -376,9 +376,9 @@
         <tbody>
           <tr v-for="(label, index) in selectedLabel.generated_labels" :key="index">
             <td class="text-left">{{label.name}}</td>
-            <td class="text-left">{{label.reliability}}</td>
+            <td class="text-left">{{isFinite(label.reliability) ? label.reliability.toFixed(3) : ''}}</td>
             <td class="text-left">{{label.generator}}</td>
-            <td class="text-left">{{label.generation_date}}</td>
+            <td class="text-left">{{label.generation_date === undefined ? '' : label.generation_date.slice(0,16)}}</td>
           </tr>
         </tbody>
       </q-markup-table>
@@ -398,7 +398,7 @@
           <tr v-for="(label, index) in selectedLabel.labels" :key="index">
             <td class="text-left">{{label.name}}</td>
             <td class="text-left">{{label.creator}}</td>
-            <td class="text-left">{{label.creation_date}}</td>
+            <td class="text-left">{{label.creation_date === undefined ? '' : label.creation_date.slice(0,16)}}</td>
           </tr>
         </tbody>
       </q-markup-table>

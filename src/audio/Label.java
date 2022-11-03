@@ -1,10 +1,12 @@
 package audio;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 
 import org.json.JSONObject;
 import org.json.JSONWriter;
+import org.tinylog.Logger;
 
 import audio.review.ReviewedLabel;
 import util.JsonUtil;
@@ -171,41 +173,70 @@ public class Label {
 	public boolean isInterval(double label_start, double label_end) {
 		return (start - 0.001d) <= label_start && label_start <= (start + 0.001d) && (end - 0.001d) <= label_end && label_end <= (end + 0.001d);
 	}
-	
+
 	public boolean isInterval(Label label2) {		
-		return label2 != null && isInterval(label2);
+		return label2 != null && isInterval(label2.start, label2.end);
 	}
 
 	public synchronized void addReview(ReviewedLabel reviewedLabel) {
 		reviewedLabels.add(reviewedLabel);		
 	}
 
-	public static Label merge(Label label, Label label2) {
-		if(label.isInterval(label2)) {
-			throw new RuntimeException("not same interval label merge");
-		}
-		double start = label.start;
-		double end = label.end;
-		String comment = label.comment;
-		Vec<GeneratorLabel> generatorLabels = label.generatorLabels.copy();
-		Vec<UserLabel> userLabels = label.userLabels.copy();
-		Vec<ReviewedLabel> reviewedLabels = label.reviewedLabels.copy();
-		for(GeneratorLabel generatorLabel : label2.generatorLabels) {
-			if(!generatorLabels.some(g -> g.equals(generatorLabel))) {
-				generatorLabels.add(generatorLabel);
+	private static String mergeComment(String a, String b) {
+		if(a == null) {
+			if(b == null) {
+				return null;
+			} else {
+				return b;
+			}
+		} else {
+			if(b == null) {
+				return a;
+			} else {
+				return a.isBlank() ? b : (a + "   " + b);
 			}
 		}
-		for(UserLabel userLabel : label2.userLabels) {
-			if(!userLabels.some(g -> g.equals(userLabel))) {
-				userLabels.add(userLabel);
+	}
+
+	public static Label merge(Label a, Label b) {
+		if(!a.isInterval(b)) {
+			throw new RuntimeException("not same interval label merge " + a.start + " " + a.end + "   " + b.start + " " + b.end);
+		}
+		
+		double start = a.start;
+		
+		double end = a.end;
+		
+		String comment = mergeComment(a.comment, b.comment);
+		
+		//Logger.info("merge " + a.generatorLabels.toString() + "  " + b.generatorLabels.toString());
+		
+		Vec<GeneratorLabel> generatorLabels = a.generatorLabels.copy();
+		for(GeneratorLabel newGeneratorLabel : b.generatorLabels) {
+			if(generatorLabels.none(generatorLabel -> generatorLabel.equals(newGeneratorLabel))) {
+				generatorLabels.add(newGeneratorLabel);
 			}
 		}
-		for(ReviewedLabel reviewedLabel : label2.reviewedLabels) {
-			if(!reviewedLabels.some(g -> g.equals(reviewedLabel))) {
-				reviewedLabels.add(reviewedLabel);
+		
+		//Logger.info("merge " + a.generatorLabels.toString() + "  " + b.generatorLabels.toString()  +" :: " + generatorLabels.toString());
+		
+		Vec<UserLabel> userLabels = a.userLabels.copy();
+		for(UserLabel newUserLabel : b.userLabels) {
+			if(userLabels.none(userLabel -> userLabel.equals(newUserLabel))) {
+				userLabels.add(newUserLabel);
+			}
+		}		
+		
+		Vec<ReviewedLabel> reviewedLabels = a.reviewedLabels.copy();		
+		for(ReviewedLabel newReviewedLabel : b.reviewedLabels) {
+			if(reviewedLabels.none(reviewedLabel -> reviewedLabel.equals(newReviewedLabel))) {
+				reviewedLabels.add(newReviewedLabel);
 			}
 		}
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, LabelStatus.merge(label.labelStatus, label2.labelStatus));
+		
+		LabelStatus labelStatus = LabelStatus.merge(a.labelStatus, b.labelStatus);
+		
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelStatus);
 	}
 
 	public synchronized void setUserLabels(Vec<UserLabel> userLabels) {
@@ -215,10 +246,10 @@ public class Label {
 	public static boolean hasLabelDublicates(Vec<Label> labels) {
 		int len = labels.size();
 		for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
-			Label label = labels.get(outerIndex);
+			Label outerLabel = labels.get(outerIndex);
 			for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
-				Label label2 = labels.get(innerIndex);
-				if(label.isInterval(label2)) {
+				Label innerLabel = labels.get(innerIndex);
+				if(outerLabel.isInterval(innerLabel)) {
 					return true;
 				}
 			}
@@ -230,14 +261,15 @@ public class Label {
 		Vec<Label> resultLabels = labels.copy();			
 		int len = resultLabels.size();
 		for(int outerIndex = 0; outerIndex < len - 1; outerIndex++) {
-			Label label = resultLabels.get(outerIndex);
-			if(label != null) {
+			Label outerLabel = resultLabels.get(outerIndex);
+			if(outerLabel != null) {
 				for(int innerIndex = outerIndex + 1; innerIndex < len; innerIndex++) {
-					Label label2 = resultLabels.get(innerIndex);
-					if(label2 != null && label.isInterval(label2)) {
-						Label labelMerge = Label.merge(label, label2);
+					Label innerLabel = resultLabels.get(innerIndex);
+					if(innerLabel != null && outerLabel.isInterval(innerLabel)) {
+						Label labelMerge = Label.merge(outerLabel, innerLabel);
 						resultLabels.setFast(outerIndex, labelMerge);
 						resultLabels.setFast(innerIndex, null);
+						outerLabel = labelMerge;
 					}
 				}
 			}

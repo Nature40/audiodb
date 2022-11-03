@@ -206,14 +206,16 @@ public class Sample2 implements GeneralSample {
 	public void normaliseMeta() {
 		//Logger.info("process " + id);
 		boolean metaChanged = false;
-		Vec<Label> ll = getLabels();
-		if(Label.hasLabelDublicates(ll)) {
-			metaChanged  = true;
-			ll = Label.mergeLabelDublicates(ll);
-			this.labels = ll;
+		{
+			Vec<Label> oldLabels = getLabels();
+			if(Label.hasLabelDublicates(oldLabels)) {
+				metaChanged  = true;
+				Vec<Label> newLabels = Label.mergeLabelDublicates(oldLabels);
+				this.labels = newLabels;
+				YamlUtil.putList(yamlMap.getInternalMap(), "Labels", newLabels, Label::toMap);		
+			}
 		}
 		if(metaChanged) {
-			YamlUtil.putList(yamlMap.getInternalMap(), "Labels", labels, Label::toMap);		
 			YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
 			Logger.info("meta written " + metaPath);
 		}
