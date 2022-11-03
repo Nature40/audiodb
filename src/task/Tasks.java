@@ -1,6 +1,7 @@
 package task;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,17 +15,19 @@ import org.tinylog.Logger;
 
 import audio.Account;
 import audio.Broker;
+import audio.role.RoleManager;
 
 public class Tasks {
 
 	private static TreeMap<String, Descriptor> descriptorMap;
 
-	private final Broker broker;	
+	private final Broker broker;
+	private final RoleManager roleManager;
 	private ConcurrentHashMap<String, Task> taskMap;
 
 	private static final String TASK_PREFIX = "Task_";
 	private static final int TASK_PREFIX_LEN = TASK_PREFIX.length();
-	
+
 	private static final String[] TASK_PACKAGES = new String[] {"audio.task", "photo2.task"};
 
 	static {
@@ -49,22 +52,23 @@ public class Tasks {
 	public static void foreachDescriptor(BiConsumer<String, Descriptor> action) {
 		descriptorMap.forEach(action);
 	}
-	
+
 	public Task[] getTasks() {
 		Task[] tasks = taskMap.values().toArray(Task[]::new);
 		Arrays.sort(tasks);
 		return tasks;
 	}
-	
+
 	public Task getTask(String id) {
 		return taskMap.get(id);
 	}
 
 	public Tasks(Broker broker) {
 		this.broker = broker;
+		this.roleManager = broker.roleManager();
 		this.taskMap = new ConcurrentHashMap<String, Task>();
 	}
-	
+
 	private static final String idCharacters = "0123456789abcdefghijklmnopqrstuvwxyz";
 	private static final int idCharactersLen = idCharacters.length();
 	private static String createID() {
@@ -75,7 +79,7 @@ public class Tasks {
 		return id;
 	}
 
-	public String submit(JSONObject json, Account account) {
+	public String submit(JSONObject json, Account account, BitSet roleBits) {
 		String taskName = json.optString("task", null);
 		if(taskName == null) {
 			throw new RuntimeException("missing task parameter in task");
@@ -84,6 +88,7 @@ public class Tasks {
 		if(descriptor == null) {
 			throw new RuntimeException("unknown task");
 		}
+		roleManager.checkHasRoles(roleBits, descriptor.roles);
 		Task task = descriptor.newInstance();
 		String id = null;
 		Task ret = null;
@@ -93,7 +98,7 @@ public class Tasks {
 			ret = taskMap.putIfAbsent(id, task);
 		} while(ret != null);
 		try {
-			Ctx ctx = new Ctx(descriptor, json, id, broker, account);
+			Ctx ctx = new Ctx(descriptor, json, id, broker, account, roleBits);
 			task.setCtxAndInit(ctx);
 			ForkJoinPool.commonPool().execute(task);
 		} catch (Exception e) {

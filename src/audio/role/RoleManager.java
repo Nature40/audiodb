@@ -12,13 +12,13 @@ public class RoleManager {
 
 	private Vec<Role> roles = new Vec<Role>();
 	private AtomicInteger ci = new AtomicInteger(0);
-	
+
 	public final Role role_create_account;
 	public final Role role_manage_account;
 	public final Role role_admin;
 	public final Role role_readOnly;
 	public final Role role_reviewedOnly;
-	
+
 	public final RoleMask roleMask_list_account;
 
 	public RoleManager() {
@@ -82,6 +82,24 @@ public class RoleManager {
 
 	public boolean isLoweringRole(Role role) {
 		return role == role_readOnly || role == role_reviewedOnly;
+	}
+
+	public void checkHasRole(BitSet roleBits, String role) {
+		if(role != null) {
+			Role r = getRole(role);
+			if(r == null) {
+				throw new RuntimeException("role not found: |" + role + "|");
+			}
+			r.checkHas(roleBits);
+		}
+	}
+
+	public void checkHasRoles(BitSet roleBits, String... roles) {
+		if(roles != null) {
+			for(String role : roles) {
+				checkHasRole(roleBits, role);
+			}
+		}
 	}
 
 }

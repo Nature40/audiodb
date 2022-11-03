@@ -2,12 +2,14 @@ package audio.task;
 
 import task.Cancelable;
 import task.Description;
+import task.Role;
 import task.Tag;
 import task.Task;
 
 @Tag("audio")
 @Description("Normalise metadata.")
 @Cancelable
+@Role("admin")
 public class Task_audio_normalise_meta extends Task {
 
 	@Override

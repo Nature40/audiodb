@@ -9,6 +9,7 @@ import org.json.JSONWriter;
 import org.tinylog.Logger;
 
 import audio.Broker;
+import audio.role.RoleManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import task.Ctx;
@@ -22,11 +23,13 @@ import util.AudioTimeUtil;
 public class TaskHandler {
 
 	private final Broker broker;
+	private RoleManager roleManager;	
 	private final Tasks tasks;
 	private final TaskFilesHandler taskFilesHandler;
 
 	public TaskHandler(Broker broker) {
 		this.broker = broker;
+		this.roleManager = broker.roleManager();
 		this.tasks = broker.tasks();
 		this.taskFilesHandler = new TaskFilesHandler(broker);
 	}
@@ -141,11 +144,13 @@ public class TaskHandler {
 	}
 
 	private void handleRoot_POST(Task task, Request request, HttpServletResponse response) throws IOException {
+		Ctx ctx = task.geCtx();
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONObject jsonAction = jsonReq.getJSONObject("action");
 		String actionName = jsonAction.getString("action");
 		switch(actionName) {
 		case "cancel":
+			roleManager.checkHasRoles(ctx.roleBits, ctx.descriptor.roles);
 			task.softCancel();
 			break;
 		default:

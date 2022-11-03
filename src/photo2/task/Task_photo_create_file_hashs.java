@@ -6,12 +6,14 @@ import photo2.Photo2;
 import photo2.PhotoDB2;
 import task.Cancelable;
 import task.Description;
+import task.Role;
 import task.Tag;
 import task.Task;
 
 @Tag("photo")
 @Description("Create hashs of all image files, if missing.")
 @Cancelable
+@Role("admin")
 public class Task_photo_create_file_hashs extends Task {
 
 	@Override
@@ -28,7 +30,7 @@ public class Task_photo_create_file_hashs extends Task {
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");
 				}
-				Photo2 photo = photodb.getPhoto2NotLocked(id);
+				Photo2 photo = photodb.getPhoto2(id, false);
 				String hash = photo.getFileHash(true);
 				counter[0]++;
 				if(counter[0]%10 == 0) {

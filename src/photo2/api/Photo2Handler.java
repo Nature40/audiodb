@@ -45,7 +45,7 @@ public class Photo2Handler {
 	public void handle(String id, String target, Request request, HttpServletResponse response) throws IOException {
 		request.setHandled(true);		
 		try {
-			Photo2 photo = photodb2.getPhoto2NotLocked(id);
+			Photo2 photo = photodb2.getPhoto2(id, true);
 			if(photo == null) {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 				response.setContentType("text/plain;charset=utf-8");
@@ -220,7 +220,7 @@ public class Photo2Handler {
 					String classificator = "Expert";
 					String identity = account.username;
 					String date = LocalDateTime.now().format(ISO_DATE_TIME);
-					photo.setClassification(bbox, classification, classificator, identity, date);
+					photo.setClassification(bbox, classification, classificator, identity, date, Float.NaN);
 					break;
 				}
 				default:

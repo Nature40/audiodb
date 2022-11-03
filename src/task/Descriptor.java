@@ -30,6 +30,7 @@ public class Descriptor {
 	public final Constructor<? extends Task> constructor;
 	public final String description; // nullable
 	public final String[] tags; // nullable
+	public final String[] roles; // nullable
 	public final boolean cancelable;
 	public final Param[] params;
 
@@ -56,6 +57,18 @@ public class Descriptor {
 				this.tags = res;
 			} else {
 				this.tags = null;
+			}
+		}
+		{
+			Role[] annotations = taskClass.getAnnotationsByType(Role.class);
+			if(annotations != null && annotations.length > 0) {
+				String[] res = new String[annotations.length];
+				for (int i = 0; i < annotations.length; i++) {
+					res[i] = annotations[i].value();
+				}
+				this.roles = res;
+			} else {
+				this.roles = null;
 			}
 		}
 		this.cancelable = taskClass.isAnnotationPresent(Cancelable.class);		

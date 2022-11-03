@@ -15,12 +15,14 @@ import org.tinylog.Logger;
 import photo2.PhotoProjectConfig;
 import task.Cancelable;
 import task.Description;
+import task.Role;
 import task.Tag;
 import task.Task;
 
 @Tag("photo")
 @Description("Traverse root_data_path and for all jpg files without YAML file in root_path create a new YAML file.")
 @Cancelable
+@Role("admin")
 public class Task_photo_create_yaml extends Task {
 
 	private Path root_path;
@@ -49,10 +51,10 @@ public class Task_photo_create_yaml extends Task {
 
 	@Override
 	public void run() {
-		traverseFolder(root_data_path);
+		traverseFolder(root_data_path, root_data_path);
 	}
 
-	private long traverseFolder(Path folder) {
+	private long traverseFolder(Path folder, Path rootPath) {
 		if(isSoftCanceled()) {
 			throw new RuntimeException("canceled");
 		}
@@ -72,9 +74,9 @@ public class Task_photo_create_yaml extends Task {
 				}
 				File file = path.toFile();
 				if(file.isDirectory()) {
-					counter += traverseFolder(path);					
+					counter += traverseFolder(path, rootPath);					
 				} else if(file.isFile()) {					
-					boolean ret = traverseFile(path, file);
+					boolean ret = traverseFile(path, file, rootPath);
 					if(ret) {
 						counter++;
 					}
@@ -103,7 +105,7 @@ public class Task_photo_create_yaml extends Task {
 		return counter;
 	}
 
-	protected boolean traverseFile(Path path, File file) {
+	protected boolean traverseFile(Path path, File file, Path rootPath) {
 		//Logger.info("file " + path);
 		String filename = file.getName();
 		if((filename.endsWith(".jpg") || filename.endsWith(".JPG")) && !(filename.contains(".jpg.") || filename.contains(".JPG."))) {
@@ -114,7 +116,8 @@ public class Task_photo_create_yaml extends Task {
 					//Logger.info("yamlPath " + yamlPath);
 					File yamlFile = yamlPath.toFile();
 					if(!yamlFile.exists()) {
-						String missingLocation = path.getParent().toString();
+						Path relativePath = rootPath.relativize(path);
+						String missingLocation = relativePath.getParent().toString();
 						yamlFile.getParentFile().mkdirs();
 						return MetaCreator.createYaml(file, yamlPath, missingLocation);
 					} else {

@@ -473,6 +473,18 @@ public class Vec<T> implements List<T> {
 		};
 	}
 	
+	public boolean none(Predicate<? super T> predicate) {
+		int len = size;
+		T[] data = items;
+		for (int i = 0; i < len; i++) {
+			T e = data[i];
+			if(predicate.test(e)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public boolean some(Predicate<? super T> predicate) {
 		int len = size;
 		T[] data = items;

@@ -2,12 +2,14 @@ package audio.task;
 
 import task.Cancelable;
 import task.Description;
+import task.Role;
 import task.Tag;
 import task.Task;
 
 @Tag("audio")
 @Description("Create hashs of all audio files, if missing.")
 @Cancelable
+@Role("admin")
 public class Task_audio_create_file_hashs extends Task {
 
 	@Override

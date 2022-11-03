@@ -91,6 +91,10 @@ public class ReviewListManager {
 	}
 
 	private void traverse(PhotoProjectConfig projectConfig, Path root) throws IOException {
+		if(!root.toFile().exists()) {
+			Logger.warn("review list path does not exist " + root);
+			return;
+		}
 		Logger.info("traverse " + root);
 		for(Path path:Files.newDirectoryStream(root)) {
 			if(path.toFile().isDirectory()) {

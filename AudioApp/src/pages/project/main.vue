@@ -312,7 +312,18 @@
     <q-separator/>      
     <div :class="sampleVisibility" style="position: relative;" ref="canvasContainer" :style="{height: player_fft_cutoff_range + 'px'}">
       <detail-view ref="detail" :sampleRate="sampleRate" :labels="labels" @save="onSaveDetailViewLabel"/>
-      <canvas ref="spectrogram" style="position: absolute; top: 0px; left: 0px;" :width="canvasWidth" :height="player_fft_cutoff_range" :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" class="spectrogram" @mousedown="onCanvasMouseDown" @mousemove="onCanvasMouseMove" @mouseleave="onCanvasMouseleave" @contextmenu="onCanvasContextmenu"/>
+      <canvas 
+        ref="spectrogram" 
+        style="position: absolute; top: 0px; left: 0px;" 
+        :width="canvasWidth" 
+        :height="player_fft_cutoff_range" 
+        :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" 
+        class="spectrogram" 
+        @mousedown="onCanvasMouseDown" 
+        @mousemove="onCanvasMouseMove" 
+        @mouseleave="onCanvasMouseleave" 
+        @contextmenu="onCanvasContextmenu"
+      />
       <q-linear-progress :value="spectrogramLoadedprogress" class="q-mt-md" size="25px" v-if="spectrogramLoadedprogress < 1 && spectrogramImagesErrorCount === 0" style="position: absolute; top: 0px; left: 0px; pointer-events: none;">
         <div class="absolute-full flex flex-center">
           <q-badge color="white" text-color="accent" label="loading spectrogram" />
@@ -337,9 +348,9 @@
         </template>
       </template>
 
-      <div v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelPosY + 'px',}"></div>
-      <q-badge v-if="mouseFreuqencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent">
-        <span v-html="mouseFreuqencyText"></span> kHz
+      <div v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelPosY + 'px',}"></div>
+      <q-badge v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent">
+        <span v-html="mouseFrequencyText"></span> kHz
         <span style="padding-left: 10px;">{{mouseTimePosText}}</span> s
       </q-badge> 
     </div>
@@ -579,11 +590,11 @@ export default defineComponent({
     staticLinesCanvasPosY() {
       return this.sampleRate === undefined || this.player_fft_window === undefined || this.player_static_lines_frequency === undefined || this.player_static_lines_frequency.length === 0 ? undefined : this.player_static_lines_frequency.map(staticLineFrequency => Math.round((staticLineFrequency * this.player_fft_window) / this.sampleRate));
     },    
-    mouseFreuqencyPos() {
+    mouseFrequencyPos() {
       return this.canvasMousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (((this.player_fft_cutoff_lower + this.canvasMousePixelPosY) * this.sampleRate) / this.player_fft_window);
     },
-    mouseFreuqencyText() {
-      return (this.mouseFreuqencyPos < 100000 ? (this.mouseFreuqencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFreuqencyPos / 1000).toFixed(2);
+    mouseFrequencyText() {
+      return (this.mouseFrequencyPos < 100000 ? (this.mouseFrequencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFrequencyPos / 1000).toFixed(2);
     },
     mouseSamplePos() {
       if(this.canvasMousePixelPosX === undefined || !this.player_fft_step || !this.player_spectrum_shrink_Factor || this.canvasPixelPosX === undefined || this.player_time_expansion_factor === undefined || !this.canvasWidth) {

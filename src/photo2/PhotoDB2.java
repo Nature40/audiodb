@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.tinylog.Logger;
@@ -79,6 +80,8 @@ public class PhotoDB2 {
 		reviewListManager.init();
 	}
 
+	public boolean autorunupdatethumbs = false;
+
 	public synchronized void refresh() {
 		Timer.start("scanRemoved");
 		try {
@@ -102,7 +105,9 @@ public class PhotoDB2 {
 			Logger.info(Timer.stop("traverse"));
 		}
 
-		updateThumbs();
+		if(autorunupdatethumbs) {
+			updateThumbs();
+		}
 	}
 
 	private synchronized void scanRemoved() throws IOException {
@@ -153,6 +158,13 @@ public class PhotoDB2 {
 		String id = meta_rel_path.replaceAll("/", "__");
 		id = id.replaceAll("\\\\", "__");
 		id = id.replaceAll(".yaml", "");
+		id = project + "__" + id;
+		return id;
+	}
+
+	public static String imageRelPathToID(String project, String image_rel_path) {
+		String id = image_rel_path.replaceAll("/", "__");
+		id = id.replaceAll("\\\\", "__");
 		id = project + "__" + id;
 		return id;
 	}
@@ -363,7 +375,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void forReviewListSetById(String id, ReviewListSetConsumer consumer) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
@@ -400,7 +412,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 
 
 	public void foreachReviewListBySet(String set, ReviewListConsumer consumer) {
@@ -443,7 +455,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public int reviewListEntryByIdEntriesCount(String reviewListId) {
 		try {
 			SqlConnector sqlConnector = getSqlConnector();
@@ -587,7 +599,7 @@ public class PhotoDB2 {
 		}
 	}
 
-	public Photo2 getPhoto2NotLocked(String id) {
+	public Photo2 getPhoto2(String id, boolean checkLocked) {
 		try {
 			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_PHOTO);
 			stmt.setString(1, id);
@@ -609,7 +621,7 @@ public class PhotoDB2 {
 				LocalDateTime date = timestamp == null ? null : timestamp.toLocalDateTime();
 				long last_modified = res.getLong(7);
 				boolean locked = res.getBoolean(8);
-				if(locked) {
+				if(checkLocked && locked) {
 					return null;
 				}
 				Logger.info("locked " + locked + "  " + meta_rel_path + "    " + image_rel_path);
@@ -620,7 +632,7 @@ public class PhotoDB2 {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public Photo2 getReviewSetById(String id) {
 		try {
 			PreparedStatement stmt = tlsqlconnector.get().getStatement(SQL.QUERY_REVIEW_LIST_COLLECTION_BY_ID);
@@ -655,15 +667,21 @@ public class PhotoDB2 {
 		}
 	}
 
-	private volatile Interrupter interrupterUpdateThumbs;
+	private volatile AtomicReference<Interrupter> interrupterUpdateThumbs = new AtomicReference<>();
+	
+	public Interrupter getInterrupterUpdateThumbs() {
+		return interrupterUpdateThumbs.get();
+	}
 
 	public synchronized void updateThumbs() {
-		if(this.interrupterUpdateThumbs != null) {
-			this.interrupterUpdateThumbs.interrupted = true;
-			this.interrupterUpdateThumbs = null;
-		}
 		Interrupter interrupterLocalUpdateThumbs = new Interrupter();
-		this.interrupterUpdateThumbs = interrupterLocalUpdateThumbs;
+		Interrupter oldInterrupterUpdateThumbs = interrupterUpdateThumbs.getAndSet(interrupterLocalUpdateThumbs);
+		if(oldInterrupterUpdateThumbs != null) {
+			oldInterrupterUpdateThumbs.interrupted = true;
+		}
+		if(interrupterLocalUpdateThumbs.interrupted) {
+			return;
+		}
 		new Thread(() -> {
 			foreachIdNotLocked(photo_id -> {
 				try {
@@ -679,7 +697,7 @@ public class PhotoDB2 {
 					if(res.next()) {
 						//Logger.info("true");
 					} else {
-						Photo2 photo = getPhoto2NotLocked(photo_id);
+						Photo2 photo = getPhoto2(photo_id, true);
 						if(photo != null) {
 							Logger.info("insert " + cacheFilename + "  " + photo.imagePath + "    " + photo.id);
 							while(ForkJoinPool.commonPool().getQueuedSubmissionCount() > maxQueue) {
@@ -705,7 +723,8 @@ public class PhotoDB2 {
 					Logger.warn(e);
 					e.printStackTrace();
 				}
-			}, interrupterLocalUpdateThumbs);			
+			}, interrupterLocalUpdateThumbs);
+			interrupterLocalUpdateThumbs.interrupted = true;
 		}).start();
 	}
 

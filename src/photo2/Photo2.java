@@ -58,10 +58,11 @@ public class Photo2 {
 		YamlUtil.writeSafeYamlMap(metaPath, map);
 	}
 
-	public void setClassification(float[] bbox, String classification, String classificator, String identity, String date) {		
+	public boolean setClassification(float[] bbox, String classification, String classificator, String identity, String date, float conf) {		
 		PhotoMeta photoMeta = new PhotoMeta(getMeta());
-		photoMeta.setClassification(bbox, classification, classificator, identity, date);
+		boolean ret = photoMeta.setClassification(bbox, classification, classificator, identity, date, conf);
 		writeMeta(photoMeta.metaMap.getInternalMap());
+		return ret;
 	}
 
 	@Override

@@ -8,8 +8,8 @@
             <q-spinner color="primary" />
             Submitting ...
           </div>
-          <div v-if="submittingError" class="text-red">
-            Error at submitting or network connection.
+          <div v-if="submittingError !== undefined" class="text-red">
+            Error at submitting or network connection: {{submittingError}}
             <q-btn dense icon="refresh" @click="submit(task);">
             <q-tooltip>Resubmit</q-tooltip>            
             </q-btn>
@@ -76,7 +76,7 @@ export default defineComponent({
   data() {
     return {  
       submitting: false, 
-      submittingError: false, 
+      submittingError: undefined, 
       task: undefined,
       id: undefined,
       identity: undefined,
@@ -125,18 +125,19 @@ export default defineComponent({
       this.show = true;
       try {
         this.submitting = true;
-        this.submittingError = false;
+        this.submittingError = undefined;
         var urlPath = 'tasks';
         var data = {action: {action: 'submit', task: task}};
         var response = await this.$api.post(urlPath, data);
         this.id = response.data.result.id;
         this.submitting = false;
-        this.submittingError = false;
+        this.submittingError = undefined;
         this.refresh(); 
       } catch(e) {
-        console.log(e);
+        const errorText = e && e.response && e.response.data ? e.response.data : 'Error at submitting';
+        console.log(errorText);
         this.submitting = false;
-        this.submittingError = true;
+        this.submittingError = errorText;
       }      
     },
     view(id) {

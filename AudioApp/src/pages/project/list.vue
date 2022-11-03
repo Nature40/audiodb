@@ -83,8 +83,18 @@
     <q-toolbar v-show="workingEntry !== undefined && sample !== undefined">      
       <q-space />
       <div style="position: relative;">
-        <canvas ref="spectrogram" :class="{blur: loadingSpectrogram, 'no-blur': !loadingSpectrogram}" />
+        <canvas 
+          ref="spectrogram" 
+          class="spectrogram"
+          :class="{blur: loadingSpectrogram, 'no-blur': !loadingSpectrogram}" 
+          @mousemove="onCanvasMouseMove" 
+          @mouseleave="onCanvasMouseleave"
+        />
         <div v-if="loadingSpectrogram" style="position: absolute; color: red; top: 0px;">Loading spectrogram.</div>
+        <div v-if="canvasMousePixelPosY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.3);" :style="{bottom: canvasMousePixelPosY + 'px',}" />
+        <div v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none; background-color: rgba(255, 255, 255, 0.5); border-radius: 10px;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}">
+          <span v-html="mouseFrequencyText"></span> kHz
+        </div>        
       </div>
       <q-space />
     </q-toolbar>
@@ -182,7 +192,9 @@ export default defineComponent({
       saveLabelsLoading: false,
       saveLabelsError: false,
       statusDone: true,
-      skipdone: true,           
+      skipdone: true, 
+      canvasMousePixelPosX: undefined, 
+      canvasMousePixelPosY: undefined,         
     };
   },
   
@@ -227,6 +239,12 @@ export default defineComponent({
       let c = Math.floor((this.player_fft_cutoff_upper_frequency *  this.player_fft_window) / this.sampleRate);
       return c < 1 ? 1 : c > this.player_fft_window / 2 ? this.player_fft_window / 2 : c;
     },
+    player_fft_cutoff_range() {
+      if(this.player_fft_cutoff === undefined || this.player_fft_cutoff_lower === undefined) {
+        return undefined;
+      }
+      return this.player_fft_cutoff - this.player_fft_cutoff_lower;
+    },    
     sampleLabel() {
       if(this.workingEntry === undefined || this.sample === undefined || this.sample.labels === undefined) {
         return undefined;
@@ -236,7 +254,13 @@ export default defineComponent({
     },
     userSelectedLabelNamesSet() {
       return new Set(this.userSelectedLabelNames);
-    },    
+    },
+    mouseFrequencyPos() {
+      return this.canvasMousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (((this.player_fft_cutoff_lower + this.canvasMousePixelPosY) * this.sampleRate) / this.player_fft_window);
+    },
+    mouseFrequencyText() {
+      return (this.mouseFrequencyPos < 100000 ? (this.mouseFrequencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFrequencyPos / 1000).toFixed(2);
+    },        
   },
 
   methods: {
@@ -573,7 +597,16 @@ export default defineComponent({
         console.log(e);
         this.$q.notify({type: 'negative', message: 'Error submitting label. You may try again to submit.'});
       }
-    },        
+    },
+    onCanvasMouseMove(e) {
+      var rect = this.$refs.spectrogram.getBoundingClientRect();
+      this.canvasMousePixelPosX = e.clientX - rect.left;
+      this.canvasMousePixelPosY = (this.player_fft_cutoff_range - 1) - (e.clientY - rect.top);
+    },
+    onCanvasMouseleave(e) {
+      this.canvasMousePixelPosX = undefined;
+      this.canvasMousePixelPosY = undefined;
+    },            
   },
 
   watch: {
@@ -622,6 +655,11 @@ export default defineComponent({
 .label-definition-r::first-letter {
   color: rgb(97, 97, 97);
   font-size: 120%;
+}
+
+.spectrogram {
+  display: block; /* remove bottom border */
+  cursor: crosshair;
 }
 
 </style>

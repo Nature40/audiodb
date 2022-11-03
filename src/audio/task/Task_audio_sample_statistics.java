@@ -11,6 +11,7 @@ import task.Cancelable;
 import task.Description;
 import task.Descriptor.Param.Type;
 import task.Param;
+import task.Role;
 import task.Tag;
 import task.Task;
 import task.TaskResult;
@@ -28,6 +29,7 @@ import util.collections.vec.Vec;
 @Param(name = "col_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'time_zone' in CSV output.")
 @Param(name = "col_temperature", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'temperature' in CSV output.")
 @Param(name = "filename", type = Type.STRING, preset = "samples.csv", description = "Filename of output CSV-file.")
+@Role("admin")
 public class Task_audio_sample_statistics extends Task {
 
 	@Override

@@ -1,5 +1,8 @@
 package util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.function.BiConsumer;
@@ -10,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.json.JSONWriter;
 
 import util.collections.ReadonlyList;
@@ -109,7 +113,7 @@ public class JsonUtil {
 		}
 		json.endArray();
 	}
-	
+
 	public static <T> void writeStringArray(JSONWriter json, String[] a) {
 		json.array();
 		if(a != null) {
@@ -119,7 +123,7 @@ public class JsonUtil {
 		}
 		json.endArray();
 	}
-	
+
 	public static <T> void writeStringArray(JSONWriter json, String[] a, int maxLen) {
 		json.array();
 		if(a != null) {
@@ -155,7 +159,7 @@ public class JsonUtil {
 			json.value(timestamp);
 		}
 	}
-	
+
 	public static void write(JSONWriter json, String name, String value) {
 		json.key(name);
 		json.value(value);
@@ -183,8 +187,11 @@ public class JsonUtil {
 		json.value(value);
 	}
 
-
-
-
-
+	public static JSONObject read(File file) throws IOException {
+		try(FileInputStream in = new FileInputStream(file)) {
+			JSONTokener jsonTokener = new JSONTokener(in);
+			JSONObject json = new JSONObject(jsonTokener);
+			return json;
+		}
+	}
 }

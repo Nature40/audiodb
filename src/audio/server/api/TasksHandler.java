@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -165,13 +166,14 @@ public class TasksHandler extends AbstractHandler {
 	private void handleRoot_POST(Request request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		Account sessionAccount = (Account) session.getAttribute("account");
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONObject jsonAction = jsonReq.getJSONObject("action");
 		String actionName = jsonAction.getString("action");
 		switch(actionName) {
 		case "submit": {
 			JSONObject jsonTask = jsonAction.getJSONObject("task");
-			String id = tasks.submit(jsonTask, sessionAccount);
+			String id = tasks.submit(jsonTask, sessionAccount, roleBits);
 			response.setContentType("application/json");
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();

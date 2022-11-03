@@ -4,13 +4,16 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
+import org.tinylog.Logger;
+
+import io.jsonwebtoken.lang.Objects;
 import util.collections.vec.Vec;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;
 
 public class PhotoMeta {
-	
-	
+
+
 	public final YamlMap metaMap;
 
 	public PhotoMeta(YamlMap metaMap) {
@@ -75,19 +78,23 @@ public class PhotoMeta {
 		metaMap.getInternalMap().put("detections", list);
 	}
 
-	public void setClassification(float[] bbox, String classification, String classificator, String identity, String date) {
+	public boolean setClassification(float[] bbox, String classification, String classificator, String identity, String date, float conf) {
 		Vec<Detection> detections = getDetections();
-		setClassification(detections, bbox, classification, classificator, identity, date);
+		boolean ret = setClassification(detections, bbox, classification, classificator, identity, date, conf);
 		setDetections(detections);
+		return ret;
 	}
 
-	public void setClassification(Vec<Detection> detections, float[] bbox, String classification, String classificator, String identity, String date) {
+	public boolean setClassification(Vec<Detection> detections, float[] bbox, String classification, String classificator, String identity, String date, float conf) {
 		LinkedHashMap<String, Object> cMap = new LinkedHashMap<String, Object>();
 		cMap.put("classification", classification);
 		cMap.put("classificator", classificator);
 		cMap.put("identity", identity);
 		cMap.put("date", date);
-		
+		if(Float.isFinite(conf)) {
+			cMap.put("conf", conf);
+		}
+
 		Detection detection = null;
 		for(Detection d : detections) {
 			if(d.isDetection(bbox)) {
@@ -99,9 +106,26 @@ public class PhotoMeta {
 			detection = new Detection(bbox);
 			detections.add(detection);
 		}
-		detection.classifications.add(new YamlMap(cMap));
+		if(detection.classifications.none(m -> {
+			Map<String, Object> oMap = m.getInternalMap();
+			Object cConf = cMap.get("conf");
+			Object oConf = oMap.get("conf");
+			float cConfN = cConf != null && cConf instanceof Number ? ((Number)cConf).floatValue() : -9999;
+			float oConfN = oConf != null && oConf instanceof Number ? ((Number)oConf).floatValue() : -9999;
+			
+			return Objects.nullSafeEquals(cMap.get("classification"), oMap.get("classification"))
+					&& Objects.nullSafeEquals(cMap.get("classificator"), oMap.get("classificator"))
+					&& Objects.nullSafeEquals(cMap.get("identity"), oMap.get("identity"))
+					&& Objects.nullSafeEquals(cMap.get("date"), oMap.get("date"))
+					&& cConfN == oConfN;
+		})) {
+			detection.classifications.add(new YamlMap(cMap));
+			return true;
+		} else {
+			return false;
+		}
 	}
-	
+
 	public LinkedHashSet<String> getClassifications() {
 		LinkedHashSet<String> classificationSet = new LinkedHashSet<String>();
 		for(Detection detection : getDetections()) {
@@ -115,7 +139,7 @@ public class PhotoMeta {
 		//Logger.info(classificationSet);
 		return classificationSet;
 	}
-	
+
 	public boolean isClassifiedAsPerson() {
 		//Logger.info(getClassifications().contains("person"));
 		LinkedHashSet<String> classifications = getClassifications();

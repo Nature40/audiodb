@@ -23,7 +23,7 @@
           <thead>
             <tr>
               <th>Parameter</th> 
-              <th>Value</th> 
+              <th style="min-width: 700px;">Value</th> 
             </tr>
           </thead>
           <tbody>

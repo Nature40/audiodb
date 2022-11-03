@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,10 +14,12 @@ import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
+import org.tinylog.Logger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -57,7 +58,7 @@ public class YamlUtil {
 	}
 
 	public static void writeSafeYamlMap(Path path, Map<String, Object> yamlMap) {		
-		Path writepath = Paths.get(path.toString()+"_temp");
+		Path writepath = Paths.get(path.toString()+"_temp_" + Math.abs(ThreadLocalRandom.current().nextLong()));
 		File writeFile = writepath.toFile();
 		try(FileWriter fileWriter = new FileWriter(writeFile, StandardCharsets.UTF_8)){
 			PrintWriter out = new PrintWriter(fileWriter);
@@ -65,8 +66,23 @@ public class YamlUtil {
 			out.close();
 			if(out.checkError()) {
 				throw new RuntimeException("write error");	
-			}				
-			Files.move(writepath, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+			}
+			int count = 0;
+			while(true) {
+				try {
+					Files.move(writepath, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+					if(count > 0) {
+						Logger.warn((count + 1) + " tries on successful move " + writepath);
+					}
+					return;
+				} catch (Exception e) {
+					count++;
+					if(count >= 100) {
+						throw e;
+					}
+				}
+				Thread.sleep(50);
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -170,7 +186,7 @@ public class YamlUtil {
 		T[] a = list.mapArray(generator, mapper);
 		yamlMap.put(name, a);
 	}
-	
+
 	public static String readFileToString(Path path) throws IOException {
 		return Files.readString(path, StandardCharsets.UTF_8);
 	}

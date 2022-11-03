@@ -10,6 +10,7 @@ import org.tinylog.Logger;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import task.Cancelable;
 import task.Description;
+import task.Role;
 import task.Tag;
 import task.Task;
 import util.AudioTimeUtil;
@@ -17,6 +18,7 @@ import util.AudioTimeUtil;
 @Tag("audio")
 @Description("Create audio recording timeseries per location.")
 @Cancelable
+@Role("admin")
 public class Task_audio_location_timeseries extends Task {
 
 	@Override

@@ -1,5 +1,6 @@
 package task;
 
+import java.util.BitSet;
 import java.util.HashMap;
 
 import org.json.JSONArray;
@@ -15,14 +16,16 @@ public class Ctx {
 	public final String id;
 	public final Broker broker;
 	public final Account account;
+	public final BitSet roleBits;	
 	private HashMap<String, String> paramMap;
 
-	public Ctx(Descriptor descriptor, JSONObject json, String id, Broker broker, Account account) {
+	public Ctx(Descriptor descriptor, JSONObject json, String id, Broker broker, Account account, BitSet roleBits) {
 		this.descriptor = descriptor;
 		this.json = json;
 		this.id = id;
 		this.broker = broker;
 		this.account = account;
+		this.roleBits = roleBits;
 		if(json.has("params")) {
 			JSONArray jsonParams = json.getJSONArray("params");
 			HashMap<String, String> paramMap = new HashMap<String, String>();
