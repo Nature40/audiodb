@@ -249,7 +249,13 @@ export default defineComponent({
       if(this.workingEntry === undefined || this.sample === undefined || this.sample.labels === undefined) {
         return undefined;
       }
-      const label = this.sample.labels.find(e => e.start === this.workingEntry.start && e.end === this.workingEntry.end);
+      //const label = this.sample.labels.find(e => e.start === this.workingEntry.start && e.end === this.workingEntry.end);
+      const label = this.sample.labels.find(e => 
+        (e.start - 0.001) <= this.workingEntry.start 
+        && this.workingEntry.start <= (e.start + 0.001) 
+        && (e.end - 0.001) <= this.workingEntry.end 
+        && this.workingEntry.end <= (e.end + 0.001)
+      );
       return label;
     },
     userSelectedLabelNamesSet() {
