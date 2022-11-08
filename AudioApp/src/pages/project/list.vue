@@ -1,5 +1,5 @@
 <template>
-  <q-page class="fit column content-center">
+  <q-page class="fit column content-center bg-grey-1" id="list_view_page">
     <q-toolbar class="bg-grey-3" id="viewWidth">
       <q-btn @click="stop()" icon="stop" padding="xs" push></q-btn>      
       <q-btn @click="replay()" icon="play_arrow" padding="xs" push></q-btn>
@@ -13,6 +13,7 @@
       <q-space />
       <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select audio sample." push padding="xs" no-caps>List [<b>{{listId}}</b>]</q-btn>
       <list-manager ref="listmanager" @set_worklist="setWorklist($event)" />
+      <q-btn @click="onFullscreenClick" :icon="isFullscreen ? 'close_fullscreen' : 'fullscreen'" title="Toggle fullscreen." round padding="xs" no-caps class="q-ml-sm"></q-btn>
     </q-toolbar>
     <q-toolbar class="bg-grey-4" v-if="workingEntry !== undefined && sample !== undefined">
       <a :href="'#/projects/' + project + '/main?sample=' + sample.id" target="_blank" rel="noopener noreferrer" title="Open full audio sample view at new tab.">
@@ -194,7 +195,8 @@ export default defineComponent({
       statusDone: true,
       skipdone: true, 
       canvasMousePixelPosX: undefined, 
-      canvasMousePixelPosY: undefined,         
+      canvasMousePixelPosY: undefined,
+      isFullscreen: false,         
     };
   },
   
@@ -612,6 +614,18 @@ export default defineComponent({
     onCanvasMouseleave(e) {
       this.canvasMousePixelPosX = undefined;
       this.canvasMousePixelPosY = undefined;
+    },
+    onFullscreenClick() {
+      if(document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        const e = document.getElementById('list_view_page'); 
+        if(e.requestFullscreen) {
+          e.requestFullscreen();
+        } else if (e.webkitRequestFullscreen) {
+          e.webkitRequestFullscreen();
+        }
+      }    
     },            
   },
 
@@ -637,6 +651,10 @@ export default defineComponent({
     },
   },  
   async mounted() {
+    document.addEventListener('fullscreenchange', (e) => {
+      this.isFullscreen = document.fullscreenElement ? true : false;
+    });
+    this.isFullscreen = document.fullscreenElement ? true : false;    
     this.refreshWorkingEntry();
   },    
 })
