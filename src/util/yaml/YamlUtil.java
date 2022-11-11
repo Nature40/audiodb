@@ -1,11 +1,12 @@
 package util.yaml;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,12 +47,24 @@ public class YamlUtil {
 			//addImplicitResolver(Tag.TIMESTAMP, TIMESTAMP, "0123456789"); // do not parse timestamps			
 		}
 	}
-
+	
 	public static YamlMap readYamlMap(Path path) {
-		try(InputStream in = new FileInputStream(path.toFile())) {			
-			Yaml yaml = new Yaml(new Constructor(), new Representer(), new DumperOptions(), new LoaderOptions(), new CleanResolver());
-			YamlMap yamlMap = YamlMap.ofObject(yaml.load(in));
-			return yamlMap;
+		try(InputStream inputStream = new FileInputStream(path.toFile())) {	
+			try(BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
+				LoaderOptions loaderOptions = new LoaderOptions();
+				DumperOptions dumperOptions = new DumperOptions();
+				Yaml yaml = new Yaml(
+						new Constructor(loaderOptions), 
+						new Representer(dumperOptions), 
+						dumperOptions, 
+						loaderOptions, 
+						new CleanResolver()
+					);
+				YamlMap yamlMap = YamlMap.ofObject(yaml.load(bufferedInputStream));
+				return yamlMap;
+			}
+		} catch (RuntimeException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -59,30 +72,30 @@ public class YamlUtil {
 
 	public static void writeSafeYamlMap(Path path, Map<String, Object> yamlMap) {		
 		Path writepath = Paths.get(path.toString()+"_temp_" + Math.abs(ThreadLocalRandom.current().nextLong()));
-		File writeFile = writepath.toFile();
+		File writeFile = writepath.toFile();		
 		try(FileWriter fileWriter = new FileWriter(writeFile, StandardCharsets.UTF_8)){
-			PrintWriter out = new PrintWriter(fileWriter);
-			new Yaml().dump(yamlMap, out);
-			out.close();
-			if(out.checkError()) {
-				throw new RuntimeException("write error");	
-			}
-			int count = 0;
-			while(true) {
-				try {
-					Files.move(writepath, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-					if(count > 0) {
-						Logger.warn((count + 1) + " tries on successful move " + writepath);
+			try(BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)){
+				new Yaml().dump(yamlMap, bufferedWriter);
+				bufferedWriter.close();
+				fileWriter.close();
+				for(int count = 0;;) {
+					try {
+						Files.move(writepath, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+						if(count > 0) {
+							Logger.warn((count + 1) + " tries on successful move " + writepath);
+						}
+						return;
+					} catch (Exception e) {
+						count++;
+						if(count >= 100) {
+							throw e;
+						}
 					}
-					return;
-				} catch (Exception e) {
-					count++;
-					if(count >= 100) {
-						throw e;
-					}
+					Thread.sleep(50);
 				}
-				Thread.sleep(50);
-			}
+			}				
+		} catch (RuntimeException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

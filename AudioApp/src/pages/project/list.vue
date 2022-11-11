@@ -26,6 +26,7 @@
       <span style="padding-left: 10px;" v-if="(!sample.location || !sample.device) && sample.date === undefined">{{sample.id}}</span>
       <span style="padding-left: 20px;">{{workingEntry.start}} - {{workingEntry.end}}</span>
       <span style="padding-left: 20px; color: grey;">{{Number.isFinite(currentTime) ? currentTime.toFixed(2) : '---'}}</span>
+      ......{{spectrogramPos}}
       <q-space />
 
 
@@ -91,8 +92,10 @@
           @mousemove="onCanvasMouseMove" 
           @mouseleave="onCanvasMouseleave"
         />
+        <div v-if="spectrogramPos !== undefined" class="spectrogram-position" :style="{top: 0 + 'px', left: spectrogramPos + 'px',}" />
+        <div v-if="spectrogramPos !== undefined" class="spectrogram-position" :style="{bottom: 0 + 'px', left: spectrogramPos + 'px',}" />
         <div v-if="loadingSpectrogram" style="position: absolute; color: red; top: 0px;">Loading spectrogram.</div>
-        <div v-if="canvasMousePixelPosY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.3);" :style="{bottom: canvasMousePixelPosY + 'px',}" />
+        <div v-if="canvasMousePixelPosY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.3);" :style="{bottom: canvasMousePixelPosY + 'px',}" />        
         <div v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none; background-color: rgba(255, 255, 255, 0.5); border-radius: 10px;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}">
           <span v-html="mouseFrequencyText"></span> kHz
         </div>        
@@ -196,7 +199,9 @@ export default defineComponent({
       skipdone: true, 
       canvasMousePixelPosX: undefined, 
       canvasMousePixelPosY: undefined,
-      isFullscreen: false,         
+      isFullscreen: false,
+      fft_step: undefined,      
+      shrink_Factor: undefined,   
     };
   },
   
@@ -206,10 +211,10 @@ export default defineComponent({
       player_fft_cutoff_lower_frequency: state => state.project.player_fft_cutoff_lower_frequency,
       player_fft_window: state => state.project.player_fft_window,
       player_fft_cutoff_upper_frequency: state => state.project.player_fft_cutoff_upper_frequency,
-      player_fft_step: state => state.project.player_fft_step,
+      //player_fft_step: state => state.project.player_fft_step,
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
-      player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
+      //player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
     }),
     listId() {
       return this.$route.query.list;
@@ -268,6 +273,23 @@ export default defineComponent({
     },
     mouseFrequencyText() {
       return (this.mouseFrequencyPos < 100000 ? (this.mouseFrequencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFrequencyPos / 1000).toFixed(2);
+    },
+    spectrogramPos() {
+      if(this.currentTime === undefined 
+        || this.currentTime < 0 
+        || this.sampleRate === undefined 
+        || this.sampleRate < 1
+        || this.fft_step === undefined
+        || this.fft_step < 1
+        || this.shrink_Factor === undefined
+        || this.shrink_Factor < 1
+        || this.workingEntry === undefined
+        || this.workingEntry.start === undefined
+        || this.workingEntry.start < 0
+      ) {
+        return undefined;
+      }
+      return Math.floor(((this.currentTime - this.workingEntry.start) * this.sampleRate) / (this.fft_step * this.shrink_Factor));
     },        
   },
 
@@ -419,6 +441,8 @@ export default defineComponent({
           const maxWidth = document.getElementById('viewWidth').clientWidth;
           var entrySampleCount = end_sample - start_sample + 1;
           var {fft_step, shrink_Factor} = this.getShrinking(entrySampleCount, maxWidth);
+          this.fft_step = fft_step;
+          this.shrink_Factor = shrink_Factor;
 
           url.searchParams.append('window', this.player_fft_window);
           url.searchParams.append('step', fft_step);
@@ -619,7 +643,8 @@ export default defineComponent({
       if(document.fullscreenElement) {
         document.exitFullscreen();
       } else {
-        const e = document.getElementById('list_view_page'); 
+        //const e = document.getElementById('list_view_page'); // bugs in select elements at fullscreen
+        const e = document.documentElement;
         if(e.requestFullscreen) {
           e.requestFullscreen();
         } else if (e.webkitRequestFullscreen) {
@@ -684,6 +709,16 @@ export default defineComponent({
 .spectrogram {
   display: block; /* remove bottom border */
   cursor: crosshair;
+}
+
+.spectrogram-position {
+  position: absolute; 
+  z-index: 1; 
+  width: 1px;
+  height: 128px;
+  background-color: #ff0000b0;
+  box-shadow: 0px 0px 4px red;
+  /*transition: all 0.05s linear;*/
 }
 
 </style>
