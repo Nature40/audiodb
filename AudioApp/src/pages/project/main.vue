@@ -403,6 +403,11 @@
         </tbody>
       </q-markup-table>
     </div>
+
+    <div class="column">
+      <div v-if="selectedLabel.label_status !== undefined"><b>Label status: </b> {{selectedLabel.label_status}} <q-icon name="done" color="green" v-if="selectedLabel.label_status === 'done'" /></div>
+      <div v-if="selectedLabel.comment !== undefined"><b>Comment: </b> {{selectedLabel.comment}}</div>
+    </div> 
   </div>
 
   <div class="q-ma-md" v-if="labels.length > 0">

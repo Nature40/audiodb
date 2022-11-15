@@ -9,7 +9,7 @@
           icon="menu"
           aria-label="Menu"
           @click="toggleLeftDrawer"
-          title="show/hide main menu"
+          title="Toggle sidebar."
         />
 
         <q-toolbar-title>

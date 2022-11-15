@@ -53,7 +53,7 @@ public class Label {
 
 	public final double start;
 	public final double end;
-	public final String comment;
+	public String comment;
 	public final Vec<GeneratorLabel> generatorLabels;
 	public Vec<UserLabel> userLabels;
 	public final Vec<ReviewedLabel> reviewedLabels;

@@ -27,7 +27,7 @@ import util.Web;
 import util.collections.vec.Vec;
 
 public class Sample2Handler {
-	
+
 
 	private final Broker broker;
 	private final SampleManager sampleManager;
@@ -162,6 +162,10 @@ public class Sample2Handler {
 			case "set_label_names": {
 				double a = jsonAction.getDouble("start");
 				double b = jsonAction.getDouble("end");
+				String comment = jsonAction.optString("comment", null);
+				if(comment != null && comment.isBlank()) {
+					comment = null;
+				}
 				if(!(Double.isFinite(a) || Double.isFinite(b))) {
 					throw new RuntimeException("invalid label range parameter");
 				}
@@ -199,6 +203,9 @@ public class Sample2Handler {
 				label.userLabels = newUserlabels;
 				String label_status = JsonUtil.optString(jsonAction, "set_label_status", null);
 				label.labelStatus = Label.LabelStatus.parse(label_status);
+				if(comment != null) {
+					label.comment = comment;
+				}
 				sample.setLabels(labels);
 				break;
 			}

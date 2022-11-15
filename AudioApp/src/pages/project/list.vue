@@ -1,17 +1,57 @@
 <template>
   <q-page class="fit column content-center bg-grey-1" id="list_view_page">
     <q-toolbar class="bg-grey-3" id="viewWidth">
-      <q-btn @click="stop()" icon="stop" padding="xs" push></q-btn>      
-      <q-btn @click="replay()" icon="play_arrow" padding="xs" push></q-btn>
-      <q-checkbox v-model="autoplay" label="autoplay" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autoplay ? 'black' : 'grey'}" />      
+      <q-btn @click="stop()" icon="stop" padding="xs" push title="Stop audio playback."></q-btn>      
+      <q-btn @click="replay()" icon="play_arrow" padding="xs" push title="Play back the audio segment starting from beginning."></q-btn>
+      <q-checkbox v-model="autoplay" label="auto-play" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autoplay ? 'black' : 'grey'}" title="When moving in the list of audio segments, directly play back the audio."/>      
       <q-space />
-      <q-btn @click="onPrev" icon="skip_previous" :loading="indexActionLoading" padding="xs" push></q-btn>
-        [[<b>{{Number.isFinite(index) ? (index + 1) : '-'}}</b>]]
-      <q-btn @click="onNext" icon="skip_next" :loading="indexActionLoading" padding="xs" push></q-btn>
-      <q-checkbox v-model="skipdone" label="skipdone" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: skipdone ? 'black' : 'grey'}" />      
+      <q-btn @click="onPrev" icon="skip_previous" :loading="indexActionLoading" padding="xs" push title="Move to previous audio segment in the list." />
+        <q-btn-dropdown :label="'[[' + (Number.isFinite(index) ? (index + 1) : '-') + ']]'" dense padding="xs" push size="md" :loading="indexActionLoading" dropdown-icon="more_vert">
+          <div style="background-color: #eaeaea;" class="column">
+            <b style="text-align: center;">Directly jump to entry position in worklist.</b>
+            <div class="row justify-between">
+              <q-btn 
+                push 
+                no-caps 
+                @click="jumpToLast(jumpPos - 1)" 
+                :disabled="!Number.isFinite(jumpPos)"
+                title="Jump to requested position or, if position is not available to next lower available position."
+              >
+                (&lt;) Jump to 
+              </q-btn>
+              <q-input
+                v-model.number="jumpPos"
+                type="number"
+                outlined
+                style="width: 100px"
+                dense
+                bg-color="white"
+                title="Requested position. To Jump to that position, click the jump-button on the left or on the right."
+              />
+              <q-btn 
+                push 
+                no-caps 
+                @click="jumpToFirst(jumpPos - 1)" 
+                :disabled="!Number.isFinite(jumpPos)"
+                title="Jump to requested position or, if position is not available to next higher available position."
+              >
+                Jump to (&gt;)
+              </q-btn>
+            </div>  
+            <div class="row justify-between">
+              <q-btn push no-caps @click="jumpToFirst()" title="Jump to first available position.">Jump to first</q-btn>
+              <q-btn push no-caps @click="jumpToLast()" title="Jump to last available position.">Jump to last</q-btn>
+            </div>
+            <div>Range of worklist entry positions: <b>1</b> to <b>{{worklistEntryCount}}</b></div>
+            <div>Note: If your requested entry position is not available, jump to next (respective previous) available position.</div>                        
+            <div>Note: If option 'skip done' is checked, positions marked as 'done' are not available in the worklist.</div> 
+          </div>
+        </q-btn-dropdown>
+      <q-btn @click="onNext" icon="skip_next" :loading="indexActionLoading" padding="xs" push title="Move to next audio segment in the list." />
+      <q-checkbox v-model="skipdone" label="skip 'done'" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: skipdone ? 'black' : 'grey'}" title="When moving in the list of audio segments, skip all entries that are already marked as 'done'."/>      
       <span v-if="indexActionError" style="color: red;">{{indexActionError}}</span>
       <q-space />
-      <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select audio sample." push padding="xs" no-caps>List [<b>{{listId}}</b>]</q-btn>
+      <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select worklist of audio segments." push padding="xs" no-caps>List [<b>{{listId}}</b>]</q-btn>
       <list-manager ref="listmanager" @set_worklist="setWorklist($event)" />
       <q-btn @click="onFullscreenClick" :icon="isFullscreen ? 'close_fullscreen' : 'fullscreen'" title="Toggle fullscreen." round padding="xs" no-caps class="q-ml-sm"></q-btn>
     </q-toolbar>
@@ -26,14 +66,12 @@
       <span style="padding-left: 10px;" v-if="(!sample.location || !sample.device) && sample.date === undefined">{{sample.id}}</span>
       <span style="padding-left: 20px;">{{workingEntry.start}} - {{workingEntry.end}}</span>
       <span style="padding-left: 20px; color: grey;">{{Number.isFinite(currentTime) ? currentTime.toFixed(2) : '---'}}</span>
-      ......{{spectrogramPos}}
       <q-space />
-
 
       <q-select
         filled
         v-model="userSelectedLabelNames"
-        :options="labelDefinitions"
+        :options="selectableLabels"
         :label="userSelectedLabelNames === undefined || userSelectedLabelNames === null || userSelectedLabelNames.length === 0 ? '(none)' : 'Labels'"
         style="min-width: 400px"
         dense
@@ -45,15 +83,45 @@
         clearable
         ref="selectLabel"
       >
+        <template v-slot:prepend>
+          <div class="cursor-pointer" @click.stop.prevent="">
+            <q-icon name="edit" /> 
+            <q-popup-edit v-model="customLabel" v-slot="scope" title="Add a custom label" @before-show="customLabel = undefined" @save="addCustomLabel">
+              <span style="color: green;">Confirm label by return key or by add-button.</span> 
+              <q-input v-model="scope.value" dense autofocus @keyup.enter="scope.set" hint="Type your new custom label here.">
+                <template v-slot:after>
+                  <q-btn 
+                    @click="scope.set" 
+                    icon="keyboard_return" 
+                    padding="xs" 
+                    push 
+                    :disabled="scope.value === undefined || scope.value === null || scope.value.length === 0"
+                    title="Add the new custom label to your list of currently selected labels."
+                  />
+                </template>
+              </q-input>
+              <br><i style="color: #b11c1c;"><q-icon name="speaker_notes" size="xs"/> Only add a custom label if there is no corresponding item in the given list of labels.</i>
+              <br><br><i><q-icon name="speaker_notes" size="xs"/> To open the list of labels, click outside of this box to close it and then click at the area on the right next to this edit button to open the drop down label selector.</i>                
+              </q-popup-edit>
+          </div>                   
+        </template>      
         <template v-slot:append>
-          <!--<q-icon name="edit" @click.stop.prevent="labelSelectDialogShow = true" />--> 
           <q-icon name="apps" @click.stop.prevent="labelSelectDialogShow = true" />          
           <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
             <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
               <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
                 <q-tooltip>Close</q-tooltip>
               </q-btn>
-              <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name);"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
+              <q-badge 
+                v-for="labelDefinition in selectableLabels" 
+                :key="labelDefinition.name" 
+                @click="addLabel(labelDefinition.name);"  
+                color="grey-3" 
+                :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" 
+                style="width: 200px; margin: 1px; overflow: hidden;" 
+                class="text-h6" 
+                :title="labelDefinition.desc"
+              >
                 <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
                 <span v-else class="label-definition-r">{{labelDefinition.name}}</span>
               </q-badge>
@@ -63,15 +131,40 @@
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps">
             <q-item-section>
-              <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+              <q-item-label>
+                <b>{{scope.opt.name}}</b>
+                <span style="color: grey;" v-if="scope.opt.desc !== undefined && scope.opt.desc.length > 0"> - {{scope.opt.desc}}</span>
+              </q-item-label>
             </q-item-section>
           </q-item>
         </template>          
       </q-select>
 
-      <q-btn push @click="onSubmit" no-caps :loading="saveLabelsLoading">Submit</q-btn>
+      <q-btn push @click="onSubmit" no-caps :loading="saveLabelsLoading" title="Submit currently selected labels and, if enabled, set this audio segment as 'done' and move to next audio segment in the list.">Submit</q-btn>
+      <q-btn-dropdown 
+        dense 
+        padding="xs" 
+        flat 
+        size="sm" 
+        :loading="indexActionLoading" 
+        dropdown-icon="rate_review" 
+        style="color: rgba(64, 96, 136, 0.55);"
+        title="Add comment to current audio segment."
+        ref="commentDropdown"
+      >
+        <b>Comment on current audio segment</b>
+        <q-input 
+          v-model="labelComment" 
+          dense 
+          autofocus 
+          hint="Type your comment here. It will be saved next time when you click the submit-button." 
+          style="min-width: 600px;"
+          @keyup.enter.prevent="$refs.commentDropdown.hide()"
+        />
+        <i>To close this box, press enter key or click outside of this box.</i>
+      </q-btn-dropdown>
       <q-checkbox v-model="statusDone" label="Set 'done'." title="On submit, set user label status to 'done'." unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: statusDone ? 'black' : 'grey'}" />      
-      <q-checkbox v-model="autonext" label="autonext" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autonext ? 'black' : 'grey'}" />      
+      <q-checkbox v-model="autonext" label="auto-next" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autonext ? 'black' : 'grey'}" title="On submit, move to next audio segment in the list."/>      
 
       <q-space />
       <q-badge v-if="workingEntry.title"
@@ -103,54 +196,59 @@
       <q-space />
     </q-toolbar>
     <q-toolbar v-if="sampleLabel !== undefined">
-
-    <div class="q-ma-md" v-if="sampleLabel.generated_labels.length > 0">
-      Generated labels
+    <div class="row">
+      <div class="q-ma-md" v-if="sampleLabel.generated_labels.length > 0">
+        Generated labels
+        <q-markup-table dense title="Treats">
+          <thead>
+            <tr>
+              <th class="text-left">Name</th>
+              <th class="text-left">Confidence</th>
+              <th class="text-left">Generator</th>
+              <th class="text-left">Generation date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(label, index) in sampleLabel.generated_labels" :key="index">
+              <td class="text-left" style="cursor: pointer;" @click="addLabel(label.name, !userSelectedLabelNamesSet.has(label.name));">
+                <q-badge color="grey-1" :text-color="userSelectedLabelNamesSet.has(label.name) ? 'green' : 'red'" class="q-ma-sm">
+                  {{label.name}}
+                </q-badge>
+              </td>
+              <td class="text-left">{{isFinite(label.reliability) ? label.reliability.toFixed(3) : ''}}</td>
+              <td class="text-left">{{label.generator}}</td>
+              <td class="text-left">{{label.generation_date === undefined ? '' : label.generation_date.slice(0,16)}}</td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+      </div>
+      <div class="q-ma-md" v-if="sampleLabel.labels.length > 0">
+      Created labels
       <q-markup-table dense>
         <thead>
           <tr>
             <th class="text-left">Name</th>
-            <th class="text-left">Confidence</th>
-            <th class="text-left">Generator</th>
-            <th class="text-left">Generation date</th>
+            <th class="text-left">Creator</th>
+            <th class="text-left">Creation date</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(label, index) in sampleLabel.generated_labels" :key="index">
+          <tr v-for="(label, index) in sampleLabel.labels" :key="index">
             <td class="text-left" style="cursor: pointer;" @click="addLabel(label.name, !userSelectedLabelNamesSet.has(label.name));">
               <q-badge color="grey-1" :text-color="userSelectedLabelNamesSet.has(label.name) ? 'green' : 'red'" class="q-ma-sm">
                 {{label.name}}
               </q-badge>
             </td>
-            <td class="text-left">{{isFinite(label.reliability) ? label.reliability.toFixed(3) : ''}}</td>
-            <td class="text-left">{{label.generator}}</td>
-            <td class="text-left">{{label.generation_date === undefined ? '' : label.generation_date.slice(0,16)}}</td>
+            <td class="text-left">{{label.creator}}</td>
+            <td class="text-left">{{label.creation_date === undefined ? '' : label.creation_date.slice(0,16)}}</td>
           </tr>
         </tbody>
       </q-markup-table>
-    </div>
-    <div class="q-ma-md" v-if="sampleLabel.labels.length > 0">
-    Created labels
-    <q-markup-table dense>
-      <thead>
-        <tr>
-          <th class="text-left">Name</th>
-          <th class="text-left">Creator</th>
-          <th class="text-left">Creation date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(label, index) in sampleLabel.labels" :key="index">
-          <td class="text-left" style="cursor: pointer;" @click="addLabel(label.name, !userSelectedLabelNamesSet.has(label.name));">
-            <q-badge color="grey-1" :text-color="userSelectedLabelNamesSet.has(label.name) ? 'green' : 'red'" class="q-ma-sm">
-              {{label.name}}
-            </q-badge>
-          </td>
-          <td class="text-left">{{label.creator}}</td>
-          <td class="text-left">{{label.creation_date === undefined ? '' : label.creation_date.slice(0,16)}}</td>
-        </tr>
-      </tbody>
-    </q-markup-table>
+      </div>
+      <div class="column">
+        <div v-if="sampleLabel.label_status !== undefined"><b>Label status: </b> {{sampleLabel.label_status}} <q-icon name="done" color="green" v-if="sampleLabel.label_status === 'done'" /></div>
+        <div v-if="sampleLabel.comment !== undefined"><b>Comment: </b> {{sampleLabel.comment}}</div>
+      </div>      
     </div>
     </q-toolbar>
     <q-toolbar v-if="workingEntry !== undefined && sampleLabel === undefined">
@@ -169,7 +267,7 @@ import ListManager from 'components/list-manager';
 
 
 export default defineComponent({
-  name: 'List',
+  name: 'WorklistView',
 
   components: {
     ListManager
@@ -201,7 +299,13 @@ export default defineComponent({
       canvasMousePixelPosY: undefined,
       isFullscreen: false,
       fft_step: undefined,      
-      shrink_Factor: undefined,   
+      shrink_Factor: undefined,
+      customLabelDialogShow: false, 
+      customLabel: undefined,
+      customLabels: [],  
+      labelComment: undefined,
+      jumpPos: 1,
+      worklistEntryCount: undefined,
     };
   },
   
@@ -290,6 +394,9 @@ export default defineComponent({
         return undefined;
       }
       return Math.floor(((this.currentTime - this.workingEntry.start) * this.sampleRate) / (this.fft_step * this.shrink_Factor));
+    },
+    selectableLabels() {
+      return this.labelDefinitions.concat(this.customLabels);
     },        
   },
 
@@ -298,14 +405,21 @@ export default defineComponent({
       this.indexActionLoading = loading;
       this.indexActionError = error;
     },
-    async onPrev() {
+    onPrev() {
+      if(Number.isFinite(this.index)) {      
+        this.jumpToLast(this.index - 1); 
+      } else {
+        this.jumpToLast();
+      }       
+    },
+    async jumpToLast(last) {
       try {
         this.stop();
         this.setActionStatus(true, undefined);
         var urlPath = 'worklists/' + this.listId + '/last';
         var params = {};
-        if(Number.isFinite(this.index)) {
-          params.last = this.index - 1;
+        if(Number.isFinite(last)) {
+          params.last = last;
         }
         if(this.skipdone) {
           params.skip_done = true;
@@ -320,13 +434,20 @@ export default defineComponent({
       }
     },
     async onNext() {
+      if(Number.isFinite(this.index)) {      
+        this.jumpToFirst(this.index + 1);
+      } else {
+        this.jumpToFirst();
+      }      
+    },
+    async jumpToFirst(first) {
       try {
         this.stop();
         this.setActionStatus(true, undefined);
         var urlPath = 'worklists/' + this.listId + '/first';
         var params = {};
-        if(Number.isFinite(this.index)) {
-          params.first = this.index + 1;
+        if(Number.isFinite(first)) {
+          params.first = first;
         }
         if(this.skipdone) {
           params.skip_done = true;
@@ -387,6 +508,7 @@ export default defineComponent({
           this.setActionStatus(false, undefined);
         } catch(e) {
           this.setActionStatus(false, e.response && e.response.data ? (e.response.data.error ? e.response.data.error : e.response.data) : 'error');
+          console.log('runWorkingEntry_stage_1');
           console.log(e);
         }
       } else {
@@ -419,6 +541,7 @@ export default defineComponent({
           }
         }
       } catch (e) {
+        console.log('runWorkingEntry_stage_2a');
         console.log(e);
       }
     },
@@ -468,6 +591,7 @@ export default defineComponent({
           this.imageBitmap = undefined;
         }
       } catch (e) {
+        console.log('runWorkingEntry_stage_2b');
         console.log(e);
       } finally {
         if(loadingSpectrogramCurrentIndex === this.workingEntry.index) {
@@ -480,17 +604,20 @@ export default defineComponent({
     },
     repaint() {
       try {      
-        var canvas = this.$refs.spectrogram;
-        var ctx = canvas.getContext("2d");
-        if(this.imageBitmap !== undefined) {      
-          canvas.width = this.imageBitmap.width;
-          canvas.height = this.imageBitmap.height;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(this.imageBitmap, 0, 0);
-        } else {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const canvas = this.$refs.spectrogram;
+        if(canvas) {
+          const ctx = canvas.getContext("2d");
+          if(this.imageBitmap !== undefined) {      
+            canvas.width = this.imageBitmap.width;
+            canvas.height = this.imageBitmap.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(this.imageBitmap, 0, 0);
+          } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
         }
       } catch(e) {
+        console.log('repaint');
         console.log(e);
       }
     },
@@ -583,6 +710,7 @@ export default defineComponent({
         } catch(e) {
           this.labelDefinitionsLoading = false;
           this.labelDefinitionsError = true;
+          console.log('refreshLabelDefinitions');
           console.log(e);
         }
       }
@@ -610,6 +738,9 @@ export default defineComponent({
         var urlPath = 'samples2/' + this.workingEntry.sample;
         var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
         var action = {action: 'set_label_names', names: names, start: this.workingEntry.start, end: this.workingEntry.end};
+        if(this.labelComment !== undefined && this.labelComment !== null && this.labelComment.length > 0) {
+          action.comment = this.labelComment;
+        }
         action.set_label_status = this.statusDone ? 'done' : 'open';
         var data = {actions: [action]};
         this.saveLabelsLoading = true;
@@ -626,6 +757,7 @@ export default defineComponent({
       } catch(e) {
         this.saveLabelsLoading = false;
         this.saveLabelsError = true;
+        console.log('onSubmit');
         console.log(e);
         this.$q.notify({type: 'negative', message: 'Error submitting label. You may try again to submit.'});
       }
@@ -651,12 +783,44 @@ export default defineComponent({
           e.webkitRequestFullscreen();
         }
       }    
-    },            
+    },
+    addCustomLabel(customLabel) {
+      //console.log('addCustomLabel');
+      //console.log(customLabel);
+      if(customLabel === undefined || customLabel === null || customLabel.length === 0) {
+        return;
+      }
+      if(this.customLabels.some(e => e.name === customLabel)) {
+        return;
+      }
+      const e = {name: customLabel, desc: ''};
+      this.customLabels.push(e);
+      this.$refs.selectLabel.add(e);
+      //console.log(this.customLabels);
+    },
+    async refeshWorklistEntryCount() {
+      try {
+        if(this.listId != undefined) {
+          this.worklistEntryCount = undefined;
+          var urlPath = 'worklists/' + this.listId;
+          var params = {};       
+          var response = await this.$api.get(urlPath, {params});
+          this.worklistEntryCount = response.data.size;
+        }
+      } catch(e) {
+        console.log(e);
+      }
+    },           
   },
 
   watch: {
-    listId() {
-      this.refreshWorkingEntry();
+    listId: {
+      immediate: true,   
+      async handler() {
+        this.refreshWorkingEntry();
+        this.labelComment = undefined;
+        this.refeshWorklistEntryCount();
+      }      
     },
     index() {
       if(Number.isFinite(this.index)) {
@@ -666,13 +830,18 @@ export default defineComponent({
       } else {
         this.setWorkingEntry(undefined);
       }
+      this.labelComment = undefined;
     },
     project: {
       immediate: true,   
       async handler() {
         console.log('project changed');
         this.refreshLabelDefinitions();
+        this.labelComment = undefined;
       }
+    },
+    workingEntry() {
+      this.labelComment = undefined;
     },
   },  
   async mounted() {
