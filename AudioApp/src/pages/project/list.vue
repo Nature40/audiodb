@@ -26,7 +26,8 @@
                 style="width: 100px"
                 dense
                 bg-color="white"
-                title="Requested position. To Jump to that position, click the jump-button on the left or on the right."
+                title="Requested position. To Jump to that position, click the jump-button on the left or on the right (or press enter key)."
+                @keyup.enter.prevent="onEnterKeyJump"
               />
               <q-btn 
                 push 
@@ -810,7 +811,12 @@ export default defineComponent({
       } catch(e) {
         console.log(e);
       }
-    },           
+    },
+    onEnterKeyJump() {
+      if(Number.isFinite(this.jumpPos)) {
+        this.jumpToFirst(this.jumpPos - 1)
+      }           
+    },
   },
 
   watch: {

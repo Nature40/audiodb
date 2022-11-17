@@ -85,6 +85,46 @@ public class SampleManager {
 			Logger.warn("error in " + traversing_path + "   " + e);
 		}
 	}
+	
+	@FunctionalInterface
+	public interface TraverseYamlConsumer {
+		void apply(AudioProjectConfig projectConfig, Path traversing_path, Path sub_path);
+	}
+	
+	public void traverseYamlFiles(TraverseYamlConsumer consumer) throws IOException {
+		AudioProjectConfig projectConfig = broker.config().audioConfig;
+		traverseYamlFiles(projectConfig, projectConfig.root_path, consumer);
+	}
+	
+	private void traverseYamlFiles(AudioProjectConfig projectConfig, Path traversing_path, TraverseYamlConsumer consumer) throws IOException {
+		Logger.info("traverse " + traversing_path);
+		try {
+			for(Path sub_path:Files.newDirectoryStream(traversing_path)) {
+				if(sub_path.toFile().isDirectory()) {
+					traverseYamlFiles(projectConfig, sub_path, consumer);
+				} else if(sub_path.toFile().isFile()) {
+					try {
+						if(sub_path.getFileName().toString().endsWith(".yaml")) {
+							consumer.apply(projectConfig, traversing_path, sub_path);
+						}
+					} catch(Exception e) {
+						Logger.warn(e);
+						e.printStackTrace();
+					}
+				} else {
+					Logger.warn("unknown entity: " + sub_path);
+				}
+			}
+		} catch(NoSuchFileException e) {
+			Logger.warn("missing  " + traversing_path);
+		} catch(Exception e) {
+			Logger.warn("error in " + traversing_path + "   " + e);
+		}
+	}
+	
+	
+	
+	
 
 	public boolean isUpToDate(String id, long last_modified) {
 		try {

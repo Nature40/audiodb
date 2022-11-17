@@ -23,19 +23,19 @@
           <thead>
             <tr>
               <th>Parameter</th> 
-              <th style="min-width: 700px;">Value</th> 
+              <th style="min-width: 700px;" class="col-desc">Value</th> 
             </tr>
           </thead>
           <tbody>
             <tr v-for="arg in args" :key="arg.name" :title="arg.description">
               <td><q-btn icon="undo" round size="xs" unelevated padding="xs" dense :title="'Set to parameter preset: ' + arg.preset" @click="arg.value = arg.preset"></q-btn>{{arg.name}}</td>
-              <td v-if="arg.type === 'BOOLEAN'">
+              <td v-if="arg.type === 'BOOLEAN'" class="col-desc">
                 <q-checkbox v-model="arg.value" dense />
               </td>
-              <td v-else-if="arg.type === 'STRING'">
+              <td v-else-if="arg.type === 'STRING'" class="col-desc">
                 <q-input v-model="arg.value" dense outlined bg-color="white"/>
               </td>
-              <td v-else>
+              <td v-else class="col-desc">
                 (unknown Type: {{arg.type}})
               </td>
             </tr>
@@ -53,21 +53,19 @@
           <thead>
             <tr>
               <th>Parameter</th> 
-              <th>Description</th> 
+              <th class="col-desc">Description</th> 
             </tr>
           </thead>
           <tbody>
             <tr v-for="arg in args" :key="arg.name">
               <td>{{arg.name}}</td>
-              <td>{{arg.description}}</td>
+              <td class="col-desc">{{arg.description}}</td>
             </tr>
           </tbody>
         </table>
         <!--<hr>-->
       </div>      
     </div>
-
-    
 
     <task-console ref="TaskConsole"/>
 
@@ -224,6 +222,10 @@ tbody tr:last-child {
 }
 tbody tr:hover {
   background-color: #00000020;
+}
+
+.col-desc {
+  padding-left: 20px;
 }
 
 </style>

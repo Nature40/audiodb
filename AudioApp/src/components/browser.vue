@@ -111,9 +111,9 @@
             {label: 'At', value: 'one'},
           ]"
         />
-        <span v-if="toggleTime === 'all'">Time</span>
+        <span v-if="toggleTime === 'all'">Date</span>
         <q-badge v-if="toggleTime === 'one' && requestMetaError" color="red">Error loading timestamps<q-btn color="grey" @click="requestRefreshMeta">refresh</q-btn></q-badge>
-        <q-select v-if="toggleTime === 'one'" outlined v-model="selectedTimestamp" :options="filteredTimestamps" label="Time" class="col" dense clearable use-input @filter="timestampfilterFn" input-debounce="0" :loading="requestMetaLoading">
+        <q-select v-if="toggleTime === 'one'" outlined v-model="selectedTimestamp" :options="filteredTimestamps" label="Date" class="col" dense clearable use-input @filter="timestampfilterFn" input-debounce="0" :loading="requestMetaLoading">
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps" dense>
               <q-item-section>
