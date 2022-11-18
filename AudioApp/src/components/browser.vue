@@ -78,6 +78,8 @@
             </q-item>              
           </template>
         </q-select>
+        <q-btn @click="$refs.inventory.show = true;" icon="view_timeline" title="Show audio devices inventory."  push round style="margin-left: 20px;" />
+        <audio-inventory ref="inventory"/>
       </q-card-section>
 
       <q-separator/>
@@ -96,7 +98,7 @@
           clearable 
           :loading="requestMetaLoading"
         >
-        </q-select>        
+        </q-select>
         <q-select 
           outlined 
           v-model="selectedTimestamp" 
@@ -122,7 +124,7 @@
             <span v-if="selectedTimestamp && (years.length === 1 || selectedYear)">{{selectedTimestamp.month}}-{{selectedTimestamp.day}}</span>
             <span v-else-if="selectedTimestamp">{{selectedTimestamp.year}}-{{selectedTimestamp.month}}-{{selectedTimestamp.day}}</span>
           </template>
-        </q-select>
+        </q-select>       
       </q-card-section>
 
       <q-separator/>
@@ -197,8 +199,15 @@
 import { defineComponent, ref } from 'vue';
 import {mapState} from 'vuex';
 
+import AudioInventory from 'components/inventory';
+
 export default defineComponent({
   name: 'audio-browser',
+
+  components: {
+    AudioInventory,
+  },  
+
   setup () {
     const show = ref(false);
     return {

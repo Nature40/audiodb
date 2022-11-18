@@ -68,6 +68,7 @@ public class ProjectHandler {
 
 	private void handleRoot(String project, Request request, HttpServletResponse response) throws IOException {
 		boolean fLocations = Web.getFlagBoolean(request, "locations");
+		boolean fDevices = Web.getFlagBoolean(request, "devices");
 		boolean fTimestamps = Web.getFlagBoolean(request, "timestamps");
 		boolean fDates = Web.getFlagBoolean(request, "dates");
 		String timestamps_of_location = Web.getString(request, "timestamps_of_location", null);
@@ -115,6 +116,12 @@ public class ProjectHandler {
 			json.key("locations");
 			json.array();
 			sampleManager.tlSampleManagerConnector.get().forEachLocation(location -> json.value(location));
+			json.endArray();
+		}
+		if(fDevices) {
+			json.key("devices");
+			json.array();
+			sampleManager.tlSampleManagerConnector.get().forEachDevice(device -> json.value(device));
 			json.endArray();
 		}
 		

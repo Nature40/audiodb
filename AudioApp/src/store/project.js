@@ -130,6 +130,7 @@ actions: {
     try {
       var params = {};
       params.locations = true;
+      params.devices = true;
       //params.timestamps = true;
       params.dates = true;
       params.samples_table_count = true;
