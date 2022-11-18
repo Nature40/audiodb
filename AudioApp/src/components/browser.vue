@@ -68,22 +68,8 @@
       <q-separator/>        
 
       <q-card-section class="text-h5 row">
-        <q-btn-toggle
-          v-model="toggleLocation"
-          class="custom-toggle"
-          no-caps
-          rounded
-          unelevated
-          toggle-color="primary"
-          color="white"
-          text-color="primary"
-          :options="[
-            {label: 'All', value: 'all'},
-            {label: 'At', value: 'one'},
-          ]"
-        />
-        <span v-if="toggleLocation === 'all'">Location</span>
-        <q-select v-if="toggleLocation === 'one'" outlined v-model="selectedLocation" :options="filteredLocations" label="Location" class="col" dense clearable use-input @filter="locationfilterFn" input-debounce="0" :loading="requestMetaLoading">
+        <q-icon name="place" size="lg" color="grey-4" />
+        <q-select outlined v-model="selectedLocation" :options="filteredLocations" :label="selectedLocation ? 'Location' : '(All locations)'" class="col" dense clearable use-input @filter="locationfilterFn" input-debounce="0" :loading="requestMetaLoading">
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps" dense>
               <q-item-section>
@@ -97,32 +83,44 @@
       <q-separator/>
 
       <q-card-section class="text-h5 row">
-        <q-btn-toggle
-          v-model="toggleTime"
-          class="custom-toggle"
-          no-caps
-          rounded
-          unelevated
-          toggle-color="primary"
-          color="white"
-          text-color="primary"
-          :options="[
-            {label: 'All', value: 'all'},
-            {label: 'At', value: 'one'},
-          ]"
-        />
-        <span v-if="toggleTime === 'all'">Date</span>
-        <q-badge v-if="toggleTime === 'one' && requestMetaError" color="red">Error loading timestamps<q-btn color="grey" @click="requestRefreshMeta">refresh</q-btn></q-badge>
-        <q-select v-if="toggleTime === 'one'" outlined v-model="selectedTimestamp" :options="filteredTimestamps" label="Date" class="col" dense clearable use-input @filter="timestampfilterFn" input-debounce="0" :loading="requestMetaLoading">
+        <q-icon name="schedule" size="lg" color="grey-4" />
+        <q-badge v-if="requestMetaError" color="red">Error loading timestamps<q-btn color="grey" @click="requestRefreshMeta">refresh</q-btn></q-badge>
+        <div v-if="years.length === 1">{{years[0]}}</div>
+        <q-select v-else-if="years.length > 1" 
+          outlined 
+          v-model="selectedYear" 
+          :options="years" 
+          :label="selectedYear ? 'Year' : '(All years)'" 
+          class="col" 
+          dense 
+          clearable 
+          :loading="requestMetaLoading"
+        >
+        </q-select>        
+        <q-select 
+          outlined 
+          v-model="selectedTimestamp" 
+          :options="filteredTimestamps" 
+          :label="selectedTimestamp ? 'Date' : '(All dates)'" 
+          class="col" 
+          dense 
+          clearable 
+          use-input 
+          @filter="timestampfilterFn" 
+          input-debounce="0" 
+          :loading="requestMetaLoading"
+        >
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps" dense>
               <q-item-section>
-                <q-item-label>{{scope.opt.date}}<!-- <span style="color: grey;">{{scope.opt.time}}</span>--></q-item-label>
+                <q-item-label v-if="years.length === 1 || selectedYear"><b>{{scope.opt.month}}</b>-{{scope.opt.day}}</q-item-label>
+                <q-item-label v-else><b>{{scope.opt.year}}</b>-{{scope.opt.month}}-<i>{{scope.opt.day}}</i></q-item-label>
               </q-item-section>
             </q-item>              
           </template>
           <template v-slot:selected>
-            <span v-if="selectedTimestamp">{{selectedTimestamp.date}} <span style="color: grey;">{{selectedTimestamp.time}}</span></span>
+            <span v-if="selectedTimestamp && (years.length === 1 || selectedYear)">{{selectedTimestamp.month}}-{{selectedTimestamp.day}}</span>
+            <span v-else-if="selectedTimestamp">{{selectedTimestamp.year}}-{{selectedTimestamp.month}}-{{selectedTimestamp.day}}</span>
           </template>
         </q-select>
       </q-card-section>
@@ -168,9 +166,9 @@
         <q-separator/>
         <q-toolbar>
         <q-space />
-        <q-btn :disabled="!hasPrevPageSamples" @click="onPrevPage">prev page</q-btn>
+        <q-btn :disabled="!hasPrevPageSamples" @click="onPrevPage" icon="navigate_before" no-caps push>Prev page</q-btn>
         {{samplesOffset}}
-        <q-btn :disabled="!hasNextPageSamples"  @click="onNextPage">next page</q-btn>
+        <q-btn :disabled="!hasNextPageSamples"  @click="onNextPage" icon-right="navigate_next" no-caps push>Next page</q-btn>
         
         <q-space />
         </q-toolbar>
@@ -213,8 +211,6 @@ export default defineComponent({
       samples: [],
       samplesOffset: 0,
       samplesLimit: 1000,    
-      toggleLocation: 'all',
-      toggleTime: 'all',
       selectedLocation: undefined,
       selectedTimestamp: undefined,
       refreshRequested: false,
@@ -233,6 +229,7 @@ export default defineComponent({
       dialoghelpShow: false,
       dialoghelpMaximizedToggle: false,
       dialogMaximizedToggle: false,
+      selectedYear: undefined,
     };
   },
   computed: {
@@ -279,31 +276,36 @@ export default defineComponent({
         return location === null ? {label: '(unknown)', value: 'null'} : {label: location, value: location};
       });
     },
-    timestamps() {
-      if(this.toggleLocation === 'one' && this.selectedLocation && this.timestamps_of_location && this.timestamps_of_location.location === this.selectedLocation.value) {
+    timestampsUnfiltered() {
+      if(this.selectedLocation && this.timestamps_of_location && this.timestamps_of_location.location === this.selectedLocation.value) {
         const timestamps = this.timestamps_of_location.timestamps;
         if(timestamps.length === 0) {
-          return [{date: '(no timestamps)', value: undefined}];
+          return [{date: '(no timestamps)', value: undefined, year: undefined}];
         }
         return timestamps.map(t => {
-          return t.timestamp <= 0 ? {date: '(unknown)', value: 0} : {date: t.date, time: t.time, value: t.timestamp};
+          return t.timestamp <= 0 ? {date: '(unknown)', value: 0, year: '(unknown)', month: '(unknown)', day: '(unknown)'} : {date: t.date, time: t.time, value: t.timestamp, year: t.year, month: t.month<10 ? '0'+t.month : ''+t.month, day: t.day<10 ? '0'+t.day : ''+t.day};
         });
       } else {
         const d = this.$store.state.project.data;
-        /*if(d === undefined || d.timestamps === undefined || d.timestamps.length === 0) {
-          return [{date: '(no timestamps)', value: undefined}];
-        }
-        return d.timestamps.map(t => {
-          return t.timestamp <= 0 ? {date: '(unknown)', value: 0} : {date: t.date, time: t.time, value: t.timestamp};
-        });*/
         if(d === undefined || d.dates === undefined || d.dates.length === 0) {
           return [{date: '(no timestamps)', value: undefined}];
         }
         return d.dates.map(t => {
-          return t.timestamp <= 0 ? {date: '(unknown)', value: 0} : {date: t.date, value: t.timestamp};
+          return t.timestamp <= 0 ? {date: '(unknown)', value: 0, year: '(unknown)', month: '(unknown)', day: '(unknown)'} : {date: t.date, value: t.timestamp, year: t.year, month: t.month<10 ? '0'+t.month : ''+t.month, day: t.day<10 ? '0'+t.day : ''+t.day};
         });
       }
-    },    
+    },
+    timestamps() {
+      if(!this.selectedYear) {
+        return this.timestampsUnfiltered;
+      }
+      return this.timestampsUnfiltered.filter(e => e.year === this.selectedYear);
+    },
+    years() {
+      const coll = new Set();
+      this.timestampsUnfiltered.forEach(e => coll.add(e.year));
+      return [...coll];
+    }    
   },
   watch: {
     refreshRequested() {
@@ -311,8 +313,8 @@ export default defineComponent({
         if(
           this.refreshConfirmNeeded
           && !this.refreshConfirmed
-          && (this.toggleLocation === 'all' || (this.toggleLocation === 'one' && !this.selectedLocation)) 
-          && (this.toggleTime === 'all' || (this.toggleTime === 'one' && !this.selectedTimestamp))
+          && !this.selectedLocation 
+          && !this.selectedTimestamp
         ) {
           this.refreshConfirmRequested = true;
         } else {
@@ -338,23 +340,17 @@ export default defineComponent({
         this.refreshRequestedMeta = false;
       }
     },
-    toggleLocation() {
-      this.samplesOffset = 0;
-      this.requestRefresh();
-      this.requestRefreshMeta();
-    },
     selectedLocation() {
       this.samplesOffset = 0;
       this.requestRefresh();
       this.requestRefreshMeta();
     },
-    toggleTime() {
-      this.samplesOffset = 0;
-      this.requestRefresh();
-    },
     selectedTimestamp() {
       this.samplesOffset = 0;
       this.requestRefresh();
+    },
+    selectedYear() {
+      this.selectedTimestamp = undefined;
     },
     movePrevSelectedSampleRequested() {
       if(this.movePrevSelectedSampleRequested) {
@@ -398,10 +394,10 @@ export default defineComponent({
       //console.log("querySamples");
       try {        
         let params = { samples: true, count: true, limit: this.samplesLimit, offset: this.samplesOffset,};
-        if(this.toggleLocation === 'one' && this.selectedLocation) {
+        if(this.selectedLocation) {
           params.location = this.selectedLocation.value;
         }
-        if(this.toggleTime === 'one' && this.selectedTimestamp) {
+        if(this.selectedTimestamp) {
           //params.timestamp = this.selectedTimestamp.value;
           var t = this.selectedTimestamp.value;
           if(t === 0) {
@@ -518,7 +514,4 @@ export default defineComponent({
   font-weight: bold;
 }
 
-.custom-toggle {
-  border: 1px solid #027be3;
-}
 </style>

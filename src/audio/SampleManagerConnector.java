@@ -8,7 +8,6 @@ import java.util.EnumMap;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
-
 import org.tinylog.Logger;
 
 public class SampleManagerConnector {	
@@ -63,78 +62,82 @@ public class SampleManagerConnector {
 				"(?)"),
 
 		DELETE_TRAVERSE_MISSING("DELETE FROM SAMPLE WHERE NOT EXISTS ( SELECT 1 FROM TRAVERSE WHERE SAMPLE.ID = TRAVERSE.ID)"),
+		
 
 		COUNT_TABLE("SELECT COUNT(1) FROM SAMPLE"),
 		
 		COUNT_ALL("SELECT COUNT(ID) FROM SAMPLE WHERE NOT LOCKED"),
 
-		COUNT_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED"),
 		
 		COUNT_AT_TIMERANGE("SELECT COUNT(ID) FROM SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED"),
+		
 
 		QUERY_ALL("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE USE INDEX (IDX_LOCKED_TIMESTAMP_LOCATION_ID) WHERE NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
 
-		QUERY_AT_TIMESTAMP("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
-		
 		QUERY_AT_TIMERANGE("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ?  AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
 
 		QUERY_ALL_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE USE INDEX (IDX_LOCKED_TIMESTAMP_LOCATION_ID) WHERE NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
 
-		QUERY_AT_TIMESTAMP_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE TIMESTAMP = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
-		
 		QUERY_AT_TIMERANGE_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ?  AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
+		
 
 		COUNT_AT_LOCATION("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED"),
 
-		COUNT_AT_LOCATION_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP = ? AND NOT LOCKED"),
-		
 		COUNT_AT_LOCATION_AT_TIMERANGE("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED"),
 
 		COUNT_AT_LOCATION_NULL("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED"),
 
-		COUNT_AT_LOCATION_NULL_AT_TIMESTAMP("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP = ? AND NOT LOCKED"),
-		
 		COUNT_AT_LOCATION_NULL_AT_TIMERANGE("SELECT COUNT(ID) FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED"),
+		
 
 		QUERY_AT_LOCATION("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
 
-		QUERY_AT_LOCATION_AT_TIMESTAMP("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
-		
 		QUERY_AT_LOCATION_AT_TIMERANGE("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
 
 		QUERY_AT_LOCATION_NULL("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
 
-		QUERY_AT_LOCATION_NULL_AT_TIMESTAMP("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
-		
 		QUERY_AT_LOCATION_NULL_AT_TIMERANGE("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION"),
 
 		QUERY_AT_LOCATION_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
 
-		QUERY_AT_LOCATION_AT_TIMESTAMP_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
-		
 		QUERY_AT_LOCATION_AT_TIMERANGE_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),		
 
 		QUERY_AT_LOCATION_NULL_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
 
-		QUERY_AT_LOCATION_NULL_AT_TIMESTAMP_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP = ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
-
 		QUERY_AT_LOCATION_NULL_AT_TIMERANGE_PAGED("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED ORDER BY TIMESTAMP, LOCATION LIMIT ? OFFSET ?"),
 		
-		QUERY_ID("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE ID = ? AND NOT LOCKED"),
-
-		QUERY_ALL_LOCATION("SELECT DISTINCT LOCATION FROM SAMPLE ORDER BY LOCATION"),
-
-		QUERY_ALL_TIMESTAMP("SELECT DISTINCT TIMESTAMP FROM SAMPLE ORDER BY TIMESTAMP"),
 		
-		QUERY_ALL_DATE("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE ORDER BY DATE"),
+		QUERY_BY_ID("SELECT ID, PROJECT, META_PATH, SAMPLE_PATH, LOCATION, TIMESTAMP, LAST_MODIFIED, LOCKED, DEVICE FROM SAMPLE WHERE ID = ? AND NOT LOCKED"),
 
-		QUERY_AT_LOCATION_TIMESTAMP("SELECT DISTINCT TIMESTAMP FROM SAMPLE WHERE LOCATION = ? ORDER BY TIMESTAMP"),
 		
-		QUERY_AT_LOCATION_DATE("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE WHERE LOCATION = ? ORDER BY DATE"),
+		QUERY_LOCATIONS_ALL("SELECT DISTINCT LOCATION FROM SAMPLE ORDER BY LOCATION"),
 
-		QUERY_AT_LOCATION_NULL_TIMESTAMP("SELECT DISTINCT TIMESTAMP FROM SAMPLE WHERE LOCATION IS NULL ORDER BY TIMESTAMP"),
 		
-		QUERY_AT_LOCATION_NULL_DATE("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE WHERE LOCATION IS NULL ORDER BY DATE");
+		QUERY_TIMESTAMPS_ALL("SELECT DISTINCT TIMESTAMP FROM SAMPLE ORDER BY TIMESTAMP"),
+		
+		QUERY_DATES_ALL("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE ORDER BY DATE"),
+
+		QUERY_TIMESTAMPS_AT_LOCATION("SELECT DISTINCT TIMESTAMP FROM SAMPLE WHERE LOCATION = ? ORDER BY TIMESTAMP"),
+		
+		QUERY_DATES_AT_LOCATION("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE WHERE LOCATION = ? ORDER BY DATE"),
+
+		QUERY_TIMESTAMPS_AT_LOCATION_NULL("SELECT DISTINCT TIMESTAMP FROM SAMPLE WHERE LOCATION IS NULL ORDER BY TIMESTAMP"),
+		
+		QUERY_DATES_AT_LOCATION_NULL("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE WHERE LOCATION IS NULL ORDER BY DATE"),
+		
+		
+		QUERY_DEVICES_ALL("SELECT DISTINCT DEVICE FROM SAMPLE WHERE NOT LOCKED ORDER BY DEVICE"),
+		
+		QUERY_DEVICES_AT_TIMERANGE("SELECT DISTINCT DEVICE FROM SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ?  AND NOT LOCKED ORDER BY DEVICE"),
+
+		QUERY_DEVICES_AT_LOCATION_NULL("SELECT DISTINCT DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND NOT LOCKED ORDER BY DEVICE"),
+		
+		QUERY_DEVICES_AT_LOCATION("SELECT DISTINCT DEVICE FROM SAMPLE WHERE LOCATION = ? AND NOT LOCKED ORDER BY DEVICE"),
+		
+		QUERY_DEVICES_AT_LOCATION_NULL_AT_TIMERANGE("SELECT DISTINCT DEVICE FROM SAMPLE WHERE LOCATION IS NULL AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED ORDER BY DEVICE"),
+		
+		QUERY_DEVICES_AT_LOCATION_AT_TIMERANGE("SELECT DISTINCT DEVICE FROM SAMPLE WHERE LOCATION = ? AND TIMESTAMP >= ? AND TIMESTAMP <= ? AND NOT LOCKED ORDER BY DEVICE");
+		
 
 		public final String sql;
 
@@ -285,6 +288,17 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public void forEachString(ResultSet res, Consumer<String> consumer) {
+		try {
+			while(res.next()) {
+				String value = res.getString(1);
+				consumer.accept(value);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	public static void consumeRow(ResultSet res, SampleRowConsumer consumer) {
 		try {
@@ -311,17 +325,16 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
-
-	public void forEachAtTimestamp(long timestamp, SampleRowConsumer consumer) {
+	
+	public void forEachDevice(Consumer<String> consumer) {		
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_AT_TIMESTAMP);
-			stmt.setLong(1, timestamp);
-			forEachRow(stmt.executeQuery(), consumer);
+			PreparedStatement stmt = getStatement(SQL.QUERY_DEVICES_ALL);
+			forEachString(stmt.executeQuery(), consumer);			
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void forEachAtTimerange(long start, long end, SampleRowConsumer consumer) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.QUERY_AT_TIMERANGE);
@@ -332,10 +345,21 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public void forEachDeviceAtTimerange(long start, long end, Consumer<String> consumer) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_DEVICES_AT_TIMERANGE);
+			stmt.setLong(1, start);
+			stmt.setLong(2, end);
+			forEachString(stmt.executeQuery(), consumer);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	public void forEachLocation(Consumer<String> consumer) {
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_LOCATION);
+			PreparedStatement stmt = getStatement(SQL.QUERY_LOCATIONS_ALL);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				String location = res.getString(1);
@@ -348,7 +372,7 @@ public class SampleManagerConnector {
 
 	public void forEachTimestamp(LongConsumer consumer) {
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_TIMESTAMP);
+			PreparedStatement stmt = getStatement(SQL.QUERY_TIMESTAMPS_ALL);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				long timestamp = res.getLong(1);
@@ -361,7 +385,7 @@ public class SampleManagerConnector {
 	
 	public void forEachDate(LongConsumer consumer) {
 		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_ALL_DATE);
+			PreparedStatement stmt = getStatement(SQL.QUERY_DATES_ALL);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				long timestamp = res.getLong(1);
@@ -376,9 +400,9 @@ public class SampleManagerConnector {
 		PreparedStatement stmt;
 		try {
 			if(location == null) {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_TIMESTAMP);
+				stmt = getStatement(SQL.QUERY_TIMESTAMPS_AT_LOCATION_NULL);
 			} else {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_TIMESTAMP);
+				stmt = getStatement(SQL.QUERY_TIMESTAMPS_AT_LOCATION);
 				stmt.setString(1, location);
 			}				
 			ResultSet res = stmt.executeQuery();
@@ -395,9 +419,9 @@ public class SampleManagerConnector {
 		PreparedStatement stmt;
 		try {
 			if(location == null) {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_DATE);
+				stmt = getStatement(SQL.QUERY_DATES_AT_LOCATION_NULL);
 			} else {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_DATE);
+				stmt = getStatement(SQL.QUERY_DATES_AT_LOCATION);
 				stmt.setString(1, location);
 			}				
 			ResultSet res = stmt.executeQuery();
@@ -425,22 +449,6 @@ public class SampleManagerConnector {
 		}
 	}
 
-	public int countAtTimestamp(long timestamp) {
-		try {
-			PreparedStatement stmt = getStatement(SQL.COUNT_AT_TIMESTAMP);
-			stmt.setLong(1, timestamp);
-			ResultSet res = stmt.executeQuery();
-			if(res.next()) {
-				int count = res.getInt(1);
-				return count;
-			} else {
-				throw new RuntimeException("internal error");
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	public int countAtTimerange(long start, long end) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.COUNT_AT_TIMERANGE);
@@ -470,18 +478,6 @@ public class SampleManagerConnector {
 		}
 	}
 
-	public void forEachAtTimestampPaged(long timestamp, SampleRowConsumer consumer, int limit, int offset) {
-		try {
-			PreparedStatement stmt = getStatement(SQL.QUERY_AT_TIMESTAMP_PAGED);
-			stmt.setLong(1, timestamp);
-			stmt.setInt(2, limit);
-			stmt.setInt(3, offset);
-			forEachRow(stmt.executeQuery(), consumer);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	public void forEachAtTimerangePaged(long start, long end, SampleRowConsumer consumer, int limit, int offset) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.QUERY_AT_TIMERANGE_PAGED);
@@ -495,6 +491,11 @@ public class SampleManagerConnector {
 		}
 	}	
 
+	/**
+	 * 
+	 * @param location    null == unknown location
+	 * @return
+	 */
 	public int countAtLocation(String location) {		
 		try {
 			PreparedStatement stmt;
@@ -503,7 +504,7 @@ public class SampleManagerConnector {
 			} else {
 				stmt = getStatement(SQL.COUNT_AT_LOCATION);
 				stmt.setString(1, location);
-			}			
+			}
 			ResultSet res = stmt.executeQuery();
 			if(res.next()) {
 				int count = res.getInt(1);
@@ -516,29 +517,6 @@ public class SampleManagerConnector {
 		}
 	}
 
-	public int countAtLocationAtTimestamp(String location, long timestamp) {		
-		try {
-			PreparedStatement stmt;
-			if(location == null) {
-				stmt = getStatement(SQL.COUNT_AT_LOCATION_NULL_AT_TIMESTAMP);
-				stmt.setLong(1, timestamp);
-			} else {
-				stmt = getStatement(SQL.COUNT_AT_LOCATION_AT_TIMESTAMP);
-				stmt.setString(1, location);
-				stmt.setLong(2, timestamp);
-			}			
-			ResultSet res = stmt.executeQuery();
-			if(res.next()) {
-				int count = res.getInt(1);
-				return count;
-			} else {
-				throw new RuntimeException("internal error");
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	public int countAtLocationAtTimerange(String location, long start, long end) {		
 		try {
 			PreparedStatement stmt;
@@ -578,24 +556,22 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
-
-	public void forEachAtLocationAtTimestamp(String location, long timestamp, SampleRowConsumer consumer) {
+	
+	public void forEachDeviceAtLocation(String location, Consumer<String> consumer) {
 		try {
 			PreparedStatement stmt;
 			if(location == null) {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_AT_TIMESTAMP);
-				stmt.setLong(1, timestamp);
+				stmt = getStatement(SQL.QUERY_DEVICES_AT_LOCATION_NULL);	
 			} else {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_AT_TIMESTAMP);
-				stmt.setString(1, location);
-				stmt.setLong(2, timestamp);
+				stmt = getStatement(SQL.QUERY_DEVICES_AT_LOCATION);
+				stmt.setString(1, location);			
 			}
-			forEachRow(stmt.executeQuery(), consumer);
+			forEachString(stmt.executeQuery(), consumer);
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void forEachAtLocationAtTimerange(String location, long start, long end, SampleRowConsumer consumer) {
 		try {
 			PreparedStatement stmt;
@@ -604,7 +580,7 @@ public class SampleManagerConnector {
 				stmt.setLong(1, start);
 				stmt.setLong(2, end);
 			} else {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_AT_TIMESTAMP);
+				stmt = getStatement(SQL.QUERY_AT_LOCATION_AT_TIMERANGE);
 				stmt.setString(1, location);
 				stmt.setLong(2, start);
 				stmt.setLong(3, end);
@@ -614,6 +590,25 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public void forEachDeviceAtLocationAtTimerange(String location, long start, long end, Consumer<String> consumer) {
+		try {
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = getStatement(SQL.QUERY_DEVICES_AT_LOCATION_NULL_AT_TIMERANGE);
+				stmt.setLong(1, start);
+				stmt.setLong(2, end);
+			} else {
+				stmt = getStatement(SQL.QUERY_DEVICES_AT_LOCATION_AT_TIMERANGE);
+				stmt.setString(1, location);
+				stmt.setLong(2, start);
+				stmt.setLong(3, end);
+			}
+			forEachString(stmt.executeQuery(), consumer);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}	
 
 	public void forEachPagedAtLocation(String location, SampleRowConsumer consumer, int limit, int offset) {
 		try {
@@ -634,27 +629,6 @@ public class SampleManagerConnector {
 		}
 	}
 
-	public void forEachPagedAtLocationAtTimestamp(String location, long timestamp, SampleRowConsumer consumer, int limit, int offset) {
-		try {
-			PreparedStatement stmt;
-			if(location == null) {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_NULL_AT_TIMESTAMP_PAGED);
-				stmt.setLong(1, timestamp);
-				stmt.setInt(2, limit);
-				stmt.setInt(3, offset);
-			} else {
-				stmt = getStatement(SQL.QUERY_AT_LOCATION_AT_TIMESTAMP_PAGED);
-				stmt.setString(1, location);
-				stmt.setLong(2, timestamp);
-				stmt.setInt(3, limit);
-				stmt.setInt(4, offset);
-			}
-			forEachRow(stmt.executeQuery(), consumer);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	public void forEachPagedAtLocationAtTimerange(String location, long start, long end, SampleRowConsumer consumer, int limit, int offset) {
 		try {
 			PreparedStatement stmt;

@@ -253,20 +253,12 @@ public class SampleManager {
 		tlSampleManagerConnector.get().forEach(new SampleConverter(consumer));
 	}
 	
-	public void forEachAtTimestamp(long timestamp, Consumer<Sample2> consumer) {
-		tlSampleManagerConnector.get().forEachAtTimestamp(timestamp, new SampleConverter(consumer));
-	}
-	
 	public void forEachAtTimerange(long start, long end, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtTimerange(start, end, new SampleConverter(consumer));
 	}
 
 	public void forEachPaged(Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPaged(new SampleConverter(consumer), limit, offset);
-	}
-	
-	public void forEachAtTimestampPaged(long timestamp, Consumer<Sample2> consumer, int limit, int offset) {
-		tlSampleManagerConnector.get().forEachAtTimestampPaged(timestamp, new SampleConverter(consumer), limit, offset);
 	}
 	
 	public void forEachAtTimerangePaged(long start, long end, Consumer<Sample2> consumer, int limit, int offset) {
@@ -277,20 +269,12 @@ public class SampleManager {
 		tlSampleManagerConnector.get().forEachAtLocation(location, new SampleConverter(consumer));
 	}
 	
-	public void forEachAtLocationAtTimestamp(String location, long timestamp, Consumer<Sample2> consumer) {
-		tlSampleManagerConnector.get().forEachAtLocationAtTimestamp(location, timestamp, new SampleConverter(consumer));
-	}
-	
 	public void forEachAtLocationAtTimerange(String location, long start, long end, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtLocationAtTimerange(location, start, end, new SampleConverter(consumer));
 	}
 
 	public void forEachPagedAtLocation(String location, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocation(location, new SampleConverter(consumer), limit, offset);
-	}
-	
-	public void forEachPagedAtLocationAtTimestamp(String location, long timestamp, Consumer<Sample2> consumer, int limit, int offset) {
-		tlSampleManagerConnector.get().forEachPagedAtLocationAtTimestamp(location, timestamp, new SampleConverter(consumer), limit, offset);
 	}
 	
 	public void forEachPagedAtLocationAtTimerange(String location, long start, long end, Consumer<Sample2> consumer, int limit, int offset) {
@@ -305,7 +289,7 @@ public class SampleManager {
 
 	public Sample2 getById(String id) {
 		try {
-			PreparedStatement stmt = tlSampleManagerConnector.get().getStatement(SQL.QUERY_ID);
+			PreparedStatement stmt = tlSampleManagerConnector.get().getStatement(SQL.QUERY_BY_ID);
 			stmt.setString(1, id);
 			ResultSet res = stmt.executeQuery();
 			if(res.next()) {

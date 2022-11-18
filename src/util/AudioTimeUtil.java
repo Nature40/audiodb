@@ -196,6 +196,12 @@ public class AudioTimeUtil {
 			LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(timestamp);
 			json.key("date");
 			json.value(dateTime.toLocalDate());
+			json.key("year");
+			json.value(dateTime.getYear());
+			json.key("month");
+			json.value(dateTime.getMonthValue());
+			json.key("day");
+			json.value(dateTime.getDayOfMonth());
 		}				
 	}
 }
