@@ -100,7 +100,7 @@ public class Riff {
 		int riffFileSize = byteBuffer.getInt();
 		//Logger.info("file size: " + riffFileSize);
 		if((fileSize - 8) != riffFileSize) {
-			Logger.warn("file size no same as in RIFF size: " + fileSize + "    " + riffFileSize);
+			Logger.warn("file size no same as in RIFF size: " + fileSize + "  RIFF " + riffFileSize + "  in " + file);
 		}
 		
 		int riffTypeMarker = byteBuffer.getInt();

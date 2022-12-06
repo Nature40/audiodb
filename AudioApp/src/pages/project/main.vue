@@ -33,8 +33,9 @@
       >
         <div class="column no-wrap q-pa-md">
           <b>Download audio file.</b>
-          <span v-if="sampleRate !== playerSampleRate"><br><a :href="audioURL" :download="sample.id"><q-icon name="file_download" size="sm" />current sample rate</a></span>
-          <span><br><a :href="audioOriginalURL" :download="sample.id"><q-icon name="file_download" size="sm" />original</a></span>
+          <span v-if="sampleRate !== playerSampleRate"><br><a :href="audioURL" :download="sample.id"><q-icon name="file_download" size="sm" />Current playback speed</a></span>
+          <span v-if="sampleRate !== playerSampleRate"><br><a :href="audioOriginalSpeedURL" :download="sample.id"><q-icon name="file_download" size="sm" />Original playback speed (max. 48 kHz)</a></span>
+          <span><br><a :href="audioOriginalURL" :download="sample.id"><q-icon name="file_download" size="sm" />Original audio file</a></span>
         </div>
       </q-btn-dropdown>
 
@@ -169,7 +170,7 @@
             <q-item v-bind="scope.itemProps" style="min-width: 150px;">
               <q-item-section>
                 <q-item-label>{{scope.opt + 1}}</q-item-label>
-                <q-item-label caption>{{labels[scope.opt].start.toFixed(3)}} .. {{labels[scope.opt].end.toFixed(3)}}</q-item-label>
+                <q-item-label caption>{{labels[scope.opt].start.toFixed(3)}} .. {{labels[scope.opt].end.toFixed(3)}} (<b>{{(labels[scope.opt].end - labels[scope.opt].start).toFixed(3)}}</b>)</q-item-label>
               </q-item-section>
             </q-item>
           </template>                    
@@ -188,7 +189,7 @@
           title="Automatically move to label start time at each label change."
           />
         </q-btn>
-        <span class="q-pa-sm">{{selectedLabel.start.toFixed(3)}} .. {{selectedLabel.end.toFixed(3)}}</span>
+        <span class="q-pa-sm">{{selectedLabel.start.toFixed(3)}} .. {{selectedLabel.end.toFixed(3)}} (<b>{{(selectedLabel.end - selectedLabel.start).toFixed(3)}}</b>)</span>
         <q-badge 
           v-for="(label,i) in selectedLabel.generated_labels" 
           :key="i" 
@@ -263,8 +264,7 @@
         <q-space></q-space>        
       </div>
       <div v-if="newSegmentEnd !== undefined"  class="q-ml-lg row">
-        New Time segment
-        <span class="q-pa-sm">{{(newSegmentStart/sampleRate).toFixed(3)}} .. {{(newSegmentEnd/sampleRate).toFixed(3)}}</span>
+        New segment
         <q-select
           filled
           v-model="userSelectedLabelNames"
@@ -292,6 +292,21 @@
       <q-space></q-space>
       <q-badge v-if="saveLabelsLoading" color="grey-3" text-color="accent" label="Sending label..."/>
       <q-badge v-if="saveLabelsError" color="grey-3" text-color="red" label="Error sending label. You may try again."/>
+      
+      <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-if="Number.isFinite(newSegmentStart)">
+        Segment  
+        {{(newSegmentStart / sampleRate).toFixed(3)}}
+        ..
+        <span v-if="Number.isFinite(newSegmentEnd)">{{(newSegmentEnd / sampleRate).toFixed(3)}}
+        (
+        <b>{{((newSegmentEnd - newSegmentStart + 1)/ sampleRate).toFixed(3)}}</b>
+        )</span>
+        <span v-else-if="Number.isFinite(samplePos)">{{(samplePos / sampleRate).toFixed(3)}}
+        (
+        <b>{{((samplePos - newSegmentStart + 1)/ sampleRate).toFixed(3)}}</b>
+        )</span>
+      </q-badge>      
+      
       <q-btn icon="add" size="xs" text-color="green" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
       <q-btn icon="cancel" size="xs" padding="xs" margin="xs" text-color="red" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
       <q-btn icon="navigation" label="Set end" size="xs" padding="xs" margin="xs" text-color="green" title="Set end time of new time segment at current time position." @click="onNewTimeSegmentEnd" v-if="newSegmentStart !== undefined && newSegmentEnd === undefined" :disabled="samplePos === undefined"/>
@@ -584,12 +599,20 @@ export default defineComponent({
       }
       return url;
     },
-    audioOriginalURL() {
+    audioOriginalSpeedURL() {
       if(!this.sample) {
         return undefined;
       }
       const baseURL = this.$api.defaults.baseURL;
       var url = baseURL + 'samples2/' + this.sample.id + '/audio';
+      return url;
+    },
+    audioOriginalURL() {
+      if(!this.sample) {
+        return undefined;
+      }
+      const baseURL = this.$api.defaults.baseURL;
+      var url = baseURL + 'samples2/' + this.sample.id + '/audio?original';
       return url;
     },
     staticLinesCanvasPosY() {

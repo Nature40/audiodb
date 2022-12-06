@@ -28,7 +28,9 @@
 /accounts.yaml
 /config.yaml
 /config.yaml_OLD
+/config.yaml_PREV
 /config_bats.yaml
+/exploratories_inventory.csv
 /keystore.jks
 /label_definitions.yaml
 /label_definitions.yaml_OLD
@@ -70,4 +72,5 @@ review_lists_n1
 /Motten_FVA_1__221004fva_eval_meta
 /Motten_FVA_1__221004fva_eval_meta_dup
 /Motten_FVA_1__221004fva_eval_worklist
+/Motten_FVA_1_meta
 /Spring 2022*

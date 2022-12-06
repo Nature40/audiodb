@@ -215,7 +215,7 @@ public final class Web {
 
 	public static boolean getFlagBoolean(Request request, String name) {
 		String text = request.getParameter(name);
-		if(text==null) {
+		if(text == null) {
 			return false;
 		}
 		if(text.isEmpty()) {

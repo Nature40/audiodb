@@ -39,10 +39,12 @@ public class AudioHandler {
 	public void handle(GeneralSample sample, Request request, HttpServletResponse response) throws IOException {
 		File file = sample.getAudioFile();
 		String rangeText = request.getHeader("Range");
+		
+		boolean fOriginal = Web.getFlagBoolean(request, "original");
 
 		double overwrite_sampling_rate = Web.getDouble(request, "overwrite_sampling_rate", Double.NaN);	
 
-		if(!Double.isFinite(overwrite_sampling_rate) && !isAbove(file, 48000)) {
+		if(fOriginal || (!Double.isFinite(overwrite_sampling_rate) && !isAbove(file, 48000))) {
 			sendFile(file, rangeText, response, "audio/wave");
 		} else {
 			//if(overwrite_sampling_rate <= 0d || overwrite_sampling_rate > 192000d) {

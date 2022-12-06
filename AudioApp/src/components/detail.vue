@@ -105,11 +105,28 @@
           <br>move mouse cursor to segment end position, release left mouse button,
           <br> select correct label, click right mouse button to save the new segment.          
           </q-badge>
-
+          <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-if="Number.isFinite(mouseStartX) && Number.isFinite(mouseEndX)">
+            Segment  
+            {{(pixelPosToSamplePos(mouseStartX) / sample.sample_rate).toFixed(3)}}
+            ..
+            {{(pixelPosToSamplePos(mouseEndX) / sample.sample_rate).toFixed(3)}}
+            (
+            <b>{{((pixelPosToSamplePos(mouseEndX) - pixelPosToSamplePos(mouseStartX) + 1)/ sample.sample_rate).toFixed(3)}}</b>
+            )
+          </q-badge>           
+          <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-else-if="Number.isFinite(labelStartX) && Number.isFinite(labelEndX)">
+            Segment  
+            {{(labelStartX / sample.sample_rate).toFixed(3)}}
+            ..
+            {{(labelEndX / sample.sample_rate).toFixed(3)}}
+            (
+            <b>{{((labelEndX - labelStartX + 1)/ sample.sample_rate).toFixed(3)}}</b>
+            )
+          </q-badge>         
           <q-space />
 
           <q-btn @click="onMovePrevSamples" icon="arrow_left" padding="xs" :loading="loading" title="Move backward in time."></q-btn>
-          <span>{{(start_sample / this.sample.sample_rate).toFixed(3)}} - {{( (end_sample + 1) / this.sample.sample_rate).toFixed(3)}}</span>
+          <span>{{(start_sample / sample.sample_rate).toFixed(3)}} - {{( (end_sample + 1) / sample.sample_rate).toFixed(3)}}</span>
           <q-btn @click="onMoveNextSamples" icon="arrow_right" padding="xs" :loading="loading" title="Move forward in time."></q-btn>
           <q-checkbox
             v-model="hideLabels"

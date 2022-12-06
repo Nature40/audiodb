@@ -65,8 +65,17 @@
       <span style="padding-left: 5px;" v-if="sample.time">{{sample.time}}</span>
       <span style="padding-left: 10px; font-family: monospace;" v-if="(sample.location === undefined || sample.date === undefined) && sample.device">{{sample.device}}</span>
       <span style="padding-left: 10px;" v-if="(!sample.location || !sample.device) && sample.date === undefined">{{sample.id}}</span>
-      <span style="padding-left: 20px;">{{workingEntry.start}} - {{workingEntry.end}}</span>
-      <span style="padding-left: 20px; color: grey;">{{Number.isFinite(currentTime) ? currentTime.toFixed(2) : '---'}}</span>
+      <!--<span style="padding-left: 20px;">{{workingEntry.start}} - {{workingEntry.end}}</span>-->
+      <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-if="Number.isFinite(workingEntry.start) && Number.isFinite(workingEntry.end)">
+        Segment  
+        {{workingEntry.start.toFixed(3)}}
+        ..
+        {{workingEntry.end.toFixed(3)}}
+        (
+        <b>{{(workingEntry.end - workingEntry.start).toFixed(3)}}</b>
+        )
+      </q-badge>
+      <span style="padding-left: 20px; color: grey;">{{Number.isFinite(currentTime) && player_time_expansion_factor ? (currentTime / player_time_expansion_factor).toFixed(2) : '---'}}</span>
       <q-space />
 
       <q-select
@@ -320,6 +329,7 @@ export default defineComponent({
       player_spectrum_threshold: state => state.project.player_spectrum_threshold,
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
       //player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
+      player_time_expansion_factor: state => state.project.player_time_expansion_factor,
     }),
     listId() {
       return this.$route.query.list;
@@ -368,7 +378,7 @@ export default defineComponent({
         && (e.end - 0.001) <= this.workingEntry.end 
         && this.workingEntry.end <= (e.end + 0.001)
       );
-      return label;
+      return label; 
     },
     userSelectedLabelNamesSet() {
       return new Set(this.userSelectedLabelNames);
@@ -391,14 +401,18 @@ export default defineComponent({
         || this.workingEntry === undefined
         || this.workingEntry.start === undefined
         || this.workingEntry.start < 0
+        || this.player_time_expansion_factor === undefined        
       ) {
         return undefined;
       }
-      return Math.floor(((this.currentTime - this.workingEntry.start) * this.sampleRate) / (this.fft_step * this.shrink_Factor));
+      return Math.floor((((this.currentTime / this.player_time_expansion_factor) - this.workingEntry.start) * this.sampleRate) / (this.fft_step * this.shrink_Factor));
     },
     selectableLabels() {
       return this.labelDefinitions.concat(this.customLabels);
-    },        
+    },
+    playerSampleRate() {
+      return this.sampleRate === undefined ? undefined : Math.trunc(this.sampleRate / this.player_time_expansion_factor);
+    },            
   },
 
   methods: {
@@ -520,6 +534,9 @@ export default defineComponent({
       try {
         if(this.sample !== undefined) {
           var apiUrl = this.$store.getters.api('samples2', this.sample.id, 'audio');
+          if(this.sampleRate !== this.playerSampleRate) {
+            apiUrl += '?overwrite_sampling_rate=' + this.playerSampleRate;
+          }          
           var url = new URL(apiUrl);
           if(this.audio === undefined) {
             this.audio = new Audio(url.href);
@@ -531,10 +548,10 @@ export default defineComponent({
           
           this.audio.ontimeupdate = (event) => {
             this.currentTime = this.audio.currentTime;
-            if(this.currentTime >= this.workingEntry.end) {
+            if(this.player_time_expansion_factor && this.currentTime >= (this.workingEntry.end * this.player_time_expansion_factor)) {
               this.audio.pause();
               this.audio.oncanplay = undefined;
-              this.audio.currentTime = this.workingEntry.start;
+              this.audio.currentTime = this.workingEntry.start * this.player_time_expansion_factor;
             }
           };
           if(this.autoplay) {
@@ -623,8 +640,8 @@ export default defineComponent({
       }
     },
     replay() {
-      if(this.workingEntry !== undefined && this.audio !== undefined) {
-        this.audio.currentTime = this.workingEntry.start;
+      if(this.player_time_expansion_factor && this.workingEntry !== undefined && this.audio !== undefined) {
+        this.audio.currentTime = this.workingEntry.start * this.player_time_expansion_factor;
         this.audio.oncanplay = (event) => {
           this.audio.play();
         };
@@ -637,8 +654,8 @@ export default defineComponent({
       if(this.audio !== undefined) {
         this.audio.pause();
         this.audio.oncanplay = undefined;
-        if(this.workingEntry !== undefined) {
-          this.audio.currentTime = this.workingEntry.start;
+        if(this.player_time_expansion_factor && this.workingEntry !== undefined) {
+          this.audio.currentTime = this.workingEntry.start * this.player_time_expansion_factor;
         }
       }
     },
