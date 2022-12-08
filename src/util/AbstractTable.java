@@ -8,7 +8,8 @@ import java.util.function.UnaryOperator;
 
 import org.tinylog.Logger;
 
-import ch.randelshofer.fastdoubleparser.FastDoubleParser;
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import ch.randelshofer.fastdoubleparser.JavaFloatParser;
 
 public abstract class AbstractTable {
 
@@ -62,7 +63,7 @@ public abstract class AbstractTable {
 					return Float.NaN;
 				}
 				//return Float.parseFloat(row[rowIndex]);
-				return (float) FastDoubleParser.parseDouble(row[rowIndex]);
+				return JavaFloatParser.parseFloat(row[rowIndex]);
 			} catch(NumberFormatException e) {
 				if(row[rowIndex].toLowerCase().equals("na")||row[rowIndex].toLowerCase().equals("null")||row[rowIndex].toLowerCase().equals("nan")) {
 					return Float.NaN;
@@ -119,7 +120,7 @@ public abstract class AbstractTable {
 					return Double.NaN;
 				}
 				//return Double.parseDouble(row[rowIndex]);
-				return FastDoubleParser.parseDouble(row[rowIndex]);
+				return JavaDoubleParser.parseDouble(row[rowIndex]);
 			} catch(NumberFormatException e) {
 				if(row[rowIndex].toLowerCase().equals("na")||row[rowIndex].toLowerCase().equals("null")||row[rowIndex].toLowerCase().equals("nan")) {
 					return Double.NaN;

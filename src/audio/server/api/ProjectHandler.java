@@ -101,7 +101,9 @@ public class ProjectHandler {
 		json.key("player_fft_window");
 		json.value(config.player_fft_window);
 		json.key("player_fft_window_step_factor");
-		json.value(config.player_fft_window_step_factor);		
+		json.value(config.player_fft_window_step_factor);
+		json.key("player_spectrum_shrink_Factor");
+		json.value(config.player_spectrum_shrink_Factor);		
 		json.key("player_time_expansion_factor");
 		json.value(config.player_time_expansion_factor);
 		if(config.player_static_lines_frequency != null) {
@@ -112,6 +114,50 @@ public class ProjectHandler {
 		json.value(config.player_fft_cutoff_lower_frequency);
 		json.key("player_fft_cutoff_upper_frequency");
 		json.value(config.player_fft_cutoff_upper_frequency);
+		json.key("detail_fft_window_overlap_percent");
+		json.value(config.detail_fft_window_overlap_percent);
+		
+		if(config.hasProfiles()) {
+			json.key("profiles");
+			json.object();
+			config.forEachProfile((id, p) -> {
+				json.key(id);
+				json.object();
+				json.key("player_spectrum_threshold");
+				json.value(p.player_spectrum_threshold);
+				json.key("player_fft_intensity_max");
+				json.value(p.player_fft_intensity_max);
+				json.key("player_playbackRate");
+				json.value(p.player_playbackRate);
+				json.key("player_preservesPitch");
+				json.value(p.player_preservesPitch);
+				json.key("player_overwriteSamplingRate");
+				json.value(p.player_overwriteSamplingRate);
+				json.key("player_samplingRate");
+				json.value(p.player_samplingRate);
+				json.key("player_fft_window");
+				json.value(p.player_fft_window);
+				json.key("player_fft_window_step_factor");
+				json.value(p.player_fft_window_step_factor);
+				json.key("player_spectrum_shrink_Factor");
+				json.value(p.player_spectrum_shrink_Factor);	
+				json.key("player_time_expansion_factor");
+				json.value(p.player_time_expansion_factor);
+				if(p.player_static_lines_frequency != null) {
+					json.key("player_static_lines_frequency");
+					json.value(p.player_static_lines_frequency);
+				}
+				json.key("player_fft_cutoff_lower_frequency");
+				json.value(p.player_fft_cutoff_lower_frequency);
+				json.key("player_fft_cutoff_upper_frequency");
+				json.value(p.player_fft_cutoff_upper_frequency);
+				json.key("detail_fft_window_overlap_percent");
+				json.value(p.detail_fft_window_overlap_percent);				
+				json.endObject();
+			});
+			json.endObject();
+		}
+		
 		if(fLocations) {
 			json.key("locations");
 			json.array();
@@ -123,11 +169,7 @@ public class ProjectHandler {
 			json.array();
 			sampleManager.tlSampleManagerConnector.get().forEachDevice(device -> json.value(device));
 			json.endArray();
-		}
-		
-		json.key("detail_fft_window_overlap_percent");
-		json.value(config.detail_fft_window_overlap_percent);
-		
+		}		
 		if(fSamplesTableCount) {
 			int samples_table_count = sampleManager.tlSampleManagerConnector.get().getTableSize();
 			json.key("samples_table_count");

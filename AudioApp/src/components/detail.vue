@@ -374,6 +374,9 @@ export default defineComponent({
       this.loadSpectrogramImage();
     },
     async loadSpectrogramImage() {
+      if(!this.sample) {
+        return;
+      }
       try {
         this.loading = true;
         this.error = false;
@@ -394,7 +397,8 @@ export default defineComponent({
           end_sample = this.sample.samples - sampleLen;
         }*/
         var image = new Image();
-        image.src = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + this.start_sample + '&end_sample=' + this.end_sample + this.spectrogramSettingsQuery;
+        const imageUrl = baseURL + 'samples2/' + this.sample.id + '/spectrogram' + '?start_sample=' + this.start_sample + '&end_sample=' + this.end_sample + this.spectrogramSettingsQuery;
+        image.src = imageUrl;
         await image.decode();   
         this.image = image;
         this.imageStartSample = this.start_sample;        
@@ -404,10 +408,11 @@ export default defineComponent({
         this.$nextTick( () => {
           this.repaint();
         });                 
-      } catch {
+      } catch(e) {
         this.loading = false;
         this.error = true;
-        console.log('error');         
+        console.log('error ');         
+        console.log(e); 
       }
     },
     repaint() {
@@ -569,7 +574,7 @@ export default defineComponent({
     },
     onOverlapMenuHide() {
       if(this.userWindowOverlapPercentChanged) {
-        console.log('hidden');
+        //console.log('hidden');
         this.userWindowOverlapPercentChanged = false;
         this.windowOverlapFactor = (100 / (100 - this.userWindowOverlapPercent));
         this.refresh();

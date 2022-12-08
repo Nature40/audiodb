@@ -87,6 +87,14 @@
           </q-btn>
         </q-bar>     
 
+        <q-card-section style="background-color: #0000000d;">
+            <b>Profile</b>
+            <q-select v-model="selectedProfileId" dense options-dense hide-bottom-space filled :options="profileIds" style="min-width: 100px;" />
+        </q-card-section>
+        <q-separator/>
+        <q-separator/>
+        <q-separator/>
+
         <q-card-section>
           <q-badge color="grey-6">
             Sampling window (spectrogram)
@@ -244,8 +252,10 @@
         </q-card-section>          
 
         <q-separator />
+        <q-separator />
+        <q-separator />
 
-        <q-card-actions align="right">
+        <q-card-actions align="right" style="background-color: #0000000d;">
           <q-btn v-close-popup flat color="primary" label="Apply" @click="onApply" />
         </q-card-actions>
       </q-card>
@@ -280,7 +290,8 @@ export default defineComponent({
       user_player_fft_cutoff_range_max: 192000,
       dialoghelpShow: false,
       dialoghelpMaximizedToggle: false,
-      dialogMaximizedToggle: false,            
+      dialogMaximizedToggle: false, 
+      selectedProfileId: undefined,         
     };
   },
   computed: {
@@ -301,11 +312,11 @@ export default defineComponent({
       default_player_fft_cutoff_lower_frequency: state => state.project.default_player_fft_cutoff_lower_frequency,
       player_fft_cutoff_upper_frequency: state => state.project.player_fft_cutoff_upper_frequency,        
       default_player_fft_cutoff_upper_frequency: state => state.project.default_player_fft_cutoff_upper_frequency,
+      profileIds: state => state.project.profileIds,
+      profileId: state => state.project.profileId,
     }),
     valid_lines_frequency() {
       let u = this.user_player_static_lines_frequency;
-      console.log(u);
-      console.log(u === undefined);
       if(u === undefined || u === null ) {
         return true;
       }
@@ -352,17 +363,21 @@ export default defineComponent({
     },
     refresh() {
       this.user_player_fft_window = this.toValidExp(this.player_fft_window);
+      this.user_player_fft_cutoff_range.min = this.player_fft_cutoff_lower_frequency;      
+      this.user_player_fft_cutoff_range.max = this.player_fft_cutoff_upper_frequency;         
       this.user_player_fft_intensity_range.min = this.player_spectrum_threshold;      
-      this.user_player_fft_intensity_range.max = this.player_fft_intensity_max;      
+      this.user_player_fft_intensity_range.max = this.player_fft_intensity_max;         
       this.user_player_spectrum_shrink_Factor = this.player_spectrum_shrink_Factor;
       this.user_player_time_expansion_factor = this.player_time_expansion_factor;
       this.user_player_static_lines_frequency = this.player_static_lines_frequency === undefined ? undefined : this.player_static_lines_frequency.join(', ');
-      this.user_player_fft_cutoff_range.min = this.player_fft_cutoff_lower_frequency;      
-      this.user_player_fft_cutoff_range.max = this.player_fft_cutoff_upper_frequency; 
+
     },
     toValidExp(window) {
       var exp = Math.trunc(Math.log2(window));
       return exp < this.user_player_fft_window_min ? this.user_player_fft_window_min : (exp > this.user_player_fft_window_max ? this.user_player_fft_window_max : exp);
+    },
+    setProfile(id) {
+      this.$store.dispatch('project/setProfile', id);
     }
   },
   watch: {
@@ -371,6 +386,32 @@ export default defineComponent({
         this.refresh();
       }
     },
+    profileIds() {
+      if(this.profileIds && this.profileIds.length !== 0) {
+        this.selectedProfileId = this.profileIds[0];
+      }
+    },
+    profileId: {
+      handler() {
+        if(this.profileId !== this.selectedProfileId) {
+          this.selectedProfileId = this.profileId;
+        }
+      },
+      immediate: true,
+    },
+    selectedProfileId() {
+      if(this.profileId !== this.selectedProfileId) {
+        this.setProfile(this.selectedProfileId);
+      }
+    },
+    player_fft_window() {this.refresh();},
+    player_fft_cutoff_lower_frequency() {this.refresh();},
+    player_fft_cutoff_upper_frequency() {this.refresh();},
+    player_spectrum_threshold() {this.refresh();},
+    player_fft_intensity_max() {this.refresh();},
+    player_spectrum_shrink_Factor() {this.refresh();},
+    player_time_expansion_factor() {this.refresh();},
+    player_static_lines_frequency() {this.refresh();},
   },
   async mounted() {
   },

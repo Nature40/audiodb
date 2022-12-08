@@ -3,6 +3,9 @@ package audio;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 import org.tinylog.Logger;
 
@@ -24,14 +27,15 @@ public final class AudioProjectConfig {
 	public final boolean player_overwriteSamplingRate;
 	public final double player_samplingRate;
 	public final int player_fft_window;
-	public final double player_fft_window_step_factor;	
+	public final double player_fft_window_step_factor;
+	public final double player_spectrum_shrink_Factor;
 	public final int player_time_expansion_factor;
 	public final float[] player_static_lines_frequency;
 	public final double player_fft_cutoff_lower_frequency;
-	public final double player_fft_cutoff_upper_frequency;
-	
+	public final double player_fft_cutoff_upper_frequency;	
 	public final double detail_fft_window_overlap_percent;
-	
+	private final Map<String, AudioProfile> profileMap;
+
 	public final int audio_cache_max_files;
 
 	public static class Builder {
@@ -48,13 +52,14 @@ public final class AudioProjectConfig {
 		public double player_samplingRate = 32000;
 		public int player_fft_window = 1024; //16384,//8192,//4096,//2048,//1024,
 		public double player_fft_window_step_factor = 1d;
+		public double player_spectrum_shrink_Factor = 1d;
 		public int player_time_expansion_factor = 1;
 		public float[] player_static_lines_frequency = null;
 		public double player_fft_cutoff_lower_frequency = 0;
-		public double player_fft_cutoff_upper_frequency = 192000;
-		
+		public double player_fft_cutoff_upper_frequency = 192000;		
 		public double detail_fft_window_overlap_percent = 75d;
-		
+		public Map<String, AudioProfile> profileMap = null;
+
 		public int audio_cache_max_files = 20;
 
 		public Builder() {}
@@ -72,13 +77,22 @@ public final class AudioProjectConfig {
 			player_samplingRate = yamlMap.optDouble("player_samplingRate", player_samplingRate);
 			player_fft_window = yamlMap.optInt("player_fft_window", player_fft_window);
 			player_fft_window_step_factor = yamlMap.optDouble("player_fft_window_step_factor", player_fft_window_step_factor);
+			player_spectrum_shrink_Factor = yamlMap.optDouble("player_spectrum_shrink_Factor", player_spectrum_shrink_Factor);
 			player_time_expansion_factor = yamlMap.optInt("player_time_expansion_factor", player_time_expansion_factor);
 			yamlMap.optFunList("player_static_lines_frequency", yamlList -> player_static_lines_frequency = yamlList.asFloatArray());
 			player_fft_cutoff_lower_frequency = yamlMap.optDouble("player_fft_cutoff_lower_frequency", player_fft_cutoff_lower_frequency);
-			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);
-			
+			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);			
 			detail_fft_window_overlap_percent = yamlMap.optDouble("detail_fft_window_overlap_percent", detail_fft_window_overlap_percent);
-			
+			YamlMap yamlProfiles = yamlMap.optMap("profiles");
+			if(yamlProfiles != null) {
+				profileMap = new LinkedHashMap<String, AudioProfile>();
+				for(String profileId : yamlProfiles.keys()) {
+					YamlMap yamlProfile = yamlProfiles.getMap(profileId);
+					AudioProfile audioProfile = new AudioProfile(new AudioProfile.Builder(yamlProfile));
+					profileMap.put(profileId, audioProfile);
+				}
+			}
+
 			audio_cache_max_files = yamlMap.optInt("audio_cache_max_files", audio_cache_max_files);
 		}
 	}
@@ -97,13 +111,14 @@ public final class AudioProjectConfig {
 		player_samplingRate = builder.player_samplingRate;
 		player_fft_window = builder.player_fft_window;
 		player_fft_window_step_factor = builder.player_fft_window_step_factor;
+		player_spectrum_shrink_Factor = builder.player_spectrum_shrink_Factor;
 		player_time_expansion_factor = builder.player_time_expansion_factor;
 		player_static_lines_frequency = builder.player_static_lines_frequency;
 		player_fft_cutoff_lower_frequency = builder.player_fft_cutoff_lower_frequency;
 		player_fft_cutoff_upper_frequency = builder.player_fft_cutoff_upper_frequency;
-		
 		detail_fft_window_overlap_percent = builder.detail_fft_window_overlap_percent;
-		
+		profileMap = builder.profileMap == null ? null : new LinkedHashMap<String, AudioProfile>(builder.profileMap);
+
 		audio_cache_max_files = builder.audio_cache_max_files;
 		Logger.info(this);
 	}
@@ -124,4 +139,13 @@ public final class AudioProjectConfig {
 				+ audio_cache_max_files + "]";
 	}
 
+	public boolean hasProfiles() {
+		return profileMap != null;
+	}
+
+	public void forEachProfile(BiConsumer<String, AudioProfile> action) {
+		if(profileMap != null) {
+			profileMap.forEach(action);	
+		}		
+	}
 }
