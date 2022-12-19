@@ -6,16 +6,13 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ThreadLocalRandom;
 
-
-import org.tinylog.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.tinylog.Logger;
 
 import com.webauthn4j.WebAuthnManager;
 import com.webauthn4j.authenticator.Authenticator;

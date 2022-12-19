@@ -29,7 +29,8 @@ function login() {
 	var u = document.getElementById('user').value;
 	var p = document.getElementById('password').value;
 	var h = hash(u, p);
-	window.location.href = "/login?server_nonce=" + server_nonce + "&client_nonce=" + client_nonce +"&hash=" + h;
+	var href = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+	window.location.href = "/login?server_nonce=" + server_nonce + "&client_nonce=" + client_nonce +"&hash=" + h + "&href=" + href;
 }
 document.onkeydown = function (e) {
 	if(e.code === 'Enter') {

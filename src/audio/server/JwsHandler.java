@@ -73,14 +73,14 @@ public class JwsHandler extends AbstractHandler {
 	}
 
 	private void handleJwsParameterRedirect(String jwsParam, Request request, HttpServletResponse response) throws MustacheException, IOException {
-		String redirect_target = request.getRequestURL().toString();
+		String location = request.getRequestURL().toString();
 		String qs = request.getQueryString();
 		int jwsIndex = qs.indexOf("jws=");
 		if(jwsIndex < 0) {
 			throw new RuntimeException("url JWS error");
 		}
 		if(jwsIndex > 0) {
-			redirect_target += "?" + qs.substring(0, jwsIndex - 1);
+			location += "?" + qs.substring(0, jwsIndex - 1);
 		}
 		//String redirect_target = "/";
 		try {
@@ -104,7 +104,7 @@ public class JwsHandler extends AbstractHandler {
 			session.setAttribute("roles", broker.roleManager().getRoleBits(account.roles));
 
 			request.setHandled(true);
-			response.setHeader(HttpHeader.LOCATION.asString(), redirect_target);
+			response.setHeader(HttpHeader.LOCATION.asString(), location);
 			response.setStatus(HttpServletResponse.SC_FOUND);
 			response.setContentLength(0);
 			return;
@@ -118,7 +118,7 @@ public class JwsHandler extends AbstractHandler {
 			}
 			HashMap<String, Object> ctx = new HashMap<>();
 			ctx.put("error", e.getMessage());
-			ctx.put("redirect_target", redirect_target);
+			ctx.put("href", location);
 			TemplateUtil.getTemplate("login_jws_error.mustache", true).execute(ctx, response.getWriter());
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 		}
