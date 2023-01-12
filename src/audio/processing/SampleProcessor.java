@@ -1,9 +1,16 @@
 package audio.processing;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
@@ -12,8 +19,10 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.apache.commons.math3.analysis.function.Gaussian;
 import org.jtransforms.fft.FloatFFT_1D;
+import org.tinylog.Logger;
 
 import audio.GeneralSample;
+import fr.delthas.javamp3.Sound;
 
 public class SampleProcessor {
 
@@ -67,12 +76,6 @@ public class SampleProcessor {
 		return col * step;
 	}
 
-	public void loadData(int additionalSpace) {
-		int start = 0;
-		int end = getFrameLength() - 1;
-		loadData(0, start, end);
-	}
-
 	public int getFrameLength() {
 		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {	
 			int frameLength = (int) in.getFrameLength();			
@@ -82,81 +85,126 @@ public class SampleProcessor {
 		}		
 	}
 
+	public void loadData(int additionalSpace) {
+		int start = 0;
+		int end = getFrameLength() - 1;
+		loadData(0, start, end);
+	}
+
 	public void loadData(int additionalSpace, int start, int end) {
+		boolean unsupportedAudioFile = false;
 		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {			
-			AudioFormat audioFormat = in.getFormat();
-			//Logger.info("Format: " + audioFormat);
-			//Logger.info("FrameLength: " + in.getFrameLength());
-			//Logger.info("rate: " + audioFormat.getFrameRate() + "   " + audioFormat.getSampleRate());
-
-			this.sampleRate = audioFormat.getSampleRate();
-
-			if(audioFormat.getChannels() != 1) {
-				throw new RuntimeException("currently for audio only one channel is supported (mono).");
-			}
-
-			Encoding audioEncoding = audioFormat.getEncoding();			
-			if(audioEncoding != Encoding.PCM_SIGNED) {
-				throw new RuntimeException("currently audio in PCM_SIGNED encoding is supported.");
-			}
-
-			if(audioFormat.getSampleSizeInBits() != 16) {
-				throw new RuntimeException("currently for audio only samples of 16 bit are supported.");
-			}
-
-			if(audioFormat.getFrameSize() != 2) {
-				throw new RuntimeException("currently for audio only frame size of 2 bytes is supported (PCM_SIGNED 16 bit mono).");
-			}
-
-			int frameLength = (int) in.getFrameLength();
-
-			if(end < start) {
-				throw new RuntimeException("invalid interval  " + start + "    " + end);
-			}
-
-			this.dataLength = end - start + 1;
-
-			int MAX_SAMPLES = 512 * 1024 * 1024;
-
-			if(dataLength > MAX_SAMPLES) {
-				throw new RuntimeException("interval is too large: " + dataLength + "    max allowed " + MAX_SAMPLES);
-			}
-
-			if(start > Integer.MAX_VALUE - MAX_SAMPLES || end > start + MAX_SAMPLES) {
-				throw new RuntimeException("invalid interval: " + start +  " " + end + "   " + dataLength);
-			}
-
-			int readStart = start < 0 ? 0 : start;
-			int readEnd = end >= frameLength ? frameLength - 1 : end;
-			int readLen = readEnd - readStart + 1;
-
-			int off = start < 0 ? -start : 0;
-
-			int fullBytesLen = (int) ((dataLength + additionalSpace) * 2);
-			//Logger.info("allocate data array for spectrum: " + fullBytesLen);
-			byte[] fullBytes = new byte[fullBytesLen];
-			if(readStart > 0) {
-				in.skip(readStart * 2);
-			}
-			in.read(fullBytes, off * 2, readLen * 2);
-			short[] fullShorts = new short[fullBytes.length / 2];
-
-			ByteBuffer byteBuffer = ByteBuffer.wrap(fullBytes);
-			if(audioFormat.isBigEndian()) {
-				byteBuffer.order(ByteOrder.BIG_ENDIAN);
-			} else {
-				byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-			}
-			byteBuffer.asShortBuffer().get(fullShorts);				
-			this.data = fullShorts;			
-
-			sampleRateN2 = sampleRate / n / 2d;
-			binFactor = sampleRateN2 / 1000d;
-
-		} catch (UnsupportedAudioFileException | IOException e) {
+			loadDataAudioInputStream(in, additionalSpace, start, end);
+		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} catch (UnsupportedAudioFileException e) {
+			unsupportedAudioFile = true;
+		}
+		if(unsupportedAudioFile) {
+			loadDataMp3(additionalSpace, start, end);
 		}
 	}
+
+	public void loadDataAudioInputStream(AudioInputStream in, int additionalSpace, int start, int end) throws IOException {
+		AudioFormat audioFormat = in.getFormat();
+		//Logger.info("Format: " + audioFormat);
+		//Logger.info("FrameLength: " + in.getFrameLength());
+		//Logger.info("rate: " + audioFormat.getFrameRate() + "   " + audioFormat.getSampleRate());
+
+		this.sampleRate = audioFormat.getSampleRate();
+
+		if(audioFormat.getChannels() != 1) {
+			throw new RuntimeException("currently for audio only one channel is supported (mono).");
+		}
+
+		Encoding audioEncoding = audioFormat.getEncoding();			
+		if(audioEncoding != Encoding.PCM_SIGNED) {
+			throw new RuntimeException("currently audio in PCM_SIGNED encoding is supported.");
+			//Logger.warn("currently audio in PCM_SIGNED encoding is supported.");
+		}
+
+		if(audioFormat.getSampleSizeInBits() != 16) {
+			throw new RuntimeException("currently for audio only samples of 16 bit are supported: " + audioFormat.getSampleSizeInBits());
+			//Logger.warn("currently for audio only samples of 16 bit are supported: " + audioFormat.getSampleSizeInBits());
+		}
+
+		if(audioFormat.getFrameSize() != 2) {
+			throw new RuntimeException("currently for audio only frame size of 2 bytes is supported (PCM_SIGNED 16 bit mono) : " + audioFormat.getFrameSize());
+			//Logger.warn("currently for audio only frame size of 2 bytes is supported (PCM_SIGNED 16 bit mono) : " + audioFormat.getFrameSize());
+		}
+
+		int frameLength = (int) in.getFrameLength();
+		//Logger.info("frameLength " + frameLength);
+
+		if(end < start) {
+			throw new RuntimeException("invalid interval  " + start + "    " + end);
+		}
+
+		this.dataLength = end - start + 1;
+
+		int MAX_SAMPLES = 512 * 1024 * 1024;
+
+		if(dataLength > MAX_SAMPLES) {
+			throw new RuntimeException("interval is too large: " + dataLength + "    max allowed " + MAX_SAMPLES);
+		}
+
+		if(start > Integer.MAX_VALUE - MAX_SAMPLES || end > start + MAX_SAMPLES) {
+			throw new RuntimeException("invalid interval: " + start +  " " + end + "   " + dataLength);
+		}
+
+		int readStart = start < 0 ? 0 : start;
+		int readEnd = end >= frameLength ? frameLength - 1 : end;
+		int readLen = readEnd - readStart + 1;
+
+		int off = start < 0 ? -start : 0;
+
+		int fullBytesLen = (int) ((dataLength + additionalSpace) * 2);
+		//Logger.info("allocate data array for spectrum: " + fullBytesLen);
+		byte[] fullBytes = new byte[fullBytesLen];
+		if(readStart > 0) {
+			in.skip(readStart * 2);
+		}
+		in.read(fullBytes, off * 2, readLen * 2);
+		short[] fullShorts = new short[fullBytes.length / 2];
+
+		ByteBuffer byteBuffer = ByteBuffer.wrap(fullBytes);
+		if(audioFormat.isBigEndian()) {
+			byteBuffer.order(ByteOrder.BIG_ENDIAN);
+		} else {
+			byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+		}
+		byteBuffer.asShortBuffer().get(fullShorts);				
+		this.data = fullShorts;			
+
+		sampleRateN2 = sampleRate / n / 2d;
+		binFactor = sampleRateN2 / 1000d;		
+	}
+	
+	public void loadDataMp3(int additionalSpace, int start, int end) {		
+		try(Sound sound = new Sound(new BufferedInputStream(new FileInputStream(sample.getAudioFile())))) {	
+			AudioFormat audioFormat = sound.getAudioFormat();
+			Logger.info(audioFormat);
+			ByteArrayOutputStream tmpOut = new ByteArrayOutputStream();							
+			sound.decodeFullyInto(tmpOut);
+			byte[] tmpArray = tmpOut.toByteArray();				
+			Logger.info(tmpArray.length);
+			ByteArrayInputStream tmpIn = new ByteArrayInputStream(tmpArray);							
+			AudioInputStream audioInputStream = new AudioInputStream(tmpIn, audioFormat, tmpArray.length);
+			File tmpFile = new File("tmpOut.wav");
+			AudioSystem.write(audioInputStream, Type.WAVE, tmpFile);
+			try(AudioInputStream in = AudioSystem.getAudioInputStream(tmpFile)) {			
+				loadDataAudioInputStream(in, additionalSpace, start, end);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} catch (UnsupportedAudioFileException e) {
+				throw new RuntimeException(e);
+			}
+		} catch (FileNotFoundException e1) {
+			throw new RuntimeException(e1);
+		} catch (IOException e1) {
+			throw new RuntimeException(e1);
+		}		
+	}	
 
 	public static float[] getGaussianWeights(int n) {
 		double upper = n;
@@ -187,7 +235,7 @@ public class SampleProcessor {
 		}*/
 		return weight;
 	}
-	
+
 	public static float[] getGaussianWeights(int n, int step) {
 		double upper = n;
 		double mean = (upper - 1d) / 2d;
