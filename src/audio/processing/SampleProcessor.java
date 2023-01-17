@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
@@ -23,9 +25,12 @@ import org.tinylog.Logger;
 
 import audio.GeneralSample;
 import fr.delthas.javamp3.Sound;
+import io.nayuki.flac.common.StreamInfo;
+import io.nayuki.flac.decode.FlacDecoder;
 
 public class SampleProcessor {
 
+	private static final int MAX_SAMPLES = 512 * 1024 * 1024;
 
 	public static final int n = 1024;
 	public static final int n2 = n / 2;
@@ -92,16 +97,22 @@ public class SampleProcessor {
 	}
 
 	public void loadData(int additionalSpace, int start, int end) {
+		File audioFile = sample.getAudioFile();
+		String filename = audioFile.getName();
 		boolean unsupportedAudioFile = false;
-		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {			
+		try(AudioInputStream in = AudioSystem.getAudioInputStream(audioFile)) {			
 			loadDataAudioInputStream(in, additionalSpace, start, end);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (UnsupportedAudioFileException e) {
 			unsupportedAudioFile = true;
 		}
-		if(unsupportedAudioFile) {
+		if(unsupportedAudioFile && filename.toLowerCase().endsWith("mp3")) {
 			loadDataMp3(additionalSpace, start, end);
+		} else if(unsupportedAudioFile && filename.toLowerCase().endsWith("flac")) {
+			loadDataFlac(additionalSpace, start, end);
+		} else if(unsupportedAudioFile) {
+			throw new RuntimeException("could not read audio data");
 		}
 	}
 
@@ -140,9 +151,7 @@ public class SampleProcessor {
 			throw new RuntimeException("invalid interval  " + start + "    " + end);
 		}
 
-		this.dataLength = end - start + 1;
-
-		int MAX_SAMPLES = 512 * 1024 * 1024;
+		this.dataLength = end - start + 1;		
 
 		if(dataLength > MAX_SAMPLES) {
 			throw new RuntimeException("interval is too large: " + dataLength + "    max allowed " + MAX_SAMPLES);
@@ -179,7 +188,7 @@ public class SampleProcessor {
 		sampleRateN2 = sampleRate / n / 2d;
 		binFactor = sampleRateN2 / 1000d;		
 	}
-	
+
 	public void loadDataMp3(int additionalSpace, int start, int end) {		
 		try(Sound sound = new Sound(new BufferedInputStream(new FileInputStream(sample.getAudioFile())))) {	
 			AudioFormat audioFormat = sound.getAudioFormat();
@@ -204,7 +213,97 @@ public class SampleProcessor {
 		} catch (IOException e1) {
 			throw new RuntimeException(e1);
 		}		
-	}	
+	}
+
+	public void loadDataFlac(int additionalSpace, int start, int end) {
+		try (FlacDecoder dec = new FlacDecoder(sample.getAudioFile())) {			
+			while (true) {
+				Object[] mb = dec.readAndHandleMetadataBlock();
+				if(mb == null) {
+					break;
+				}
+				int mbType = (int) mb[0];
+				byte[] mbData = (byte[]) mb[1];
+				
+				switch(mbType) {
+				case 0:
+					Logger.info("mmType " + mbType + " STREAMINFO" + "  len " + mbData.length);
+					break;
+				case 1:
+					Logger.info("mmType " + mbType + " APPLICATION" + "  len " + mbData.length);
+					break;
+				case 2:
+					Logger.info("mmType " + mbType + " PADDING"  + "  len " + mbData.length);
+					break;					
+				case 3:
+					Logger.info("mmType " + mbType + " SEEKTABLE" + "  len "  + mbData.length);
+					break;
+				case 4:
+					Logger.info("mmType " + mbType + " VORBIS_COMMENT" + "  len " + mbData.length);
+					break;
+				case 5:
+					Logger.info("mmType " + mbType + " CUESHEET" + "  len " + mbData.length);
+					break;
+				case 6:
+					Logger.info("mmType " + mbType + " PICTURE" + "  len " + mbData.length);
+					break;
+				default:
+					Logger.info("mmType " + mbType + "  len " + mbData.length);
+				}
+				
+				Logger.info(new String(mbData, StandardCharsets.UTF_8));
+				Logger.info(Arrays.toString(mbData));
+			}
+			StreamInfo streamInfo = dec.streamInfo;
+			if (streamInfo.sampleDepth != 16) {
+				throw new RuntimeException("Only 16 bit samples supported.");
+			}
+			if (streamInfo.numChannels != 1) {
+				throw new RuntimeException("Only 1 channel supported.");
+			}
+			Logger.info("streamInfo.numSamples " + streamInfo.numSamples);
+
+			int[][] samples = new int[1][(int)streamInfo.numSamples];
+			{
+				int pos = 0;
+				while(true) {
+					int len = dec.readAudioBlock(samples, pos);
+					if (len == 0) {
+						break;
+					}
+					pos += len;
+				}
+				if(streamInfo.numSamples != pos) {
+					Logger.info("read error " + pos + "   " + streamInfo.numSamples);
+				}
+			}
+
+			int readStart = start < 0 ? 0 : start;
+			int readEnd = (int) (end >= streamInfo.numSamples ? streamInfo.numSamples - 1 : end);
+			this.dataLength = readEnd - readStart + 1;		
+
+			if(this.dataLength > MAX_SAMPLES) {
+				throw new RuntimeException("interval is too large: " + dataLength + "    max allowed " + MAX_SAMPLES);
+			}
+
+			if(readStart > Integer.MAX_VALUE - MAX_SAMPLES) {
+				throw new RuntimeException("invalid interval: " + readStart +  " " + readEnd + "   " + dataLength);
+			}
+
+			short[] fullShorts = new short[dataLength + additionalSpace];			
+			int[] src = samples[0];
+			for(int pos = 0, i = readStart; i <= readEnd; i++) {
+				fullShorts[pos++] = (short) src[i];
+			}
+
+			this.data = fullShorts;			
+
+			sampleRateN2 = sampleRate / n / 2d;
+			binFactor = sampleRateN2 / 1000d;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	public static float[] getGaussianWeights(int n) {
 		double upper = n;

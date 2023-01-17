@@ -92,7 +92,9 @@ dependencies {
 	//implementation group: 'fr.delthas', name: 'javamp3', version: '1.0.1' // version with	IndexOutOfBoundsException bug
 	implementation name: 'javamp3-1.0.4' // local jar file from  https://github.com/kevinstadler/JavaMP3
 	
-	//implementation group: 'net.jthink', name: 'jaudiotagger', version: '3.0.1'			
+	//implementation group: 'net.jthink', name: 'jaudiotagger', version: '3.0.1'
+	
+	implementation name: 'flac-library-java-2022-09-12' // local jar file derived from  https://github.com/nayuki/FLAC-library-Java		
 }
 
 sourceSets.main.java.srcDir 'src'

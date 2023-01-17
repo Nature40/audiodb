@@ -30,6 +30,22 @@
 
               <q-card-section class="q-pt-none">
                 <div class="text-h6">Select worklist</div>
+
+                <br>               
+                <p>Category (optional):</p>
+                <ul>
+                  <li>Select work list category to filter set of work lists.</li>
+                  <li>Special category '<b>(all)</b>' does not filter work lists.</li>
+                  <li>Special category '<b>(none)</b>' shows work list with no category only.</li>
+                </ul>
+
+                
+                <p>Work list:</p>
+                <ul>
+                  <li><b>Select</b> a work list form the list of available work lists (filtered by category).</li>
+                  <li>Click <b>apply-button</b> on the lower right to choose this work list and go back to work list view.</li>
+                </ul>
+ 
               </q-card-section>              
                            
             </q-card>

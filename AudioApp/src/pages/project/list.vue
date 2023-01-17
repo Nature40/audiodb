@@ -55,6 +55,60 @@
       <q-btn @click="$refs.listmanager.show = true;" icon="menu_book" title="Select worklist of audio segments." push padding="xs" no-caps>List [<b>{{listId}}</b>]</q-btn>
       <list-manager ref="listmanager" @set_worklist="setWorklist($event)" />
       <q-btn @click="onFullscreenClick" :icon="isFullscreen ? 'close_fullscreen' : 'fullscreen'" title="Toggle fullscreen." round padding="xs" no-caps class="q-ml-sm"></q-btn>
+
+      <q-btn @click="dialoghelpShow = true;" icon="help" dense flat style="margin-left: 10px;" title="Get help."></q-btn>
+      <q-dialog
+        v-model="dialoghelpShow"
+        :maximized="dialoghelpMaximizedToggle"
+        transition-show="slide-down"
+        transition-hide="slide-up"
+      >
+        <q-card class="bg-grey-3 text-black">
+          <q-bar>
+            <q-icon name="help_outline" />
+            <div>Help</div>
+            <q-space />
+            <q-btn dense flat icon="window" @click="dialoghelpMaximizedToggle = false" v-show="dialoghelpMaximizedToggle">
+              <q-tooltip v-if="dialoghelpMaximizedToggle">Minimize</q-tooltip>
+            </q-btn>
+            <q-btn dense flat icon="crop_square" @click="dialoghelpMaximizedToggle = true" v-show="!dialoghelpMaximizedToggle">
+              <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
+            </q-btn>
+            <q-btn dense flat icon="close" v-close-popup>
+              <q-tooltip>Close</q-tooltip>
+            </q-btn>
+          </q-bar>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Work list view</div>
+              <i><b>Current position</b> is marked by the vertical line that moves over the spectrogram when playing audio.</i>
+              <br><br>
+              <p>Choose work list:</p>
+              <ul>
+                <li>Click the <b>book-button</b> on the upper right to select a work list from all available work lists.</li>
+                <li>The label on the book-button shows the currently chosen work list.</li>
+              </ul>
+
+              <p>Work list entry:</p>
+              <i>Controls for the work list entry are on the upper middle.</i>
+              <ul>
+                <li>Click the <b>move-left-button</b> / <b>move-right-button</b> the move to the previous / next entry in the work list.</li>
+                <li>Click <b>work-list-entry-number-button</b> in the middle to directly jump to a work list entry.</li>
+                <li>Activate <b>skip 'done'-checkbox</b> to skip work list entries that are marked as 'done' already.</li>
+
+              </ul>
+
+              <p>Play audio of currently selected work list entry:</p>
+              <ul>
+                <li>Click the <b>stop-button</b> on the upper left to stop audio play before finish.</li>                
+                <li>Click the <b>play-button</b> on the upper left. Click it again to replay.</li>
+                <li>Activate <b>auto-play-checkbox</b> to directly play audio when another work list entry is chosen.</li>
+                <li>Click with <b>left mouse button</b> on the spectrogram to start audio play from that position.</li>
+              </ul>           
+          </q-card-section>          
+        </q-card>
+      </q-dialog>
+
     </q-toolbar>
     <q-toolbar class="bg-grey-4" v-if="workingEntry !== undefined && sample !== undefined">
       <a :href="'#/projects/' + project + '/main?sample=' + sample.id" target="_blank" rel="noopener noreferrer" title="Open full audio sample view at new tab.">
@@ -194,6 +248,7 @@
           :class="{blur: loadingSpectrogram, 'no-blur': !loadingSpectrogram}" 
           @mousemove="onCanvasMouseMove" 
           @mouseleave="onCanvasMouseleave"
+          @click="onCanvasClick"
         />
         <div v-if="spectrogramPos !== undefined" class="spectrogram-position" :style="{top: 0 + 'px', left: spectrogramPos + 'px',}" />
         <div v-if="spectrogramPos !== undefined" class="spectrogram-position" :style="{bottom: 0 + 'px', left: spectrogramPos + 'px',}" />
@@ -316,6 +371,8 @@ export default defineComponent({
       labelComment: undefined,
       jumpPos: 1,
       worklistEntryCount: undefined,
+      dialoghelpShow: false,
+      dialoghelpMaximizedToggle: false,
     };
   },
   
@@ -639,9 +696,9 @@ export default defineComponent({
         console.log(e);
       }
     },
-    replay() {
+    replay(startTime) {
       if(this.player_time_expansion_factor && this.workingEntry !== undefined && this.audio !== undefined) {
-        this.audio.currentTime = this.workingEntry.start * this.player_time_expansion_factor;
+        this.audio.currentTime = startTime === undefined ? this.workingEntry.start * this.player_time_expansion_factor : startTime;
         this.audio.oncanplay = (event) => {
           this.audio.play();
         };
@@ -788,6 +845,13 @@ export default defineComponent({
     onCanvasMouseleave(e) {
       this.canvasMousePixelPosX = undefined;
       this.canvasMousePixelPosY = undefined;
+    },
+    onCanvasClick(e) {
+      const rect = this.$refs.spectrogram.getBoundingClientRect();
+      const xPos = e.clientX - rect.left;
+      const startTime = (((xPos * this.fft_step * this.shrink_Factor) / this.sampleRate) + this.workingEntry.start) * this.player_time_expansion_factor;
+      console.log('onCanvasClick ' + xPos + '   ' + startTime);
+      this.replay(startTime);
     },
     onFullscreenClick() {
       if(document.fullscreenElement) {
