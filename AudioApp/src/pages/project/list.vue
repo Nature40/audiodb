@@ -6,7 +6,15 @@
       <q-checkbox v-model="autoplay" label="auto-play" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autoplay ? 'black' : 'grey'}" title="When moving in the list of audio segments, directly play back the audio."/>      
       <q-space />
       <q-btn @click="onPrev" icon="skip_previous" :loading="indexActionLoading" padding="xs" push title="Move to previous audio segment in the list." />
-        <q-btn-dropdown :label="'[[' + (Number.isFinite(index) ? (index + 1) : '-') + ']]'" dense padding="xs" push size="md" :loading="indexActionLoading" dropdown-icon="more_vert">
+        <q-btn-dropdown 
+          :label="'[[' + (Number.isFinite(index) ? (index + 1) : '-') + ']]'" 
+          dense 
+          padding="xs" 
+          push size="md" 
+          :loading="indexActionLoading" 
+          dropdown-icon="more_vert"
+          title="Directly jump to a worklist entry."
+        >
           <div style="background-color: #eaeaea;" class="column">
             <b style="text-align: center;">Directly jump to entry position in worklist.</b>
             <div class="row justify-between">
@@ -81,29 +89,62 @@
 
           <q-card-section class="q-pt-none">
             <div class="text-h6">Work list view</div>
-              <i><b>Current position</b> is marked by the vertical line that moves over the spectrogram when playing audio.</i>
-              <br><br>
-              <p>Choose work list:</p>
+              <i>Hover mouse over a control to show a tooltip description.</i>                                  
+          </q-card-section>
+          
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Work list</div>
               <ul>
                 <li>Click the <b>book-button</b> on the upper right to select a work list from all available work lists.</li>
                 <li>The label on the book-button shows the currently chosen work list.</li>
-              </ul>
+              </ul>          
+          </q-card-section>
 
-              <p>Work list entry:</p>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Work list entry</div>
               <i>Controls for the work list entry are on the upper middle.</i>
               <ul>
                 <li>Click the <b>move-left-button</b> / <b>move-right-button</b> the move to the previous / next entry in the work list.</li>
                 <li>Click <b>work-list-entry-number-button</b> in the middle to directly jump to a work list entry.</li>
                 <li>Activate <b>skip 'done'-checkbox</b> to skip work list entries that are marked as 'done' already.</li>
+              </ul>          
+          </q-card-section>
 
-              </ul>
 
-              <p>Play audio of currently selected work list entry:</p>
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Play audio</div>
+              <i>Audio of currently selected work list entry.</i>
+              <br><i><b>Current audio position</b> is marked by the vertical line that moves over the spectrogram when playing audio.</i>                   
               <ul>
                 <li>Click the <b>stop-button</b> on the upper left to stop audio play before finish.</li>                
                 <li>Click the <b>play-button</b> on the upper left. Click it again to replay.</li>
                 <li>Activate <b>auto-play-checkbox</b> to directly play audio when another work list entry is chosen.</li>
                 <li>Click with <b>left mouse button</b> on the spectrogram to start audio play from that position.</li>
+              </ul>           
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <div class="text-h6">Labelling</div>
+              <i>Controls for labelling are on the upper row below the play and worklist select row.</i>
+              <br><i>On the left, click the <b>link-symbol</b> to open the full audio sample of the current worklist entry in the audio view.</i>
+
+              <br><br>
+              <p>Label selection:</p>
+              <ul>
+                <li>Click the <b>label on the right</b> to select the label suggested by the worklist entry.</li>                
+                <li>Click <b>labels form the tables of generated or user selected labels</b> below the spectrogram.</li>
+                <li>Click on the <b>middle selection control</b> to select labels from the list of defined labels.</li>
+                <li>Click on the <b>right side grid symbol of the middle selection control</b> to open a grid of defined labels.</li>
+                <li>Click on the <b>left side edit symbol of the middle selection control</b> to type a custom label name. Only use this if there is no fitting label in the defined label list.</li>
+              </ul> 
+
+              <p>Submitting:</p>
+              <ul>
+                <li>Click the <b>submit-button</b> to save the currently selected labels for that worklist entry.</li>                
+                <li>Optionally, click the <b>comment-bubble-symbol</b> right of the submit-button to write a comment for that worklist entry before submit.</li> 
+                <li>Activate <b>set-done-checkbox</b> to mark this worklist entry as 'done' on submit.</li>
+                <li>Activate <b>auto-next-checkbox</b> to move to next worklist entry on submit.</li>
               </ul>           
           </q-card-section>          
         </q-card>
@@ -146,6 +187,7 @@
         emit-value
         clearable
         ref="selectLabel"
+        title="Select labels form the list of defined labels. Click the grid icon on the right to open a grid of defined labels. Click the edit icon on the left to enter a custom label."
       >
         <template v-slot:prepend>
           <div class="cursor-pointer" @click.stop.prevent="">
@@ -170,7 +212,7 @@
           </div>                   
         </template>      
         <template v-slot:append>
-          <q-icon name="apps" @click.stop.prevent="labelSelectDialogShow = true" />          
+          <q-icon name="apps" @click.stop.prevent=" labelSelectDialogShow = true" />          
           <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
             <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
               <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
@@ -231,7 +273,7 @@
       <q-checkbox v-model="autonext" label="auto-next" unchecked-icon="highlight_off" checked-icon="task_alt" dense size="xs" class="q-pl-xs q-pr-sm" :style="{color: autonext ? 'black' : 'grey'}" title="On submit, move to next audio segment in the list."/>      
 
       <q-space />
-      <q-badge v-if="workingEntry.title"
+      <q-badge v-if="workingEntry.title" title="Add to selected labels."
         color="grey-4" 
         :text-color="userSelectedLabelNamesSet.has(workingEntry.title) ? 'green' : 'red'" class="q-ma-sm" @click="addLabel(workingEntry.title, !userSelectedLabelNamesSet.has(workingEntry.title));" 
         style="cursor: pointer;"
