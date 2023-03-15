@@ -84,7 +84,7 @@ public class DeviceInventory {
 			Logger.warn("missing inventory file: " + deviceInventoryPath);
 			return;
 		}
-		Logger.info("device inventroy read "  + deviceInventoryPath);
+		Logger.info("device inventory read "  + deviceInventoryPath);
 		try(CsvTable csvTable = new CsvTable(deviceInventoryPath)) {
 			CsvCell cellDevice = csvTable.getCell("device");
 			CsvCell cellLocation = csvTable.getCell("location");	
