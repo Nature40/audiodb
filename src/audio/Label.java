@@ -1,12 +1,10 @@
 package audio;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 
 import org.json.JSONObject;
 import org.json.JSONWriter;
-import org.tinylog.Logger;
 
 import audio.review.ReviewedLabel;
 import util.JsonUtil;
@@ -58,6 +56,8 @@ public class Label {
 	public Vec<UserLabel> userLabels;
 	public final Vec<ReviewedLabel> reviewedLabels;
 	public LabelStatus labelStatus;
+	public final double lower;
+	public final double upper;
 
 	public static final Comparator<Label> INTERVAL_COMPARATOR = (a,b) -> {
 		int c = Double.compare(a.start, b.start);
@@ -67,7 +67,7 @@ public class Label {
 		return Double.compare(a.end, b.end);
 	};
 
-	private Label(double start, double end, String comment, Vec<GeneratorLabel> generatorLabels, Vec<UserLabel> userLabels, Vec<ReviewedLabel> reviewedLabels, LabelStatus labelStatus) {
+	private Label(double start, double end, String comment, Vec<GeneratorLabel> generatorLabels, Vec<UserLabel> userLabels, Vec<ReviewedLabel> reviewedLabels, LabelStatus labelStatus, double lower, double upper) {
 		this.start = start;
 		this.end = end;
 		this.comment = comment;
@@ -75,10 +75,16 @@ public class Label {
 		this.userLabels = userLabels;
 		this.reviewedLabels = reviewedLabels;
 		this.labelStatus = labelStatus;
+		this.lower = lower;
+		this.upper = upper;
+	}
+	
+	public Label(double start, double end, double lower, double upper) {
+		this(start, end, "", new Vec<GeneratorLabel>(), new Vec<UserLabel>(), new Vec<ReviewedLabel>(), null, lower, upper);
 	}
 
 	public Label(double start, double end) {
-		this(start, end, "", new Vec<GeneratorLabel>(), new Vec<UserLabel>(), new Vec<ReviewedLabel>(), null);
+		this(start, end, "", new Vec<GeneratorLabel>(), new Vec<UserLabel>(), new Vec<ReviewedLabel>(), null, Double.NaN, Double.NaN);
 	}
 
 	public static Label ofJSON(JSONObject jsonLabel) {		
@@ -86,12 +92,24 @@ public class Label {
 		double b = jsonLabel.getDouble("end");
 		double start = Math.min(a, b);
 		double end = Math.max(a, b);
+		
+		double fqa = jsonLabel.optDouble("lower");
+		double fqb = jsonLabel.optDouble("upper");
+		double lower = Math.min(fqa, fqb);
+		double upper = Math.max(fqa, fqb);	
+		if(!Double.isFinite(lower)) {
+			lower = Double.NaN;
+		}
+		if(!Double.isFinite(upper)) {
+			upper = Double.NaN;
+		}
+		
 		String comment = jsonLabel.optString("comment", "");
 		Vec<GeneratorLabel> generatorLabels = JsonUtil.optVec(jsonLabel, "generated_labels", GeneratorLabel::ofJSON);
 		Vec<UserLabel> userLabels = JsonUtil.optVec(jsonLabel, "labels", UserLabel::ofJSON);
 		Vec<ReviewedLabel> reviewedLabels = JsonUtil.optVec(jsonLabel, "reviewed_labels", ReviewedLabel::ofJSON);
 		LabelStatus labelstatus = LabelStatus.parse(jsonLabel.optString("label_status", null));
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus);
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus, lower, upper);
 	}
 
 	public void toJSON(JSONWriter json) {
@@ -100,6 +118,12 @@ public class Label {
 		json.value(start);
 		json.key("end");
 		json.value(end);
+		if(hasLowerUpper()) {
+			json.key("lower");
+			json.value(lower);
+			json.key("upper");
+			json.value(upper);
+		}
 		if(hasComment()) {
 			json.key("comment");
 			json.value(comment);		
@@ -118,6 +142,10 @@ public class Label {
 		LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
 		map.put("start", start);
 		map.put("end", end);
+		if(hasLowerUpper()) {
+			map.put("lower", lower);
+			map.put("upper", upper);
+		}		
 		if(hasComment()) {
 			map.put("comment", comment);	
 		}
@@ -134,14 +162,27 @@ public class Label {
 		double a = yamlMap.getDouble("start");
 		double b = yamlMap.getDouble("end");
 		double start = Math.min(a, b);
-		double end = Math.max(a, b);		
+		double end = Math.max(a, b);
+		
+
+		double fqa = yamlMap.optDouble("lower");
+		double fqb = yamlMap.optDouble("upper");
+		double lower = Math.min(fqa, fqb);
+		double upper = Math.max(fqa, fqb);	
+		if(!Double.isFinite(lower)) {
+			lower = Double.NaN;
+		}
+		if(!Double.isFinite(upper)) {
+			upper = Double.NaN;
+		}
+		
 		String comment = yamlMap.optString("comment", "");
 		Vec<GeneratorLabel> generatorLabels = YamlUtil.optVec(yamlMap, "generated_labels", GeneratorLabel::ofYAML);
 		Vec<UserLabel> userLabels = YamlUtil.optVec(yamlMap, "labels", UserLabel::ofYAML);
 		Vec<ReviewedLabel> reviewedLabels = YamlUtil.optVec(yamlMap, "reviewed_labels", ReviewedLabel::ofYAML);
 		String ls = yamlMap.optString("label_status", null);
 		LabelStatus labelstatus = LabelStatus.parse(ls);
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus);
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelstatus, lower, upper);
 	}
 
 	public String[] getGeneratorLabelNames() {
@@ -151,10 +192,14 @@ public class Label {
 	public String[] getUserLabelNames() {
 		return userLabels.mapArray(String[]::new, UserLabel::name);
 	}
+	
+	public boolean hasLowerUpper() {
+		return Double.isFinite(lower) && Double.isFinite(upper);
+	}
 
 	public Label withCreator(String username, String date) {
 		Vec<UserLabel> ul = this.userLabels.map(userLabel -> userLabel.withCreator(username, date));
-		return new Label(this.start, this.end, this.comment, this.generatorLabels, ul, this.reviewedLabels, this.labelStatus);
+		return new Label(this.start, this.end, this.comment, this.generatorLabels, ul, this.reviewedLabels, this.labelStatus, this.lower, this.upper);
 	}
 
 	public boolean hasComment() {
@@ -203,9 +248,10 @@ public class Label {
 			throw new RuntimeException("not same interval label merge " + a.start + " " + a.end + "   " + b.start + " " + b.end);
 		}
 		
-		double start = a.start;
-		
-		double end = a.end;
+		double start = a.start;		
+		double end = a.end;		
+		double lower = a.lower <= b.lower ? a.lower : b.lower;
+		double upper = a.upper >= b.upper ? a.upper : b.upper;
 		
 		String comment = mergeComment(a.comment, b.comment);
 		
@@ -236,7 +282,7 @@ public class Label {
 		
 		LabelStatus labelStatus = LabelStatus.merge(a.labelStatus, b.labelStatus);
 		
-		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelStatus);
+		return new Label(start, end, comment, generatorLabels, userLabels, reviewedLabels, labelStatus, lower, upper);
 	}
 
 	public synchronized void setUserLabels(Vec<UserLabel> userLabels) {
@@ -282,6 +328,6 @@ public class Label {
 	public String toString() {
 		return "Label [start=" + start + ", end=" + end + ", comment=" + comment + ", generatorLabels="
 				+ generatorLabels + ", userLabels=" + userLabels + ", reviewedLabels=" + reviewedLabels
-				+ ", labelStatus=" + labelStatus + "]";
+				+ ", labelStatus=" + labelStatus + ", lower=" + lower + ", upper=" + upper + "]";
 	}
 }

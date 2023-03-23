@@ -292,19 +292,42 @@
       <q-space></q-space>
       <q-badge v-if="saveLabelsLoading" color="grey-3" text-color="accent" label="Sending label..."/>
       <q-badge v-if="saveLabelsError" color="grey-3" text-color="red" label="Error sending label. You may try again."/>
-      
-      <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-if="Number.isFinite(newSegmentStart)">
-        Segment  
-        {{(newSegmentStart / sampleRate).toFixed(3)}}
-        ..
-        <span v-if="Number.isFinite(newSegmentEnd)">{{(newSegmentEnd / sampleRate).toFixed(3)}}
-        (
-        <b>{{((newSegmentEnd - newSegmentStart + 1)/ sampleRate).toFixed(3)}}</b>
-        )</span>
-        <span v-else-if="Number.isFinite(samplePos)">{{(samplePos / sampleRate).toFixed(3)}}
-        (
-        <b>{{((samplePos - newSegmentStart + 1)/ sampleRate).toFixed(3)}}</b>
-        )</span>
+
+      <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-if="Number.isFinite(newSegmentStart) && !Number.isFinite(newSegmentEnd)">        
+        <span v-if="Number.isFinite(samplePos) && newSegmentStart <= samplePos">
+          Segment selection  
+          {{(newSegmentStart / sampleRate).toFixed(3)}}
+          ..
+          {{(samplePos / sampleRate).toFixed(3)}}
+          (<b>{{((samplePos - newSegmentStart + 1)/ sampleRate).toFixed(3)}}</b>)          
+        </span>
+        <span v-else-if="Number.isFinite(samplePos) && newSegmentStart > samplePos">
+          Segment selection  
+          {{(samplePos / sampleRate).toFixed(3)}}
+          ..
+          {{(newSegmentStart / sampleRate).toFixed(3)}}          
+          (<b>{{((newSegmentStart - samplePos + 1)/ sampleRate).toFixed(3)}}</b>)          
+        </span>
+        <span v-else>
+          Segment selection  
+          {{(newSegmentStart / sampleRate).toFixed(3)}}      
+        </span>
+      </q-badge>      
+      <q-badge color="grey-4" text-color="grey-8" style="margin-left: 50px;" v-else-if="Number.isFinite(newSegmentStart) && Number.isFinite(newSegmentEnd)">        
+        <span v-if="newSegmentStart <= newSegmentEnd">
+          New segment  
+          {{(newSegmentStart / sampleRate).toFixed(3)}}
+          ..
+          {{(newSegmentEnd / sampleRate).toFixed(3)}}
+          (<b>{{((newSegmentEnd - newSegmentStart + 1)/ sampleRate).toFixed(3)}}</b>)          
+        </span>
+        <span v-else>
+          New segment  
+          {{(newSegmentEnd / sampleRate).toFixed(3)}}
+          ..
+          {{(newSegmentStart / sampleRate).toFixed(3)}}          
+          (<b>{{((newSegmentStart - newSegmentEnd + 1)/ sampleRate).toFixed(3)}}</b>)          
+        </span>
       </q-badge>      
       
       <q-btn icon="add" size="xs" text-color="green" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
@@ -321,7 +344,7 @@
         <span style="font-weight: bold;">{{(samplePos/sampleRate).toFixed(3)}}</span>
       </div>
       <div style="position: absolute; top: 0px; right: 0px; pointer-events: none;" v-if="sampleRate !== undefined && sampleLen !== undefined">
-        {{(sampleLen/sampleRate).toFixed(3)}}
+        {{(sampleLen/sampleRate).toFixed(3)}} start {{canvasMousePixelStartY}} pos {{canvasMousePixelPosY}} lower {{newSegmentLowerFq}} upper {{newSegmentUpperFq}}
       </div>
     </div>
     <q-separator/>      
@@ -335,7 +358,8 @@
         :style="{width: canvasWidth + 'px', height: player_fft_cutoff_range + 'px'}" 
         class="spectrogram" 
         @mousedown="onCanvasMouseDown" 
-        @mousemove="onCanvasMouseMove" 
+        @mousemove="onCanvasMouseMove"
+        @mouseup="onCanvasMouseUp" 
         @mouseleave="onCanvasMouseleave" 
         @contextmenu="onCanvasContextmenu"
       />
@@ -363,6 +387,10 @@
         </template>
       </template>
 
+      <div v-if="newSegmentLower !== undefined && newSegmentBottom !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.6);" :style="{top: newSegmentBottom + 'px', bottom: 0 + 'px',}"></div>
+      <div v-if="newSegmentLower !== undefined && newSegmentBottom !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.6);" :style="{top: 0 + 'px', bottom: newSegmentUpper + 'px',}"></div>
+        
+      <div v-if="canvasMousePixelStartY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 0, 0, 0.41);" :style="{bottom: canvasMousePixelStartY + 'px',}"></div>
       <div v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelPosY + 'px',}"></div>
       <q-badge v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent">
         <span v-html="mouseFrequencyText"></span> kHz
@@ -480,6 +508,7 @@ export default defineComponent({
       canvasMovePixelStartX: undefined,
       canvasWidth: 1024,
       canvasMousePixelPosX: undefined,
+      canvasMousePixelStartY: undefined,
       canvasMousePixelPosY: undefined,
       paintSpectrogramRequested: false,
       audio: undefined,
@@ -495,6 +524,8 @@ export default defineComponent({
       autoSaveLabels: true,
       newSegmentStart: undefined,
       newSegmentEnd: undefined,
+      newSegmentLower: undefined,
+      newSegmentUpper: undefined, 
       labelDefinitions: [],
       labelDefinitionsLoading: false,
       labelDefinitionsError: false,
@@ -621,6 +652,12 @@ export default defineComponent({
     mouseFrequencyPos() {
       return this.canvasMousePixelPosY === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (((this.player_fft_cutoff_lower + this.canvasMousePixelPosY) * this.sampleRate) / this.player_fft_window);
     },
+    newSegmentLowerFq() {
+      return this.newSegmentLower === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (Math.round(((this.player_fft_cutoff_lower + this.newSegmentLower) * this.sampleRate) / this.player_fft_window) / 1000);
+    },
+    newSegmentUpperFq() {
+      return this.newSegmentUpper === undefined || this.sampleRate === undefined || this.player_fft_window === undefined ? undefined : (Math.round(((this.player_fft_cutoff_lower + this.newSegmentUpper) * this.sampleRate) / this.player_fft_window) / 1000);
+    },    
     mouseFrequencyText() {
       return (this.mouseFrequencyPos < 100000 ? (this.mouseFrequencyPos < 10000 ? '&numsp;&numsp;' : '&numsp;' ) : '' ) + (this.mouseFrequencyPos / 1000).toFixed(2);
     },
@@ -734,6 +771,12 @@ export default defineComponent({
       }
       return indices;
     },
+    newSegmentBottom() {
+      if(this.newSegmentLower === undefined) {
+        return undefined;
+      } 
+      return this.player_fft_cutoff_range - this.newSegmentLower - 1;
+    }
   },
 
   methods: {
@@ -790,13 +833,6 @@ export default defineComponent({
       ctx.fillRect(boxOffset - 1, 0, 1, this.player_fft_cutoff_range);
       ctx.fillRect(boxOffset + 1, 0, 1, this.player_fft_cutoff_range);
 
-      /*ctx.beginPath();
-      ctx.lineWidth = '1'; // width of the line
-      ctx.strokeStyle = 'red'; // color of the line
-      ctx.moveTo(boxOffset, 0); // begins a new sub-path based on the given x and y values.
-      ctx.lineTo(boxOffset, this.player_fft_cutoff_range); // used to create a pointer based on x and y  
-      ctx.stroke();*/
-
       if(next !== undefined) {
         this.imageNextIndex = next;
       }
@@ -808,20 +844,30 @@ export default defineComponent({
       }
     },
     paintLabels() {
-      var canvas = this.$refs.spectrogram;
-      var ctx = canvas.getContext("2d");
+      const canvas = this.$refs.spectrogram;
+      const ctx = canvas.getContext("2d");
       const boxOffset = Math.trunc(canvas.width / 2);
       const canvasPixelXmin = this.canvasPixelPosX - boxOffset;
       const canvasPixelXmax = this.canvasPixelPosX + (this.canvasWidth - 1);
+      const canvasPixelYmin = 0;
+      const canvasPixelYmax = canvas.height - 1;
       for(var i = 0; i < this.labels.length; i++) {
         var label = this.labels[i];
         var labelPixelXmin = Math.trunc(Math.trunc(label.start * this.sampleRate) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
         var labelPixelXmax = Math.trunc(Math.trunc(label.end * this.sampleRate) / (this.player_fft_step * this.player_spectrum_shrink_Factor));
+        var labelPixelYmin = canvasPixelYmin;
+        var labelPixelYmax = canvasPixelYmax;
+        if(label.lower !== undefined) {
+          labelPixelYmax = this.player_fft_cutoff_lower + canvasPixelYmax - Math.trunc((label.lower * 1000 * this.player_fft_window) / this.sampleRate);
+        }
+        if(label.upper !== undefined) {
+          labelPixelYmin = this.player_fft_cutoff_lower + canvasPixelYmax - Math.trunc((label.upper * 1000 * this.player_fft_window) / this.sampleRate);
+        }
         //console.log(labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
         if(canvasPixelXmin <= labelPixelXmax && canvasPixelXmax >= labelPixelXmin) {
           //console.log('fill ' + labelPixelXmin + ' ' + labelPixelXmax + '  ' + canvasPixelXmin + ' ' + canvasPixelXmax);
           ctx.fillStyle = i === this.selectedLabelIndex ? 'rgba(255,0,0,0.3)' : 'rgba(0,255,0,0.3)';
-          ctx.fillRect(labelPixelXmin - canvasPixelXmin, 0, labelPixelXmax - labelPixelXmin + 1, this.player_fft_cutoff_range);
+          ctx.fillRect(labelPixelXmin - canvasPixelXmin, labelPixelYmin, labelPixelXmax - labelPixelXmin + 1, labelPixelYmax - labelPixelYmin + 1);
         }      
       }
       if(this.newSegmentStart !== undefined) {
@@ -934,37 +980,67 @@ export default defineComponent({
       }
     },
     onCanvasMouseDown(e) {      
-      this.canvasMovePixelStartX = e.pageX;
-      //console.log('onCanvasMouseDown ' + this.canvasMovePixelStartX);
-    },
-    onCanvasMouseMove(e) {
-      if(this.canvasMovePixelStartX === undefined) {
-        if(e.buttons == 1) { // left mouse button
-          this.canvasMovePixelStartX = e.pageX;
-        }
+      if(!e.ctrlKey) {
+        this.canvasMovePixelStartX = e.pageX;
+        //console.log('onCanvasMouseDown ' + this.canvasMovePixelStartX);
       } else {
         if(e.buttons == 1) { // left mouse button
-          const mouseSpeedup = 8;
-          //console.log('offsetX ' + (e.pageX - this.canvasMovePixelStartX));
-          var deltaX = (e.pageX - this.canvasMovePixelStartX);
-          var offsetX = deltaX;
-          //if(Math.abs(deltaX) > 20) {
-            var offsetX = deltaX * mouseSpeedup;
-          //}
-          //console.log('offsetX ' + offsetX);
-          var newCanvasPixelPosX = this.canvasPixelPosX - offsetX;
-          this.moveToCanvasPixelPosX(newCanvasPixelPosX);
-          this.canvasMovePixelStartX = e.pageX;
+          var rect = this.$refs.spectrogram.getBoundingClientRect();
+          this.canvasMousePixelStartY = (this.player_fft_cutoff_range - 1) - (e.clientY - rect.top);        
+          this.canvasMousePixelPosY = this.canvasMousePixelStartY;
+          this.newSegmentLower = undefined;
+          this.newSegmentUpper = undefined;
         } else {
-          this.canvasMovePixelStartX = undefined;
+          this.canvasMousePixelStartY = undefined;
         }
       }
+    },
+    onCanvasMouseMove(e) {
       var rect = this.$refs.spectrogram.getBoundingClientRect();
+      if(!e.ctrlKey) {
+        if(this.canvasMovePixelStartX === undefined) {
+          if(e.buttons == 1) { // left mouse button
+            this.canvasMovePixelStartX = e.pageX;
+          }
+        } else {
+          if(e.buttons == 1) { // left mouse button
+            const mouseSpeedup = 8;
+            //console.log('offsetX ' + (e.pageX - this.canvasMovePixelStartX));
+            var deltaX = (e.pageX - this.canvasMovePixelStartX);
+            var offsetX = deltaX;
+            //if(Math.abs(deltaX) > 20) {
+              var offsetX = deltaX * mouseSpeedup;
+            //}
+            //console.log('offsetX ' + offsetX);
+            var newCanvasPixelPosX = this.canvasPixelPosX - offsetX;
+            this.moveToCanvasPixelPosX(newCanvasPixelPosX);
+            this.canvasMovePixelStartX = e.pageX;
+          } else {
+            this.canvasMovePixelStartX = undefined;
+          }
+        }        
+        this.canvasMousePixelStartY = undefined; 
+      }
       this.canvasMousePixelPosX = e.clientX - rect.left;
       this.canvasMousePixelPosY = (this.player_fft_cutoff_range - 1) - (e.clientY - rect.top);
     },
+    onCanvasMouseUp(e) {   
+      var rect = this.$refs.spectrogram.getBoundingClientRect();   
+      this.canvasMousePixelPosY = (this.player_fft_cutoff_range - 1) - (e.clientY - rect.top);
+      if(this.canvasMousePixelStartY !== undefined && this.canvasMousePixelPosY !== undefined && this.canvasMousePixelStartY !== this.canvasMousePixelPosY) {
+        if(this.canvasMousePixelStartY <=  this.canvasMousePixelPosY) {
+          this.newSegmentLower = this.canvasMousePixelStartY;
+          this.newSegmentUpper = this.canvasMousePixelPosY;
+        } else {
+          this.newSegmentLower = this.canvasMousePixelPosY;
+          this.newSegmentUpper = this.canvasMousePixelStartY;
+        }
+      } 
+      this.canvasMousePixelStartY = undefined;  
+    },    
     onCanvasMouseleave(e) {
       this.canvasMousePixelPosX = undefined;
+      this.canvasMousePixelStartY = undefined;
       this.canvasMousePixelPosY = undefined;
     },
     paintSpectrogramRequestedAnimationFrame() {
@@ -1144,7 +1220,17 @@ export default defineComponent({
       try {
         var urlPath = 'samples2/' + this.selectedSampleId;
         var names = !this.userSelectedLabelNames ? [] : this.userSelectedLabelNames;
-        var data = {actions: [{action: 'add_label', names: names, start: this.newSegmentStart/this.sampleRate, end: this.newSegmentEnd/this.sampleRate,}]};
+        var action = {
+          action: 'add_label', 
+          names: names, 
+          start: this.newSegmentStart/this.sampleRate, 
+          end: this.newSegmentEnd/this.sampleRate,
+        };
+        if(this.newSegmentLowerFq != undefined && this.newSegmentUpperFq != undefined) {
+          action.lower = this.newSegmentLowerFq;
+          action.upper = this.newSegmentUpperFq;
+        }
+        var data = {actions: [action]};
         this.saveLabelsLoading = true;
         this.saveLabelsError = false;
         var response = await this.$api.post(urlPath, data);
@@ -1153,6 +1239,8 @@ export default defineComponent({
         this.selectedLabelIndex = undefined;
         this.newSegmentStart = undefined;
         this.newSegmentEnd = undefined;
+        this.newSegmentLower = undefined;
+        this.newSegmentUpper = undefined;        
         this.userSelectedLabelNames = undefined;
         this.userSelectedLabelNamesChanged = false;
         this.refreshSample();

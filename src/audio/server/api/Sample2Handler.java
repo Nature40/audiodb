@@ -214,6 +214,16 @@ public class Sample2Handler {
 				double b = jsonAction.getDouble("end");
 				double start = Math.min(a, b);
 				double end = Math.max(a, b);
+				double fqa = jsonAction.optDouble("lower");
+				double fqb = jsonAction.optDouble("upper");
+				double lower = Math.min(fqa, fqb);
+				double upper = Math.max(fqa, fqb);
+				if(!Double.isFinite(lower)) {
+					lower = Double.NaN;
+				}
+				if(!Double.isFinite(upper)) {
+					upper = Double.NaN;
+				}
 				String[] names = JsonUtil.optStrings(jsonAction, "names");
 				Vec<Label> labels = sample.getLabels();
 				Vec<UserLabel> newUserlabels = new Vec<UserLabel>();
@@ -223,7 +233,7 @@ public class Sample2Handler {
 					UserLabel userLabel = new UserLabel(name, creator, creation_date);
 					newUserlabels.add(userLabel);
 				}
-				Label label = new Label(start, end);
+				Label label = new Label(start, end, lower, upper);
 				label.userLabels = newUserlabels;
 				labels.add(label);
 				sample.setLabels(labels);
