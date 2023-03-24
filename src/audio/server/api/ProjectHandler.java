@@ -114,6 +114,8 @@ public class ProjectHandler {
 		json.value(config.player_fft_cutoff_lower_frequency);
 		json.key("player_fft_cutoff_upper_frequency");
 		json.value(config.player_fft_cutoff_upper_frequency);
+		json.key("player_mouse_move_factor");
+		json.value(config.player_mouse_move_factor);
 		json.key("detail_fft_window_overlap_percent");
 		json.value(config.detail_fft_window_overlap_percent);
 		
@@ -151,6 +153,8 @@ public class ProjectHandler {
 				json.value(p.player_fft_cutoff_lower_frequency);
 				json.key("player_fft_cutoff_upper_frequency");
 				json.value(p.player_fft_cutoff_upper_frequency);
+				json.key("player_mouse_move_factor");
+				json.value(p.player_mouse_move_factor);
 				json.key("detail_fft_window_overlap_percent");
 				json.value(p.detail_fft_window_overlap_percent);				
 				json.endObject();

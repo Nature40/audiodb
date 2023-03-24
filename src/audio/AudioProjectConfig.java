@@ -33,6 +33,7 @@ public final class AudioProjectConfig {
 	public final float[] player_static_lines_frequency;
 	public final double player_fft_cutoff_lower_frequency;
 	public final double player_fft_cutoff_upper_frequency;	
+	public final double player_mouse_move_factor;
 	public final double detail_fft_window_overlap_percent;
 	private final Map<String, AudioProfile> profileMap;
 
@@ -56,7 +57,8 @@ public final class AudioProjectConfig {
 		public int player_time_expansion_factor = 1;
 		public float[] player_static_lines_frequency = null;
 		public double player_fft_cutoff_lower_frequency = 0;
-		public double player_fft_cutoff_upper_frequency = 192000;		
+		public double player_fft_cutoff_upper_frequency = 192000;	
+		public double player_mouse_move_factor = 8d;
 		public double detail_fft_window_overlap_percent = 75d;
 		public Map<String, AudioProfile> profileMap = null;
 
@@ -81,7 +83,8 @@ public final class AudioProjectConfig {
 			player_time_expansion_factor = yamlMap.optInt("player_time_expansion_factor", player_time_expansion_factor);
 			yamlMap.optFunList("player_static_lines_frequency", yamlList -> player_static_lines_frequency = yamlList.asFloatArray());
 			player_fft_cutoff_lower_frequency = yamlMap.optDouble("player_fft_cutoff_lower_frequency", player_fft_cutoff_lower_frequency);
-			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);			
+			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);	
+			player_mouse_move_factor = yamlMap.optDouble("player_mouse_move_factor", player_mouse_move_factor);
 			detail_fft_window_overlap_percent = yamlMap.optDouble("detail_fft_window_overlap_percent", detail_fft_window_overlap_percent);
 			YamlMap yamlProfiles = yamlMap.optMap("profiles");
 			if(yamlProfiles != null) {
@@ -116,27 +119,12 @@ public final class AudioProjectConfig {
 		player_static_lines_frequency = builder.player_static_lines_frequency;
 		player_fft_cutoff_lower_frequency = builder.player_fft_cutoff_lower_frequency;
 		player_fft_cutoff_upper_frequency = builder.player_fft_cutoff_upper_frequency;
+		player_mouse_move_factor = builder.player_mouse_move_factor;
 		detail_fft_window_overlap_percent = builder.detail_fft_window_overlap_percent;
 		profileMap = builder.profileMap == null ? null : new LinkedHashMap<String, AudioProfile>(builder.profileMap);
 
 		audio_cache_max_files = builder.audio_cache_max_files;
 		Logger.info(this);
-	}
-
-	@Override
-	public String toString() {
-		return "AudioProjectConfig [project=" + project + ", root_path=" + root_path + ", root_data_path="
-				+ root_data_path + ", device_inventory_file=" + device_inventory_file + ", player_spectrum_threshold="
-				+ player_spectrum_threshold + ", player_fft_intensity_max=" + player_fft_intensity_max
-				+ ", player_playbackRate=" + player_playbackRate + ", player_preservesPitch=" + player_preservesPitch
-				+ ", player_overwriteSamplingRate=" + player_overwriteSamplingRate + ", player_samplingRate="
-				+ player_samplingRate + ", player_fft_window=" + player_fft_window + ", player_fft_window_step_factor="
-				+ player_fft_window_step_factor + ", player_time_expansion_factor=" + player_time_expansion_factor
-				+ ", player_static_lines_frequency=" + Arrays.toString(player_static_lines_frequency)
-				+ ", player_fft_cutoff_lower_frequency=" + player_fft_cutoff_lower_frequency
-				+ ", player_fft_cutoff_upper_frequency=" + player_fft_cutoff_upper_frequency
-				+ ", detail_fft_window_overlap_percent=" + detail_fft_window_overlap_percent + ", audio_cache_max_files="
-				+ audio_cache_max_files + "]";
 	}
 
 	public boolean hasProfiles() {
@@ -147,5 +135,23 @@ public final class AudioProjectConfig {
 		if(profileMap != null) {
 			profileMap.forEach(action);	
 		}		
+	}
+
+	@Override
+	public String toString() {
+		return "AudioProjectConfig [project=" + project + ", root_path=" + root_path + ", root_data_path="
+				+ root_data_path + ", worklist_path=" + worklist_path + ", device_inventory_file="
+				+ device_inventory_file + ", player_spectrum_threshold=" + player_spectrum_threshold
+				+ ", player_fft_intensity_max=" + player_fft_intensity_max + ", player_playbackRate="
+				+ player_playbackRate + ", player_preservesPitch=" + player_preservesPitch
+				+ ", player_overwriteSamplingRate=" + player_overwriteSamplingRate + ", player_samplingRate="
+				+ player_samplingRate + ", player_fft_window=" + player_fft_window + ", player_fft_window_step_factor="
+				+ player_fft_window_step_factor + ", player_spectrum_shrink_Factor=" + player_spectrum_shrink_Factor
+				+ ", player_time_expansion_factor=" + player_time_expansion_factor + ", player_static_lines_frequency="
+				+ Arrays.toString(player_static_lines_frequency) + ", player_fft_cutoff_lower_frequency="
+				+ player_fft_cutoff_lower_frequency + ", player_fft_cutoff_upper_frequency="
+				+ player_fft_cutoff_upper_frequency + ", player_mouse_move_factor=" + player_mouse_move_factor
+				+ ", detail_fft_window_overlap_percent=" + detail_fft_window_overlap_percent + ", profileMap="
+				+ profileMap + ", audio_cache_max_files=" + audio_cache_max_files + "]";
 	}
 }

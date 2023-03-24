@@ -550,7 +550,8 @@ export default defineComponent({
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
       player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
       player_time_expansion_factor: state => state.project.player_time_expansion_factor,
-      player_static_lines_frequency: state => state.project.player_static_lines_frequency, 
+      player_static_lines_frequency: state => state.project.player_static_lines_frequency,
+      player_mouse_move_factor: state => state.project.player_mouse_move_factor, 
     }),
     player_fft_cutoff_lower() {
       let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sampleRate);
@@ -1004,12 +1005,11 @@ export default defineComponent({
           }
         } else {
           if(e.buttons == 1) { // left mouse button
-            const mouseSpeedup = 8;
             //console.log('offsetX ' + (e.pageX - this.canvasMovePixelStartX));
             var deltaX = (e.pageX - this.canvasMovePixelStartX);
             var offsetX = deltaX;
             //if(Math.abs(deltaX) > 20) {
-              var offsetX = deltaX * mouseSpeedup;
+              var offsetX = deltaX * this.player_mouse_move_factor;
             //}
             //console.log('offsetX ' + offsetX);
             var newCanvasPixelPosX = this.canvasPixelPosX - offsetX;

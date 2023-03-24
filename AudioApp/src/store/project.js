@@ -36,10 +36,13 @@ state: {
   
   player_static_lines_frequency: [4000, 12000],
   default_player_static_lines_frequency: undefined,
+
+  player_mouse_move_factor: 8,
+  default_player_mouse_move_factor: 8,
   
   detail_fft_window_overlap_percent: 0.75,
   default_detail_fft_window_overlap_percent: 0.75,
-  
+
   profiles: {},
   profileIds: [''],
   profileDefaultId: '(Project defaults)',
@@ -110,6 +113,9 @@ mutations: {
     if(settings.player_static_lines_frequency !== undefined) {
       state.default_player_static_lines_frequency = settings.player_static_lines_frequency.length === 0 ? undefined : settings.player_static_lines_frequency;    
     }
+    if(settings.player_mouse_move_factor !== undefined) {
+      state.default_player_mouse_move_factor = settings.player_mouse_move_factor;    
+    }    
 
     if(settings.detail_fft_window_overlap_percent !== undefined) {
       state.default_detail_fft_window_overlap_percent = settings.detail_fft_window_overlap_percent;    
@@ -145,6 +151,9 @@ mutations: {
     if(settings.player_static_lines_frequency !== undefined) {
       state.player_static_lines_frequency = settings.player_static_lines_frequency.length === 0 ? undefined : settings.player_static_lines_frequency;    
     }
+    if(settings.player_mouse_move_factor !== undefined) {
+      state.player_mouse_move_factor = settings.player_mouse_move_factor;    
+    }    
 
     if(settings.detail_fft_window_overlap_percent !== undefined) {
       state.detail_fft_window_overlap_percent = settings.detail_fft_window_overlap_percent;    

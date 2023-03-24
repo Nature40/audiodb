@@ -35,7 +35,7 @@
                   <li>To apply the changes, Click 'apply'-button.</li> 
                   <li>To discard changes, click 'close'-button or press 'Esc'-key or click outside of the settings-box.</li>
                   <li>To revert to default value of an individual settings, click the reset-button at that setting.</li>
-                  <li>Changes are applied at the current session only. Page refresh discards all changes in settings.</li>
+                  <li>Changes are applied at the current session only. Page refresh discards all settings changes.</li>
                 </ol>
               </q-card-section>
               
@@ -73,7 +73,15 @@
                 <i>Slowdown audio playback.</i>
                 <br>Value of 1 is actual playback speed.
                 <br>Value of e.g. 10 may be suitable for ultrasonic bat recordings.
-              </q-card-section>              
+              </q-card-section>
+              
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Mouse move factor (speedup on moving in time)</div>
+                <i>On the spectrogram move in time faster than actual mouse move.</i>
+                <br>Value of 0.5 is half of the mouse move speed. (more sprecise positioning)
+                <br>Value of 1 is same as the actual mouse move speed. (spectrogram and mouse are in sync)
+                <br>Value of 20 is twenty times faster move than actual mouse move speed. (rough positioning)
+              </q-card-section>
             </q-card>
           </q-dialog>
           <q-btn dense flat icon="window" @click="dialogMaximizedToggle = false" v-show="dialogMaximizedToggle">
@@ -89,7 +97,16 @@
 
         <q-card-section style="background-color: #0000000d;">
             <b>Profile</b>
-            <q-select v-model="selectedProfileId" dense options-dense hide-bottom-space filled :options="profileIds" style="min-width: 100px;" />
+            <q-select 
+              v-model="selectedProfileId" 
+              dense 
+              options-dense 
+              hide-bottom-space 
+              filled 
+              :options="profileIds" 
+              style="min-width: 100px;" 
+              title="Select a profile to load the settings values from that profile."
+            />
         </q-card-section>
         <q-separator/>
         <q-separator/>
@@ -249,7 +266,35 @@
             markers
             snap
           />
-        </q-card-section>          
+        </q-card-section>
+        <q-separator/>
+        <q-card-section>
+          <q-badge color="grey-6">
+            Mouse move factor (speedup on moving in time by mouse)
+            <q-btn
+              dense
+              color="blue-10"
+              size="xs"
+              icon-right="undo"
+              :label="default_player_mouse_move_factor"
+              title="reset to default"
+              @click="user_player_mouse_move_factor = default_player_mouse_move_factor"
+              style="margin-left: 10px;"
+            />
+          </q-badge>
+          <q-slider
+            v-model="user_player_mouse_move_factor"
+            :min=".5"
+            :max="20"
+            :step="0.5"
+            label-always
+            :label-value="user_player_mouse_move_factor"
+            dense
+            style="margin-top: 30px;"
+            markers
+            snap
+          />
+        </q-card-section>                  
 
         <q-separator />
         <q-separator />
@@ -288,6 +333,7 @@ export default defineComponent({
       user_player_fft_cutoff_range: {min: 1000, max: 5000},
       user_player_fft_cutoff_range_min: 0,
       user_player_fft_cutoff_range_max: 192000,
+      user_player_mouse_move_factor: 1,
       dialoghelpShow: false,
       dialoghelpMaximizedToggle: false,
       dialogMaximizedToggle: false, 
@@ -312,6 +358,8 @@ export default defineComponent({
       default_player_fft_cutoff_lower_frequency: state => state.project.default_player_fft_cutoff_lower_frequency,
       player_fft_cutoff_upper_frequency: state => state.project.player_fft_cutoff_upper_frequency,        
       default_player_fft_cutoff_upper_frequency: state => state.project.default_player_fft_cutoff_upper_frequency,
+      player_mouse_move_factor: state => state.project.player_mouse_move_factor,
+      default_player_mouse_move_factor: state => state.project.default_player_mouse_move_factor,      
       profileIds: state => state.project.profileIds,
       profileId: state => state.project.profileId,
     }),
@@ -359,6 +407,7 @@ export default defineComponent({
       settings.player_static_lines_frequency = this.user_player_static_lines_frequency_to_text();
       settings.player_fft_cutoff_lower_frequency = this.user_player_fft_cutoff_range.min;      
       settings.player_fft_cutoff_upper_frequency = this.user_player_fft_cutoff_range.max;
+      settings.player_mouse_move_factor = this.user_player_mouse_move_factor;
       this.$store.dispatch('project/set', settings); 
     },
     refresh() {
@@ -370,7 +419,7 @@ export default defineComponent({
       this.user_player_spectrum_shrink_Factor = this.player_spectrum_shrink_Factor;
       this.user_player_time_expansion_factor = this.player_time_expansion_factor;
       this.user_player_static_lines_frequency = this.player_static_lines_frequency === undefined ? undefined : this.player_static_lines_frequency.join(', ');
-
+      this.user_player_mouse_move_factor = this.player_mouse_move_factor;
     },
     toValidExp(window) {
       var exp = Math.trunc(Math.log2(window));
@@ -412,6 +461,7 @@ export default defineComponent({
     player_spectrum_shrink_Factor() {this.refresh();},
     player_time_expansion_factor() {this.refresh();},
     player_static_lines_frequency() {this.refresh();},
+    player_mouse_move_factor() {this.refresh();},
   },
   async mounted() {
   },

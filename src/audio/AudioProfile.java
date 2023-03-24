@@ -18,7 +18,8 @@ public final class AudioProfile {
 	public final int player_time_expansion_factor;
 	public final float[] player_static_lines_frequency;
 	public final double player_fft_cutoff_lower_frequency;
-	public final double player_fft_cutoff_upper_frequency;	
+	public final double player_fft_cutoff_upper_frequency;
+	public final double player_mouse_move_factor;
 	public final double detail_fft_window_overlap_percent;
 	
 	public static class Builder {		
@@ -35,6 +36,7 @@ public final class AudioProfile {
 		public float[] player_static_lines_frequency = null;
 		public double player_fft_cutoff_lower_frequency = 0;
 		public double player_fft_cutoff_upper_frequency = 192000;		
+		public double player_mouse_move_factor = 8d;
 		public double detail_fft_window_overlap_percent = 75d;
 		
 		public Builder() {}
@@ -51,7 +53,8 @@ public final class AudioProfile {
 			player_time_expansion_factor = yamlMap.optInt("player_time_expansion_factor", player_time_expansion_factor);
 			yamlMap.optFunList("player_static_lines_frequency", yamlList -> player_static_lines_frequency = yamlList.asFloatArray());
 			player_fft_cutoff_lower_frequency = yamlMap.optDouble("player_fft_cutoff_lower_frequency", player_fft_cutoff_lower_frequency);
-			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);			
+			player_fft_cutoff_upper_frequency = yamlMap.optDouble("player_fft_cutoff_upper_frequency", player_fft_cutoff_upper_frequency);		
+			player_mouse_move_factor = yamlMap.optDouble("player_mouse_move_factor", player_mouse_move_factor);
 			detail_fft_window_overlap_percent = yamlMap.optDouble("detail_fft_window_overlap_percent", detail_fft_window_overlap_percent);
 		}
 	}
@@ -70,6 +73,7 @@ public final class AudioProfile {
 		player_static_lines_frequency = builder.player_static_lines_frequency;
 		player_fft_cutoff_lower_frequency = builder.player_fft_cutoff_lower_frequency;
 		player_fft_cutoff_upper_frequency = builder.player_fft_cutoff_upper_frequency;		
+		player_mouse_move_factor = builder.player_mouse_move_factor;
 		detail_fft_window_overlap_percent = builder.detail_fft_window_overlap_percent;
 	}
 }
