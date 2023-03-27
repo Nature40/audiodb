@@ -170,7 +170,13 @@
             <q-item v-bind="scope.itemProps" style="min-width: 150px;">
               <q-item-section>
                 <q-item-label>{{scope.opt + 1}}</q-item-label>
-                <q-item-label caption>{{labels[scope.opt].start.toFixed(3)}} .. {{labels[scope.opt].end.toFixed(3)}} (<b>{{(labels[scope.opt].end - labels[scope.opt].start).toFixed(3)}}</b>)</q-item-label>
+                <q-item-label caption>
+                  {{labels[scope.opt].start.toFixed(3)}} .. {{labels[scope.opt].end.toFixed(3)}} 
+                  (<b>{{(labels[scope.opt].end - labels[scope.opt].start).toFixed(3)}}</b>)
+                  <span v-if="labels[scope.opt].lower !== undefined && labels[scope.opt].upper !== undefined" style="font-size: 0.7em;">
+                    {{labels[scope.opt].lower.toFixed(1)}} .. {{labels[scope.opt].upper.toFixed(1)}} kHz
+                  </span>
+                </q-item-label>
               </q-item-section>
             </q-item>
           </template>                    
@@ -189,7 +195,13 @@
           title="Automatically move to label start time at each label change."
           />
         </q-btn>
-        <span class="q-pa-sm">{{selectedLabel.start.toFixed(3)}} .. {{selectedLabel.end.toFixed(3)}} (<b>{{(selectedLabel.end - selectedLabel.start).toFixed(3)}}</b>)</span>
+        <span class="q-pa-sm">
+          {{selectedLabel.start.toFixed(3)}} .. {{selectedLabel.end.toFixed(3)}} 
+          (<b>{{(selectedLabel.end - selectedLabel.start).toFixed(3)}}</b>)
+          <span v-if="selectedLabel.lower !== undefined && selectedLabel.upper !== undefined" style="font-size: 0.7em;">
+            {{selectedLabel.lower.toFixed(1)}} .. {{selectedLabel.upper.toFixed(1)}} kHz
+          </span>
+        </span>
         <q-badge 
           v-for="(label,i) in selectedLabel.generated_labels" 
           :key="i" 
@@ -328,7 +340,10 @@
           {{(newSegmentStart / sampleRate).toFixed(3)}}          
           (<b>{{((newSegmentStart - newSegmentEnd + 1)/ sampleRate).toFixed(3)}}</b>)          
         </span>
-      </q-badge>      
+      </q-badge>
+      <span v-if="newSegmentLowerFq !== undefined && newSegmentUpperFq !== undefined" style="font-size: 0.7em;">
+        {{newSegmentLowerFq.toFixed(1)}} .. {{newSegmentUpperFq.toFixed(1)}} kHz
+      </span>      
       
       <q-btn icon="add" size="xs" text-color="green" padding="xs" margin="xs" title="Add new time segment with start at current time position." @click="onNewTimeSegmentStart" v-if="newSegmentStart === undefined" :disabled="samplePos === undefined"/>
       <q-btn icon="cancel" size="xs" padding="xs" margin="xs" text-color="red" title="Cancel adding new time segment." @click="onNewTimeSegmentCancel" v-if="newSegmentStart !== undefined"/>
@@ -342,9 +357,6 @@
       <q-slider v-model="canvasPixelPosX" :min="0" :max="spectrogramFullPixelLen - 1" @update:model-value="onSliderUpdate" @change="onSliderChange"/>
       <div style="position: absolute; top: 0px; left: 0px; pointer-events: none;" v-if="sampleRate !== undefined && samplePos !== undefined">
         <span style="font-weight: bold;">{{(samplePos/sampleRate).toFixed(3)}}</span>
-      </div>
-      <div style="position: absolute; top: 0px; right: 0px; pointer-events: none;" v-if="sampleRate !== undefined && sampleLen !== undefined">
-        {{(sampleLen/sampleRate).toFixed(3)}} start {{canvasMousePixelStartY}} pos {{canvasMousePixelPosY}} lower {{newSegmentLowerFq}} upper {{newSegmentUpperFq}}
       </div>
     </div>
     <q-separator/>      
@@ -387,10 +399,10 @@
         </template>
       </template>
 
-      <div v-if="newSegmentLower !== undefined && newSegmentBottom !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.6);" :style="{top: newSegmentBottom + 'px', bottom: 0 + 'px',}"></div>
-      <div v-if="newSegmentLower !== undefined && newSegmentBottom !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.6);" :style="{top: 0 + 'px', bottom: newSegmentUpper + 'px',}"></div>
+      <div v-if="newSegmentLower !== undefined && newSegmentBottom !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.6); border-top:1px solid rgba(255, 255, 255, 0.41);" :style="{top: newSegmentBottom + 'px', bottom: 0 + 'px',}"></div>
+      <div v-if="newSegmentLower !== undefined && newSegmentBottom !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.6); border-bottom:1px solid rgba(255, 255, 255, 0.41);" :style="{top: 0 + 'px', bottom: newSegmentUpper + 'px',}"></div>
         
-      <div v-if="canvasMousePixelStartY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 0, 0, 0.41);" :style="{bottom: canvasMousePixelStartY + 'px',}"></div>
+      <div v-if="canvasMousePixelStartY !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelStartY + 'px',}"></div>
       <div v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none; left: 0px; right: 0px; height: 1px; background-color: rgba(255, 255, 255, 0.41);" :style="{bottom: canvasMousePixelPosY + 'px',}"></div>
       <q-badge v-if="mouseFrequencyPos !== undefined" style="position: absolute; pointer-events: none;" :style="{bottom: canvasMousePixelPosY + 'px', left: canvasMousePixelPosX + 'px',}" color="white" text-color="accent">
         <span v-html="mouseFrequencyText"></span> kHz

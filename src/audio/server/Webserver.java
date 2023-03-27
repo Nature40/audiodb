@@ -62,7 +62,7 @@ import audio.server.api.WorklistsHandler;
 import photo2.api.PhotoDB2Handler;
 
 public class Webserver {
-	
+
 
 	private static HttpConfiguration createBaseHttpConfiguration() {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
@@ -123,15 +123,29 @@ public class Webserver {
 
 		//Logger.info("starting server");
 
+		int httpPort = 0;
+		int httpsPort = 0;
+
 		Server server = new Server();
 		if(config.enableHttps()) {
-			ServerConnector httpConnector = createHttpConnector(server, config.http_port);
-			ServerConnector httpsConnector = createHttpsConnector(server, config.https_port, config.keystore_path, config.keystore_password);
-			server.setConnectors(new Connector[] {httpConnector, httpsConnector});
-		} else {
+			if(config.hasHTTPport()) {
+				ServerConnector httpConnector = createHttpConnector(server, config.http_port);
+				ServerConnector httpsConnector = createHttpsConnector(server, config.https_port, config.keystore_path, config.keystore_password);
+				server.setConnectors(new Connector[] {httpConnector, httpsConnector});
+				httpPort = config.http_port;
+				httpsPort = config.https_port;
+			} else {
+				ServerConnector httpsConnector = createHttpsConnector(server, config.https_port, config.keystore_path, config.keystore_password);
+				server.setConnectors(new Connector[] {httpsConnector});
+				httpsPort = config.https_port;
+			}
+		} else if(config.hasHTTPport()) {
 			ServerConnector httpConnector = createHttpConnector(server, config.http_port);
 			server.setConnectors(new Connector[] {httpConnector});
-		}		
+			httpPort = config.http_port;
+		} else {
+			throw new RuntimeException("no port specified for HTTP or for HTTPS");
+		}
 
 		DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
 		sessionIdManager.setWorkerName(null);
@@ -184,7 +198,14 @@ public class Webserver {
 		//server.setHandler(sessionHandler);
 		server.start();
 		Logger.info("");
-		Logger.info("***   Server started   ***");
+		String s = "***   Server started   ***";
+		if(httpPort > 0) {
+			s  += " [at HTTP port " + httpPort + "]";
+		}
+		if(httpsPort > 0) {
+			s  += " [at HTTPS port " + httpsPort + "]";
+		}
+		Logger.info(s);
 		server.join();
 		Logger.info("***   Server stopped   ***");
 	}

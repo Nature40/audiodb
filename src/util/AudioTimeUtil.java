@@ -31,9 +31,9 @@ public class AudioTimeUtil {
 		LocalDate localDate = localDateTime.toLocalDate();
 		int y = localDate.getYear();
 		c[0] = (char) ('0'+  y/1000);
-		c[1] = (char) ('0'+ ((y%1000)/100)  );
-		c[2] = (char) ('0'+ ((y%100)/10)  );
-		c[3] = (char) ('0'+ (y%10)  );
+		c[1] = (char) ('0'+ ((y%1000)/100));
+		c[2] = (char) ('0'+ ((y%100)/10));
+		c[3] = (char) ('0'+ (y%10));
 		c[4] = (char) ('-');
 		int m = localDate.getMonthValue();
 		c[5] = (char) ('0'+(m/10));

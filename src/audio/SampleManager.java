@@ -120,11 +120,7 @@ public class SampleManager {
 		} catch(Exception e) {
 			Logger.warn("error in " + traversing_path + "   " + e);
 		}
-	}
-	
-	
-	
-	
+	}	
 
 	public boolean isUpToDate(String id, long last_modified) {
 		try {

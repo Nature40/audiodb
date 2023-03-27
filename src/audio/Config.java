@@ -79,7 +79,15 @@ public class Config {
 		return new Config(login, default_account, jwsConfigs.readonlyWeakView(), http_port, https_port, keystore_path, keystore_password, audioConfig, photoConfig);
 	}
 	
+	public boolean hasHTTPport() {
+		return http_port > 0;
+	}
+	
+	public boolean hasHTTPSport() {
+		return https_port > 0;
+	}
+	
 	public boolean enableHttps() {
-		return !keystore_password.isEmpty();
+		return hasHTTPSport() && !keystore_password.isEmpty();
 	}
 }

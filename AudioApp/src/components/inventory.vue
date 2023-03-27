@@ -117,8 +117,8 @@ export default defineComponent({
       columns: [
         {name: 'location', field: 'location', label: 'Location', sortable: true, align: 'left', },        
         {name: 'device', field: 'device', label: 'Device', sortable: true, align: 'left', },
-        {name: 'start', field: row => row.start.date + ' ' + row.start.time, label: 'Start', sortable: true, align: 'left', },
-        {name: 'end', field: row => row.end.date + ' ' + row.end.time, label: 'End', sortable: true, align: 'left', },
+        {name: 'start', field: row => row.start === undefined ? '' : row.start.date + ' ' + row.start.time, label: 'Start', sortable: true, align: 'left', },
+        {name: 'end', field: row => row.end === undefined ? '' : row.end.date + ' ' + row.end.time, label: 'End', sortable: true, align: 'left', },
       ],
       filterValue: undefined,
       tabelPagination: {

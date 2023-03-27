@@ -24,8 +24,8 @@ public class DeviceInventory {
 		public final long end;
 
 		public Entry(String device, String location, long start, long end) {
-			this.device = device;
-			this.location = location;
+			this.device = device == null ? null : device.trim();
+			this.location = location == null ? null : location.trim();
 			this.start = start;
 			this.end = end;
 		}
