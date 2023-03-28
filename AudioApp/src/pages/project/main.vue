@@ -63,14 +63,15 @@
               <q-tooltip>Close</q-tooltip>
             </q-btn>
           </q-bar>
-
+          <i>At the web interface, hover mouse over a control to show a short description of the meaning of that control.</i>
+          <br><br>
           <q-card-section class="q-pt-none">
             <div class="text-h6">Select audio sample</div>
-              <i><b>Current audio sample</b> is printed at the top middle.</i>
+              <i>The <b>current audio sample</b> is titled at the top middle.</i>
               <br><i>If needed, download audio file by click on download-button at top right.</i>
               <ol>
-                <li><b>Click</b> 'browse'-button an the top left.</li>
-                <li><b>Click</b> '?'-button at browse view top right for further help.</li>
+                <li>Click <b>'browse'-button</b> an the top left.</li>
+                <li>There click <b>'?'-button</b> at browse view top right for further help.</li>
               </ol>            
           </q-card-section>
 
@@ -78,78 +79,89 @@
             <div class="text-h6">Move in time</div>
               <i><b>Current position</b> is marked by the vertical line in the middle of the spectrogram.</i>
               <br><br>
-              <p>By spectrogram:</p>
+              <p>Move by <b>spectrogram</b>:</p>
               <ol>
-                <li><b>Place</b> mouse cursor at spectrogram.</li>
-                <li><b>Press and hold</b> left mouse button.</li>
-                <li><b>Move</b> mouse cursor left or right by holding left mouse button.</li>
+                <li>Place <b>mouse cursor</b> at spectrogram.</li>
+                <li>Press and hold <b>left mouse button</b>.</li>
+                <li><b>Move mouse cursor</b> left or right by holding left mouse button.</li>
                 <li><b>Release</b> left mouse button.</li>
               </ol>
               
-              <p>By time slider:</p>
+              <p>Move by <b>time slider</b>:</p>
               <ol>
                 <li><b>Click</b> on the time slider scale to move to that position.</li>
                 <li>Or <b>Press and hold</b> left mouse button on the time slider scale and move mouse to move in time.</li>
               </ol>
 
-              <p>By label segment:</p>
+              <p>Move by <b>label segment</b>:</p>
               <ol>
-              <li><b>Click</b> previous- or next-button on the select control on the top left to move to a label segment.</li>
-              <li>Or choose a segment by click on the segment control on the top left.</li>
+              <li>Click <b>previous-</b> or <b>next-button</b> on the select control on the top left to move to one of the existing label segments.</li>
+              <li>Or choose a <b>segment</b> by click on the segment control on the top left.</li>
               </ol>             
           </q-card-section>
 
           <q-card-section class="q-pt-none">
             <div class="text-h6">Labeling</div>
             <ol>
-              <li><b>Place</b> time position to label start by moving in time.</li>
-              <li><b>Click</b> '+'-button at the top right to mark label start.</li>
-              <li><b>Move</b> time position to label end by moving in time.</li>
-              <li><b>Click</b> 'set end'-button at the top right to mark label end.</li>
-              <li><b>Select</b> label names at the top middle.</li>
-              <li><b>Click</b> 'save new segment'-button at the top right to write new label to database.</li>
-            </ol>            
+              <li>Place <b>time position</b> to <b>label start</b> by moving in time. (The vertical line in the middle of the screen.)</li>
+              <li>Click <b>'+'-button</b> at the top right to mark label start.</li>
+              <li>Move <b>time position</b> to <b>label end</b> by moving in time.</li>
+              <li>Click <b>'set end'-button</b> at the top right to mark <b>label end</b>.</li>
+              <li>Select <b>label names</b> at the top middle.</li>
+              <li>Click <b>'save new segment'-button</b> at the top right to write new label to database.</li>
+            </ol>
+            
+            <i><b>(optional)</b> Labeling including <b>lower and upper frequency</b>.</i>
+            <i>You are free to first do the time segment selection and then the frequency range selection or the other way around. Finish with 'save new segment'-button.</i>
+            <ol>
+              <li><b>Place mouse</b> on the spectrogram at the desired lower or upper frequency.</li>
+              <li>Press and hold <b>ctrl-key</b>.</li>
+              <li>Press and hold <b>left mouse button</b>.</li>
+              <li><b>Move mouse</b> up/down to the corresponding lower or upper frequency.</li>
+              <li>Release <b>left mouse button</b>.</li>
+              <li>Release <b>ctrl-key</b>.</li>
+              <li>To <b>change</b> the frequency range, do the above steps again.</li>
+            </ol>
+
           </q-card-section>
 
           <q-card-section class="q-pt-none">
             <div class="text-h6">Verifying labels</div>
             <i>Machine generated labels can be verified by experts.</i>
             <ol>
-              <li><b>Select</b> a label segment.</li>
+              <li>Select a label <b>segment</b>.</li>
               <li><b>Click</b> on the correct generated labels at the top middle.</li>
               <li><b>Select</b> additional label names from the select control if correct labels are not generated.</li>
-              <li><b>Click</b> 'save'-button to write new label to database.</li>
+              <li>Finish with <b>'save'-button</b> to write new label to database.</li>
             </ol>            
           </q-card-section>
           
           <q-card-section class="q-pt-none">
             <div class="text-h6">Detail view</div>
             <ol>
-              <li><b>Place</b> mouse cursor on spectrogram at desired time position.</li>
-              <li><b>Click</b> right mouse button to open detail view.</li>
-              <li><b>Click</b> '?'-button at detail view top right for further help.</li>
-              <li>(At detail view click 'x'-button on the top right to come back to main view.)</li>
-              <li>(Or press 'Esc'-key to come back to main view.)</li>
+              <li>Place mouse cursor on spectrogram at desired <b>time position</b>.</li>
+              <li>Click <b>right mouse button</b> to open detail view.</li>
+              <li>There click <b>'?'-button</b> at detail view top right for further help.</li>
+              <li>(At detail view click <b>'x'-button</b> on the top right to come back to main view.)</li>
+              <li>(Or press <b>'Esc'-key</b> to come back to main view.)</li>
             </ol>
           </q-card-section>
 
           <q-card-section class="q-pt-none">
             <div class="text-h6">Playing audio</div>
-            <p><i>Note: In Mozilla Firefox web browser sound output works unreliably. You may switch to Google Chrome.</i></p>
-            <p><i>Change playback speed at settings.</i></p>
+            <p><i>Note: In Mozilla Firefox web browser sound output may work unreliably. You may switch to Google Chrome if you experience problems.</i></p>
             <ol>
-              <li>Move in time to desired start position.</li>
-              <li><b>Click</b> 'play'-button on top left to start audio.</li>
-              <li><b>Click</b> 'pause'-button on top left to stop audio.</li>
+              <li>Move in time to desired <b>start position</b>. (The vertical line in the middle of the screen.)</li>
+              <li>Click <b>'play'-button</b> on top left to start audio.</li>
+              <li>Click <b>'pause'-button</b> on top left to stop audio.</li>
             </ol>
           </q-card-section>
 
           <q-card-section class="q-pt-none">
             <div class="text-h6">Settings</div>
-              <i><b>Current audio sample</b> is printed at the top middle.</i>
               <ol>
-                <li><b>Click</b> 'settings'-button an the top right.</li>
-                <li><b>Click</b> '?'-button at settings view top right for further help.</li>
+                <li>Click <b>'settings'-button</b> an the top right.</li>
+                <li>There click <b>'?'-button</b> at settings view top right for further help.</li>
               </ol>            
           </q-card-section>
         </q-card>

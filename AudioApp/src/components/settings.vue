@@ -27,15 +27,21 @@
                   <q-tooltip>Close</q-tooltip>
                 </q-btn>
               </q-bar>
+              <br>
+              <q-card-section class="q-pt-none">
+                <div class="text-h6">Profiles</div>
+                <i>Presets of settings are bundled as profiles.</i>
+                <br><br>Change the <b>selected profile</b> to directly apply that profile. Then you may click outside of the settings dialog to switch back to the audio view, 'apply'-button not needed.                
+              </q-card-section>
 
               <q-card-section class="q-pt-none">
                 <div class="text-h6">Change settings</div>                
                 <ol>
                   <li>Change individual settings</li>
-                  <li>To apply the changes, Click 'apply'-button.</li> 
-                  <li>To discard changes, click 'close'-button or press 'Esc'-key or click outside of the settings-box.</li>
-                  <li>To revert to default value of an individual settings, click the reset-button at that setting.</li>
-                  <li>Changes are applied at the current session only. Page refresh discards all settings changes.</li>
+                  <li>To apply the changes, finish with <b>'apply'-button</b>.</li> 
+                  <li>To discard changes, click <b>'close'-button</b> or press <b>'Esc'-key</b> or <b>click outside</b> of the settings-box.</li>
+                  <li>To revert to default value of an individual settings, click the <b>reset-button</b> at that setting.</li>
+                  <li>Changes are applied at the current browser window only. Page refresh <b>discards</b> all settings changes.</li>
                 </ol>
               </q-card-section>
               

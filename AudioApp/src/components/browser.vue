@@ -28,12 +28,12 @@
                 <q-tooltip>Close</q-tooltip>
               </q-btn>
             </q-bar>
-
+            <br>
             <q-card-section class="q-pt-none">
               <div class="text-h6">Browse audio samples</div>
               <i>The collection of audio samples is filtered by location and by time.</i>
-              <br><i>The table lists all audio samples of the current subset.</i>
-              <br><i>On large subsets click the prev-page/next-page-buttons to view all audio samples.</i>
+              <br><i>The browser table lists all audio samples of the current subset of location and time.</i>
+              <br><i>On large subsets click the prev-page/next-page-buttons to browse all audio samples.</i>
               <br><i>It is recommended to select both, one location and one time, to get small subsets in the table.</i>
             </q-card-section>
 
@@ -50,7 +50,7 @@
             <q-card-section class="q-pt-none">
               <div class="text-h6">Select audio sample</div>
               <i>Click on a table row to view that audio sample in the audio viewer.</i>
-              <br><i>In audio viewer, there are prev-sample/next-sample-buttons which refer to the position in this current subset table.</i>
+              <br><i>In audio viewer, there are prev-sample/next-sample-buttons which refer to the sample position in this current subset table.</i>
             </q-card-section>
           </q-card>
         </q-dialog>
