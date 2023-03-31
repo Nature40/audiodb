@@ -3,6 +3,7 @@ package audio;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 
@@ -113,7 +114,8 @@ public class Broker {
 
 	private synchronized LabelDefinitions loadLabelDefinitions() {
 		if(labelDefinitions == null) {
-			labelDefinitions = new LabelDefinitions(Paths.get("label_definitions.yaml"));
+			Path label_definitions_file = this.config().audioConfig.label_definitions_file;
+			labelDefinitions = new LabelDefinitions(label_definitions_file);
 		}
 		return labelDefinitions;
 	}

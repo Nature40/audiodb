@@ -20,6 +20,7 @@ public final class AudioProjectConfig {
 	public final Path root_data_path;
 	public final Path worklist_path; // nullable	
 	public final Path device_inventory_file; // nullable
+	public final Path label_definitions_file; // not null
 	public final double player_spectrum_threshold;
 	public final double player_fft_intensity_max;
 	public final double player_playbackRate; // obsolete
@@ -45,6 +46,7 @@ public final class AudioProjectConfig {
 		public Path root_data_path = null; // optional; if null -> root_path is used as data file directory
 		public Path worklist_path = null;  // nullable		
 		public Path device_inventory_file = null;  // nullable
+		public Path label_definitions_file = Paths.get("label_definitions.yaml");
 		public double player_spectrum_threshold = 13.5;
 		public double player_fft_intensity_max = 23;
 		public double player_playbackRate = 1;
@@ -72,6 +74,7 @@ public final class AudioProjectConfig {
 			yamlMap.optFunString("root_data_path", s -> root_data_path = Paths.get(s));
 			yamlMap.optFunString("worklist_path", s -> worklist_path = Paths.get(s));
 			yamlMap.optFunString("device_inventory_file", s -> device_inventory_file = Paths.get(s));
+			yamlMap.optFunString("label_definitions_file", s -> label_definitions_file = Paths.get(s));
 			player_spectrum_threshold = yamlMap.optDouble("player_spectrum_threshold", player_spectrum_threshold);
 			player_fft_intensity_max = yamlMap.optDouble("player_fft_intensity_max", player_fft_intensity_max);
 			player_playbackRate = yamlMap.optDouble("player_playbackRate", player_playbackRate);
@@ -106,6 +109,7 @@ public final class AudioProjectConfig {
 		root_data_path = builder.root_data_path == null ? builder.root_path : builder.root_data_path;
 		worklist_path = builder.worklist_path;
 		device_inventory_file = builder.device_inventory_file;
+		label_definitions_file = builder.label_definitions_file;
 		player_spectrum_threshold = builder.player_spectrum_threshold;
 		player_fft_intensity_max = builder.player_fft_intensity_max;
 		player_playbackRate = builder.player_playbackRate;
@@ -141,13 +145,14 @@ public final class AudioProjectConfig {
 	public String toString() {
 		return "AudioProjectConfig [project=" + project + ", root_path=" + root_path + ", root_data_path="
 				+ root_data_path + ", worklist_path=" + worklist_path + ", device_inventory_file="
-				+ device_inventory_file + ", player_spectrum_threshold=" + player_spectrum_threshold
-				+ ", player_fft_intensity_max=" + player_fft_intensity_max + ", player_playbackRate="
-				+ player_playbackRate + ", player_preservesPitch=" + player_preservesPitch
-				+ ", player_overwriteSamplingRate=" + player_overwriteSamplingRate + ", player_samplingRate="
-				+ player_samplingRate + ", player_fft_window=" + player_fft_window + ", player_fft_window_step_factor="
-				+ player_fft_window_step_factor + ", player_spectrum_shrink_Factor=" + player_spectrum_shrink_Factor
-				+ ", player_time_expansion_factor=" + player_time_expansion_factor + ", player_static_lines_frequency="
+				+ device_inventory_file + ", label_definitions_file=" + label_definitions_file
+				+ ", player_spectrum_threshold=" + player_spectrum_threshold + ", player_fft_intensity_max="
+				+ player_fft_intensity_max + ", player_playbackRate=" + player_playbackRate + ", player_preservesPitch="
+				+ player_preservesPitch + ", player_overwriteSamplingRate=" + player_overwriteSamplingRate
+				+ ", player_samplingRate=" + player_samplingRate + ", player_fft_window=" + player_fft_window
+				+ ", player_fft_window_step_factor=" + player_fft_window_step_factor
+				+ ", player_spectrum_shrink_Factor=" + player_spectrum_shrink_Factor + ", player_time_expansion_factor="
+				+ player_time_expansion_factor + ", player_static_lines_frequency="
 				+ Arrays.toString(player_static_lines_frequency) + ", player_fft_cutoff_lower_frequency="
 				+ player_fft_cutoff_lower_frequency + ", player_fft_cutoff_upper_frequency="
 				+ player_fft_cutoff_upper_frequency + ", player_mouse_move_factor=" + player_mouse_move_factor

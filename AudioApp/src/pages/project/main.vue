@@ -240,7 +240,7 @@
           ref="selectLabel"
         >
           <template v-slot:append>
-            <q-icon name="apps" @click.stop.prevent="onClickLabelSelectDialogShow" />
+            <q-icon name="apps" @click.stop.prevent="onClickLabelSelectDialogShow" />      
             <q-dialog v-model="labelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
               <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
                 <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
@@ -251,18 +251,18 @@
                   <span v-else>{{labelDefinition.name}}</span>
                 </q-badge>
               </div>
-            </q-dialog>            
+            </q-dialog>                 
           </template>
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps">
               <q-item-section>
-                <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+                <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;" v-if="scope.opt.desc">- {{scope.opt.desc}}</span></q-item-label>
               </q-item-section>
             </q-item>
           </template>          
         </q-select>
         <q-btn icon-right="push_pin" padding="xs" margin="xs" @click="onSaveLabels" :disabled="!userSelectedLabelNamesChanged" title="Save changes.">
-          <q-checkbox
+          <!--<q-checkbox
           v-model="autoSaveLabels"
           size="xs"
           padding="xs"
@@ -270,7 +270,7 @@
           color="grey-6"
           style="padding: 0px; margin: -4px;"
           title="! currently NOT IMPLEMENTED !  Automatically save changes when moving to another label. ! currently NOT IMPLEMENTED !"
-          />
+          />-->
         </q-btn>
         <q-badge v-if="userSelectedLabelNamesChanged" color="grey-3" text-color="accent" label="...unsaved changes..."/>
         <q-btn icon="delete_forever" text-color="red" size="s" padding="xs" margin="xs" title="Remove selected time segment." @click="removeTimeSegmentShow = true;" />
@@ -303,10 +303,24 @@
           emit-value
           clearable
         >
+        <template v-slot:append>
+            <q-icon name="apps" @click.stop.prevent="onClickNewLabelSelectDialogShow" />      
+            <q-dialog v-model="newLabelSelectDialogShow" transition-show="rotate" transition-hide="rotate" class="q-pt-none" full-width full-height>
+              <div class="q-pt-none column wrap justify-start content-around fit" style="position: relative; background-color: white;">
+                <q-btn dense icon="close" v-close-popup style="position: absolute; top: 0px; right: 0px;">
+                  <q-tooltip>Close</q-tooltip>
+                </q-btn>
+                <q-badge  v-for="labelDefinition in labelDefinitions" :key="labelDefinition.name" @click="addLabel(labelDefinition.name)"  color="grey-3" :text-color="userSelectedLabelNamesSet.has(labelDefinition.name) ? 'green' : 'grey-7'" style="width: 200px; margin: 1px; overflow: hidden;" class="text-h6" :title="labelDefinition.desc">
+                  <span v-if="labelDefinition.n" class="label-definition-n">{{labelDefinition.name}}</span>
+                  <span v-else>{{labelDefinition.name}}</span>
+                </q-badge>
+              </div>
+            </q-dialog>                 
+          </template>         
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps">
               <q-item-section>
-                <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;">- {{scope.opt.desc}}</span></q-item-label>
+                <q-item-label><b>{{scope.opt.name}}</b> <span style="color: grey;" v-if="scope.opt.desc">- {{scope.opt.desc}}</span></q-item-label>
               </q-item-section>
             </q-item>
           </template>
@@ -492,7 +506,7 @@
       {{name}}
     </q-badge>
   </div>
-
+ 
   </q-page>
 </template>
 
@@ -556,6 +570,7 @@ export default defineComponent({
       saveLabelsLoading: false,
       saveLabelsError: false,
       labelSelectDialogShow: false,
+      newLabelSelectDialogShow: false,
       removeTimeSegmentShow: false,
       dialoghelpShow: false,
       dialoghelpMaximizedToggle: false,
@@ -1308,7 +1323,7 @@ export default defineComponent({
     },
     addLabel(name) {
       if(!this.userSelectedLabelNames) {
-        this.userSelectedLabelNames = name;
+        this.userSelectedLabelNames = [name];
         this.userSelectedLabelNamesChanged = true;
       } else if(!this.userSelectedLabelNamesSet.has(name)){
         this.userSelectedLabelNames.push(name);
@@ -1357,6 +1372,9 @@ export default defineComponent({
     onClickLabelSelectDialogShow() {
       this.labelSelectDialogShow = true;
     },
+    onClickNewLabelSelectDialogShow() {
+      this.newLabelSelectDialogShow = true;
+    },   
   },
 
   watch: {

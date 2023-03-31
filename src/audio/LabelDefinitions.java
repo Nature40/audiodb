@@ -40,6 +40,7 @@ public class LabelDefinitions {
 				Logger.info("no file: " + labelDefinitionsPath);
 				return false;			
 			}
+			Logger.info("label definitions read "  + labelDefinitionsPath);
 			YamlMap yamlMap = YamlUtil.readYamlMap(labelDefinitionsPath);
 			List<YamlMap> ldList = yamlMap.optList("label_definitions").asMaps();
 			lds = ldList.stream().map(m -> LabelDefinition.ofYAML(m)).collect(Vec.collector());
