@@ -15,6 +15,9 @@ import util.yaml.YamlUtil;
 
 public class Sample2 implements GeneralSample {
 
+	private static final boolean TRY_GENERATE_METADATA_FROM_DATA = false;
+	private static final boolean TRY_GENERATE_METADATA_FROM_YAML = false;
+
 	public final String id;
 	public final String project;
 	public final Path metaPath;
@@ -68,11 +71,12 @@ public class Sample2 implements GeneralSample {
 		return this.yamlMap;
 	}
 
+	@SuppressWarnings("unused")
 	public long samples() {
 		if(samples == -2) {
 			YamlMap m = meta();
 			samples = m.optLong("Samples", -1);
-			if(samples == -1) {
+			if(TRY_GENERATE_METADATA_FROM_DATA && samples == -1) {
 				if(MetaCreator.supplementYaml(m.getInternalMap(), samplePath)) {
 					//Logger.info("write meta" + id);
 					YamlUtil.writeSafeYamlMap(metaPath, yamlMap.getInternalMap());
@@ -119,22 +123,28 @@ public class Sample2 implements GeneralSample {
 	 * return nullable
 	 * @return 
 	 */
+	@SuppressWarnings("unused")
 	public String getUTC() {
-		String comment = comment();
-		if(comment == null) {
-			return null;
-		}
-		try {
-			final Matcher offsetMatcher = MetaCreator.UTC_OFFSET_PATTERN.matcher(comment);
-			if(offsetMatcher.matches() && offsetMatcher.groupCount() == 1) {
-				String offsetText = offsetMatcher.group(1);
-				return "UTC" + offsetText;
-			} else {
+		String utc = meta().optString("recording_time_zone");
+		if(TRY_GENERATE_METADATA_FROM_YAML && utc == null) {
+			String comment = comment();
+			if(comment == null) {
 				return null;
 			}
-		} catch(Exception e) {
-			Logger.warn(e);
-			return null;
+			try {
+				final Matcher offsetMatcher = MetaCreator.UTC_OFFSET_PATTERN.matcher(comment);
+				if(offsetMatcher.matches() && offsetMatcher.groupCount() == 1) {
+					String offsetText = offsetMatcher.group(1);
+					return "UTC" + offsetText;
+				} else {
+					return null;
+				}
+			} catch(Exception e) {
+				Logger.warn(e);
+				return null;
+			}
+		} else {
+			return utc;
 		}
 	}
 
@@ -190,10 +200,11 @@ public class Sample2 implements GeneralSample {
 		return xxh64;
 	}
 
+	@SuppressWarnings("unused")
 	public double getTemperature() {
 		YamlMap meta = meta();
 		double temperature = meta.optDouble("temperature");
-		if(!Double.isFinite(temperature)) {
+		if(TRY_GENERATE_METADATA_FROM_YAML && !Double.isFinite(temperature)) {
 			temperature = MetaCreator.getTemperature(comment());		
 		}
 		return temperature;
@@ -226,5 +237,13 @@ public class Sample2 implements GeneralSample {
 			return label.start == start && label.end == end;
 		});*/
 		return getLabels().find(label -> label.isInterval(start, end));
+	}
+
+	public long getFileSize() {
+		return meta().optLong("file_size", Long.MIN_VALUE);
+	}
+	
+	public boolean hasFileSize() {
+		return 0 <= getFileSize();
 	}
 }

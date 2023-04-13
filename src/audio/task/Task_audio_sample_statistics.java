@@ -3,6 +3,7 @@ package audio.task;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import org.tinylog.Logger;
 
@@ -23,11 +24,14 @@ import util.collections.vec.Vec;
 @Cancelable
 @Param(name = "col_location", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'location' in CSV output.")
 @Param(name = "col_time", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'time' in CSV output.")
-@Param(name = "col_sample", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'sample' in CSV output.")
+@Param(name = "col_path", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'path' in CSV output. Folder path excluding filename.")
+@Param(name = "col_filename", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'filename' in CSV output. Filename excluding folder path.")
+@Param(name = "col_sample", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'sample' in CSV output. Folder path including filename.")
 @Param(name = "col_device", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'device' in CSV output.")
 @Param(name = "col_duration", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'duration' in CSV output.")
 @Param(name = "col_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'time_zone' in CSV output.")
 @Param(name = "col_temperature", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'temperature' in CSV output.")
+@Param(name = "col_file_size", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'file_size' in CSV output and sum up total file size in log message.")
 @Param(name = "filename", type = Type.STRING, preset = "samples.csv", description = "Filename of output CSV-file.")
 @Role("admin")
 public class Task_audio_sample_statistics extends Task {
@@ -49,11 +53,14 @@ public class Task_audio_sample_statistics extends Task {
 
 		boolean col_location = this.ctx.getParamBoolean("col_location");
 		boolean col_time = this.ctx.getParamBoolean("col_time");
+		boolean col_path = this.ctx.getParamBoolean("col_path");
+		boolean col_filename = this.ctx.getParamBoolean("col_filename");
 		boolean col_sample = this.ctx.getParamBoolean("col_sample");
 		boolean col_device = this.ctx.getParamBoolean("col_device");
 		boolean col_duration = this.ctx.getParamBoolean("col_duration");
 		boolean col_time_zone = this.ctx.getParamBoolean("col_time_zone");
 		boolean col_temperature = this.ctx.getParamBoolean("col_temperature");
+		boolean col_file_size = this.ctx.getParamBoolean("col_file_size");
 		String filename = this.ctx.getParamString("filename");
 		validateFilenameThrow(filename);
 
@@ -66,6 +73,12 @@ public class Task_audio_sample_statistics extends Task {
 			}
 			if(col_time) {
 				cols.add("time");	
+			}
+			if(col_path) {
+				cols.add("path");	
+			}
+			if(col_filename) {
+				cols.add("filename");	
 			}
 			if(col_sample) {
 				cols.add("sample");	
@@ -82,8 +95,14 @@ public class Task_audio_sample_statistics extends Task {
 			if(col_temperature) {
 				cols.add("temperature");	
 			}
+			if(col_file_size) {
+				cols.add("file_size");	
+			}
 			csv.writeRow(cols);
 			Vec<String> row = new Vec<String>();
+			final long[] fileSizeCounter = new long[] {0};
+			final double[] durationCounter = new double[] {0};
+			Path root_data_path = ctx.broker.config().audioConfig.root_data_path;
 			ctx.broker.sampleManager().forEach(sample -> {
 				row.clear();
 				if(isSoftCanceled()) {
@@ -97,9 +116,21 @@ public class Task_audio_sample_statistics extends Task {
 					String timeName = AudioTimeUtil.ofAudiotime(sample.timestamp).toString();
 					row.add(timeName);
 				}
-				if(col_sample) {
-					String samplePath = sample.samplePath.toString();
-					row.add(samplePath);
+				if(col_path || col_filename || col_sample) {
+					Path path = root_data_path.relativize(sample.samplePath);
+					if(col_path) {
+						Path parent = path.getParent();
+						String samplePath = parent == null ? "" : parent.toString();
+						row.add(samplePath);
+					}
+					if(col_filename) {
+						String samplePath = path.getFileName().toString();
+						row.add(samplePath);
+					}
+					if(col_sample) {
+						String samplePath = path.toString();
+						row.add(samplePath);
+					}
 				}
 				if(col_device) {
 					String device = sample.device;
@@ -109,6 +140,7 @@ public class Task_audio_sample_statistics extends Task {
 					double d = sample.duration();
 					String duration = Double.isFinite(d) ? "" + d : "NA";
 					row.add(duration);
+					durationCounter[0] += d;
 				}
 				if(col_time_zone) {
 					String utc_ = sample.getUTC();
@@ -120,12 +152,27 @@ public class Task_audio_sample_statistics extends Task {
 					String temperature = Double.isFinite(temperature_) ? Double.toString(temperature_) : "";
 					row.add(temperature);
 				}
+				if(col_file_size) {
+					long filesize = sample.getFileSize();
+					if(filesize >= 0) {
+						row.add(Long.toString(filesize));
+						fileSizeCounter[0] += filesize; 
+					} else {
+						row.add("");
+					}					
+				}
 				csv.writeRow(row);
 			});
 			setResult(
 					TaskResult.ofText("CSV-file produced."),
 					TaskResult.ofFile(output_target)
 					);
+			if(col_file_size) {
+				Duration totalDuration = Duration.ofSeconds((long) durationCounter[0]);
+				String durationText = String.format("%d days %02d:%02d:%02d", totalDuration.toDays(), totalDuration.toHoursPart(), totalDuration.toMinutesPart(), totalDuration.toSecondsPart());
+				setMessage(durationText + " total audio data duration (" + durationCounter[0] + " seconds)");	
+				setMessage(fileSizeCounter[0] + " bytes total audio data file size");				
+			}
 		} catch (IOException e) {
 			Logger.warn(e);
 		}

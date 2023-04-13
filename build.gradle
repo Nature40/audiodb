@@ -76,7 +76,7 @@ dependencies {
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
 	
-	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.21.0.RELEASE'
+	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.21.1.RELEASE'
 	
 	implementation group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 	implementation group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
