@@ -15,6 +15,7 @@ import task.Task;
 import task.TaskResult;
 import task.TaskResult.File;
 import task.Tasks;
+import util.Web;
 
 public class TaskFilesHandler {
 
@@ -46,7 +47,7 @@ public class TaskFilesHandler {
 			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);

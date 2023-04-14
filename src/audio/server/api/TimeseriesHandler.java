@@ -21,6 +21,7 @@ import audio.Broker;
 import audio.Sample;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import util.AudioTimeUtil;
+import util.Web;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
 
@@ -53,7 +54,7 @@ public class TimeseriesHandler extends AbstractHandler {
 					String errorText = "unknown method in " + baseRequest.getMethod();
 					Logger.error(errorText);
 					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					response.setContentType("text/plain");
+					response.setContentType(Web.MIME_TEXT);
 					response.getWriter().print(errorText);		
 				}
 				}
@@ -74,7 +75,7 @@ public class TimeseriesHandler extends AbstractHandler {
 						String errorText = "unknown method in " + baseRequest.getMethod();
 						Logger.error(errorText);
 						response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-						response.setContentType("text/plain");
+						response.setContentType(Web.MIME_TEXT);
 						response.getWriter().print(errorText);		
 					}
 					}
@@ -87,13 +88,13 @@ public class TimeseriesHandler extends AbstractHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
 
 	private void handleIndices(Request request, Response response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("indices");
@@ -130,7 +131,7 @@ public class TimeseriesHandler extends AbstractHandler {
 	}
 
 	private void process(Vec<String> indices, HttpServletResponse response) throws IOException {
-		response.setContentType("text/csv;charset=utf-8");		
+		response.setContentType(Web.MIME_CSV);		
 		try (CsvWriter csv = CsvWriter.builder().build(response.getWriter())) {
 			String[] header = new String[HEADER_META_ROWS + indices.size()];
 			header[0] = "plotID";

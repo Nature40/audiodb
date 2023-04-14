@@ -5,7 +5,7 @@ import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import util.Web;
 
 import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
@@ -46,13 +46,13 @@ public class Labeling_listsHandler extends AbstractHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("labeling_lists");

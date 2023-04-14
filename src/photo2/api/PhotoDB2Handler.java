@@ -66,7 +66,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
@@ -78,7 +78,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 		boolean classification_definitions = Web.getFlagBoolean(request, "classification_definitions");
 		boolean review_lists = Web.getFlagBoolean(request, "review_lists");	
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 

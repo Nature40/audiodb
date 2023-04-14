@@ -48,7 +48,7 @@ public class Photo2Handler {
 			Photo2 photo = photodb2.getPhoto2(id, true);
 			if(photo == null) {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: photo not found");
 				return;
 			}
@@ -82,7 +82,7 @@ public class Photo2Handler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
@@ -155,7 +155,7 @@ public class Photo2Handler {
 				}
 				bufferedImage = ThumbManager.scale(bufferedImage, (int) calcWidth, (int) calcHeight);						
 			}
-			response.setContentType("image/jpeg");
+			response.setContentType(Web.MIME_JPEG);
 			ThumbManager.writeJPG(bufferedImage, 0.95f, response);
 		}
 	}
@@ -237,7 +237,7 @@ public class Photo2Handler {
 	private void handleRoot_GET(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
 		//boolean writeClassifications = Web.getFlagBoolean(request, "classifications");
 		boolean writeDetections = Web.getFlagBoolean(request, "detections");
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("photo");

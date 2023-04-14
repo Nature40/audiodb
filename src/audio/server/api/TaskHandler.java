@@ -19,6 +19,7 @@ import task.TaskResult.File;
 import task.TaskResult.Text;
 import task.Tasks;
 import util.AudioTimeUtil;
+import util.Web;
 
 public class TaskHandler {
 
@@ -62,7 +63,7 @@ public class TaskHandler {
 			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);
@@ -138,7 +139,7 @@ public class TaskHandler {
 	}
 
 	private void handleRoot_GET(Task task, Request request, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		taskToJSON(task, json);		
 	}

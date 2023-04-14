@@ -59,7 +59,7 @@ public class TasksHandler extends AbstractHandler {
 			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);
@@ -104,7 +104,7 @@ public class TasksHandler extends AbstractHandler {
 		boolean fDescriptors = Web.getFlagBoolean(request, "descriptors");
 		boolean fTasks = Web.getFlagBoolean(request, "tasks");
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		if(fDescriptors) {
@@ -167,6 +167,9 @@ public class TasksHandler extends AbstractHandler {
 		HttpSession session = request.getSession(false);
 		Account sessionAccount = (Account) session.getAttribute("account");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
+		//if(request.getCharacterEncoding() == null) { // no direct getter
+		request.setCharacterEncoding("utf-8");
+		//}
 		JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
 		JSONObject jsonAction = jsonReq.getJSONObject("action");
 		String actionName = jsonAction.getString("action");
@@ -174,7 +177,7 @@ public class TasksHandler extends AbstractHandler {
 		case "submit": {
 			JSONObject jsonTask = jsonAction.getJSONObject("task");
 			String id = tasks.submit(jsonTask, sessionAccount, roleBits);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("result");

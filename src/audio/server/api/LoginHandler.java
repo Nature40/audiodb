@@ -20,6 +20,7 @@ import audio.Hex;
 import audio.Nonce;
 import audio.server.AccessHandler;
 import util.TemplateUtil;
+import util.Web;
 
 public class LoginHandler extends AbstractHandler {
 
@@ -88,6 +89,7 @@ public class LoginHandler extends AbstractHandler {
 			HashMap<String, Object> ctx = new HashMap<>();
 			ctx.put("error", e.getMessage());
 			ctx.put("href", location);
+			response.setContentType(Web.MIME_HTML);
 			TemplateUtil.getTemplate("login_local_error.mustache", true).execute(ctx, response.getWriter());
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 		}

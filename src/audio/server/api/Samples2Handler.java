@@ -12,6 +12,7 @@ import org.json.JSONWriter;
 
 import audio.Broker;
 import audio.Sample2;
+import audio.SampleManager;
 import audio.SampleManagerConnector;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +21,6 @@ import util.AudioTimeUtil;
 import util.Web;
 
 public class Samples2Handler extends AbstractHandler {
-
 
 	private final Broker broker;
 
@@ -51,7 +51,7 @@ public class Samples2Handler extends AbstractHandler {
 			e.printStackTrace();
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);
@@ -61,7 +61,7 @@ public class Samples2Handler extends AbstractHandler {
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
 		Logger.info("query samples");
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 
@@ -92,6 +92,9 @@ public class Samples2Handler extends AbstractHandler {
 			if(sample.hasLocation()) {
 				json.key("location");
 				json.value(sample.location);
+			} else if(SampleManager.UNKNOWN_LOCATION_AS_DEVICE && sample.hasDevice()) { // not needed as location as devices already in db
+				json.key("location");
+				json.value("(device) " + sample.device);
 			}
 			if(sample.hasTimestamp()) {
 				//json.key("timestamp");

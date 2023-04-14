@@ -19,6 +19,7 @@ import org.json.JSONWriter;
 
 import audio.Broker;
 import audio.LabelDefinition;
+import util.Web;
 import util.collections.vec.Vec;
 
 public class LabelDefinitionsHandler extends AbstractHandler {
@@ -52,7 +53,7 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 		catch(Exception e) {
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -62,7 +63,7 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 	}
 
 	public void handleGET(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("label_definitions");
@@ -90,7 +91,7 @@ public class LabelDefinitionsHandler extends AbstractHandler {
 			broker.labelDefinitions().replace(vec);
 		}
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("massage");

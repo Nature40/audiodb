@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import util.Web;
 import util.collections.vec.Vec;
 
 public class AccountsHandler extends AbstractHandler {
@@ -44,7 +45,7 @@ public class AccountsHandler extends AbstractHandler {
 				String errorText = "unknown method in " + "accounts: " + baseRequest.getMethod();
 				Logger.error(errorText );
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				response.setContentType("text/plain");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().print(errorText);		
 			}
 			}
@@ -52,7 +53,7 @@ public class AccountsHandler extends AbstractHandler {
 		catch(Exception e) {
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -160,7 +161,7 @@ public class AccountsHandler extends AbstractHandler {
 			}
 		}
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("massage");
@@ -173,7 +174,7 @@ public class AccountsHandler extends AbstractHandler {
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
 		broker.roleManager().roleMask_list_account.checkIntersects(roleBits);
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("accounts");

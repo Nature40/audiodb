@@ -12,7 +12,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
+import util.Web;
 
 import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
@@ -90,13 +90,13 @@ public class WebAuthnHandler extends AbstractHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		response.setContentType("text/plain;charset=utf-8");		
+		response.setContentType(Web.MIME_TEXT);		
 		response.getWriter().write("WebAuthn");
 	}
 
@@ -150,10 +150,10 @@ public class WebAuthnHandler extends AbstractHandler {
 			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
-		response.setContentType("text/plain;charset=utf-8");		
+		response.setContentType(Web.MIME_TEXT);		
 		response.getWriter().write("WebAuthn");
 	}	
 
@@ -170,14 +170,14 @@ public class WebAuthnHandler extends AbstractHandler {
 			Authenticator authenticator = account.webAuthnAccount().authenticator();
 			AuthenticationParameters authenticationParameters = webAuthn.createAuthenticationParameters(jsonReq, authenticator);
 			AuthenticationData authenticationData = webAuthn.validateAuthention(jsonReq, authenticationRequest, authenticationParameters);
-			response.setContentType("text/plain;charset=utf-8");		
+			response.setContentType(Web.MIME_TEXT);		
 			response.getWriter().write("Validated identity: " + account.username);
 		}
 		catch (Exception e){			
 			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}		
 	}

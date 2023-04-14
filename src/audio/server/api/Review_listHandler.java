@@ -26,6 +26,7 @@ import audio.review.ReviewedLabel;
 import audio.review.ReviewedLabel.Reviewed;
 import audio.Sample;
 import util.JsonUtil;
+import util.Web;
 
 public class Review_listHandler {
 	
@@ -132,7 +133,7 @@ public class Review_listHandler {
 	}
 
 	void sendReview_list(String review_list_id, ReviewList reviewList, HttpServletResponse response, boolean reviewedOnly) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("review_list");

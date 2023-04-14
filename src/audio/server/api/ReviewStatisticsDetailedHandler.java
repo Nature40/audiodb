@@ -16,6 +16,7 @@ import org.json.JSONWriter;
 import audio.Broker;
 import audio.GeneratorLabel;
 import audio.review.ReviewedLabel;
+import util.Web;
 import util.collections.vec.Vec;
 
 public class ReviewStatisticsDetailedHandler extends AbstractHandler {
@@ -50,7 +51,7 @@ public class ReviewStatisticsDetailedHandler extends AbstractHandler {
 			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);
@@ -204,7 +205,7 @@ public class ReviewStatisticsDetailedHandler extends AbstractHandler {
 			});
 		});
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		

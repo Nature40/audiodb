@@ -7,7 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
+import util.Web;
 
 import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
@@ -50,7 +50,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 				String errorText = "unknown method in " + "login: " + baseRequest.getMethod();
 				Logger.error(errorText );
 				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				response.setContentType("text/plain");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().print(errorText);		
 			}
 			}
@@ -58,7 +58,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 		catch(Exception e) {
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -69,7 +69,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 	
 	public void handleGET(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		try {
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());			
 			byte[] challengeBytes = WebAuthn.createChallenge();
 			Logger.info(Arrays.toString(challengeBytes));
@@ -83,7 +83,7 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
@@ -108,13 +108,13 @@ public class LoginWebAuthnHandler extends AbstractHandler {
 			session.setAttribute("account", account);
 			session.setAttribute("roles", broker.roleManager().getRoleBits(account.roles));			
 			
-			response.setContentType("text/plain;charset=utf-8");		
+			response.setContentType(Web.MIME_TEXT);		
 			response.getWriter().write("Validated identity: " + WebAuthn.bytesToString(authenticationData.getUserHandle()));
 		} catch(Exception e) {
 			Logger.error(e);
 			e.printStackTrace();
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}

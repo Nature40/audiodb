@@ -3,7 +3,10 @@ package audio.task;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.Duration;
+import java.util.Locale;
 
 import org.tinylog.Logger;
 
@@ -33,6 +36,9 @@ import util.collections.vec.Vec;
 @Param(name = "col_temperature", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'temperature' in CSV output.")
 @Param(name = "col_file_size", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'file_size' in CSV output and sum up total file size in log message.")
 @Param(name = "filename", type = Type.STRING, preset = "samples.csv", description = "Filename of output CSV-file.")
+@Param(name = "filter_by_location", type = Type.STRING, preset = "", description = "(optional) Process the specified location only.")
+@Param(name = "filter_by_device", type = Type.STRING, preset = "", description = "(optional) Process the specified device id only.")
+@Param(name = "filter_by_time", type = Type.STRING, preset = "", description = "(optional) Process the specified range of time only. Format: yyyy-MM-ddTHH:mm:ss  A shortened format leads to a range of time. e.g. 2022 means all samples from year 2022. e.g. 2022-02 means all samples from February at year 2022.")
 @Role("admin")
 public class Task_audio_sample_statistics extends Task {
 
@@ -62,7 +68,15 @@ public class Task_audio_sample_statistics extends Task {
 		boolean col_temperature = this.ctx.getParamBoolean("col_temperature");
 		boolean col_file_size = this.ctx.getParamBoolean("col_file_size");
 		String filename = this.ctx.getParamString("filename");
+		String filter_by_location = this.ctx.getParamString("filter_by_location");
+		String filter_by_device = this.ctx.getParamString("filter_by_device");
+		String filter_by_time = this.ctx.getParamString("filter_by_time");
 		validateFilenameThrow(filename);
+		boolean hasFilter_by_location = !filter_by_location.isBlank();
+		boolean hasFilter_by_device = !filter_by_device.isBlank();
+		boolean hasFilter_by_time = !filter_by_time.isBlank();
+		long time_min = AudioTimeUtil.toAudiotimeStart(filter_by_time);
+		long time_max = AudioTimeUtil.toAudiotimeEnd(filter_by_time);
 
 		Path output_target = output_path.resolve(filename);
 		try (CsvWriter csv = CsvWriter.builder().build(output_target)) {
@@ -102,66 +116,80 @@ public class Task_audio_sample_statistics extends Task {
 			Vec<String> row = new Vec<String>();
 			final long[] fileSizeCounter = new long[] {0};
 			final double[] durationCounter = new double[] {0};
+			final long[] fileCounter = new long[] {0};
+			DecimalFormat doubleFormat = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+			doubleFormat.setMaximumFractionDigits(340);
 			Path root_data_path = ctx.broker.config().audioConfig.root_data_path;
 			ctx.broker.sampleManager().forEach(sample -> {
-				row.clear();
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");
 				}
-				if(col_location) {
-					String location = sample.location;
-					row.add(location);
-				}
-				if(col_time) {
-					String timeName = AudioTimeUtil.ofAudiotime(sample.timestamp).toString();
-					row.add(timeName);
-				}
-				if(col_path || col_filename || col_sample) {
-					Path path = root_data_path.relativize(sample.samplePath);
-					if(col_path) {
-						Path parent = path.getParent();
-						String samplePath = parent == null ? "" : parent.toString();
-						row.add(samplePath);
+				if((!hasFilter_by_location || (hasFilter_by_location && filter_by_location.equals(sample.location)))
+						&& (!hasFilter_by_device || (hasFilter_by_device && filter_by_device.equals(sample.device)))
+						&& (!hasFilter_by_time || (hasFilter_by_time && time_min <= sample.timestamp && sample.timestamp <= time_max))) {
+					row.clear();
+					if(col_location) {
+						String location = sample.location;
+						row.add(location);
 					}
-					if(col_filename) {
-						String samplePath = path.getFileName().toString();
-						row.add(samplePath);
+					if(col_time) {
+						String timeName = AudioTimeUtil.ofAudiotime(sample.timestamp).toString();
+						row.add(timeName);
 					}
-					if(col_sample) {
-						String samplePath = path.toString();
-						row.add(samplePath);
+					if(col_path || col_filename || col_sample) {
+						Path path = root_data_path.relativize(sample.samplePath);
+						if(col_path) {
+							Path parent = path.getParent();
+							String samplePath = parent == null ? "" : parent.toString();
+							row.add(samplePath);
+						}
+						if(col_filename) {
+							String samplePath = path.getFileName().toString();
+							row.add(samplePath);
+						}
+						if(col_sample) {
+							String samplePath = path.toString();
+							row.add(samplePath);
+						}
 					}
+					if(col_device) {
+						String device = sample.device;
+						row.add(device);
+					}
+					if(col_duration) {
+						double d = sample.duration();
+						if(Double.isFinite(d)) {
+							row.add(doubleFormat.format(d));
+							durationCounter[0] += d;
+						} else {
+							row.add("NA");
+						}					
+					}
+					if(col_time_zone) {
+						String utc_ = sample.getUTC();
+						String utc = utc_ == null ? "" : utc_;
+						row.add(utc);
+					}
+					if(col_temperature) {
+						double temperature_ = sample.getTemperature();
+						String temperature = Double.isFinite(temperature_) ? Double.toString(temperature_) : "";
+						row.add(temperature);
+					}
+					if(col_file_size) {
+						long filesize = sample.getFileSize();
+						if(filesize >= 0) {
+							row.add(Long.toString(filesize));
+							fileSizeCounter[0] += filesize; 
+						} else {
+							row.add("");
+						}					
+					}
+					csv.writeRow(row);
 				}
-				if(col_device) {
-					String device = sample.device;
-					row.add(device);
+				fileCounter[0]++;
+				if(fileCounter[0] % 1000 == 0) {
+					setMessage(fileCounter[0] + " audio files passed");
 				}
-				if(col_duration) {
-					double d = sample.duration();
-					String duration = Double.isFinite(d) ? "" + d : "NA";
-					row.add(duration);
-					durationCounter[0] += d;
-				}
-				if(col_time_zone) {
-					String utc_ = sample.getUTC();
-					String utc = utc_ == null ? "" : utc_;
-					row.add(utc);
-				}
-				if(col_temperature) {
-					double temperature_ = sample.getTemperature();
-					String temperature = Double.isFinite(temperature_) ? Double.toString(temperature_) : "";
-					row.add(temperature);
-				}
-				if(col_file_size) {
-					long filesize = sample.getFileSize();
-					if(filesize >= 0) {
-						row.add(Long.toString(filesize));
-						fileSizeCounter[0] += filesize; 
-					} else {
-						row.add("");
-					}					
-				}
-				csv.writeRow(row);
 			});
 			setResult(
 					TaskResult.ofText("CSV-file produced."),
@@ -170,7 +198,8 @@ public class Task_audio_sample_statistics extends Task {
 			if(col_file_size) {
 				Duration totalDuration = Duration.ofSeconds((long) durationCounter[0]);
 				String durationText = String.format("%d days %02d:%02d:%02d", totalDuration.toDays(), totalDuration.toHoursPart(), totalDuration.toMinutesPart(), totalDuration.toSecondsPart());
-				setMessage(durationText + " total audio data duration (" + durationCounter[0] + " seconds)");	
+				setMessage(fileCounter[0] + " total audio files");
+				setMessage(durationText + " total audio data duration (" + doubleFormat.format(durationCounter[0]) + " seconds)");	
 				setMessage(fileSizeCounter[0] + " bytes total audio data file size");				
 			}
 		} catch (IOException e) {

@@ -5,7 +5,7 @@ import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import util.Web;
 
 import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
@@ -25,7 +25,7 @@ public class AccountHandler extends AbstractHandler {
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		baseRequest.setHandled(true);
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 
 		json.object();

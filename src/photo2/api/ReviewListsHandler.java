@@ -58,7 +58,7 @@ public class ReviewListsHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}		
 	}
@@ -155,7 +155,7 @@ public class ReviewListsHandler {
 				throw new RuntimeException("unknown action:" + actionName);
 			}
 		}
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("result");

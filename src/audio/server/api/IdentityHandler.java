@@ -7,7 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
+import util.Web;
 
 import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
@@ -34,7 +34,7 @@ public class IdentityHandler extends AbstractHandler {
 		String authentication = (String) session.getAttribute("authentication");
 		BitSet roleBits = (BitSet) session.getAttribute("roles");
 		String[] roleNames = broker.roleManager().getRoleNames(roleBits);
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("authentication");

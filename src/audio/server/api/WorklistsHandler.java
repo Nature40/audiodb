@@ -14,6 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.JsonUtil;
+import util.Web;
 
 public class WorklistsHandler extends AbstractHandler {
 	private final Broker broker;
@@ -49,7 +50,7 @@ public class WorklistsHandler extends AbstractHandler {
 			e.printStackTrace();
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);
@@ -58,7 +59,7 @@ public class WorklistsHandler extends AbstractHandler {
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 

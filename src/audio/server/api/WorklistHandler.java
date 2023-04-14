@@ -77,7 +77,7 @@ public class WorklistHandler {
 		if(worklist == null) {
 			throw new RuntimeException("worklist not found");
 		}
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 
@@ -91,7 +91,7 @@ public class WorklistHandler {
 		Worklist worklist = worklistStore.getWorklistByd(worklistId);
 		if(worklist == null) {
 			response.setStatus(HttpStatus.NOT_FOUND_404);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -111,7 +111,7 @@ public class WorklistHandler {
 
 		if(worklistEntry == null) {
 			response.setStatus(HttpStatus.NOT_FOUND_404);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -120,7 +120,7 @@ public class WorklistHandler {
 			return;
 		}
 		
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 
@@ -142,7 +142,7 @@ public class WorklistHandler {
 		Worklist worklist = worklistStore.getWorklistByd(worklistId);
 		if(worklist == null) {
 			response.setStatus(HttpStatus.NOT_FOUND_404);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -162,7 +162,7 @@ public class WorklistHandler {
 
 		if(worklistEntry == null) {
 			response.setStatus(HttpStatus.NOT_FOUND_404);
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("error");
@@ -171,7 +171,7 @@ public class WorklistHandler {
 			return;
 		}
 		
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 

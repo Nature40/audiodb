@@ -25,6 +25,7 @@ import util.yaml.YamlUtil;
 
 public class SampleManager {
 	
+	public static final boolean UNKNOWN_LOCATION_AS_DEVICE = true;
 
 	private final Path root_path;
 	private final Path root_data_path;
@@ -166,9 +167,15 @@ public class SampleManager {
 					}
 					if(location == null) {
 						location = yamlMap.optString("location", null);
+					}
+					if(location == null && UNKNOWN_LOCATION_AS_DEVICE && device_id != null) {
+						location = "(device) " + device_id;
 					}					
 					String sample_rel_path = projectConfig.root_path.relativize(root.resolve(sample_file)).toString(); 
-					boolean locked = false; // TODO
+					
+					int sampleLen = yamlMap.optInt("Samples", -1);					
+					boolean locked = sampleLen <= 0; // lock empty file -> file is not listed
+					
 					if(sqlconnector.exist(id)) {
 						Logger.info("update sample " + id);
 						sqlconnector.update(id, projectConfig.project, meta_rel_path, sample_rel_path, location, timestamp, last_modified, locked, device_id);

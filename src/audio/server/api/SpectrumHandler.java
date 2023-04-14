@@ -144,6 +144,7 @@ public class SpectrumHandler {
 		Logger.info(Timer.stop("render image"));
 
 		Timer.start("send image");
+		response.setContentType(Web.MIME_PNG);
 		image.writePngCompressed(response.getOutputStream());
 		Logger.info(Timer.stop("send image"));
 	}

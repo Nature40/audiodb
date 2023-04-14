@@ -45,7 +45,7 @@ public class AudioHandler {
 		double overwrite_sampling_rate = Web.getDouble(request, "overwrite_sampling_rate", Double.NaN);	
 
 		if(fOriginal || (!Double.isFinite(overwrite_sampling_rate) && !isAbove(file, 48000))) {
-			sendFile(file, rangeText, response, "audio/wave");
+			sendFile(file, rangeText, response, Web.MIME_WAVE);
 		} else {
 			//if(overwrite_sampling_rate <= 0d || overwrite_sampling_rate > 192000d) {
 			if(overwrite_sampling_rate <= 0d || overwrite_sampling_rate > 1000000d) {

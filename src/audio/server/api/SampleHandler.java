@@ -19,6 +19,7 @@ import audio.Sample;
 import audio.SampleUserLocked;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import util.Web;
 
 public class SampleHandler {
 	
@@ -107,7 +108,7 @@ public class SampleHandler {
 			}
 		}		
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("result");
@@ -117,7 +118,7 @@ public class SampleHandler {
 
 	private void handleMeta(Sample sample, Request request, HttpServletResponse response) throws IOException {
 		//response.setContentType("text/yaml; charset=utf-8");
-		response.setContentType("text/plain; charset=utf-8");
+		response.setContentType(Web.MIME_TEXT);
 
 		LinkedHashMap<String, Object> yamlMap = new LinkedHashMap<String, Object>();
 

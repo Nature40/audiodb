@@ -104,7 +104,7 @@ public class Sample2Handler {
 	}
 
 	private void handleRoot_GET(Sample2 sample, Request request, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 
 		boolean reqSamples = Web.getFlagBoolean(request, "samples");
@@ -258,7 +258,7 @@ public class Sample2Handler {
 			}
 		}		
 
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("result");

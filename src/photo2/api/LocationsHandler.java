@@ -10,6 +10,7 @@ import org.json.JSONWriter;
 import audio.Broker;
 import jakarta.servlet.http.HttpServletResponse;
 import photo2.PhotoDB2;
+import util.Web;
 
 public class LocationsHandler {
 
@@ -33,13 +34,13 @@ public class LocationsHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}		
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {		
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		writeLocationsJSON(json);		

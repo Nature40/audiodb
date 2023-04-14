@@ -23,6 +23,7 @@ import audio.processing.Metric;
 import audio.processing.Metrics;
 import audio.processing.SampleProcessor;
 import de.siegmar.fastcsv.writer.CsvWriter;
+import util.Web;
 import util.collections.vec.Vec;
 
 public class QueryHandler extends AbstractHandler {
@@ -51,7 +52,7 @@ public class QueryHandler extends AbstractHandler {
 					String errorText = "unknown method in " + baseRequest.getMethod();
 					Logger.error(errorText);
 					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					response.setContentType("text/plain");
+					response.setContentType(Web.MIME_TEXT);
 					response.getWriter().print(errorText);		
 				}
 				}
@@ -72,7 +73,7 @@ public class QueryHandler extends AbstractHandler {
 						String errorText = "unknown method in " + baseRequest.getMethod();
 						Logger.error(errorText);
 						response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-						response.setContentType("text/plain");
+						response.setContentType(Web.MIME_TEXT);
 						response.getWriter().print(errorText);		
 					}
 					}
@@ -85,13 +86,13 @@ public class QueryHandler extends AbstractHandler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
 	}
 
 	private void handleMetrics(Request request, Response response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("metrics");
@@ -123,7 +124,7 @@ public class QueryHandler extends AbstractHandler {
 			metrics.add(metric);
 		}
 
-		response.setContentType("text/csv;charset=utf-8");
+		response.setContentType(Web.MIME_CSV);
 		try (CsvWriter csv = CsvWriter.builder().build(response.getWriter())) {
 			String[] header = new String[HEADER_META_ROWS + metrics.size()];
 			header[0] = "sample";

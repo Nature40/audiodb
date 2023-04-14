@@ -23,8 +23,13 @@ public final class Web {
 
 	private Web(){}
 
-	public static final String MIME_JSON = "application/json";
-	public static final String MIME_CSV = "text/csv";
+	public static final String MIME_TEXT = "text/plain;charset=utf-8";
+	public static final String MIME_HTML = "text/html;charset=utf-8";
+	public static final String MIME_JSON = "application/json;charset=utf-8";
+	public static final String MIME_CSV = "text/csv;charset=utf-8";
+	public static final String MIME_WAVE = "audio/wave";
+	public static final String MIME_PNG = "image/png";
+	public static final String MIME_JPEG = "image/jpeg";
 
 	public static double getDouble(Request request, String name) {
 		String text = request.getParameter(name);

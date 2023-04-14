@@ -58,7 +58,7 @@ public class ProjectHandler {
 			Logger.error(e);
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.setContentType("text/plain;charset=utf-8");
+				response.setContentType(Web.MIME_TEXT);
 				response.getWriter().println("ERROR: " + e.getMessage());
 			} catch(Exception e1) {
 				Logger.warn(e1);
@@ -79,7 +79,7 @@ public class ProjectHandler {
 		if(!config.project.equals(project)) {
 			throw new RuntimeException("unknown project");
 		}		
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		json.key("project");		

@@ -43,7 +43,7 @@ public class Photos2Handler {
 			e.printStackTrace();
 			Logger.error(e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			response.setContentType("text/plain;charset=utf-8");
+			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}		
 	}
@@ -52,7 +52,7 @@ public class Photos2Handler {
 		if(Web.has(request, "review_list")) {
 			String review_list = Web.getString(request, "review_list");
 
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("photos");
@@ -66,7 +66,7 @@ public class Photos2Handler {
 			String project = Web.getString(request, "project");
 			String location = Web.getString(request, "location");
 
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("photos");
@@ -77,7 +77,7 @@ public class Photos2Handler {
 			json.endArray();
 			json.endObject();
 		} else {
-			response.setContentType("application/json");
+			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("photos");

@@ -29,6 +29,7 @@ import audio.UserLabel;
 import audio.labeling.LabelingList;
 import audio.labeling.LabelingListEntry;
 import util.JsonUtil;
+import util.Web;
 import util.collections.vec.Vec;
 
 public class Labeling_listHandler {
@@ -140,7 +141,7 @@ public class Labeling_listHandler {
 	}
 	
 	public void sendLabelingListAndSampleLabels(String labeling_list_id, LabelingList labelingList, Sample sample, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		writeLabeling_list(labeling_list_id, labelingList, json);
@@ -151,7 +152,7 @@ public class Labeling_listHandler {
 	}
 
 	public void sendLabeling_list(String labeling_list_id, LabelingList labelingList, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		writeLabeling_list(labeling_list_id, labelingList, json);

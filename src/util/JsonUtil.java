@@ -141,7 +141,7 @@ public class JsonUtil {
 	}
 
 	public static void write(HttpServletResponse response, Consumer<JSONWriter> writer) throws IOException {
-		response.setContentType("application/json");
+		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 		writer.accept(json);
