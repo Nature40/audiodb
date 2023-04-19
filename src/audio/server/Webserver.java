@@ -5,6 +5,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
 import jakarta.servlet.ServletException;
@@ -39,6 +40,7 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import audio.Broker;
+import audio.CommandlineConfig;
 import audio.Config;
 import audio.server.api.AccountHandler;
 import audio.server.api.AccountsHandler;
@@ -116,9 +118,13 @@ public class Webserver {
 
 
 
-	public static void main(String[] srgs) throws Exception {
+	public static void main(String[] args) throws Exception {
+		
+		Logger.info("Args: " + Arrays.toString(args));
+		
+		CommandlineConfig commandlineConfig = new CommandlineConfig(new CommandlineConfig.Builder(args));
 
-		Broker broker = new Broker();
+		Broker broker = new Broker(commandlineConfig);
 		Config config = broker.config();
 
 		//Logger.info("starting server");
@@ -183,13 +189,15 @@ public class Webserver {
 		handlerList.addHandler(createContext("/query", true, new QueryHandler(broker)));
 		handlerList.addHandler(createContext("/timeseries", true, new TimeseriesHandler(broker)));
 		handlerList.addHandler(createContext("/web", true, webcontent()));
-		handlerList.addHandler(new BaseRedirector("/web/"));
+		//handlerList.addHandler(new BaseRedirector("/web/"));
+		handlerList.addHandler(new BaseRedirector("/index"));
 		handlerList.addHandler(createContext("/WebAuthn", true, new WebAuthnHandler(broker)));
 		//if(broker.config().login) {
 		handlerList.addHandler(createContext("/logout", true, new LogoutHandler()));
 		//}
 
 		handlerList.addHandler(createContext("/photodb2", true, new PhotoDB2Handler(broker)));
+		handlerList.addHandler(createContext("/index", true, new IndexPage(broker)));
 
 		handlerList.addHandler(new NoContentHandler());		
 		server.setHandler(handlerList);

@@ -42,7 +42,7 @@ public final class AudioProjectConfig {
 
 	public static class Builder {
 		public String project = "default_project"; // project name is needed
-		public Path root_path = Paths.get("data"); // root_path is needed
+		public Path root_path = null; // root_path is needed, if null  -> no audio project
 		public Path root_data_path = null; // optional; if null -> root_path is used as data file directory
 		public Path worklist_path = null;  // nullable		
 		public Path device_inventory_file = null;  // nullable

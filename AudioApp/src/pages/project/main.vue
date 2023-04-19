@@ -36,6 +36,12 @@
           <span v-if="sampleRate !== playerSampleRate"><br><a :href="audioURL" :download="sample.id"><q-icon name="file_download" size="sm" />Current playback speed</a></span>
           <span v-if="sampleRate !== playerSampleRate"><br><a :href="audioOriginalSpeedURL" :download="sample.id"><q-icon name="file_download" size="sm" />Original playback speed (max. 48 kHz)</a></span>
           <span><br><a :href="audioOriginalURL" :download="sample.id"><q-icon name="file_download" size="sm" />Original audio file</a></span>
+          <span>
+            <br>
+            <a :href="audioMetaYamlURL" target="_blank"><q-icon name="file_download" size="sm" />meta.yaml file</a>
+            <q-btn @click="{$refs.metaview.sample = sample.id; $refs.metaview.show = true;}" icon="zoom_in" title="Meta view" padding="xs" flat round></q-btn>
+            <meta-view ref="metaview"/>
+          </span>
         </div>
       </q-btn-dropdown>
 
@@ -407,7 +413,7 @@
         </div>
       </q-linear-progress>
       <q-badge v-if="spectrogramImagesErrorCount > 0" style="position: absolute; top: 0px; left: 0px;" color="white" text-color="accent">
-        ERROR laoding spectrogram
+        ERROR loading spectrogram
         <q-btn color="grey" @click="spectrogramImagesErrorCount = 0; loadSpectrogramImage(spectrogramId, 0);">retry</q-btn>
       </q-badge>                
       <q-badge v-if="audioWaiting" color="yellow-14" text-color="accent" label="loading audio" style="position: absolute; top: 10px; right: 10px;"/>    
@@ -517,6 +523,7 @@ import {mapState} from 'vuex';
 import AudioBrowser from 'components/browser';
 import AudioSettings from 'components/settings';
 import DetailView from 'components/detail';
+import MetaView from 'components/meta-view';
 
 export default defineComponent({
   name: 'Main',
@@ -525,6 +532,7 @@ export default defineComponent({
     AudioBrowser,
     AudioSettings,
     DetailView,
+    MetaView,
   },
 
   data() {
@@ -684,6 +692,14 @@ export default defineComponent({
       }
       const baseURL = this.$api.defaults.baseURL;
       var url = baseURL + 'samples2/' + this.sample.id + '/audio?original';
+      return url;
+    },
+    audioMetaYamlURL() {
+      if(!this.sample) {
+        return undefined;
+      }
+      const baseURL = this.$api.defaults.baseURL;
+      var url = baseURL + 'samples2/' + this.sample.id + '/meta.yaml';
       return url;
     },
     staticLinesCanvasPosY() {

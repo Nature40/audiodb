@@ -20,6 +20,7 @@ import util.yaml.YamlMap;
 
 public class Broker {
 
+	public final CommandlineConfig commandlineConfig;
 	private Config config;
 	private RoleManager roleManager;
 	private AccountManager accountManager;
@@ -57,6 +58,11 @@ public class Broker {
 	private Object worklistStoreLock = new Object();
 
 	public Broker() {
+		this(CommandlineConfig.DEFAULT);
+	}
+
+	public Broker(CommandlineConfig commandlineConfig) {
+		this.commandlineConfig = commandlineConfig;
 		//samples(); // preload sample metadata
 		//reviewListManager();  // preload review_list metadata
 	}

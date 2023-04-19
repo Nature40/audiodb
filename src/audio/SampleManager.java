@@ -24,7 +24,7 @@ import util.yaml.YamlMap;
 import util.yaml.YamlUtil;
 
 public class SampleManager {
-	
+
 	public static final boolean UNKNOWN_LOCATION_AS_DEVICE = true;
 
 	private final Path root_path;
@@ -35,7 +35,7 @@ public class SampleManager {
 	private final Connection conn;
 	public final TlSampleManagerConnector tlSampleManagerConnector;	
 	public final DeviceInventory deviceInventory;
-	
+
 	public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	public SampleManager(Broker broker) {
@@ -50,7 +50,9 @@ public class SampleManager {
 			throw new RuntimeException(e);
 		}
 		tlSampleManagerConnector.get().init(false);
-		refresh(false);	
+		if(!broker.commandlineConfig.no_yaml_scan) {
+			refresh(false);	
+		}
 	}
 
 	public static String metaRelPathToID(String project, String meta_rel_path) {
@@ -86,17 +88,17 @@ public class SampleManager {
 			Logger.warn("error in " + traversing_path + "   " + e);
 		}
 	}
-	
+
 	@FunctionalInterface
 	public interface TraverseYamlConsumer {
 		void apply(AudioProjectConfig projectConfig, Path traversing_path, Path sub_path);
 	}
-	
+
 	public void traverseYamlFiles(TraverseYamlConsumer consumer) throws IOException {
 		AudioProjectConfig projectConfig = broker.config().audioConfig;
 		traverseYamlFiles(projectConfig, projectConfig.root_path, consumer);
 	}
-	
+
 	private void traverseYamlFiles(AudioProjectConfig projectConfig, Path traversing_path, TraverseYamlConsumer consumer) throws IOException {
 		Logger.info("traverse " + traversing_path);
 		try {
@@ -172,10 +174,10 @@ public class SampleManager {
 						location = "(device) " + device_id;
 					}					
 					String sample_rel_path = projectConfig.root_path.relativize(root.resolve(sample_file)).toString(); 
-					
+
 					int sampleLen = yamlMap.optInt("Samples", -1);					
 					boolean locked = sampleLen <= 0; // lock empty file -> file is not listed
-					
+
 					if(sqlconnector.exist(id)) {
 						Logger.info("update sample " + id);
 						sqlconnector.update(id, projectConfig.project, meta_rel_path, sample_rel_path, location, timestamp, last_modified, locked, device_id);
@@ -220,7 +222,7 @@ public class SampleManager {
 			Logger.info(Timer.stop("traverse"));
 		}
 	}
-	
+
 	abstract class AbstractSampleConverter implements SampleRowConsumer {
 		@Override
 		public final void accept(String id, String project, String meta_rel_path, String sample_rel_path, String location, long timestamp, long lastModified, boolean locked, String device) {
@@ -229,10 +231,10 @@ public class SampleManager {
 		}
 		public abstract void accept(Sample2 sample);
 	}
-	
+
 	class SampleConverter extends AbstractSampleConverter {
 		private final Consumer<Sample2> consumer;
-		
+
 		SampleConverter(Consumer<Sample2> consumer) {
 			this.consumer = consumer;
 		}
@@ -242,7 +244,7 @@ public class SampleManager {
 			consumer.accept(sample);			
 		}		
 	}
-	
+
 	class SampleHolder extends AbstractSampleConverter {
 		public Sample2 sample;
 
@@ -255,7 +257,7 @@ public class SampleManager {
 	public void forEach(Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEach(new SampleConverter(consumer));
 	}
-	
+
 	public void forEachAtTimerange(long start, long end, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtTimerange(start, end, new SampleConverter(consumer));
 	}
@@ -263,7 +265,7 @@ public class SampleManager {
 	public void forEachPaged(Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPaged(new SampleConverter(consumer), limit, offset);
 	}
-	
+
 	public void forEachAtTimerangePaged(long start, long end, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachAtTimerangePaged(start, end, new SampleConverter(consumer), limit, offset);
 	}
@@ -271,7 +273,7 @@ public class SampleManager {
 	public void forEachAtLocation(String location, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtLocation(location, new SampleConverter(consumer));
 	}
-	
+
 	public void forEachAtLocationAtTimerange(String location, long start, long end, Consumer<Sample2> consumer) {
 		tlSampleManagerConnector.get().forEachAtLocationAtTimerange(location, start, end, new SampleConverter(consumer));
 	}
@@ -279,11 +281,11 @@ public class SampleManager {
 	public void forEachPagedAtLocation(String location, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocation(location, new SampleConverter(consumer), limit, offset);
 	}
-	
+
 	public void forEachPagedAtLocationAtTimerange(String location, long start, long end, Consumer<Sample2> consumer, int limit, int offset) {
 		tlSampleManagerConnector.get().forEachPagedAtLocationAtTimerange(location, start, end, new SampleConverter(consumer), limit, offset);
 	}
-	
+
 	private Sample2 convertRow(ResultSet res) {
 		SampleHolder sampleHolder = new SampleHolder();
 		SampleManagerConnector.consumeRow(res, sampleHolder);

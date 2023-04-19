@@ -4,21 +4,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import util.Web;
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.tinylog.Logger;
 
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.data.AuthenticationData;
@@ -36,6 +28,11 @@ import audio.Account;
 import audio.Broker;
 import audio.WebAuthn;
 import audio.WebAuthnAccount;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import util.Web;
 
 public class WebAuthnHandler extends AbstractHandler {
 	

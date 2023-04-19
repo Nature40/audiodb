@@ -4,6 +4,9 @@
 <title>App Index</title>
 <meta charset=utf-8>
 
+{{#hasAudioProject}}{{^hasPhotoProject}}<meta http-equiv="refresh" content="0; url=/web/audio" />{{/hasPhotoProject}}{{/hasAudioProject}}	
+{{^hasAudioProject}}{{#hasPhotoProject}}<meta http-equiv="refresh" content="0; url=/web/photo" />{{/hasPhotoProject}}{{/hasAudioProject}}	
+
 <style>
 body {
 	background-color: #eae7e0; 
@@ -37,9 +40,9 @@ li {
 <h1>App Index</h1>
 
 <ul>
-	<!--<li><a href="/web/app">Go to old <b>app for audio</b> review, labelling, listening, visualisation</a></li>-->
-	<li><a href="/web/photo">Go to <b>PhotoApp</b></a></li>
-	<li><a href="/web/audio">Go to <b>AudioApp</b></a></li>
+	{{#hasAudioProject}}<li><a href="/web/audio">Go to <b>AudioApp</b></a></li>{{/hasAudioProject}}
+	{{#hasPhotoProject}}<li><a href="/web/photo">Go to <b>PhotoApp</b></a></li>{{/hasPhotoProject}}
+	{{^hasAudioProject}}{{^hasPhotoProject}}<b>Neither a audio project nor a photo project has been configured.</b>{{/hasPhotoProject}}{{/hasAudioProject}}	
 </ul>
 
 </body>

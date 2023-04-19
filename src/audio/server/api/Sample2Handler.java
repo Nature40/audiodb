@@ -1,6 +1,8 @@
 package audio.server.api;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.BitSet;
 import java.util.Collections;
@@ -71,6 +73,14 @@ public class Sample2Handler {
 					audioHandler.handle(sample, request, response);
 				} finally {
 					sampleManager.lock.readLock().unlock();
+				}
+				break;
+			}
+			case "meta.yaml": {
+				if("GET".equals(request.getMethod())) {
+					handleMetaYaml_GET(sample, request, response);
+				} else {
+					throw new RuntimeException("no call");
 				}
 				break;
 			}
@@ -264,5 +274,12 @@ public class Sample2Handler {
 		json.key("result");
 		json.value("OK");
 		json.endObject();
+	}
+
+	private void handleMetaYaml_GET(Sample2 sample, Request request, HttpServletResponse response) throws IOException {
+		try(InputStream inputStream = new FileInputStream(sample.metaPath.toFile())) {
+			response.setContentType(Web.MIME_TEXT);
+			inputStream.transferTo(response.getOutputStream());
+		}	
 	}
 }
