@@ -39,6 +39,7 @@ public final class AudioProjectConfig {
 	private final Map<String, AudioProfile> profileMap;
 
 	public final int audio_cache_max_files;
+	public final String time_zone;
 
 	public static class Builder {
 		public String project = "default_project"; // project name is needed
@@ -65,6 +66,7 @@ public final class AudioProjectConfig {
 		public Map<String, AudioProfile> profileMap = null;
 
 		public int audio_cache_max_files = 20;
+		public String time_zone = "UTC";
 
 		public Builder() {}
 
@@ -100,6 +102,7 @@ public final class AudioProjectConfig {
 			}
 
 			audio_cache_max_files = yamlMap.optInt("audio_cache_max_files", audio_cache_max_files);
+			yamlMap.optFunString("time_zone", s -> time_zone = s);
 		}
 	}
 
@@ -128,6 +131,7 @@ public final class AudioProjectConfig {
 		profileMap = builder.profileMap == null ? null : new LinkedHashMap<String, AudioProfile>(builder.profileMap);
 
 		audio_cache_max_files = builder.audio_cache_max_files;
+		time_zone = builder.time_zone;
 		Logger.info(this);
 	}
 
@@ -157,6 +161,7 @@ public final class AudioProjectConfig {
 				+ player_fft_cutoff_lower_frequency + ", player_fft_cutoff_upper_frequency="
 				+ player_fft_cutoff_upper_frequency + ", player_mouse_move_factor=" + player_mouse_move_factor
 				+ ", detail_fft_window_overlap_percent=" + detail_fft_window_overlap_percent + ", profileMap="
-				+ profileMap + ", audio_cache_max_files=" + audio_cache_max_files + "]";
+				+ profileMap + ", audio_cache_max_files=" + audio_cache_max_files + ", time_zone="
+				+ time_zone + "]";
 	}
 }

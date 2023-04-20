@@ -7,17 +7,24 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.function.LongConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONWriter;
 
 public class AudioTimeUtil {
-	
+
 	public static final DateTimeFormatter DATE_SPACE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 	private static final LocalDateTime UNIX_EPOCH = LocalDateTime.of(1970,1,1,0,0);
 
 	public static LocalDateTime ofAudiotime(long timestamp) {
 		LocalDateTime datetime = UNIX_EPOCH.plusSeconds(timestamp);	
+		return datetime;
+	}
+	
+	public static LocalDateTime ofAudiotime(long timestamp, int timeOffset) {
+		LocalDateTime datetime = UNIX_EPOCH.plusSeconds(timestamp + timeOffset);	
 		return datetime;
 	}
 
@@ -160,10 +167,20 @@ public class AudioTimeUtil {
 	public static LongConsumer timestampDateTimeWriter(JSONWriter json) {
 		return timestamp -> writeTimestampDateTime(json, timestamp);
 	}
+	
+	public static LongConsumer timestampDateTimeWriter(JSONWriter json, int timeOffset) {
+		return timestamp -> writeTimestampDateTime(json, timestamp, timeOffset);
+	}
 
 	public static void writeTimestampDateTime(JSONWriter json, long timestamp) {
 		json.object();
 		writePropsTimestampDateTime(json, timestamp);			
+		json.endObject();
+	}
+	
+	public static void writeTimestampDateTime(JSONWriter json, long timestamp, int timeOffset) {
+		json.object();
+		writePropsTimestampDateTime(json, timestamp, timeOffset);			
 		json.endObject();
 	}
 
@@ -179,13 +196,35 @@ public class AudioTimeUtil {
 		}				
 	}
 
+	public static void writePropsTimestampDateTime(JSONWriter json, long timestamp, int timeOffset) {
+		json.key("timestamp");
+		json.value(timestamp);
+		if(timestamp > 0) {
+			LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(timestamp + timeOffset);
+			json.key("date");
+			json.value(dateTime.toLocalDate());
+			json.key("time");
+			json.value(dateTime.toLocalTime());
+		}				
+	}
+
 	public static LongConsumer timestampDateWriter(JSONWriter json) {
 		return timestamp -> writeTimestampDate(json, timestamp);
+	}
+	
+	public static LongConsumer timestampDateWriter(JSONWriter json, int timeOffset) {
+		return timestamp -> writeTimestampDate(json, timestamp, timeOffset);
 	}
 
 	public static void writeTimestampDate(JSONWriter json, long timestamp) {
 		json.object();
 		writePropsTimestampDate(json, timestamp);			
+		json.endObject();
+	}
+	
+	public static void writeTimestampDate(JSONWriter json, long timestamp, int timeOffset) {
+		json.object();
+		writePropsTimestampDate(json, timestamp, timeOffset);			
 		json.endObject();
 	}
 
@@ -203,5 +242,46 @@ public class AudioTimeUtil {
 			json.key("day");
 			json.value(dateTime.getDayOfMonth());
 		}				
+	}
+	
+	public static void writePropsTimestampDate(JSONWriter json, long timestamp, int timeOffset) {
+		json.key("timestamp");
+		json.value(timestamp);
+		if(timestamp > 0) {
+			LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(timestamp + timeOffset);
+			json.key("date");
+			json.value(dateTime.toLocalDate());
+			json.key("year");
+			json.value(dateTime.getYear());
+			json.key("month");
+			json.value(dateTime.getMonthValue());
+			json.key("day");
+			json.value(dateTime.getDayOfMonth());
+		}				
+	}
+
+	//private final static Pattern UTC_OFFSET_TIME_ZONE_PATTERN = Pattern.compile(".*\\(UTC([-+]?[0-9]*)\\).*");	
+	private final static Pattern UTC_OFFSET_TIME_ZONE_PATTERN = Pattern.compile("^UTC([-+][0-9][0-9]?)$");
+	private final static int HOUR_OFFSET = 60*60;
+
+	public static int getTimeZoneOffsetSeconds(String timeZone) {
+		if(timeZone == null) {
+			return 0;
+		}
+		timeZone = timeZone.strip();
+		if(timeZone.isEmpty()) {
+			return 0;
+		}
+		if(timeZone.equals("UTC")) {
+			return 0;
+		}
+		final Matcher offsetMatcher = UTC_OFFSET_TIME_ZONE_PATTERN.matcher(timeZone);
+		if(offsetMatcher.matches() && offsetMatcher.groupCount() == 1) {
+			String offsetText = offsetMatcher.group(1);
+			int offset = Integer.parseInt(offsetText);
+			return offset * HOUR_OFFSET;
+		} else {
+			throw new RuntimeException("unknown time zone: |" + timeZone + "|" + offsetMatcher.matches());
+		}
 	}
 }

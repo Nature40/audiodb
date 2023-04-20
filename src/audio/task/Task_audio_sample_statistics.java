@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Locale;
 
 import org.tinylog.Logger;
@@ -32,10 +35,12 @@ import util.collections.vec.Vec;
 @Param(name = "col_sample", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'sample' in CSV output. Folder path including filename.")
 @Param(name = "col_device", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'device' in CSV output.")
 @Param(name = "col_duration", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'duration' in CSV output.")
-@Param(name = "col_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'time_zone' in CSV output.")
+@Param(name = "col_original_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'original_time_zone' of recording in CSV output. This may not be identical to the time zone of the 'time' column.")
 @Param(name = "col_temperature", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'temperature' in CSV output.")
 @Param(name = "col_file_size", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'file_size' in CSV output and sum up total file size in log message.")
 @Param(name = "filename", type = Type.STRING, preset = "samples.csv", description = "Filename of output CSV-file.")
+@Param(name = "time_zone", type = Type.STRING, preset = "", description = "Set time zone of the 'time' column. e.g. UTC+1  If left empty, default time zone of project will be set.")
+@Param(name = "include_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "In 'time' column, include the time zone marker. If false, time zone marker is not included in output, but time zone conversions are still applied.")
 @Param(name = "filter_by_location", type = Type.STRING, preset = "", description = "(optional) Process the specified location only.")
 @Param(name = "filter_by_device", type = Type.STRING, preset = "", description = "(optional) Process the specified device id only.")
 @Param(name = "filter_by_time", type = Type.STRING, preset = "", description = "(optional) Process the specified range of time only. Format: yyyy-MM-ddTHH:mm:ss  A shortened format leads to a range of time. e.g. 2022 means all samples from year 2022. e.g. 2022-02 means all samples from February at year 2022.")
@@ -64,10 +69,15 @@ public class Task_audio_sample_statistics extends Task {
 		boolean col_sample = this.ctx.getParamBoolean("col_sample");
 		boolean col_device = this.ctx.getParamBoolean("col_device");
 		boolean col_duration = this.ctx.getParamBoolean("col_duration");
-		boolean col_time_zone = this.ctx.getParamBoolean("col_time_zone");
+		boolean col_original_time_zone = this.ctx.getParamBoolean("col_original_time_zone");
 		boolean col_temperature = this.ctx.getParamBoolean("col_temperature");
 		boolean col_file_size = this.ctx.getParamBoolean("col_file_size");
 		String filename = this.ctx.getParamString("filename");
+		String reqTimeZone = this.ctx.getParamString("time_zone");
+		boolean include_time_zone = this.ctx.getParamBoolean("include_time_zone");
+		String tz = reqTimeZone.isBlank() ? ctx.broker.config().audioConfig.time_zone : reqTimeZone;
+		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(tz);
+		ZoneOffset timeZoneOffset = include_time_zone ? ZoneOffset.ofTotalSeconds(timeZoneOffsetSeconds) : null;
 		String filter_by_location = this.ctx.getParamString("filter_by_location");
 		String filter_by_device = this.ctx.getParamString("filter_by_device");
 		String filter_by_time = this.ctx.getParamString("filter_by_time");
@@ -103,8 +113,8 @@ public class Task_audio_sample_statistics extends Task {
 			if(col_duration) {
 				cols.add("duration");	
 			}
-			if(col_time_zone) {
-				cols.add("time_zone");	
+			if(col_original_time_zone) {
+				cols.add("original_time_zone");	
 			}			
 			if(col_temperature) {
 				cols.add("temperature");	
@@ -133,8 +143,15 @@ public class Task_audio_sample_statistics extends Task {
 						row.add(location);
 					}
 					if(col_time) {
-						String timeName = AudioTimeUtil.ofAudiotime(sample.timestamp).toString();
-						row.add(timeName);
+						LocalDateTime dt = AudioTimeUtil.ofAudiotime(sample.timestamp, timeZoneOffsetSeconds);
+						if(include_time_zone) {
+							ZonedDateTime zdt = ZonedDateTime.of(dt, timeZoneOffset);
+							String timeName = zdt.toString();
+							row.add(timeName);
+						} else {
+							String timeName = dt.toString();
+							row.add(timeName);
+						}
 					}
 					if(col_path || col_filename || col_sample) {
 						Path path = root_data_path.relativize(sample.samplePath);
@@ -165,7 +182,7 @@ public class Task_audio_sample_statistics extends Task {
 							row.add("NA");
 						}					
 					}
-					if(col_time_zone) {
+					if(col_original_time_zone) {
 						String utc_ = sample.getUTC();
 						String utc = utc_ == null ? "" : utc_;
 						row.add(utc);

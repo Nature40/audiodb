@@ -84,6 +84,8 @@ public class Samples2Handler extends AbstractHandler {
 		boolean flagCount = Web.getFlagBoolean(request, "count");
 		boolean flagDevices = Web.getFlagBoolean(request, "devices");
 		boolean flagSamples = Web.getFlagBoolean(request, "samples");
+		String reqTimeZone = Web.getString(request, "tz", "UTC");
+		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
 
 		Consumer<Sample2> sampleWriter = sample -> {
 			json.object();
@@ -100,7 +102,7 @@ public class Samples2Handler extends AbstractHandler {
 				//json.key("timestamp");
 				//json.value(sample.timestamp);
 				//Logger.info(sample.timestamp);
-				LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(sample.timestamp);
+				LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(sample.timestamp, timeZoneOffsetSeconds);
 				json.key("date");
 				json.value(dateTime.toLocalDate());
 				json.key("time");

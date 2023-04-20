@@ -43,6 +43,9 @@ state: {
   detail_fft_window_overlap_percent: 0.75,
   default_detail_fft_window_overlap_percent: 0.75,
 
+  time_zone: 'UTC',
+  default_time_zone: 'UTC',  
+
   profiles: {},
   profileIds: [''],
   profileDefaultId: '(Project defaults)',
@@ -120,6 +123,10 @@ mutations: {
     if(settings.detail_fft_window_overlap_percent !== undefined) {
       state.default_detail_fft_window_overlap_percent = settings.detail_fft_window_overlap_percent;    
     }
+
+    if(settings.time_zone !== undefined) {
+      state.default_time_zone = settings.time_zone;    
+    }
   },
   set(state, settings) {
     if(settings.player_fft_window !== undefined) {
@@ -157,6 +164,10 @@ mutations: {
 
     if(settings.detail_fft_window_overlap_percent !== undefined) {
       state.detail_fft_window_overlap_percent = settings.detail_fft_window_overlap_percent;    
+    }
+
+    if(settings.time_zone !== undefined) {
+      state.time_zone = settings.time_zone;    
     }
   },  
   setProfile(state, profileID) {

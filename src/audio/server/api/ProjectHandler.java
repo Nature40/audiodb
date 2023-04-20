@@ -75,6 +75,9 @@ public class ProjectHandler {
 		String dates_of_location = Web.getString(request, "dates_of_location", null);
 		boolean fInventory = Web.getFlagBoolean(request, "inventory");
 		boolean fSamplesTableCount = Web.getFlagBoolean(request, "samples_table_count");
+		String reqTimeZone = Web.getString(request, "tz", "UTC");
+		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
+		
 		AudioProjectConfig config = broker.config().audioConfig;		
 		if(!config.project.equals(project)) {
 			throw new RuntimeException("unknown project");
@@ -118,6 +121,8 @@ public class ProjectHandler {
 		json.value(config.player_mouse_move_factor);
 		json.key("detail_fft_window_overlap_percent");
 		json.value(config.detail_fft_window_overlap_percent);
+		json.key("time_zone");
+		json.value(config.time_zone);		
 		
 		if(config.hasProfiles()) {
 			json.key("profiles");
@@ -180,8 +185,8 @@ public class ProjectHandler {
 			json.value(samples_table_count);
 		}
 
-		LongConsumer timestampDateTimeWriter = AudioTimeUtil.timestampDateTimeWriter(json); 		
-		LongConsumer timestampDateWriter = AudioTimeUtil.timestampDateWriter(json);
+		LongConsumer timestampDateTimeWriter = AudioTimeUtil.timestampDateTimeWriter(json, timeZoneOffsetSeconds); 		
+		LongConsumer timestampDateWriter = AudioTimeUtil.timestampDateWriter(json, timeZoneOffsetSeconds);
 
 		if(fTimestamps) {
 			json.key("timestamps");
@@ -231,27 +236,11 @@ public class ProjectHandler {
 				json.value(entry.location);
 				if(entry.start != Long.MIN_VALUE) {
 					json.key("start");
-					json.object();
-					json.key("timestamp");
-					json.value(entry.start);
-					LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(entry.start);
-					json.key("date");
-					json.value(dateTime.toLocalDate());
-					json.key("time");
-					json.value(dateTime.toLocalTime());
-					json.endObject();
+					AudioTimeUtil.writeTimestampDateTime(json, entry.start, timeZoneOffsetSeconds);					
 				}
 				if(entry.end != Long.MAX_VALUE) {
 					json.key("end");
-					json.object();
-					json.key("timestamp");
-					json.value(entry.end);
-					LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(entry.end);
-					json.key("date");
-					json.value(dateTime.toLocalDate());
-					json.key("time");
-					json.value(dateTime.toLocalTime());
-					json.endObject();
+					AudioTimeUtil.writeTimestampDateTime(json, entry.end, timeZoneOffsetSeconds);	
 				}
 				json.endObject();
 			});

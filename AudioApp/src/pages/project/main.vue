@@ -8,7 +8,7 @@
         <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :class="{'element-hidden': $refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.movePrevSelectedSampleRequested = true" title="Move to previous sample on the browsed list of samples"/>
         <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
         <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
-        <span class="text-weight-light text-grey-7" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}}</span>
+        <span class="text-weight-light text-grey-9" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}} <span class="text-weight-light text-grey-7" style="font-size: 0.7em;">{{time_zone}}</span></span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px; font-family: monospace;" v-if="sample.device"><q-icon name="memory"/>{{sample.device}}</span>
         <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
         <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
@@ -598,7 +598,9 @@ export default defineComponent({
       player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
       player_time_expansion_factor: state => state.project.player_time_expansion_factor,
       player_static_lines_frequency: state => state.project.player_static_lines_frequency,
-      player_mouse_move_factor: state => state.project.player_mouse_move_factor, 
+      player_mouse_move_factor: state => state.project.player_mouse_move_factor,
+      time_zone: state => state.project.time_zone,  
+      project_data: state => state.project.data,
     }),
     player_fft_cutoff_lower() {
       let c = Math.floor((this.player_fft_cutoff_lower_frequency *  this.player_fft_window) / this.sampleRate);
@@ -1191,6 +1193,9 @@ export default defineComponent({
       try {
         var urlPath = 'samples2/' + this.selectedSampleId;
         var params = {samples: true, sample_rate: true, labels: true,};
+        if(this.time_zone) {
+          params.tz = this.time_zone;
+        }
         this.sampleLoading = true;
         this.sampleError = false;
         var response = await this.$api.get(urlPath, {params});
@@ -1397,6 +1402,13 @@ export default defineComponent({
     selectedSampleId: {
       immediate: true,   
       async handler() {
+        if(this.project_data !== undefined) {
+          this.refreshSample();
+        }
+      }
+    },
+    async project_data() {
+      if(this.project_data !== undefined) {
         this.refreshSample();
       }
     },
@@ -1460,6 +1472,7 @@ export default defineComponent({
     },    
   },
   async mounted() {
+    //this.$store.dispatch('project/init'); 
     this.audio = new Audio();    
     this.audio.addEventListener('playing', e => this.onAudioPlaying(e));
     this.audio.addEventListener('pause', e => this.onAudioPause(e));

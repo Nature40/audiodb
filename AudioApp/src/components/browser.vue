@@ -146,7 +146,7 @@
           <thead>
             <tr>
               <th class="text-left">Location</th>
-              <th class="text-left">Time</th>
+              <th class="text-left">Time <span style="font-size: 0.7em;">{{time_zone}}</span></th>
               <th class="text-left">Device</th>
               <th class="text-left">Id</th>
               </tr>
@@ -244,6 +244,7 @@ export default defineComponent({
   computed: {
     ...mapState({
       samples_table_count: state => state.project.samples_table_count,
+      time_zone: state => state.project.time_zone,
     }),
     refreshConfirmNeeded() {
       const count = this.samples_table_count;
@@ -415,6 +416,9 @@ export default defineComponent({
             params.start = t;
             params.end = t + (86400 - 1);
           }          
+        }
+        if(this.time_zone) {
+          params.tz = this.time_zone;
         }
         this.requestError = false;
         this.requestLoading = true;

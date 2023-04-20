@@ -120,6 +120,8 @@ public class Sample2Handler {
 		boolean reqSamples = Web.getFlagBoolean(request, "samples");
 		boolean reqSampleRate = Web.getFlagBoolean(request, "sample_rate");
 		boolean reqLabels = Web.getFlagBoolean(request, "labels");
+		String reqTimeZone = Web.getString(request, "tz", "UTC");
+		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
 
 		json.object();
 		json.key("sample");		
@@ -137,7 +139,7 @@ public class Sample2Handler {
 			json.value(sample.device);
 		}
 		if(sample.hasTimestamp()) {
-			AudioTimeUtil.writePropsTimestampDateTime(json, sample.timestamp);
+			AudioTimeUtil.writePropsTimestampDateTime(json, sample.timestamp, timeZoneOffsetSeconds);
 		}
 		if(reqSamples && sample.hasSamples()) {
 			json.key("samples");

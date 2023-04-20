@@ -19,6 +19,7 @@ public final class CommandlineConfig {
 				String arg = args[i];
 				switch(arg) {
 				case "--no-yaml-scan":
+					this.no_yaml_scan = true;
 					break;
 				default:
 					throw new RuntimeException("unknown command line arg: |" + arg + "|   available args: --no-yaml-scan");
