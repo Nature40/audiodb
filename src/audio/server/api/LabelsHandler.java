@@ -22,6 +22,7 @@ import audio.Broker;
 import audio.Label;
 import audio.Sample;
 import audio.review.ReviewedLabel;
+import util.AudioTimeUtil;
 import util.JsonUtil;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;
@@ -116,7 +117,7 @@ public class LabelsHandler {
 			String actionName = jsonAction.getString("action");
 			switch(actionName) {
 			case "add_label": {
-				Label label = Label.ofJSON(jsonAction.getJSONObject("label")).withCreator(account.username, LocalDateTime.now().toString());				
+				Label label = Label.ofJSON(jsonAction.getJSONObject("label")).withCreator(account.username, AudioTimeUtil.timeTextOfNow());				
 				sample.getLabels().add(label);
 				break;
 			}

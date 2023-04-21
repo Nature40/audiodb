@@ -28,6 +28,7 @@ import audio.Sample;
 import audio.UserLabel;
 import audio.labeling.LabelingList;
 import audio.labeling.LabelingListEntry;
+import util.AudioTimeUtil;
 import util.JsonUtil;
 import util.Web;
 import util.collections.vec.Vec;
@@ -110,7 +111,7 @@ public class Labeling_listHandler {
 						int sample_label_index = sample.findLabelIndexOf(entry.label_start, entry.label_end);
 						Label label = sample_label_index < 0 ? new Label(entry.label_start, entry.label_end) : sample.getLabel(sample_label_index);
 						String username = account.username;
-						String timestamp = LocalDateTime.now().toString();
+						String timestamp = AudioTimeUtil.timeTextOfNow();
 						Vec<UserLabel> userLabels = new Vec<UserLabel>();
 						for(String label_name : req_label_names) {
 							UserLabel userLabel = label.userLabels.find((UserLabel us) -> label_name.equals(us.name));

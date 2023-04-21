@@ -193,7 +193,7 @@ actions: {
       params.locations = true;
       params.devices = true;
       //params.timestamps = true;
-      params.dates = true;
+      //params.dates = true; // not static because of time zone
       params.samples_table_count = true;
       var response = await rootState.api.get('projects/' + rootState.projectId, {params});
       commit('setData', response.data);

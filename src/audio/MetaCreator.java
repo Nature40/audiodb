@@ -44,7 +44,7 @@ public class MetaCreator {
 			Vec<Object> logList = new Vec<Object>();
 			LinkedHashMap<String, Object> logO = new LinkedHashMap<String, Object>();
 			logO.put("action", "create_yaml");
-			logO.put("date", LocalDateTime.now().format(ISO_FORMATTER));
+			logO.put("date", AudioTimeUtil.timeTextOfNow());
 			logList.add(logO);
 			m.put("log", logList);
 			YamlUtil.writeSafeYamlMap(yamlPath, m);

@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.function.LongConsumer;
@@ -15,6 +16,7 @@ import org.json.JSONWriter;
 public class AudioTimeUtil {
 
 	public static final DateTimeFormatter DATE_SPACE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	private static final DateTimeFormatter ZONED_TIME_TEXT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
 
 	private static final LocalDateTime UNIX_EPOCH = LocalDateTime.of(1970,1,1,0,0);
 
@@ -281,7 +283,13 @@ public class AudioTimeUtil {
 			int offset = Integer.parseInt(offsetText);
 			return offset * HOUR_OFFSET;
 		} else {
-			throw new RuntimeException("unknown time zone: |" + timeZone + "|" + offsetMatcher.matches());
+			throw new RuntimeException("unknown time zone: |" + timeZone + "|");
 		}
+	}
+	
+	public static String timeTextOfNow() {
+		ZonedDateTime zonedDateTime = ZonedDateTime.now();
+		String s = zonedDateTime.format(ZONED_TIME_TEXT_FORMATTER);
+		return s;
 	}
 }

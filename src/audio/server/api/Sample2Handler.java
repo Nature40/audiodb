@@ -207,7 +207,7 @@ public class Sample2Handler {
 				for(String name : namesSet) {
 					if(!retainNames.contains(name)) {
 						String creator = account.username;
-						String creation_date = LocalDateTime.now().toString();
+						String creation_date = AudioTimeUtil.timeTextOfNow();
 						UserLabel userLabel = new UserLabel(name, creator, creation_date);
 						newUserlabels.add(userLabel);
 					}
@@ -241,7 +241,7 @@ public class Sample2Handler {
 				Vec<UserLabel> newUserlabels = new Vec<UserLabel>();
 				for(String name : names) {
 					String creator = account.username;
-					String creation_date = LocalDateTime.now().toString();
+					String creation_date = AudioTimeUtil.timeTextOfNow();
 					UserLabel userLabel = new UserLabel(name, creator, creation_date);
 					newUserlabels.add(userLabel);
 				}

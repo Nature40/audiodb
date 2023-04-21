@@ -230,6 +230,7 @@ export default defineComponent({
       requestError: false,
       filteredLocations: [],
       filteredTimestamps: [],
+      timestamps_all_locations: undefined,
       timestamps_of_location: undefined,
       requestMetaLoading: false,
       requestMetaError: false,
@@ -296,11 +297,11 @@ export default defineComponent({
           return t.timestamp <= 0 ? {date: '(unknown)', value: 0, year: '(unknown)', month: '(unknown)', day: '(unknown)'} : {date: t.date, time: t.time, value: t.timestamp, year: t.year, month: t.month<10 ? '0'+t.month : ''+t.month, day: t.day<10 ? '0'+t.day : ''+t.day};
         });
       } else {
-        const d = this.$store.state.project.data;
-        if(d === undefined || d.dates === undefined || d.dates.length === 0) {
+        const d = this.timestamps_all_locations;
+        if(d === undefined || d.length === 0) {
           return [{date: '(no timestamps)', value: undefined}];
         }
-        return d.dates.map(t => {
+        return d.map(t => {
           return t.timestamp <= 0 ? {date: '(unknown)', value: 0, year: '(unknown)', month: '(unknown)', day: '(unknown)'} : {date: t.date, value: t.timestamp, year: t.year, month: t.month<10 ? '0'+t.month : ''+t.month, day: t.day<10 ? '0'+t.day : ''+t.day};
         });
       }
@@ -398,6 +399,12 @@ export default defineComponent({
         }
       }
     },    
+    time_zone() {
+      if(this.time_zone) {
+        this.requestRefreshMeta();
+        this.requestRefresh();
+      }
+    },
   },
   methods: {
     async querySamples() {
@@ -482,7 +489,13 @@ export default defineComponent({
         if(this.selectedLocation) {
           //params.timestamps_of_location = this.selectedLocation.value;
           params.dates_of_location = this.selectedLocation.value;
+        } else {
+          params.dates = true;
         }
+        if(this.time_zone) {
+          params.tz = this.time_zone;
+        }
+        //this.timestamps_all_locations = undefined; // no clear
         this.timestamps_of_location = undefined;
         this.requestMetaError = false;
         this.requestMetaLoading = true;
@@ -496,6 +509,10 @@ export default defineComponent({
           }
           this.timestamps_of_location = tol;
         }
+        var td = response.data.project.dates;
+        if(td !== undefined) {
+          this.timestamps_all_locations = td;
+        }
       } catch(e) {
         this.requestMetaError = true;
         this.requestMetaLoading = false;
@@ -504,19 +521,22 @@ export default defineComponent({
     },
     locationfilterFn(val, update, abort) {
       update(() => {
-        const needle = val.toLowerCase()
+        const needle = val.toLowerCase();
         this.filteredLocations = this.locations.filter(v => v.label.toLowerCase().indexOf(needle) > -1)
       });
     },
     timestampfilterFn(val, update, abort) {
       update(() => {
-        const needle = val.toLowerCase()
+        const needle = val.toLowerCase();
         this.filteredTimestamps = this.timestamps.filter(v => v.date.toLowerCase().indexOf(needle) > -1)
       });
     },
   },
   mounted() {
-    this.requestRefresh();
+    if(this.time_zone !== undefined) {
+      this.requestRefreshMeta();
+      this.requestRefresh();
+    }
   },
 });
 </script>

@@ -66,7 +66,7 @@ public final class AudioProjectConfig {
 		public Map<String, AudioProfile> profileMap = null;
 
 		public int audio_cache_max_files = 20;
-		public String time_zone = "UTC";
+		public String time_zone = "";  // possible values UTC, UTC+1, UTC-1, UTC+2 etc. missing value or empty string means no time zone, internally this is UTC but without time zone label.
 
 		public Builder() {}
 

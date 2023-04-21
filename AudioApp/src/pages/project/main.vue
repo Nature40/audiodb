@@ -6,13 +6,13 @@
       <q-space></q-space>
       <div v-if="sample !== undefined">
         <q-btn :icon="$refs.browser.movePrevSelectedSampleRequested ? 'recycling' : 'navigate_before'" padding="xs" :class="{'element-hidden': $refs.browser.movePrevSelectedSampleRequested || !$refs.browser.hasSelectedSamplePrev}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.movePrevSelectedSampleRequested = true" title="Move to previous sample on the browsed list of samples"/>
-        <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/>{{sample.location}}</span>
-        <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/>{{sample.date}}</span>
-        <span class="text-weight-light text-grey-9" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/>{{sample.time}} <span class="text-weight-light text-grey-7" style="font-size: 0.7em;">{{time_zone}}</span></span>
-        <span class="text-weight-thin text-grey-6" style="padding-left: 10px; font-family: monospace;" v-if="sample.device"><q-icon name="memory"/>{{sample.device}}</span>
-        <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"><q-icon name="fingerprint"/>{{sample.id}}</span>
-        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/>{{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
-        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"><q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
+        <span class="text-weight-bold" v-if="sample.location"><q-icon name="home"/> {{sample.location}}</span>
+        <span class="text-weight-regular text-grey-9" style="padding-left: 10px;" v-if="sample.date"><q-icon name="calendar_today"/> {{sample.date}}</span>
+        <span class="text-weight-light text-grey-9" style="padding-left: 5px;" v-if="sample.time"><q-icon name="query_builder"/> {{sample.time}} <span class="text-weight-light text-grey-7" style="font-size: 0.7em;">{{time_zone}}</span></span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px; font-family: monospace;" v-if="sample.device"> <q-icon name="memory"/>{{sample.device}}</span>
+        <span class="text-weight-bold" v-if="(!sample.location || !sample.device) && sample.date === undefined"> <q-icon name="fingerprint"/>{{sample.id}}</span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="sampleRate"><q-icon name="leaderboard"/> {{Math.trunc(sampleRate/1000)}}<sup style="font-size: 0.8em">.{{sampleRatemhz}}</sup> kHz</span>
+        <span class="text-weight-thin text-grey-6" style="padding-left: 10px;" v-if="duration !== undefined"> <q-icon name="alarm"/><span v-if="durationHH !== '00'">{{durationHH}}:</span><span class="text-grey-8">{{durationMM}}</span><span class="text-grey-6">:{{durationSS}}</span><sup class="text-grey-5" style="font-size: 0.7em" v-if="durationMS !== '000'">.{{durationMS}}</sup></span>
         <q-btn :icon="$refs.browser.moveNextSelectedSampleRequested ? 'recycling' : 'navigate_next'" padding="xs" :class="{'element-hidden': $refs.browser.moveNextSelectedSampleRequested || !$refs.browser.hasSelectedSampleNext}" @click="if(userSelectedLabelNamesChanged) {onSaveLabels();} $refs.browser.moveNextSelectedSampleRequested = true" title="Move to next sample on the browsed list of samples"/>
       </div>
       <div v-if="sample === undefined">        
@@ -485,7 +485,7 @@
           <tr v-for="(label, index) in selectedLabel.labels" :key="index">
             <td class="text-left">{{label.name}}</td>
             <td class="text-left">{{label.creator}}</td>
-            <td class="text-left">{{label.creation_date === undefined ? '' : label.creation_date.slice(0,16)}}</td>
+            <td class="text-left" :title="label.creation_date">{{label.creation_date === undefined ? '' : label.creation_date.slice(0,16)}}</td>
           </tr>
         </tbody>
       </q-markup-table>

@@ -117,14 +117,20 @@ public class SampleManagerConnector {
 		QUERY_TIMESTAMPS_ALL("SELECT DISTINCT TIMESTAMP FROM SAMPLE ORDER BY TIMESTAMP"),
 		
 		QUERY_DATES_ALL("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE ORDER BY DATE"),
+		
+		QUERY_ZONED_DATES_ALL("SELECT DISTINCT ((TIMESTAMP + ?) - ((TIMESTAMP + ?) % 86400)) AS DATE FROM SAMPLE ORDER BY DATE"),
 
 		QUERY_TIMESTAMPS_AT_LOCATION("SELECT DISTINCT TIMESTAMP FROM SAMPLE WHERE LOCATION = ? ORDER BY TIMESTAMP"),
 		
 		QUERY_DATES_AT_LOCATION("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE WHERE LOCATION = ? ORDER BY DATE"),
+		
+		QUERY_ZONED_DATES_AT_LOCATION("SELECT DISTINCT ((TIMESTAMP + ?) - ((TIMESTAMP + ?) % 86400)) AS DATE FROM SAMPLE WHERE LOCATION = ? ORDER BY DATE"),
 
 		QUERY_TIMESTAMPS_AT_LOCATION_NULL("SELECT DISTINCT TIMESTAMP FROM SAMPLE WHERE LOCATION IS NULL ORDER BY TIMESTAMP"),
 		
 		QUERY_DATES_AT_LOCATION_NULL("SELECT DISTINCT (TIMESTAMP - (TIMESTAMP % 86400)) AS DATE FROM SAMPLE WHERE LOCATION IS NULL ORDER BY DATE"),
+		
+		QUERY_ZONED_DATES_AT_LOCATION_NULL("SELECT DISTINCT ((TIMESTAMP + ?) - ((TIMESTAMP + ?) % 86400)) AS DATE FROM SAMPLE WHERE LOCATION IS NULL ORDER BY DATE"),
 		
 		
 		QUERY_DEVICES_ALL("SELECT DISTINCT DEVICE FROM SAMPLE WHERE NOT LOCKED ORDER BY DEVICE"),
@@ -397,6 +403,21 @@ public class SampleManagerConnector {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public void forEachZonedDate(int timeZoneOffsetSeconds, LongConsumer consumer) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_ZONED_DATES_ALL);
+			stmt.setInt(1, timeZoneOffsetSeconds);
+			stmt.setInt(2, timeZoneOffsetSeconds);
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				long timestamp = res.getLong(1) - timeZoneOffsetSeconds; // convert back to UTC
+				consumer.accept(timestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	public void forEachTimestamp(String location, LongConsumer consumer) {
 		PreparedStatement stmt;
@@ -429,6 +450,29 @@ public class SampleManagerConnector {
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
 				long timestamp = res.getLong(1);
+				consumer.accept(timestamp);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void forEachZonedDate(String location, int timeZoneOffsetSeconds, LongConsumer consumer) {
+		PreparedStatement stmt;
+		try {
+			if(location == null) {
+				stmt = getStatement(SQL.QUERY_ZONED_DATES_AT_LOCATION_NULL);
+				stmt.setInt(1, timeZoneOffsetSeconds);
+				stmt.setInt(2, timeZoneOffsetSeconds);
+			} else {
+				stmt = getStatement(SQL.QUERY_ZONED_DATES_AT_LOCATION);
+				stmt.setInt(1, timeZoneOffsetSeconds);
+				stmt.setInt(2, timeZoneOffsetSeconds);
+				stmt.setString(3, location);
+			}				
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				long timestamp = res.getLong(1) - timeZoneOffsetSeconds; // convert back to UTC
 				consumer.accept(timestamp);
 			}
 		} catch (SQLException e) {

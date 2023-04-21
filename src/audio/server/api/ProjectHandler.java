@@ -77,6 +77,7 @@ public class ProjectHandler {
 		boolean fSamplesTableCount = Web.getFlagBoolean(request, "samples_table_count");
 		String reqTimeZone = Web.getString(request, "tz", "UTC");
 		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
+		Logger.info(reqTimeZone + " --> " + timeZoneOffsetSeconds);
 		
 		AudioProjectConfig config = broker.config().audioConfig;		
 		if(!config.project.equals(project)) {
@@ -197,7 +198,7 @@ public class ProjectHandler {
 		if(fDates) {
 			json.key("dates");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachDate(timestampDateWriter);
+			sampleManager.tlSampleManagerConnector.get().forEachZonedDate(timeZoneOffsetSeconds, timestampDateWriter);
 			json.endArray();
 		}
 		if(timestamps_of_location != null) {
@@ -220,7 +221,7 @@ public class ProjectHandler {
 			json.value(loc);
 			json.key("timestamps");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachDate(loc, timestampDateWriter);
+			sampleManager.tlSampleManagerConnector.get().forEachZonedDate(loc, timeZoneOffsetSeconds, timestampDateWriter);
 			json.endArray();
 			json.endObject();
 		}

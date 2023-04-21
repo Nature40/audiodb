@@ -157,7 +157,7 @@
       </a>        
       <span style="padding-left: 10px;" v-if="sample.location">{{sample.location}}</span>
       <span style="padding-left: 10px;" v-if="sample.date">{{sample.date}}</span>
-      <span style="padding-left: 5px;" v-if="sample.time">{{sample.time}}</span>
+      <span style="padding-left: 5px;" v-if="sample.time">{{sample.time}} <span style="font-size: 0.7em;">{{time_zone}}</span></span>
       <span style="padding-left: 10px; font-family: monospace;" v-if="(sample.location === undefined || sample.date === undefined) && sample.device">{{sample.device}}</span>
       <span style="padding-left: 10px;" v-if="(!sample.location || !sample.device) && sample.date === undefined">{{sample.id}}</span>
       <!--<span style="padding-left: 20px;">{{workingEntry.start}} - {{workingEntry.end}}</span>-->
@@ -429,6 +429,7 @@ export default defineComponent({
       player_fft_intensity_max: state => state.project.player_fft_intensity_max,
       //player_spectrum_shrink_Factor: state => state.project.player_spectrum_shrink_Factor,
       player_time_expansion_factor: state => state.project.player_time_expansion_factor,
+      time_zone: state => state.project.time_zone,
     }),
     listId() {
       return this.$route.query.list;
@@ -617,6 +618,9 @@ export default defineComponent({
           this.setActionStatus(true, undefined);
           var urlPath = 'samples2/' + this.workingEntry.sample;
           var params = {sample_rate: true, labels: true};
+          if(this.time_zone) {
+            params.tz = this.time_zone;
+          }          
           var response = await this.$api.get(urlPath, {params});
           this.sample = response.data.sample;
           this.setActionStatus(false, undefined);
