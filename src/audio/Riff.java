@@ -17,16 +17,16 @@ import org.tinylog.Logger;
 public class Riff {
 	
 
-	private static final int RIFF_MARK = 1179011410;
-	private static final int WAVE_MARK = 1163280727;
-	private static final int fmt_CHUNK_MARKER = 544501094;
+	static final int RIFF_MARK = 1179011410;
+	static final int WAVE_MARK = 1163280727;
+	static final int fmt_CHUNK_MARKER = 544501094;
 	private static final int LIST_CHUNK_MARKER = 1414744396;
-	private static final int data_CHUNK_MARKER = 1635017060;
+	static final int data_CHUNK_MARKER = 1635017060;
 	private static final int INFO_LIST_TYPE = 1330007625;
 	private static final int ICMT_SUBCHUNK_MARKER = 1414349641;
 	private static final int IART_SUBCHUNK_MARKER = 1414676809;
 	
-	private static final short PCM_WAVE_TYPE = 1;
+	static final short PCM_WAVE_TYPE = 1;
 	
 	public short type = -1;
 	public short channels = -1;

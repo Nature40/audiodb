@@ -28,11 +28,11 @@ public class AudioCache {
 			this.osr = osr;
 		}
 	}
-	
+
 	private final int capacity;
 
 	private Vec<Entry> vec;
-	
+
 	public AudioCache(int capacity) {
 		this.capacity = capacity;
 		this.vec = new Vec<Entry>(capacity);
@@ -104,7 +104,7 @@ public class AudioCache {
 
 		} finally {
 			entry.lifecycleLock.readLock().unlock();
-			
+
 			if(changed) {
 				entry = tryRemoveFirstUnlocked();
 				while(entry != null) {
@@ -119,5 +119,44 @@ public class AudioCache {
 				}
 			}
 		}		
+	}
+
+	public File runDecode(File infile) throws IOException {
+		boolean changed = false;
+		Entry entry = getEntry(infile.toString(), Float.NaN);
+		try {
+			if(entry.outFile == null) {
+				entry.dataLock.writeLock().lock();
+				try {
+					if(entry.outFile == null) {
+						File tempFile = File.createTempFile("audio_", ".wav");
+						entry.outFile = tempFile;
+						changed = true;
+						tempFile.deleteOnExit();
+						Logger.info("decode to " + tempFile);	
+						AudioHandler.decodeQoa(infile, tempFile, -1);
+					}
+				} finally {
+					entry.dataLock.writeLock().unlock();
+				}
+			}
+			return entry.outFile;
+		} finally {
+			entry.lifecycleLock.readLock().unlock();
+
+			if(changed) {
+				entry = tryRemoveFirstUnlocked();
+				while(entry != null) {
+					try {
+						File outFile = entry.outFile;
+						entry.outFile = null;
+						outFile.delete();
+					} finally {
+						entry.lifecycleLock.writeLock().unlock();					
+						entry = tryRemoveFirstUnlocked();
+					}
+				}
+			}
+		}
 	}
 }

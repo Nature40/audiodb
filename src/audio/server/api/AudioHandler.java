@@ -1,8 +1,11 @@
 package audio.server.api;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -13,60 +16,54 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.IO;
+import org.tinylog.Logger;
 
 import audio.AudioCache;
 import audio.Broker;
 import audio.GeneralSample;
+import audio.RiffWriter;
+import audio.task.Task_audio_create_yaml;
 import jakarta.servlet.http.HttpServletResponse;
 import util.Web;
 
 public class AudioHandler {
-	
 
 	private final Broker broker;
 	private final AudioCache audioCache;
 
 	public AudioHandler(Broker broker) {
 		this.broker = broker;
-		this.audioCache = new AudioCache(broker.config().audioConfig.audio_cache_max_files);
+		this.audioCache = broker.audioCache();
 	}
 
 	public void handle(GeneralSample sample, Request request, HttpServletResponse response) throws IOException {
 		File file = sample.getAudioFile();
+
+		if(Task_audio_create_yaml.isQoa(file.getName())){
+			file = audioCache.runDecode(file);
+		}
+
 		String rangeText = request.getHeader("Range");
-		
+
 		boolean fOriginal = Web.getFlagBoolean(request, "original");
 
 		double overwrite_sampling_rate = Web.getDouble(request, "overwrite_sampling_rate", Double.NaN);	
 
-		if(fOriginal || (!Double.isFinite(overwrite_sampling_rate) && !isAbove(file, 48000))) {
+		if(Task_audio_create_yaml.isWav(file.getName()) && (fOriginal || (!Double.isFinite(overwrite_sampling_rate) && !isAbove(file, 48000)))) {
 			sendFile(file, rangeText, response, Web.MIME_WAVE);
 		} else {
 			//if(overwrite_sampling_rate <= 0d || overwrite_sampling_rate > 192000d) {
 			if(overwrite_sampling_rate <= 0d || overwrite_sampling_rate > 1000000d) {
 				throw new RuntimeException("invalid overwrite_sampling_rate");
 			}
-			/*File tempFile = File.createTempFile("audio_", ".wav");
-			tempFile.deleteOnExit();
-			try {	
-				Logger.info(tempFile);	
-				createOverwriteSamplingRate(sample.getAudioFile(), tempFile, (float) overwrite_sampling_rate);
-				sendFile(tempFile, rangeText, response, "audio/wave");
-			} catch (UnsupportedAudioFileException e) {
-				throw new RuntimeException(e);
-			} finally {
-				tempFile.delete();
-			}*/
-			audioCache.run(sample.getAudioFile(), (float) overwrite_sampling_rate, rangeText, response);
+			audioCache.run(file, (float) overwrite_sampling_rate, rangeText, response);
 		}
 	}
 
-	public static void sendFile(File file, String rangeText, HttpServletResponse response, String conentType) throws FileNotFoundException, IOException {
+	public static void sendFile(File file, String rangeText, HttpServletResponse response, String conentType) throws IOException {
 		long fileLen = file.length();
 		//Logger.info("FILE "+ file.getPath() + "   " + fileLen);
 		if(rangeText == null || fileLen == 0) {
@@ -78,7 +75,14 @@ public class AudioHandler {
 				Logger.info("send full  " + file);
 				IO.copy(in, response.getOutputStream());
 			} catch(EofException e) {
-				Logger.info("remote connection closed");
+				Logger.trace("remote connection closed");
+			} catch (IOException e) {
+				Throwable cause = e.getCause();
+				if(cause != null && cause instanceof TimeoutException) {
+					Logger.trace(cause.getMessage());
+				} else {
+					throw e;
+				}
 			}
 		} else {
 			if(rangeText.startsWith("bytes=")) {
@@ -176,6 +180,41 @@ public class AudioHandler {
 		}	
 	}
 
+	public static void decodeQoa(File inFile, File outFile, int overwriteSampleRate) throws FileNotFoundException, IOException {
+		try(FileInputStream rawIn = new FileInputStream(inFile)) {
+			try(BufferedInputStream in = new BufferedInputStream(rawIn)) {
+			StreamQOADecoder dec = new StreamQOADecoder(in);
+			if(dec.readHeader()) {
+				try(FileOutputStream rawOut = new FileOutputStream(outFile)) {
+					try(BufferedOutputStream out = new BufferedOutputStream(rawOut)) {
+					int samplesLen = dec.getTotalSamples();
+					int sampleRate = overwriteSampleRate > 0 ? overwriteSampleRate : dec.getSampleRate();					
+					RiffWriter riffWriter = new RiffWriter(samplesLen, sampleRate, dec.getChannels(), out);
+					riffWriter.writeHeader();
+					short[] samples = new short[5120];
+					for(;;) {
+						if(riffWriter.hasWrittenAllSamples()) {
+							break;
+						}
+						int frameSamples = dec.readFrame(samples);
+						if(frameSamples < 0) {
+							Logger.warn("decode error");
+							break;
+						}
+						riffWriter.writeSamples(samples, frameSamples);
+					}
+					if(!riffWriter.hasWrittenAllSamples()) {
+						throw new RuntimeException("not all samples processed");
+					}
+				}
+			}
+			} else {
+				throw new RuntimeException("not valid QOA file");
+			}
+		}
+	}
+	}
+
 	private static boolean isAbove(File file, float samplingRate) {
 		float sr = getSamplingRate(file);
 		//Logger.info("sr " + sr);
@@ -183,10 +222,31 @@ public class AudioHandler {
 	}
 
 	private static float getSamplingRate(File file) {
-		try(AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
-			return audioInputStream.getFormat().getSampleRate();
-		} catch (Exception e) {
-			Logger.warn(e);
+		if(Task_audio_create_yaml.isWav(file.getName())) {
+			try(AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file)) {
+				return audioInputStream.getFormat().getSampleRate();
+			} catch (Exception e) {
+				Logger.warn(e);
+				return Float.NaN;
+			}
+		} else if(Task_audio_create_yaml.isQoa(file.getName())) {
+			try(FileInputStream in = new FileInputStream(file)) {
+				StreamQOADecoder dec = new StreamQOADecoder(in);
+				if(dec.readHeader()) {
+					return dec.getSampleRate();
+				} else {
+					Logger.warn("not valid QOA file: " + file.getName());
+					return Float.NaN;
+				}
+			} catch (FileNotFoundException e) {
+				Logger.warn(e.getMessage());
+				return Float.NaN;
+			} catch (IOException e) {
+				Logger.warn(e.getMessage());
+				return Float.NaN;
+			}
+		} else {
+			Logger.warn("unknown audio file format: " + file.getName());
 			return Float.NaN;
 		}
 	}

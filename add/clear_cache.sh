@@ -21,11 +21,15 @@ done
 
 unlink label_store.mv.db
 unlink label_store.trace.db  
+unlink label_store.trace.db.old 
 unlink photo_cache.mv.db
 unlink photo_cache.trace.db
+unlink photo_cache.trace.db.old
 unlink sample_cache.mv.db
 unlink sample_cache.trace.db
+unlink sample_cache.trace.db.old
 unlink thumb_cache.mv.db
 unlink thumb_cache.trace.db
+unlink sample_cache.trace.db.old
 
 echo -e "${GREEN}Done. Now you may start AudioDB/PhotoDB. It may take some time to regenerate database caches.${NC}"

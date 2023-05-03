@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.Request;
 import org.jtransforms.fft.FloatFFT_1D;
 import org.tinylog.Logger;
 
+import audio.AudioCache;
 import audio.Broker;
 import audio.GeneralSample;
 import audio.processing.SampleProcessor;
@@ -16,13 +17,14 @@ import util.Web;
 import util.image.ImageRGBA;
 import util.image.Lut;
 
-public class SpectrumHandler {
-	
+public class SpectrumHandler {	
 
 	private final Broker broker;
+	private final AudioCache audioCache;
 
 	public SpectrumHandler(Broker broker) {
 		this.broker = broker;
+		this.audioCache = broker.audioCache();
 	}
 
 	public void handle(GeneralSample sample, Request request, HttpServletResponse response) throws IOException {
@@ -64,7 +66,7 @@ public class SpectrumHandler {
 
 		//Logger.info("spectrum " + startSample + " to " + endSample);
 
-		SampleProcessor sampleProcessor = new SampleProcessor(sample);
+		SampleProcessor sampleProcessor = new SampleProcessor(sample, audioCache);
 		if(startSample < 0) {
 			double startSecond = Web.getDouble(request, "start", Double.NaN);
 			startSample = Double.isFinite(startSecond) ? sampleProcessor.secondsToPos(startSecond) : 0;

@@ -34,11 +34,11 @@ import util.collections.vec.Vec;
 @Param(name = "col_filename", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'filename' in CSV output. Filename excluding folder path.")
 @Param(name = "col_sample", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'sample' in CSV output. Folder path including filename.")
 @Param(name = "col_device", type = Type.BOOLEAN, preset = "TRUE", description = "Include column 'device' in CSV output.")
-@Param(name = "col_duration", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'duration' in CSV output.")
-@Param(name = "col_original_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'original_time_zone' of recording in CSV output. This may not be identical to the time zone of the 'time' column.")
-@Param(name = "col_temperature", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'temperature' in CSV output.")
+@Param(name = "col_duration", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'duration' in CSV output. (yaml read needed)")
+@Param(name = "col_original_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'original_time_zone' of recording in CSV output. This may not be identical to the time zone of the 'time' column. (yaml read needed)")
+@Param(name = "col_temperature", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'temperature' in CSV output. (yaml read needed)")
 @Param(name = "col_file_size", type = Type.BOOLEAN, preset = "FALSE", description = "Include column 'file_size' in CSV output and sum up total file size in log message.")
-@Param(name = "filename", type = Type.STRING, preset = "samples.csv", description = "Filename of output CSV-file.")
+@Param(name = "filename", type = Type.STRING, preset = "samples.csv", description = "Filename of output CSV-file. (yaml read needed)")
 @Param(name = "time_zone", type = Type.STRING, preset = "", description = "Set time zone of the 'time' column. e.g. UTC+1  If left empty, default time zone of project will be set. (Only meaningful if the audio files include a time zone.)")
 @Param(name = "include_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "In 'time' column, include the time zone marker. If false, time zone marker is not included in output, but time zone conversions are still applied. (Only meaningful if the audio files include a time zone.)")
 @Param(name = "filter_by_location", type = Type.STRING, preset = "", description = "(optional) Process the specified location only.")
@@ -130,6 +130,7 @@ public class Task_audio_sample_statistics extends Task {
 			DecimalFormat doubleFormat = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 			doubleFormat.setMaximumFractionDigits(340);
 			Path root_data_path = ctx.broker.config().audioConfig.root_data_path;
+			setMessage("start traversing audio files");
 			ctx.broker.sampleManager().forEach(sample -> {
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");

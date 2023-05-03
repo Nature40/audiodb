@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;
 
+import audio.AudioCache;
 import audio.Broker;
 import audio.Label;
 import audio.Sample;
@@ -27,14 +28,15 @@ import util.Web;
 import util.collections.vec.Vec;
 
 public class QueryHandler extends AbstractHandler {
-	
 
 	private final SampleHandler sampleHandler;
-
+	private final AudioCache audioCache;
+	
 	private final Broker broker;
 
 	public QueryHandler(Broker broker) {
 		this.broker = broker;
+		this.audioCache = broker.audioCache();
 		sampleHandler = new SampleHandler(broker);
 	}
 
@@ -146,7 +148,7 @@ public class QueryHandler extends AbstractHandler {
 		
 		Vec<String[]> rows = new Vec<String[]>();
 
-		SampleProcessor sampleProcessor = new SampleProcessor(sample);
+		SampleProcessor sampleProcessor = new SampleProcessor(sample, audioCache);
 		sampleProcessor.loadData(0);	
 		sampleProcessor.transform();
 		sampleProcessor.calcBins();

@@ -23,7 +23,9 @@ import org.apache.commons.math3.analysis.function.Gaussian;
 import org.jtransforms.fft.FloatFFT_1D;
 import org.tinylog.Logger;
 
+import audio.AudioCache;
 import audio.GeneralSample;
+import audio.task.Task_audio_create_yaml;
 import fr.delthas.javamp3.Sound;
 import io.nayuki.flac.common.StreamInfo;
 import io.nayuki.flac.decode.FlacDecoder;
@@ -31,6 +33,8 @@ import io.nayuki.flac.decode.FlacDecoder;
 public class SampleProcessor {
 
 	private static final int MAX_SAMPLES = 512 * 1024 * 1024;
+	
+	private final File audioDataFile;
 
 	public static final int n = 1024;
 	public static final int n2 = n / 2;
@@ -49,8 +53,17 @@ public class SampleProcessor {
 	private double sampleRateN2;
 	private double binFactor;
 
-	public SampleProcessor(GeneralSample sample) {
+	public SampleProcessor(GeneralSample sample, AudioCache audioCache) {
 		this.sample = sample;
+		File file = sample.getAudioFile();
+		if(Task_audio_create_yaml.isQoa(file.getName())){
+			try {
+				file = audioCache.runDecode(file);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		this.audioDataFile = file;
 	}
 
 	public int secondsToPos(double seconds) {
@@ -82,7 +95,7 @@ public class SampleProcessor {
 	}
 
 	public int getFrameLength() {
-		try(AudioInputStream in = AudioSystem.getAudioInputStream(sample.getAudioFile())) {	
+		try(AudioInputStream in = AudioSystem.getAudioInputStream(audioDataFile)) {	
 			int frameLength = (int) in.getFrameLength();			
 			return frameLength;
 		} catch (UnsupportedAudioFileException | IOException e) {
@@ -97,10 +110,9 @@ public class SampleProcessor {
 	}
 
 	public void loadData(int additionalSpace, int start, int end) {
-		File audioFile = sample.getAudioFile();
-		String filename = audioFile.getName();
+		String filename = audioDataFile.getName();
 		boolean unsupportedAudioFile = false;
-		try(AudioInputStream in = AudioSystem.getAudioInputStream(audioFile)) {			
+		try(AudioInputStream in = AudioSystem.getAudioInputStream(audioDataFile)) {			
 			loadDataAudioInputStream(in, additionalSpace, start, end);
 		} catch (IOException e) {
 			throw new RuntimeException(e);

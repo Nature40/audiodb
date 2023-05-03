@@ -3,7 +3,6 @@ package audio.server.api;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashSet;
@@ -35,12 +34,14 @@ public class Sample2Handler {
 	private final SampleManager sampleManager;
 	private final SpectrumHandler spectrumHandler;
 	private final AudioHandler audioHandler;
+	private final ActivityHandler activityHandler;
 
 	public Sample2Handler(Broker broker) {
 		this.broker = broker;
 		this.sampleManager = broker.sampleManager();
 		this.spectrumHandler = new SpectrumHandler(broker);
 		this.audioHandler = new AudioHandler(broker);
+		this.activityHandler = new ActivityHandler(broker);
 	}
 
 	public void handle(String sampleId, String target, Request request, HttpServletResponse response) throws IOException {
@@ -81,6 +82,15 @@ public class Sample2Handler {
 					handleMetaYaml_GET(sample, request, response);
 				} else {
 					throw new RuntimeException("no call");
+				}
+				break;
+			}
+			case "activity": {
+				sampleManager.lock.readLock().lock();
+				try {
+					activityHandler.handle(sample, request, response);
+				} finally {
+					sampleManager.lock.readLock().unlock();
 				}
 				break;
 			}

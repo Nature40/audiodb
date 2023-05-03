@@ -56,6 +56,10 @@ public class Broker {
 	private WorklistStore worklistStore;
 	private volatile WorklistStore worklistStoreVolatile;
 	private Object worklistStoreLock = new Object();
+	
+	private AudioCache audioCache;
+	private volatile AudioCache audioCacheVolatile;
+	private Object audioCacheLock = new Object();
 
 	public Broker() {
 		this(CommandlineConfig.DEFAULT);
@@ -293,6 +297,27 @@ public class Broker {
 			r = new WorklistStore(this);
 			worklistStoreVolatile = r;
 			worklistStore = r;
+			return r;
+		}
+	}	
+	
+	public AudioCache audioCache() {		
+		return audioCache != null ? audioCache : loadAudioCache();
+	}
+
+	private AudioCache loadAudioCache() {
+		AudioCache r = audioCacheVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (audioCacheLock) {
+			r = audioCacheVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new AudioCache(this.config().audioConfig.audio_cache_max_files);
+			audioCacheVolatile = r;
+			audioCache = r;
 			return r;
 		}
 	}

@@ -105,7 +105,7 @@ public class Task_audio_create_yaml extends Task {
 	protected boolean traverseFile(Path path, File file) {
 		//Logger.info("file " + path);
 		String filename = file.getName();
-		if(filename.endsWith(".wav") || filename.endsWith(".WAV")) {
+		if(isWav(filename)) {
 			try {
 				long fileSize = Files.size(path);
 				if(fileSize > 0) {
@@ -124,5 +124,13 @@ public class Task_audio_create_yaml extends Task {
 			}			
 		}
 		return false;		
+	}
+	
+	public static boolean isWav(String filename) {
+		return filename.endsWith(".wav") || filename.endsWith(".WAV");
+	}
+	
+	public static boolean isQoa(String filename) {
+		return filename.endsWith(".qoa");
 	}
 }

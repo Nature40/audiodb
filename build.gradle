@@ -98,6 +98,7 @@ dependencies {
 }
 
 sourceSets.main.java.srcDir 'src'
+sourceSets.main.java.srcDir 'src_qoa'
 
 jar {
 	from file('src/tinylog.properties')
