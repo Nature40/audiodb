@@ -11,6 +11,7 @@ import org.tinylog.Logger;
 
 import audio.server.api.AudioHandler;
 import jakarta.servlet.http.HttpServletResponse;
+import util.Timer;
 import util.collections.vec.Vec;
 
 public class AudioCache {
@@ -133,8 +134,15 @@ public class AudioCache {
 						entry.outFile = tempFile;
 						changed = true;
 						tempFile.deleteOnExit();
-						Logger.info("decode to " + tempFile);	
 						AudioHandler.decodeQoa(infile, tempFile, -1);
+						/*Logger.info("decode to " + tempFile);	
+						for(int r = 0; r < 5; r++) {
+							Timer.start("qoa decode");
+							for(int i = 0; i < 100; i++) {
+								AudioHandler.decodeQoa(infile, tempFile, -1);
+							}
+							Logger.info(Timer.stop("qoa decode"));
+						}*/
 					}
 				} finally {
 					entry.dataLock.writeLock().unlock();

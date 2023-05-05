@@ -43,7 +43,10 @@ import util.collections.vec.Vec;
 @Param(name = "include_time_zone", type = Type.BOOLEAN, preset = "FALSE", description = "In 'time' column, include the time zone marker. If false, time zone marker is not included in output, but time zone conversions are still applied. (Only meaningful if the audio files include a time zone.)")
 @Param(name = "filter_by_location", type = Type.STRING, preset = "", description = "(optional) Process the specified location only.")
 @Param(name = "filter_by_device", type = Type.STRING, preset = "", description = "(optional) Process the specified device id only.")
-@Param(name = "filter_by_time", type = Type.STRING, preset = "", description = "(optional) Process the specified range of time only. Format: yyyy-MM-ddTHH:mm:ss  A shortened format leads to a range of time. e.g. 2022 means all samples from year 2022. e.g. 2022-02 means all samples from February at year 2022.  Time zone of 'time_zone' parameter will be used, or if empty, default time zone of project.")
+@Param(name = "filter_by_time", type = Type.STRING, preset = "", description = "(optional) Process the specified __range__ of time only. Format: yyyy-MM-ddTHH:mm:ss  A shortened format leads to a range of time. e.g. 2022 means all samples from year 2022. e.g. 2022-02 means all samples from February at year 2022.  Time zone of 'time_zone' parameter will be used, or if empty, default time zone of project.")
+@Param(name = "filter_by_time_start", type = Type.STRING, preset = "", description = "(optional) Process __starting__ with the specified time. Format: yyyy-MM-ddTHH:mm:ss  A shortened format is allowed. e.g. 2022 means all samples, starting with with 2022-01-01T00:00:00.  Time zone of 'time_zone' parameter will be used, or if empty, default time zone of project.")
+@Param(name = "filter_by_time_end", type = Type.STRING, preset = "", description = "(optional) Process __ending__ with the specified time. Format: yyyy-MM-ddTHH:mm:ss  A shortened format is allowed. e.g. 2022 means all samples, ending with with 2022-12-31T23:59:59.  Time zone of 'time_zone' parameter will be used, or if empty, default time zone of project.")
+
 @Role("admin")
 public class Task_audio_sample_statistics extends Task {
 
@@ -81,12 +84,54 @@ public class Task_audio_sample_statistics extends Task {
 		String filter_by_location = this.ctx.getParamString("filter_by_location");
 		String filter_by_device = this.ctx.getParamString("filter_by_device");
 		String filter_by_time = this.ctx.getParamString("filter_by_time");
+		String filter_by_time_start = this.ctx.getParamString("filter_by_time_start");
+		String filter_by_time_end = this.ctx.getParamString("filter_by_time_end");
 		validateFilenameThrow(filename);
 		boolean hasFilter_by_location = !filter_by_location.isBlank();
 		boolean hasFilter_by_device = !filter_by_device.isBlank();
-		boolean hasFilter_by_time = !filter_by_time.isBlank();
-		long time_min = AudioTimeUtil.toAudiotimeStart(filter_by_time) - timeZoneOffsetSeconds;
-		long time_max = AudioTimeUtil.toAudiotimeEnd(filter_by_time) - timeZoneOffsetSeconds;
+		
+		long time_min = Long.MIN_VALUE;
+		long time_max = Long.MAX_VALUE;
+		
+		if(!filter_by_time.isBlank()) {
+			long tmin = AudioTimeUtil.toAudiotimeStart(filter_by_time);
+			long tmax = AudioTimeUtil.toAudiotimeEnd(filter_by_time);
+			if(tmin != Long.MIN_VALUE) {
+				tmin -= timeZoneOffsetSeconds;
+				if(tmin > time_min) {
+					time_min = tmin;
+				}
+			}
+			if(tmax != Long.MAX_VALUE) {
+				tmax -= timeZoneOffsetSeconds;
+				if(tmax < time_max) {
+					time_max = tmax;
+				}
+			}
+		}
+		
+		if(!filter_by_time_start.isBlank()) {
+			long tmin = AudioTimeUtil.toAudiotimeStart(filter_by_time_start);
+			if(tmin != Long.MIN_VALUE) {
+				tmin -= timeZoneOffsetSeconds;
+				if(tmin > time_min) {
+					time_min = tmin;
+				}
+			}
+		}
+		
+		if(!filter_by_time_end.isBlank()) {
+			long tmax = AudioTimeUtil.toAudiotimeEnd(filter_by_time_end);
+			if(tmax != Long.MAX_VALUE) {
+				tmax -= timeZoneOffsetSeconds;
+				if(tmax < time_max) {
+					time_max = tmax;
+				}
+			}
+		}
+		
+		long time_minf = time_min;
+		long time_maxf = time_max;
 
 		Path output_target = output_path.resolve(filename);
 		try (CsvWriter csv = CsvWriter.builder().build(output_target)) {
@@ -137,7 +182,7 @@ public class Task_audio_sample_statistics extends Task {
 				}
 				if((!hasFilter_by_location || (hasFilter_by_location && filter_by_location.equals(sample.location)))
 						&& (!hasFilter_by_device || (hasFilter_by_device && filter_by_device.equals(sample.device)))
-						&& (!hasFilter_by_time || (hasFilter_by_time && time_min <= sample.timestamp && sample.timestamp <= time_max))) {
+						&& (time_minf <= sample.timestamp && sample.timestamp <= time_maxf)) {
 					row.clear();
 					if(col_location) {
 						String location = sample.location;

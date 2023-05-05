@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.concurrent.TimeoutException;
 
 import javax.sound.sampled.AudioFileFormat.Type;
@@ -27,6 +28,8 @@ import audio.GeneralSample;
 import audio.RiffWriter;
 import audio.task.Task_audio_create_yaml;
 import jakarta.servlet.http.HttpServletResponse;
+import qoa.QOABase;
+import util.BufferedDataOutputStreamLE;
 import util.Web;
 
 public class AudioHandler {
@@ -181,38 +184,37 @@ public class AudioHandler {
 	}
 
 	public static void decodeQoa(File inFile, File outFile, int overwriteSampleRate) throws FileNotFoundException, IOException {
-		try(FileInputStream rawIn = new FileInputStream(inFile)) {
-			try(BufferedInputStream in = new BufferedInputStream(rawIn)) {
-			StreamQOADecoder dec = new StreamQOADecoder(in);
+		try(RandomAccessFile raf = new RandomAccessFile(inFile, "r")) {
+			RafQOADecoder dec = new RafQOADecoder(raf);
 			if(dec.readHeader()) {
 				try(FileOutputStream rawOut = new FileOutputStream(outFile)) {
-					try(BufferedOutputStream out = new BufferedOutputStream(rawOut)) {
-					int samplesLen = dec.getTotalSamples();
-					int sampleRate = overwriteSampleRate > 0 ? overwriteSampleRate : dec.getSampleRate();					
-					RiffWriter riffWriter = new RiffWriter(samplesLen, sampleRate, dec.getChannels(), out);
-					riffWriter.writeHeader();
-					short[] samples = new short[5120];
-					for(;;) {
-						if(riffWriter.hasWrittenAllSamples()) {
-							break;
+					//try(BufferedOutputStream out = new BufferedOutputStream(rawOut, 16384)) {
+					try(BufferedDataOutputStreamLE out = new BufferedDataOutputStreamLE(rawOut, 16384)) {
+						int samplesLen = dec.getTotalSamples();
+						int sampleRate = overwriteSampleRate > 0 ? overwriteSampleRate : dec.getSampleRate();					
+						RiffWriter riffWriter = new RiffWriter(samplesLen, sampleRate, dec.getChannels(), out);
+						riffWriter.writeHeader();
+						short[] samples = new short[QOABase.MAX_FRAME_SAMPLES];
+						for(;;) {
+							if(riffWriter.hasWrittenAllSamples()) {
+								break;
+							}
+							int frameSamples = dec.readFrame(samples);
+							if(frameSamples < 0) {
+								Logger.warn("decode error");
+								break;
+							}
+							riffWriter.writeSamples(samples, frameSamples);
 						}
-						int frameSamples = dec.readFrame(samples);
-						if(frameSamples < 0) {
-							Logger.warn("decode error");
-							break;
+						if(!riffWriter.hasWrittenAllSamples()) {
+							throw new RuntimeException("not all samples processed");
 						}
-						riffWriter.writeSamples(samples, frameSamples);
-					}
-					if(!riffWriter.hasWrittenAllSamples()) {
-						throw new RuntimeException("not all samples processed");
 					}
 				}
-			}
 			} else {
 				throw new RuntimeException("not valid QOA file");
 			}
 		}
-	}
 	}
 
 	private static boolean isAbove(File file, float samplingRate) {

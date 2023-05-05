@@ -12,10 +12,7 @@ import java.nio.file.StandardOpenOption;
 
 import org.tinylog.Logger;
 
-
-
-public class Riff {
-	
+public class Riff extends AudioFileMetaData {
 
 	static final int RIFF_MARK = 1179011410;
 	static final int WAVE_MARK = 1163280727;
@@ -30,15 +27,7 @@ public class Riff {
 	
 	public short type = -1;
 	public short channels = -1;
-	public int sample_rate = -1;
-	public int avg_bytes_per_sec = -1;
-	public short bits_per_sample = -1;
-	public long samples = -1;
 	public short block_align;
-	public String comments = null;
-	public String artist = null;
-
-
 	
 	public static String convertIntToForcc(int n) {
 		int a = (byte) n;
@@ -92,6 +81,14 @@ public class Riff {
 			fileChannel.read(byteBuffer);
 		}
 		byteBuffer.flip();
+		read(byteBuffer, bufferSize, fileSize, file, true);
+	}
+	
+	public Riff(ByteBuffer byteBuffer, int bufferSize, long fileSize, File file, boolean checkFileSize) {
+		read(byteBuffer, bufferSize, fileSize, file, checkFileSize);
+	}
+	
+	private void read(ByteBuffer byteBuffer, int bufferSize, long fileSize, File file, boolean checkFileSize) {
 		int riffMarker = byteBuffer.getInt();
 		if(riffMarker != RIFF_MARK) {
 			Logger.info(riffMarker);
@@ -99,7 +96,7 @@ public class Riff {
 		}
 		int riffFileSize = byteBuffer.getInt();
 		//Logger.info("file size: " + riffFileSize);
-		if((fileSize - 8) != riffFileSize) {
+		if(checkFileSize && (fileSize - 8) != riffFileSize) {
 			Logger.warn("file size not same as in RIFF size: " + fileSize + "  RIFF " + riffFileSize + "  in " + file);
 		}
 		
@@ -186,13 +183,13 @@ public class Riff {
 				Logger.warn("unknown chunk marker: " + chunkMarker);
 			}
 			chunkPosition = nextChunkPosition;			
-		}
-		/*if(waveMarker != WAVE_MARK) {
-			Logger.info(waveMarker);
-			throw new RuntimeException("no WAVE");
-		}
-		Logger.info(chunkMarker);
-		Logger.info(chunkSize);*/
+		}	
 	}
 
+	@Override
+	public String toString() {
+		return "Riff [type=" + type + ", channels=" + channels + ", sample_rate=" + sample_rate + ", avg_bytes_per_sec="
+				+ avg_bytes_per_sec + ", bits_per_sample=" + bits_per_sample + ", samples=" + samples + ", block_align="
+				+ block_align + ", comments=" + comments + ", artist=" + artist + "]";
+	}
 }

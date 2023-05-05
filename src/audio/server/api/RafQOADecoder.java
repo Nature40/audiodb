@@ -1,32 +1,29 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.RandomAccessFile;
 
 import qoa.QOADecoder;
 
-class StreamQOADecoder extends QOADecoder {
+class RafQOADecoder extends QOADecoder {
 
-	private final InputStream in;
+	private final RandomAccessFile raf;
 
 	private final byte[] buf = new byte[8192];
 	private int pos = 0;
 	private int len = 0;
 
-	public StreamQOADecoder(InputStream in) throws IOException {
-		this.in = in;
+	public RafQOADecoder(RandomAccessFile raf) throws IOException {
+		this.raf = raf;
 	}
 
 	@Override
 	protected int readByte() {
-		/*if(len == -1) {
-			return -1;
-		}*/
 		if(pos < len) {
 			return buf[pos++] & 0xff;
 		} else {
 			try {
-				len = in.read(buf);
+				len = raf.read(buf, 0, buf.length);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -36,21 +33,16 @@ class StreamQOADecoder extends QOADecoder {
 			pos = 1;
 			return buf[0] & 0xff;
 		}
-		/*try {
-			return in.read();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}*/
 	}
 
 	@Override
 	protected void seekToByte(int position) {
-		throw new RuntimeException("seek not supported");
-		/*try {
-			in.getChannel().position(position);
+		pos = 0;
+		len = 0;
+		try {
+			raf.seek(position);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-		}*/			
+		}		
 	}
-
 }

@@ -7,7 +7,7 @@ import java.util.Arrays;
  */
 public abstract class QOAEncoder extends QOABase
 {
-	QOAEncoder()
+	protected QOAEncoder()
 	{
 		for (int _i0 = 0; _i0 < 8; _i0++) {
 			this.lMSes[_i0] = new LMS();

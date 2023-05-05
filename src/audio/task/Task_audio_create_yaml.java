@@ -105,7 +105,7 @@ public class Task_audio_create_yaml extends Task {
 	protected boolean traverseFile(Path path, File file) {
 		//Logger.info("file " + path);
 		String filename = file.getName();
-		if(isWav(filename)) {
+		if(isWav(filename) || isQoa(filename)) {
 			try {
 				long fileSize = Files.size(path);
 				if(fileSize > 0) {

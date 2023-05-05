@@ -1,8 +1,6 @@
 package qoa;
 // Generated automatically with "cito". Do not edit.
 
-import org.tinylog.Logger;
-
 /**
  * Decoder of the "Quite OK Audio" format.
  */

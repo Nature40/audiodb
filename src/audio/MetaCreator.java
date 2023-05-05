@@ -32,7 +32,7 @@ public class MetaCreator {
 	public static boolean createYaml(File file, Path yamlPath) {
 		try {
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
-			Riff riff = new Riff(file);
+			AudioFileMetaData audioFileMetaData = AudioFileMetaData.createFromAudioFile(file);
 			m.put("AudioSens", "v1.1");
 			m.put("file", file.getName());
 			try {
@@ -40,7 +40,7 @@ public class MetaCreator {
 			} catch(Exception e) {
 				Logger.warn(e);
 			}
-			addRiffMeta(riff, m);
+			addAudioMeta(audioFileMetaData, m);
 			Vec<Object> logList = new Vec<Object>();
 			LinkedHashMap<String, Object> logO = new LinkedHashMap<String, Object>();
 			logO.put("action", "create_yaml");
@@ -57,8 +57,8 @@ public class MetaCreator {
 
 	public static boolean supplementYaml(Map<String, Object> m, Path samplePath) {
 		try {
-			Riff riff = new Riff(samplePath.toFile());
-			addRiffMeta(riff, m);
+			AudioFileMetaData audioFileMetaData = AudioFileMetaData.createFromAudioFile(samplePath.toFile());
+			addAudioMeta(audioFileMetaData, m);
 			return true;
 		} catch (Exception e) {
 			Logger.warn(e);
@@ -66,41 +66,41 @@ public class MetaCreator {
 		}
 	}
 
-	private static void addRiffMeta(Riff riff, Map<String, Object> m) {
-		addCommentMeta(riff, m);
-		if(riff.artist != null) {			
-			m.put("Artist", riff.artist);
-			if(riff.artist.startsWith(AUDIOMOTH)) {
+	private static void addAudioMeta(AudioFileMetaData audioFileMetaData, Map<String, Object> m) {
+		addCommentMeta(audioFileMetaData, m);
+		if(audioFileMetaData.artist != null) {			
+			m.put("Artist", audioFileMetaData.artist);
+			if(audioFileMetaData.artist.startsWith(AUDIOMOTH)) {
 				try {
 					m.put("device_type", "AudioMoth");
-					String idText = riff.artist.substring(AUDIOMOTH_LEN);
+					String idText = audioFileMetaData.artist.substring(AUDIOMOTH_LEN);
 					m.put("device_id", idText);
 				} catch(Exception e) {
 					Logger.warn(e);
 				}
 			}
 		}
-		if(riff.sample_rate > 0) {
-			m.put("SampleRate", riff.sample_rate);
+		if(audioFileMetaData.sample_rate > 0) {
+			m.put("SampleRate", audioFileMetaData.sample_rate);
 		}
-		if(riff.avg_bytes_per_sec > 0) {
-			m.put("AvgBytesPerSec", riff.avg_bytes_per_sec);
+		if(audioFileMetaData.avg_bytes_per_sec > 0) {
+			m.put("AvgBytesPerSec", audioFileMetaData.avg_bytes_per_sec);
 		}
-		if(riff.bits_per_sample > 0) {
-			m.put("BitsPerSample", riff.bits_per_sample);
+		if(audioFileMetaData.bits_per_sample > 0) {
+			m.put("BitsPerSample", audioFileMetaData.bits_per_sample);
 		}				
-		if(riff.samples > 0) {
-			m.put("Samples", riff.samples);
+		if(audioFileMetaData.samples > 0) {
+			m.put("Samples", audioFileMetaData.samples);
 		}
-		if(riff.samples > 0 && riff.sample_rate > 0) {
-			double duration = ((double) riff.samples) / ((double) riff.sample_rate);
+		if(audioFileMetaData.samples > 0 && audioFileMetaData.sample_rate > 0) {
+			double duration = ((double) audioFileMetaData.samples) / ((double) audioFileMetaData.sample_rate);
 			if(Double.isFinite(duration) && duration > 0) {
 				m.put("Duration", duration);
 			}
 		}
 	}
 	
-	private static void addCommentMeta(Riff riff, Map<String, Object> m) {
+	private static void addCommentMeta(AudioFileMetaData riff, Map<String, Object> m) {
 		addCommentMeta(riff.comments, m);
 	}
 
