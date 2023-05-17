@@ -233,7 +233,7 @@
         <q-select
           filled
           v-model="userSelectedLabelNames"
-          :options="selectableLabels"
+          :options="selectableLabelsFiltered"
           label="Labels"
           style="width: 250px"
           dense
@@ -244,6 +244,10 @@
           emit-value
           clearable
           ref="selectLabel"
+          use-input
+          @filter="labelFilterFn"
+          input-debounce="0"
+          @popup-hide="$refs.selectLabel.updateInputValue(''); $nextTick(() => {$refs.selectLabel.hidePopup();});"
         >
           <template v-slot:append>
             <q-icon name="apps" @click.stop.prevent="onClickLabelSelectDialogShow" />      
@@ -298,7 +302,7 @@
         <q-select
           filled
           v-model="userSelectedLabelNames"
-          :options="selectableLabels"
+          :options="selectableLabelsFiltered"
           label="Labels"
           style="width: 250px"
           dense
@@ -308,6 +312,11 @@
           option-value="name"
           emit-value
           clearable
+          ref="selectNewLabel"
+          use-input
+          @filter="labelFilterFn"
+          input-debounce="0"
+          @popup-hide="$refs.selectNewLabel.updateInputValue(''); $nextTick(() => {$refs.selectNewLabel.hidePopup();});"          
         >
         <template v-slot:append>
             <q-icon name="apps" @click.stop.prevent="onClickNewLabelSelectDialogShow" />      
@@ -582,6 +591,7 @@ export default defineComponent({
       removeTimeSegmentShow: false,
       dialoghelpShow: false,
       dialoghelpMaximizedToggle: false,
+      selectableLabelsFiltered: [],
     };
   },
   
@@ -1395,7 +1405,29 @@ export default defineComponent({
     },
     onClickNewLabelSelectDialogShow() {
       this.newLabelSelectDialogShow = true;
-    },   
+    },
+    labelFilterFn(val, update) { 
+      if (val === '') {
+        update(
+          () => {
+            this.selectableLabelsFiltered = this.selectableLabels;
+          },
+        );
+        return;
+      }
+      update(
+        () => {
+          const prefix = val.toLowerCase();
+          this.selectableLabelsFiltered = this.selectableLabels.filter(v => v.name.toLowerCase().startsWith(prefix));
+        },
+        ref => {
+              if (val !== '' && ref.options.length > 0 && ref.getOptionIndex() === -1) {
+                ref.moveOptionSelection(1, true) // focus the first selectable option and do not update the input-value
+                ref.toggleOption(ref.options[ ref.optionIndex ], true) // toggle the focused option
+              }
+            }
+      );
+    },  
   },
 
   watch: {
@@ -1469,7 +1501,15 @@ export default defineComponent({
       async handler() {
         this.refreshLabelDefinitions();
       }
-    },    
+    }, 
+    userSelectedLabelNames() {
+      if(this.$refs.selectLabel) {
+        this.$refs.selectLabel.updateInputValue('');
+      }
+      if(this.$refs.selectNewLabel) {
+        this.$refs.selectNewLabel.updateInputValue('');
+      }
+    },  
   },
   async mounted() {
     //this.$store.dispatch('project/init'); 
