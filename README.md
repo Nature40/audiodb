@@ -1,8 +1,6 @@
-# AudioDB / PhotoDB
+# AudioDB
 
-This repository contains sources, documentation and release packages of AudioDB and PhotoDB.  
-In brief, the whole package is called **AudioDB** (which also includes PhotoDB).
-
+This repository contains sources, documentation and release packages of AudioDB.  
 
 Requirements: [Java 11 (or newer)](https://adoptium.net)
 

@@ -1421,11 +1421,11 @@ export default defineComponent({
           this.selectableLabelsFiltered = this.selectableLabels.filter(v => v.name.toLowerCase().startsWith(prefix));
         },
         ref => {
-              if (val !== '' && ref.options.length > 0 && ref.getOptionIndex() === -1) {
-                ref.moveOptionSelection(1, true) // focus the first selectable option and do not update the input-value
-                ref.toggleOption(ref.options[ ref.optionIndex ], true) // toggle the focused option
-              }
-            }
+          if (val !== '' && ref.options.length > 0) {
+            ref.setOptionIndex(-1);
+            ref.moveOptionSelection(1, true);
+          }
+        }
       );
     },  
   },
