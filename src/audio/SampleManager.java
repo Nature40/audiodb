@@ -53,6 +53,7 @@ public class SampleManager {
 		if(!broker.commandlineConfig.no_yaml_scan) {
 			refresh(false);	
 		}
+		//new SampleStorage(broker).refresh(false);
 	}
 
 	public static String metaRelPathToID(String project, String meta_rel_path) {

@@ -44,6 +44,8 @@
 /sample_cache.trace.db
 /thumb_cache.mv.db
 /thumb_cache.trace.db
+/sample_meta.mv.db
+/sample_meta.trace.db
 /webcontent/app
 /webcontent/audio
 /webcontent/photo
