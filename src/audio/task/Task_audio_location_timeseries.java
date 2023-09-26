@@ -7,6 +7,8 @@ import java.nio.file.Paths;
 
 import org.tinylog.Logger;
 
+import audio.Sample2;
+import audio.SampleStorage;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import task.Cancelable;
 import task.Description;
@@ -39,7 +41,8 @@ public class Task_audio_location_timeseries extends Task {
 			throw new RuntimeException("canceled");
 		}
 
-		ctx.broker.sampleManager().tlSampleManagerConnector.get().forEachLocation(location -> {
+		//ctx.broker.sampleManager().tlSampleManagerConnector.get().forEachLocation(location -> {
+		ctx.broker.sampleStorage().tlSampleStorageConnector.get().forEachLocation(location -> {
 			if(isSoftCanceled()) {
 				throw new RuntimeException("canceled");
 			}
@@ -47,13 +50,21 @@ public class Task_audio_location_timeseries extends Task {
 				setMessage("processing location: " + location);
 				try (CsvWriter csv = CsvWriter.builder().build(output_folder_path.resolve(location + ".csv"))) {
 					csv.writeRow("plotID", "datetime", "audio");
-					ctx.broker.sampleManager().forEachAtLocation(location, sample -> {
+					SampleStorage sampleStorage = ctx.broker.sampleStorage();
+					sampleStorage.forEachOrderedSampleAtLocationName(Long.MIN_VALUE, Long.MAX_VALUE, location, sample -> {
 						if(isSoftCanceled()) {
 							throw new RuntimeException("canceled");
 						}
 						String timeName = AudioTimeUtil.toTextMinutes(AudioTimeUtil.ofAudiotime(sample.timestamp));
 						csv.writeRow(location, timeName, "1");
-					});
+					}, Integer.MAX_VALUE, 0);
+					/*ctx.broker.sampleManager().forEachAtLocation(location, sample -> {
+						if(isSoftCanceled()) {
+							throw new RuntimeException("canceled");
+						}
+						String timeName = AudioTimeUtil.toTextMinutes(AudioTimeUtil.ofAudiotime(sample.timestamp));
+						csv.writeRow(location, timeName, "1");
+					});*/
 				} catch (IOException e) {
 					Logger.warn(e);
 				}

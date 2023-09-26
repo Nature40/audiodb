@@ -42,8 +42,9 @@ public class Task_audio_scan_yaml_orphans extends Task {
 
 	@Override
 	public void run() throws IOException {
-		TraverseExist traverseExist = new TraverseExist();
+		throw new RuntimeException("not implemented");
+		/*TraverseExist traverseExist = new TraverseExist();
 		ctx.broker.sampleManager().traverseYamlFiles(traverseExist);
-		setMessage(traverseExist.counterMissing + " orphans");
+		setMessage(traverseExist.counterMissing + " orphans");*/
 	}
 }

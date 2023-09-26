@@ -32,7 +32,8 @@ public class WorklistHandler {
 		
 		SKIP_DONE_PREDICATE = e -> {
 			Logger.info(e.sample);
-			Sample2 sample = broker.sampleManager().getById(e.sample);
+			//Sample2 sample = broker.sampleManager().getById(e.sample);
+			Sample2 sample = broker.sampleStorage().getSample(Integer.parseInt(e.sample));
 			if(sample == null) {
 				return false;
 			}

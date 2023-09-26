@@ -41,9 +41,13 @@ public class Broker {
 	private volatile PhotoDB2 photodb2Volatile;
 	private Object photodb2Lock = new Object();
 	
-	private SampleManager sampleManager;
+	/*private SampleManager sampleManager;
 	private volatile SampleManager sampleManagerVolatile;
-	private Object sampleManagerLock = new Object();
+	private Object sampleManagerLock = new Object();*/
+	
+	private SampleStorage sampleStorage;
+	private volatile SampleStorage sampleStorageVolatile;
+	private Object sampleStorageLock = new Object();
 	
 	private LabelStore labelStore;
 	private volatile LabelStore labelStoreVolatile;
@@ -217,7 +221,7 @@ public class Broker {
 		}
 	}
 	
-	public SampleManager sampleManager() {		
+	/*public SampleManager sampleManager() {		
 		return sampleManager != null ? sampleManager : loadSampleManager();
 	}
 
@@ -234,6 +238,27 @@ public class Broker {
 			r = new SampleManager(this);
 			sampleManagerVolatile = r;
 			sampleManager = r;
+			return r;
+		}
+	}*/
+	
+	public SampleStorage sampleStorage() {		
+		return sampleStorage != null ? sampleStorage : loadSampleStorage();
+	}
+
+	private SampleStorage loadSampleStorage() {
+		SampleStorage r = sampleStorageVolatile;
+		if(r != null) {
+			return r;
+		}
+		synchronized (sampleStorageLock) {
+			r = sampleStorageVolatile;
+			if(r != null) {
+				return r;
+			}
+			r = new SampleStorage(this);
+			sampleStorageVolatile = r;
+			sampleStorage = r;
 			return r;
 		}
 	}

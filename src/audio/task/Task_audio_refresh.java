@@ -12,6 +12,7 @@ public class Task_audio_refresh extends Task {
 
 	@Override
 	public void run() {
-		ctx.broker.sampleManager().refresh(false);		
+		//ctx.broker.sampleManager().refresh(false);
+		ctx.broker.sampleStorage().refresh(false);
 	}
 }

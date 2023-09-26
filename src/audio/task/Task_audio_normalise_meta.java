@@ -18,7 +18,8 @@ public class Task_audio_normalise_meta extends Task {
 			throw new RuntimeException("canceled");
 		}
 
-		ctx.broker.sampleManager().forEach(sample -> {
+		//ctx.broker.sampleManager().forEach(sample -> {
+		ctx.broker.sampleStorage().forEachOrderedSample(sample -> {
 			if(isSoftCanceled()) {
 				throw new RuntimeException("canceled");
 			}

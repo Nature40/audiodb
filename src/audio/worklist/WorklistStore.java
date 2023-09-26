@@ -40,11 +40,16 @@ public class WorklistStore {
 
 	private void addAllSamplesWorklist() {
 		Vec<WorklistEntry> vec = new Vec<WorklistEntry>();
-		broker.sampleManager().forEach(sample -> {
+		broker.sampleStorage().forEachOrderedSample(sample -> {
 			WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (sample.samples() / sample.sampleRate()), "full sample");
 			//WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (1));
 			vec.add(e);
 		});
+		/*broker.sampleManager().forEach(sample -> {
+			WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (sample.samples() / sample.sampleRate()), "full sample");
+			//WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (1));
+			vec.add(e);
+		});*/
 		Worklist worklist = new Worklist();
 		worklist.replace(vec);
 		worklistMap.put("all_samples", worklist);

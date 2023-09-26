@@ -22,7 +22,8 @@ public class Task_audio_create_file_hashs extends Task {
 
 		if(count_only) {
 			long[] counter = new long[] {0, 0, 0};
-			ctx.broker.sampleManager().forEach(sample -> {
+			//ctx.broker.sampleManager().forEach(sample -> {
+				ctx.broker.sampleStorage().forEachOrderedSample(sample -> {
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");
 				}
@@ -40,7 +41,8 @@ public class Task_audio_create_file_hashs extends Task {
 			setMessage(counter[0] + " files traversed  "  + counter[1] + " files to hash  "  + counter[2] + " files with hash   done.");
 		} else {
 			long[] counter = new long[] {0};
-			ctx.broker.sampleManager().forEach(sample -> {
+			//ctx.broker.sampleManager().forEach(sample -> {
+			ctx.broker.sampleStorage().forEachOrderedSample(sample -> {
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");
 				}

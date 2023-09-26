@@ -246,4 +246,10 @@ public class Sample2 implements GeneralSample {
 	public boolean hasFileSize() {
 		return 0 <= getFileSize();
 	}
+
+	@Override
+	public String toString() {
+		return "Sample2 [id=" + id + ", project=" + project + ", metaPath=" + metaPath + ", samplePath=" + samplePath
+				+ ", location=" + location + ", timestamp=" + timestamp + ", device=" + device + "]";
+	}
 }

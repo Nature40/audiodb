@@ -19,6 +19,7 @@ import audio.Broker;
 import audio.Label;
 import audio.Sample2;
 import audio.SampleManager;
+import audio.SampleStorage;
 import audio.UserLabel;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -31,21 +32,24 @@ public class Sample2Handler {
 
 
 	private final Broker broker;
-	private final SampleManager sampleManager;
+	//private final SampleManager sampleManager;
+	private final SampleStorage sampleStorage;
 	private final SpectrumHandler spectrumHandler;
 	private final AudioHandler audioHandler;
 	private final ActivityHandler activityHandler;
 
 	public Sample2Handler(Broker broker) {
 		this.broker = broker;
-		this.sampleManager = broker.sampleManager();
+		//this.sampleManager = broker.sampleManager();
+		sampleStorage = broker.sampleStorage();
 		this.spectrumHandler = new SpectrumHandler(broker);
 		this.audioHandler = new AudioHandler(broker);
 		this.activityHandler = new ActivityHandler(broker);
 	}
 
 	public void handle(String sampleId, String target, Request request, HttpServletResponse response) throws IOException {
-		Sample2 sample = sampleManager.getById(sampleId);
+		//Sample2 sample = sampleManager.getById(sampleId);
+		Sample2 sample = sampleStorage.getSample(Integer.parseInt(sampleId));
 		if(sample == null) {
 			throw new RuntimeException("sample not found");
 		}
@@ -60,20 +64,20 @@ public class Sample2Handler {
 			String next = i < 0 ? "/" : target.substring(i);
 			switch(name) {
 			case "spectrogram": {
-				sampleManager.lock.readLock().lock();
+				sampleStorage.lock.readLock().lock();
 				try {
 					spectrumHandler.handle(sample, request, response);
 				} finally {
-					sampleManager.lock.readLock().unlock();
+					sampleStorage.lock.readLock().unlock();
 				}
 				break;
 			}
 			case "audio": {
-				sampleManager.lock.readLock().lock();
+				sampleStorage.lock.readLock().lock();
 				try {
 					audioHandler.handle(sample, request, response);
 				} finally {
-					sampleManager.lock.readLock().unlock();
+					sampleStorage.lock.readLock().unlock();
 				}
 				break;
 			}
@@ -86,11 +90,11 @@ public class Sample2Handler {
 				break;
 			}
 			case "activity": {
-				sampleManager.lock.readLock().lock();
+				sampleStorage.lock.readLock().lock();
 				try {
 					activityHandler.handle(sample, request, response);
 				} finally {
-					sampleManager.lock.readLock().unlock();
+					sampleStorage.lock.readLock().unlock();
 				}
 				break;
 			}
@@ -103,19 +107,19 @@ public class Sample2Handler {
 	private void handleRoot(Sample2 sample, Request request, HttpServletResponse response) throws IOException {
 		switch(request.getMethod()) {
 		case "GET":
-			sampleManager.lock.readLock().lock();
+			sampleStorage.lock.readLock().lock();
 			try {
 				handleRoot_GET(sample, request, response);
 			} finally {
-				sampleManager.lock.readLock().unlock();
+				sampleStorage.lock.readLock().unlock();
 			}
 			break;
 		case "POST":
-			sampleManager.lock.writeLock().lock();
+			sampleStorage.lock.writeLock().lock();
 			try {
 				handleRoot_POST(sample, request, response);
 			} finally {
-				sampleManager.lock.writeLock().unlock();
+				sampleStorage.lock.writeLock().unlock();
 			}
 			break;			
 		default:

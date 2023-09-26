@@ -176,7 +176,8 @@ public class Task_audio_sample_statistics extends Task {
 			doubleFormat.setMaximumFractionDigits(340);
 			Path root_data_path = ctx.broker.config().audioConfig.root_data_path;
 			setMessage("start traversing audio files");
-			ctx.broker.sampleManager().forEach(sample -> {
+			//ctx.broker.sampleManager().forEach(sample -> {
+			ctx.broker.sampleStorage().forEachOrderedSample(sample -> {
 				if(isSoftCanceled()) {
 					throw new RuntimeException("canceled");
 				}

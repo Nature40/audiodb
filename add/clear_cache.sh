@@ -30,6 +30,9 @@ unlink sample_cache.trace.db
 unlink sample_cache.trace.db.old
 unlink thumb_cache.mv.db
 unlink thumb_cache.trace.db
-unlink sample_cache.trace.db.old
+unlink thumb_cache.trace.db.old
+unlink sample_meta.mv.db
+unlink sample_meta.trace.db
+unlink sample_meta.trace.db.old
 
 echo -e "${GREEN}Done. Now you may start AudioDB/PhotoDB. It may take some time to regenerate database caches.${NC}"

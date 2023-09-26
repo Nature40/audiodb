@@ -25,13 +25,13 @@ public class LabelStore {
 	}
 
 	public void rebuild() {
-		SampleManager sampleManager = broker.sampleManager();
 		LabelStoreConnector conn = tlLabelStoreConnector.get();
 		conn.init(true);
 		
 		Path root_data_path = broker.config().audioConfig.root_data_path;
 		
-		sampleManager.forEach(sample -> {
+		broker.sampleStorage().forEachOrderedSample(sample -> {
+		//broker.sampleManager().forEach(sample -> {
 			Path path = root_data_path.relativize(sample.samplePath);
 			int sampleMapId = conn.getOrCreateIdBySample(path.toString());
 			Logger.info(sample.id);

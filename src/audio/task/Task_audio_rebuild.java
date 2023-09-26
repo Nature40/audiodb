@@ -12,6 +12,7 @@ public class Task_audio_rebuild extends Task {
 
 	@Override
 	public void run() {
-		ctx.broker.sampleManager().refresh(true);		
+		//ctx.broker.sampleManager().refresh(true);
+		ctx.broker.sampleStorage().refresh(true);
 	}
 }

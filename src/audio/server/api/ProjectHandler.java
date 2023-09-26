@@ -1,18 +1,18 @@
 package audio.server.api;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.function.LongConsumer;
 
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.json.JSONWriter;
+import org.tinylog.Logger;
 
 import audio.AudioProjectConfig;
 import audio.Broker;
 import audio.DeviceInventory;
 import audio.SampleManager;
+import audio.SampleStorage;
+import audio.SampleStorageConnector;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,14 +21,15 @@ import util.Web;
 
 public class ProjectHandler {
 
-
 	private final Broker broker;
-	private final SampleManager sampleManager;
+	//private final SampleManager sampleManager;
+	private final SampleStorage sampleStorage;
 	private final LabelDefinitionsHandler labelDefinitionsHandler;
 
 	public ProjectHandler(Broker broker) {
 		this.broker = broker;
-		this.sampleManager = broker.sampleManager();
+		//this.sampleManager = broker.sampleManager();
+		this.sampleStorage = broker.sampleStorage();
 		this.labelDefinitionsHandler = new LabelDefinitionsHandler(broker);
 	}
 
@@ -168,20 +169,25 @@ public class ProjectHandler {
 			json.endObject();
 		}
 		
+		SampleStorageConnector sampleStorageConnector = sampleStorage.tlSampleStorageConnector.get();
+		
 		if(fLocations) {
 			json.key("locations");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachLocation(location -> json.value(location));
+			//sampleManager.tlSampleManagerConnector.get().forEachLocation(location -> json.value(location));
+			sampleStorageConnector.forEachLocation(location -> json.value(location));
 			json.endArray();
 		}
 		if(fDevices) {
 			json.key("devices");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachDevice(device -> json.value(device));
+			//sampleManager.tlSampleManagerConnector.get().forEachDevice(device -> json.value(device));
+			sampleStorageConnector.forEachDevice(device -> json.value(device));
 			json.endArray();
 		}		
 		if(fSamplesTableCount) {
-			int samples_table_count = sampleManager.tlSampleManagerConnector.get().getTableSize();
+			//int samples_table_count = sampleManager.tlSampleManagerConnector.get().getTableSize();
+			int samples_table_count = sampleStorageConnector.getSampleCount();
 			json.key("samples_table_count");
 			json.value(samples_table_count);
 		}
@@ -190,19 +196,22 @@ public class ProjectHandler {
 		LongConsumer timestampDateWriter = AudioTimeUtil.timestampDateWriter(json, timeZoneOffsetSeconds);
 
 		if(fTimestamps) {
-			json.key("timestamps");
+			throw new RuntimeException("not implemented");
+			/*json.key("timestamps");
 			json.array();
 			sampleManager.tlSampleManagerConnector.get().forEachTimestamp(timestampDateTimeWriter);
-			json.endArray();
+			json.endArray();*/
 		}
 		if(fDates) {
 			json.key("dates");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachZonedDate(timeZoneOffsetSeconds, timestampDateWriter);
+			//sampleManager.tlSampleManagerConnector.get().forEachZonedDate(timeZoneOffsetSeconds, timestampDateWriter);
+			sampleStorageConnector.forEachZonedDate(timeZoneOffsetSeconds, timestampDateWriter);
 			json.endArray();
 		}
 		if(timestamps_of_location != null) {
-			String loc = timestamps_of_location.equals("null") ? null : timestamps_of_location;
+			throw new RuntimeException("not implemented");
+			/*String loc = timestamps_of_location.equals("null") ? null : timestamps_of_location;
 			json.key("timestamps_of_location");
 			json.object();
 			json.key("location");
@@ -211,7 +220,7 @@ public class ProjectHandler {
 			json.array();
 			sampleManager.tlSampleManagerConnector.get().forEachTimestamp(loc, timestampDateTimeWriter);
 			json.endArray();
-			json.endObject();
+			json.endObject();*/
 		}
 		if(dates_of_location != null) {
 			String loc = dates_of_location.equals("null") ? null : dates_of_location;
@@ -221,14 +230,16 @@ public class ProjectHandler {
 			json.value(loc);
 			json.key("timestamps");
 			json.array();
-			sampleManager.tlSampleManagerConnector.get().forEachZonedDate(loc, timeZoneOffsetSeconds, timestampDateWriter);
+			//sampleManager.tlSampleManagerConnector.get().forEachZonedDate(loc, timeZoneOffsetSeconds, timestampDateWriter);
+			sampleStorage.forEachZonedDateAtLocationName(timeZoneOffsetSeconds, loc, timestampDateWriter);
 			json.endArray();
 			json.endObject();
 		}
 		if(fInventory) {
 			json.key("inventory");
 			json.array();
-			DeviceInventory di = sampleManager.deviceInventory;
+			//DeviceInventory di = sampleManager.deviceInventory;
+			DeviceInventory di = sampleStorage.deviceInventory;
 			di.forEach(entry -> {
 				json.object();
 				json.key("device");

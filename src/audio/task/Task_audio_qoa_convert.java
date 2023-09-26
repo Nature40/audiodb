@@ -2,9 +2,7 @@ package audio.task;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -52,7 +50,8 @@ public class Task_audio_qoa_convert extends Task {
 
 	@Override
 	protected void run() throws Exception {		
-		this.ctx.broker.sampleManager().forEach(sample -> {
+		//this.ctx.broker.sampleManager().forEach(sample -> {
+		ctx.broker.sampleStorage().forEachOrderedSample(sample -> {
 			convert(sample);
 		});	
 	}

@@ -4,16 +4,16 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONWriter;
+import org.tinylog.Logger;
 
 import audio.Broker;
 import audio.Sample2;
 import audio.SampleManager;
-import audio.SampleManagerConnector;
+import audio.SampleStorage;
+import audio.SampleStorageConnector;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,11 +23,13 @@ import util.Web;
 public class Samples2Handler extends AbstractHandler {
 
 	private final Broker broker;
+	private final SampleStorage sampleStorage;
 
 	private final Sample2Handler sampleHandler;
 
 	public Samples2Handler(Broker broker) {
 		this.broker = broker;
+		this.sampleStorage = broker.sampleStorage();
 		sampleHandler = new Sample2Handler(broker);
 	}
 
@@ -65,7 +67,8 @@ public class Samples2Handler extends AbstractHandler {
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
 
-		SampleManagerConnector conn = broker.sampleManager().tlSampleManagerConnector.get();
+		//SampleManagerConnector conn = broker.sampleManager().tlSampleManagerConnector.get();
+		SampleStorageConnector sampleStorageConnector = sampleStorage.tlSampleStorageConnector.get();
 
 		String location = request.getParameter("location");
 		long start = Web.getLong(request, "start", Long.MIN_VALUE);
@@ -123,24 +126,28 @@ public class Samples2Handler extends AbstractHandler {
 			if(flagCount) {
 				if(timerange) {
 					json.key("count");
-					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtTimerange(start, end);
+					//int count = broker.sampleManager().tlSampleManagerConnector.get().countAtTimerange(start, end);
+					int count = sampleStorageConnector.getSampleCount(start, end);
 					json.value(count);
 				} else {
 					json.key("count");
-					int count = broker.sampleManager().tlSampleManagerConnector.get().count();
+					//int count = broker.sampleManager().tlSampleManagerConnector.get().count();
+					int count = sampleStorageConnector.getSampleCount(Long.MIN_VALUE, Long.MAX_VALUE);
 					json.value(count);
 				}
 			}
 			if(flagDevices) {
 				if(timerange) {
-					json.key("devices");
+					throw new RuntimeException("not implemented");
+					/*json.key("devices");
 					json.array();
 					conn.forEachDeviceAtTimerange(start, end, deviceWriter);
-					json.endArray();
+					json.endArray();*/
 				} else {
 					json.key("devices");
 					json.array();
-					conn.forEachDevice(deviceWriter);
+					//conn.forEachDevice(deviceWriter);
+					sampleStorageConnector.forEachDevice(deviceWriter);
 					json.endArray();
 				}
 			}
@@ -149,24 +156,40 @@ public class Samples2Handler extends AbstractHandler {
 					if(timerange) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtTimerange(start, end, sampleWriter);
+						//broker.sampleManager().forEachAtTimerange(start, end, sampleWriter);
+						sampleStorageConnector.forEachOrderedSampleId(start, end, sampleId -> {
+							Sample2 sample = sampleStorage.getSample(sampleId);
+							sampleWriter.accept(sample);
+						}, Integer.MAX_VALUE, 0);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEach(sampleWriter);
+						//broker.sampleManager().forEach(sampleWriter);
+						sampleStorageConnector.forEachOrderedSampleId(Long.MIN_VALUE, Long.MAX_VALUE, sampleId -> {
+							Sample2 sample = sampleStorage.getSample(sampleId);
+							sampleWriter.accept(sample);
+						}, Integer.MAX_VALUE, 0);
 						json.endArray();
 					}
 				} else { // page
 					if(timerange) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtTimerangePaged(start, end, sampleWriter, limit, offset);
+						//broker.sampleManager().forEachAtTimerangePaged(start, end, sampleWriter, limit, offset);
+						sampleStorageConnector.forEachOrderedSampleId(start, end, sampleId -> {
+							Sample2 sample = sampleStorage.getSample(sampleId);
+							sampleWriter.accept(sample);
+						}, limit, offset);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachPaged(sampleWriter, limit, offset);
+						//broker.sampleManager().forEachPaged(sampleWriter, limit, offset);
+						sampleStorageConnector.forEachOrderedSampleId(Long.MIN_VALUE, Long.MAX_VALUE, sampleId -> {
+							Sample2 sample = sampleStorage.getSample(sampleId);
+							sampleWriter.accept(sample);
+						}, limit, offset);
 						json.endArray();
 					}
 				} // end page
@@ -178,16 +201,19 @@ public class Samples2Handler extends AbstractHandler {
 			if(flagCount) {
 				if(timerange) {
 					json.key("count");
-					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocationAtTimerange(location, start, end);
+					//int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocationAtTimerange(location, start, end);
+					int count = sampleStorage.getSampleCountAtLocationName(start, end, location);
 					json.value(count);
 				} else {
 					json.key("count");
-					int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
+					//int count = broker.sampleManager().tlSampleManagerConnector.get().countAtLocation(location);
+					int count = sampleStorage.getSampleCountAtLocationName(Long.MIN_VALUE, Long.MAX_VALUE, location);
 					json.value(count);
 				}
 			}
 			if(flagDevices) {
-				if(timerange) {
+				throw new RuntimeException("not implemented");
+				/*if(timerange) {
 					json.key("devices");
 					json.array();
 					conn.forEachDeviceAtLocationAtTimerange(location, start, end, deviceWriter);
@@ -197,31 +223,36 @@ public class Samples2Handler extends AbstractHandler {
 					json.array();
 					conn.forEachDeviceAtLocation(location, deviceWriter);
 					json.endArray();
-				}
+				}*/
 			}
 			if(flagSamples) {
 				if(limit == Integer.MAX_VALUE && offset == 0) {  // no limit
 					if(timerange) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtLocationAtTimerange(location, start, end, sampleWriter);
+						//broker.sampleManager().forEachAtLocationAtTimerange(location, start, end, sampleWriter);
+						sampleStorage.forEachOrderedSampleAtLocationName(start, end, location, sampleWriter, Integer.MAX_VALUE, 0);
+						json.endArray();
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachAtLocation(location, sampleWriter);
+						//broker.sampleManager().forEachAtLocation(location, sampleWriter);
+						sampleStorage.forEachOrderedSampleAtLocationName(Long.MIN_VALUE, Long.MAX_VALUE, location, sampleWriter, Integer.MAX_VALUE, 0);
 						json.endArray();
 					}
 				} else {   // page
 					if(timerange) {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachPagedAtLocationAtTimerange(location, start, end, sampleWriter, limit, offset);
+						//broker.sampleManager().forEachPagedAtLocationAtTimerange(location, start, end, sampleWriter, limit, offset);
+						sampleStorage.forEachOrderedSampleAtLocationName(start, end, location, sampleWriter, limit, offset);
 						json.endArray();
 					} else {
 						json.key("samples");
 						json.array();
-						broker.sampleManager().forEachPagedAtLocation(location, sampleWriter, limit, offset);
+						//broker.sampleManager().forEachPagedAtLocation(location, sampleWriter, limit, offset);
+						sampleStorage.forEachOrderedSampleAtLocationName(Long.MIN_VALUE, Long.MAX_VALUE, location, sampleWriter, limit, offset);
 						json.endArray();
 					}
 				}  // end page
