@@ -163,7 +163,6 @@ public class SampleStorage {
 
 	public Sample2 getSample(int sampleId) {
 		StorageSample storageSample = tlSampleStorageConnector.get().getSample(sampleId);
-		Logger.info(storageSample);
 		Path metaPath = storageSample.folderName.equals(ROOT_FOLDER_MARKER) ? projectConfig.root_path.resolve(storageSample.fileName + ".yaml") : projectConfig.root_path.resolve(storageSample.folderName).resolve(storageSample.fileName + ".yaml");
 		Path samplePath = storageSample.folderName.equals(ROOT_FOLDER_MARKER) ? projectConfig.root_data_path.resolve(storageSample.fileName) : projectConfig.root_data_path.resolve(storageSample.folderName).resolve(storageSample.fileName);
 		Sample2 sample = new Sample2(Integer.toString(storageSample.sampleId), projectConfig.project, metaPath, samplePath, storageSample.locationName, storageSample.timestamp, storageSample.deviceName);
@@ -204,5 +203,10 @@ public class SampleStorage {
 
 	public void forEachOrderedSample(Consumer<Sample2> consumer) {
 		forEachOrderedSample(Long.MIN_VALUE, Long.MAX_VALUE, consumer, Integer.MAX_VALUE, 0);
+	}
+
+	public void compact() {
+		Logger.info("SHUTDOWN COMPACT");
+		tlSampleStorageConnector.get().compact();		
 	}
 }

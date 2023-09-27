@@ -13,6 +13,7 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.tinylog.Logger;
 
 public class SampleStorageConnector {
 	private static LinkedHashMap<String, String[]> TABLE_MAP = new LinkedHashMap<String, String[]>();
@@ -26,10 +27,10 @@ public class SampleStorageConnector {
 		});
 
 		TABLE_MAP.put("ORDERED_SAMPLE", new String[] {
-				"ROW_ID INT PRIMARY KEY",
+				"ROW_ID INT NOT NULL PRIMARY KEY",
 				"SAMPLE_ID INT NOT NULL",
 				"TIMESTAMP BIGINT NOT NULL",
-				"DEVICE_ID INT NOT NULL ",
+				/*"DEVICE_ID INT NOT NULL ",*/
 				"LOCATION_ID INT NOT NULL ",
 		});
 
@@ -62,20 +63,15 @@ public class SampleStorageConnector {
 				"PRIMARY KEY (FOLDER_ID, FILE_NAME)",
 		});
 	}
-	
+
 	private final String[][] INDICES = new String[][] {
-		{"IDX_FOLDER", "FOLDER", "FOLDER_NAME"},
-		{"IDX_FILE", "FILE", "FOLDER_ID, FILE_NAME"},
-		{"IDX_DEVICE", "DEVICE", "DEVICE_NAME"},
-		{"IDX_LOCATION", "LOCATION", "LOCATION_NAME"},
+		{"UNIQUE", "IDX_FOLDER", "FOLDER", "FOLDER_NAME"},
+		{"UNIQUE", "IDX_FILE", "FILE", "FOLDER_ID, FILE_NAME"},
+		{"UNIQUE", "IDX_DEVICE", "DEVICE", "DEVICE_NAME"},
+		{"UNIQUE", "IDX_LOCATION", "LOCATION", "LOCATION_NAME"},
 	};
 
 	private static enum SQL {
-		
-		/*CREATE_INDEX_FOLDER("CREATE INDEX IF NOT EXISTS IDX_FOLDER ON FOLDER (FOLDER_NAME)"),
-		CREATE_INDEX_FILE("CREATE INDEX IF NOT EXISTS IDX_FILE ON FILE (FOLDER_ID, FILE_NAME)"),
-		CREATE_INDEX_DEVICE("CREATE INDEX IF NOT EXISTS IDX_DEVICE ON DEVICE (DEVICE_NAME)"),
-		CREATE_INDEX_LOCATION("CREATE INDEX IF NOT EXISTS IDX_LOCATION ON LOCATION (LOCATION_NAME)"),*/
 
 		QUERY_FOLDER_ID_BY_FOLDER_NAME("SELECT FOLDER_ID FROM FOLDER WHERE FOLDER_NAME = ?"),		
 		QUERY_SAMPLE_ID_BY_FILE("SELECT SAMPLE_ID, LAST_MODIFIED FROM FILE WHERE FOLDER_ID = ? AND FILE_NAME = ?"),
@@ -97,12 +93,6 @@ public class SampleStorageConnector {
 				"WHERE FILE.SAMPLE_ID = ?"
 				),
 
-		/*QUERY_FILE(
-				"SELECT FILE.FOLDER_ID, FILE.FILE_NAME, FILE.LAST_MODIFIED",
-				"FROM FILE", 
-				"WHERE FILE.SAMPLE_ID = ?"
-				),*/
-
 
 		INSERT_SAMPLE("INSERT INTO SAMPLE (SAMPLE_ID, TIMESTAMP, DEVICE_ID, LOCATION_ID) VALUES (?, ?, ?, ?)"),
 		MERGE_SAMPLE("MERGE INTO SAMPLE (SAMPLE_ID, TIMESTAMP, DEVICE_ID, LOCATION_ID) VALUES (?, ?, ?, ?)"),
@@ -115,9 +105,21 @@ public class SampleStorageConnector {
 
 		CLEAR_ODERED_SAMPLE("DELETE FROM ORDERED_SAMPLE"),
 
-		FILL_ODERED_SAMPLE(
+		/*FILL_ODERED_SAMPLE(
 				"INSERT INTO ORDERED_SAMPLE (ROW_ID, SAMPLE_ID, TIMESTAMP, DEVICE_ID, LOCATION_ID)",
 				"SELECT ROW_NUMBER() OVER (ORDER BY TIMESTAMP, LOCATION_ID) as ROW_ID, SAMPLE_ID, TIMESTAMP, DEVICE_ID, LOCATION_ID",
+				"FROM SAMPLE"
+				),*/
+
+		/*FILL_ODERED_SAMPLE(
+				"INSERT INTO ORDERED_SAMPLE (ROW_ID, SAMPLE_ID, TIMESTAMP, DEVICE_ID, LOCATION_ID)",
+				"SELECT ROW_NUMBER() OVER (ORDER BY LOCATION_ID, TIMESTAMP) as ROW_ID, SAMPLE_ID, TIMESTAMP, DEVICE_ID, LOCATION_ID",
+				"FROM SAMPLE"
+				),*/
+		
+		FILL_ODERED_SAMPLE(
+				"INSERT INTO ORDERED_SAMPLE (ROW_ID, SAMPLE_ID, TIMESTAMP, LOCATION_ID)",
+				"SELECT ROW_NUMBER() OVER (ORDER BY LOCATION_ID, TIMESTAMP) as ROW_ID, SAMPLE_ID, TIMESTAMP, LOCATION_ID",
 				"FROM SAMPLE"
 				),
 
@@ -128,10 +130,12 @@ public class SampleStorageConnector {
 		COUNT_ORDERED_SAMPLES("SELECT COUNT(*) FROM ORDERED_SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ?"),
 
 		QUERY_ORDERED_SAMPLES("SELECT SAMPLE_ID FROM ORDERED_SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ? LIMIT ? OFFSET ?"),
-		
+
 		COUNT_ORDERED_SAMPLES_AT_LOCATION_ID("SELECT COUNT(*) FROM ORDERED_SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ? AND LOCATION_ID = ?"),
-		
+
 		QUERY_ORDERED_SAMPLES_AT_LOCATION_ID("SELECT SAMPLE_ID FROM ORDERED_SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ? AND LOCATION_ID = ? LIMIT ? OFFSET ?"),
+
+		SHUTDOWN_COMPACT("SHUTDOWN COMPACT"),
 
 		END_MARKER("");
 
@@ -221,13 +225,12 @@ public class SampleStorageConnector {
 					createTable(table, colDefs);
 				}
 			}
-			
-			
+
+
 			for(String[] index:INDICES) {
-				String sql = String.format("CREATE INDEX IF NOT EXISTS %s ON %s (%s)", index[0], index[1], index[2]);
-				conn.prepareStatement(sql).executeUpdate();
+				createIndex(index);
 			}
-			
+
 			/*getStatement(SQL.CREATE_INDEX_FOLDER).executeUpdate();
 			getStatement(SQL.CREATE_INDEX_FILE).executeUpdate();
 			getStatement(SQL.CREATE_INDEX_DEVICE).executeUpdate();
@@ -235,6 +238,12 @@ public class SampleStorageConnector {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private void createIndex(String[] index) throws SQLException {
+		String sql = String.format("CREATE %s INDEX IF NOT EXISTS %s ON %s (%s)", index[0], index[1], index[2], index[3]);
+		Logger.info(sql);
+		conn.prepareStatement(sql).executeUpdate();
 	}
 
 	private boolean tableExists(String name) throws SQLException {
@@ -325,7 +334,7 @@ public class SampleStorageConnector {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void insertSample(int sampleId, long timestamp, int deviceId, int locationId) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.INSERT_SAMPLE);
@@ -452,20 +461,26 @@ public class SampleStorageConnector {
 		}
 	}
 
-	private void clearOrderedSample() {
+	/*private void clearOrderedSample() {
 		try {
 			PreparedStatement stmt = getStatement(SQL.CLEAR_ODERED_SAMPLE);
 			stmt.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
-	}
+	}*/
 
 	public void refreshOrderedSample() {
-		clearOrderedSample();
 		try {
-			PreparedStatement stmt = getStatement(SQL.FILL_ODERED_SAMPLE);
-			stmt.executeUpdate();
+			dropTable("ORDERED_SAMPLE");
+			createTable("ORDERED_SAMPLE", TABLE_MAP.get("ORDERED_SAMPLE"));
+			
+			getStatement(SQL.FILL_ODERED_SAMPLE).executeUpdate();			
+			
+			createIndex(new String[]{"", "IDX_ORDERED_SAMPLE_LOCATION_ID", "ORDERED_SAMPLE", "LOCATION_ID"});
+			/*{"", "IDX_ORDERED_SAMPLE_TIMESTAMP", "ORDERED_SAMPLE", "TIMESTAMP"},
+			{"", "IDX_ORDERED_SAMPLE_LOCATION_ID", "ORDERED_SAMPLE", "LOCATION_ID"},*/
+			
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -516,7 +531,7 @@ public class SampleStorageConnector {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public int getSampleCountAtLocationId(long start, long end, int locationId) {		
 		try {
 			PreparedStatement stmt = getStatement(SQL.COUNT_ORDERED_SAMPLES_AT_LOCATION_ID);
@@ -549,7 +564,7 @@ public class SampleStorageConnector {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void forEachOrderedSampleAtLocationId(long start, long end, int locationId, IntConsumer consumer, int limit, int offset) {
 		try {
 			PreparedStatement stmt = getStatement(SQL.QUERY_ORDERED_SAMPLES_AT_LOCATION_ID);
@@ -624,5 +639,14 @@ public class SampleStorageConnector {
 		}
 
 		return storageSample;
+	}
+
+	public void compact() {
+		try {
+			PreparedStatement stmt = getStatement(SQL.SHUTDOWN_COMPACT);		
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
