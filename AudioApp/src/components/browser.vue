@@ -1,7 +1,7 @@
 <template>
   <q-dialog v-model="show" :maximized="dialogMaximizedToggle">
     <q-layout view="Lhh lpR fff" container class="bg-white" style="min-width: 1000px;">
-      <q-header class="bg-white text-black">                
+      <q-header class="bg-white text-black">
       <q-bar>
         <q-icon name="menu_book"/>
         <div>Browser</div>
@@ -41,7 +41,7 @@
               <div class="text-h6">Location</div>
               <i>Select one location from the list or none for all locations.</i>
             </q-card-section>
-            
+
             <q-card-section class="q-pt-none">
               <div class="text-h6">Time</div>
               <i>Select one date from the list or none for all dates.</i>
@@ -59,23 +59,23 @@
         </q-btn>
         <q-btn dense flat icon="crop_square" @click="dialogMaximizedToggle = true" v-show="!dialogMaximizedToggle">
           <q-tooltip v-if="!dialoghelpMaximizedToggle">Maximize</q-tooltip>
-        </q-btn>                
+        </q-btn>
         <q-btn dense flat icon="close" v-close-popup>
           <q-tooltip>Close</q-tooltip>
         </q-btn>
       </q-bar>
 
-      <q-separator/>        
+      <q-separator/>
 
       <q-card-section class="text-h5 row">
         <q-icon name="place" size="lg" color="grey-4" />
-        <q-select outlined v-model="selectedLocation" :options="filteredLocations" :label="selectedLocation ? 'Location' : '(All locations)'" class="col" dense clearable use-input @filter="locationfilterFn" input-debounce="0" :loading="requestMetaLoading">
+        <q-select outlined v-model="selectedLocation" :options="filteredLocations" label="Location" class="col" dense clearable use-input @filter="locationfilterFn" input-debounce="0" :loading="requestMetaLoading">
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps" dense>
               <q-item-section>
                 <q-item-label>{{scope.opt.label}}</q-item-label>
               </q-item-section>
-            </q-item>              
+            </q-item>
           </template>
         </q-select>
         <q-btn @click="$refs.inventory.show = true;" icon="view_timeline" title="Show audio devices inventory."  push round style="margin-left: 20px;" />
@@ -88,29 +88,30 @@
         <q-icon name="schedule" size="lg" color="grey-4" />
         <q-badge v-if="requestMetaError" color="red">Error loading timestamps<q-btn color="grey" @click="requestRefreshMeta">refresh</q-btn></q-badge>
         <div v-if="years.length === 1">{{years[0]}}</div>
-        <q-select v-else-if="years.length > 1" 
-          outlined 
-          v-model="selectedYear" 
-          :options="years" 
-          :label="selectedYear ? 'Year' : '(All years)'" 
-          class="col" 
-          dense 
-          clearable 
+        <q-select v-else-if="years.length > 1"
+          outlined
+          v-model="selectedYear"
+          :options="years"
+          :label="selectedYear ? 'Year' : '(All years)'"
+          class="col"
+          dense
+          clearable
           :loading="requestMetaLoading"
         >
         </q-select>
-        <q-select 
-          outlined 
-          v-model="selectedTimestamp" 
-          :options="filteredTimestamps" 
-          :label="selectedTimestamp ? 'Date' : '(All dates)'" 
-          class="col" 
-          dense 
-          clearable 
-          use-input 
-          @filter="timestampfilterFn" 
-          input-debounce="0" 
+        <q-select
+          outlined
+          v-model="selectedTimestamp"
+          :options="filteredTimestamps"
+          :label="selectedTimestamp ? 'Date' : '(All dates)'"
+          class="col"
+          dense
+          clearable
+          use-input
+          @filter="timestampfilterFn"
+          input-debounce="0"
           :loading="requestMetaLoading"
+          v-show="selectedLocation !== undefined && selectedLocation !== null"
         >
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps" dense>
@@ -118,13 +119,13 @@
                 <q-item-label v-if="years.length === 1 || selectedYear"><b>{{scope.opt.month}}</b>-{{scope.opt.day}}</q-item-label>
                 <q-item-label v-else><b>{{scope.opt.year}}</b>-{{scope.opt.month}}-<i>{{scope.opt.day}}</i></q-item-label>
               </q-item-section>
-            </q-item>              
+            </q-item>
           </template>
           <template v-slot:selected>
             <span v-if="selectedTimestamp && (years.length === 1 || selectedYear)">{{selectedTimestamp.month}}-{{selectedTimestamp.day}}</span>
             <span v-else-if="selectedTimestamp">{{selectedTimestamp.year}}-{{selectedTimestamp.month}}-{{selectedTimestamp.day}}</span>
           </template>
-        </q-select>       
+        </q-select>
       </q-card-section>
 
       <q-separator/>
@@ -134,14 +135,14 @@
         </q-inner-loading>
         <q-inner-loading :showing="$store.state.project.error !== undefined">
           <q-badge color="red">Error loading metadata </q-badge><q-btn color="grey" @click="$store.dispatch('project/refresh');">refresh</q-btn>
-        </q-inner-loading> 
-      
+        </q-inner-loading>
+
       </q-header>
 
       <q-page-container>
 
       <q-card-section>
-        
+
         <q-markup-table separator="cell" dense bordered>
           <thead>
             <tr>
@@ -159,7 +160,7 @@
               <td class="text-left">{{sample.id}}</td>
             </tr>
           </tbody>
-        </q-markup-table> 
+        </q-markup-table>
       </q-card-section>
 
       </q-page-container>
@@ -171,7 +172,7 @@
         <q-btn :disabled="!hasPrevPageSamples" @click="onPrevPage" icon="navigate_before" no-caps push>Prev page</q-btn>
         {{samplesOffset}}
         <q-btn :disabled="!hasNextPageSamples"  @click="onNextPage" icon-right="navigate_next" no-caps push>Next page</q-btn>
-        
+
         <q-space />
         </q-toolbar>
         <q-separator/>
@@ -181,12 +182,8 @@
           <q-spinner-gears size="50px" color="primary" />
         </q-inner-loading>
 
-        <q-inner-loading :showing="requestError">            
+        <q-inner-loading :showing="requestError">
           <q-badge color="red">Error loading request</q-badge><q-btn color="grey" @click="requestRefresh">refresh</q-btn>
-        </q-inner-loading>
-
-        <q-inner-loading :showing="refreshConfirmRequested">            
-          <q-badge color="red">Querying all data at once may take several minutes. Try to narrow the query by selecting location and/or time.</q-badge><q-btn color="grey" @click="refreshConfirmRequested = false; refreshConfirmed = true; requestRefresh()">Nevertheless, execute this query.</q-btn>
         </q-inner-loading>
       </q-footer>
 
@@ -206,12 +203,12 @@ export default defineComponent({
 
   components: {
     AudioInventory,
-  },  
+  },
 
   setup () {
     const show = ref(false);
     return {
-      show,      
+      show,
     };
   },
   data() {
@@ -219,12 +216,10 @@ export default defineComponent({
       totalSamplesCount: undefined,
       samples: [],
       samplesOffset: 0,
-      samplesLimit: 1000,    
+      samplesLimit: 1000,
       selectedLocation: undefined,
       selectedTimestamp: undefined,
       refreshRequested: false,
-      refreshConfirmRequested: false,
-      refreshConfirmed: false,
       refreshRequestedMeta: false,
       requestLoading: false,
       requestError: false,
@@ -247,10 +242,6 @@ export default defineComponent({
       samples_table_count: state => state.project.samples_table_count,
       time_zone: state => state.project.time_zone,
     }),
-    refreshConfirmNeeded() {
-      const count = this.samples_table_count;
-      return count === undefined || count > 10000;
-    },     
     selectedSampleId() {
       return this.$route.query.sample;
     },
@@ -265,7 +256,7 @@ export default defineComponent({
         return -1;
       }
       return this.samplesOffset + this.indexOfSelectedSampleId;
-    },    
+    },
     hasSelectedSamplePrev() {
       return this.offsetOfSelectedSampleId < 0 ? false : this.offsetOfSelectedSampleId > 0;
     },
@@ -316,33 +307,13 @@ export default defineComponent({
       const coll = new Set();
       this.timestampsUnfiltered.forEach(e => coll.add(e.year));
       return [...coll];
-    }    
+    }
   },
   watch: {
     refreshRequested() {
       if(this.refreshRequested) {
-        if(
-          this.refreshConfirmNeeded
-          && !this.refreshConfirmed
-          && !this.selectedLocation 
-          && !this.selectedTimestamp
-        ) {
-          this.refreshConfirmRequested = true;
-        } else {
-          this.refreshConfirmRequested = false;
-          this.$nextTick(() => this.querySamples());
-        }
+        this.$nextTick(() => this.querySamples());
         this.refreshRequested = false;
-        this.refreshConfirmed = false;
-      }
-    },
-    refreshConfirmNeeded() {
-      if(!this.refreshConfirmNeeded) {
-        if(this.refreshConfirmRequested) {
-          this.refreshConfirmRequested = false;
-          this.refreshConfirmed = true;
-          this.requestRefresh();
-        }
       }
     },
     refreshRequestedMeta() {
@@ -373,7 +344,7 @@ export default defineComponent({
             if(this.hasPrevPageSamples) {
               this.onPrevPage(true);
             } else {
-              this.movePrevSelectedSampleRequested = false; 
+              this.movePrevSelectedSampleRequested = false;
             }
           }
         } else {
@@ -391,14 +362,14 @@ export default defineComponent({
             if(this.hasNextPageSamples) {
               this.onNextPage(true);
             } else {
-              this.moveNextSelectedSampleRequested = false; 
+              this.moveNextSelectedSampleRequested = false;
             }
           }
         } else {
           this.moveNextSelectedSampleRequested = false;
         }
       }
-    },    
+    },
     time_zone() {
       if(this.time_zone) {
         this.requestRefreshMeta();
@@ -409,7 +380,7 @@ export default defineComponent({
   methods: {
     async querySamples() {
       //console.log("querySamples");
-      try {        
+      try {
         let params = { samples: true, count: true, limit: this.samplesLimit, offset: this.samplesOffset,};
         if(this.selectedLocation) {
           params.location = this.selectedLocation.value;
@@ -422,14 +393,17 @@ export default defineComponent({
           } else {
             params.start = t;
             params.end = t + (86400 - 1);
-          }          
+          }
         }
         if(this.time_zone) {
           params.tz = this.time_zone;
         }
         this.requestError = false;
         this.requestLoading = true;
-        var response = await this.$api.get('samples2', { params });
+        var response = {data: {samples: [], count: 0}};
+        if(this.selectedLocation !== undefined && this.selectedLocation !== null) {
+          response = await this.$api.get('samples2', { params });
+        }
         this.requestLoading = false;
         var samples = response.data?.samples;
         this.samples = samples === undefined ? [] : samples;
@@ -475,9 +449,6 @@ export default defineComponent({
       this.requestRefresh(force);
     },
     requestRefresh(force) {
-      if(force) {
-        this.refreshConfirmed = true;
-      }
       this.refreshRequested = true;
     },
     requestRefreshMeta() {
@@ -487,10 +458,9 @@ export default defineComponent({
       try {
         var params = {};
         if(this.selectedLocation) {
-          //params.timestamps_of_location = this.selectedLocation.value;
           params.dates_of_location = this.selectedLocation.value;
         } else {
-          params.dates = true;
+          //params.dates = true;
         }
         if(this.time_zone) {
           params.tz = this.time_zone;
@@ -509,10 +479,10 @@ export default defineComponent({
           }
           this.timestamps_of_location = tol;
         }
-        var td = response.data.project.dates;
+        /*var td = response.data.project.dates;
         if(td !== undefined) {
           this.timestamps_all_locations = td;
-        }
+        }*/
       } catch(e) {
         this.requestMetaError = true;
         this.requestMetaLoading = false;

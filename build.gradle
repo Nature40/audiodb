@@ -53,16 +53,15 @@ dependencies {
 	implementation group: 'org.tinylog', name: 'tinylog-impl', version: '2.6.2'
 	runtimeOnly group: 'org.tinylog', name: 'slf4j-tinylog', version: '2.6.2'
   	
-	implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '11.0.15'
-	implementation group: 'org.eclipse.jetty', name: 'jetty-security', version: '11.0.15'
-	implementation group: 'org.eclipse.jetty.http2', name: 'http2-server', version: '11.0.15'
-	implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '11.0.15'
-	//implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-conscrypt-server', version: '11.0.15' // ALPN support for Java 8
+	implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '11.0.16' // v12.x not compatible with Java 11
+	implementation group: 'org.eclipse.jetty', name: 'jetty-security', version: '11.0.16'
+	implementation group: 'org.eclipse.jetty.http2', name: 'http2-server', version: '11.0.16'
+	implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '11.0.16'
 	
-	implementation group: 'org.json', name: 'json', version: '20230227'
+	implementation group: 'org.json', name: 'json', version: '20230618'
 	implementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
 	implementation group: 'de.siegmar', name: 'fastcsv', version: '2.2.2'
-	implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.1'  
+	implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'  
 	implementation group: 'ch.randelshofer', name: 'fastdoubleparser', version: '0.9.0'	
 	
 	implementation group: 'com.github.wendykierp', name: 'JTransforms', version: '3.1'
@@ -76,14 +75,14 @@ dependencies {
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
 	
-	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.21.2.RELEASE'
+	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.21.6.RELEASE'
 	
 	implementation group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 	implementation group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
 	
 	implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.18.0'
 	
-	implementation group: 'com.h2database', name: 'h2', version: '2.1.214'
+	implementation group: 'com.h2database', name: 'h2', version: '2.2.224' // old database v2.1.x files not compatible with v2.2.x
 	
 	implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
 	
