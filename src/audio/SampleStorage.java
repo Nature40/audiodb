@@ -160,6 +160,11 @@ public class SampleStorage {
 			}			
 		}		
 	}
+	
+	public StorageSample getStorageSample(int sampleId) {
+		StorageSample storageSample = tlSampleStorageConnector.get().getSample(sampleId);
+		return storageSample;
+	}
 
 	public Sample2 getSample(int sampleId) {
 		StorageSample storageSample = tlSampleStorageConnector.get().getSample(sampleId);
@@ -187,9 +192,9 @@ public class SampleStorage {
 		tlSampleStorageConnector.get().forEachOrderedSampleAtLocationId(start, end, locationId, consumer, limit, offset);
 	}
 
-	public void forEachOrderedSampleAtLocationName(long start, long end, String locationName, Consumer<Sample2> consumer, int limit, int offset) {
+	public void forEachOrderedSampleAtLocationName(long start, long end, String locationName, Consumer<StorageSample> consumer, int limit, int offset) {
 		forEachOrderedSampleIdAtLocationName(start, end, locationName, sampleId -> {
-			Sample2 sample = getSample(sampleId);
+			StorageSample sample = getStorageSample(sampleId);
 			consumer.accept(sample);
 		}, limit, offset);
 	}
@@ -208,5 +213,6 @@ public class SampleStorage {
 	public void compact() {
 		Logger.info("SHUTDOWN COMPACT");
 		tlSampleStorageConnector.get().compact();		
+		Logger.info("SHUTDOWN COMPACT done. Database is closed now. AudioDB should be manually terminated and startet again.");
 	}
 }

@@ -2,6 +2,8 @@ package audio.role;
 
 import java.util.BitSet;
 
+import org.tinylog.Logger;
+
 public class Role {
 
 	public final int index;	
@@ -21,6 +23,10 @@ public class Role {
 	}
 
 	public boolean has(BitSet roleBits) {
+		if(roleBits == null) {
+			Logger.info("could not check role because roleBits not available: " + name);
+			return false;
+		}
 		return roleBits.get(index);
 	}
 

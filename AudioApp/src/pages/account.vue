@@ -12,68 +12,68 @@
           <q-btn @click="refresh" v-if="!identityLoading">try again</q-btn>
         </div>
       </div>
-    
+
       <q-list padding bordered separator v-if="identity">
         <q-item>
           <q-item-section>
             <q-item-label overline>Authentication</q-item-label>
             <q-item-label>{{identity.authentication}}</q-item-label>
-          </q-item-section>         
+          </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
             <q-item-label overline>User name</q-item-label>
             <q-item-label>{{identity.user}}</q-item-label>
-          </q-item-section>         
+          </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
             <q-item-label overline>Roles</q-item-label>
             <q-item-label><q-badge v-for="role in identity.roles" :key="role" class="role">{{role}}</q-badge></q-item-label>
-          </q-item-section>          
+          </q-item-section>
         </q-item>
       </q-list>
-      
+
       <q-list padding bordered separator v-if="identity">
         <q-item clickable @click="$refs.ChangePassword.user_name = identity.user; $refs.ChangePassword.show = true;">
           <q-item-section avatar>
             <q-icon name="edit"/>
-          </q-item-section>            
+          </q-item-section>
           <q-item-section>
             <q-item-label>Change password</q-item-label>
             <change-password ref="ChangePassword" :salt="identity.salt" @changed="refresh"/>
-          </q-item-section>                  
+          </q-item-section>
         </q-item>
         <q-item clickable @click="webauthn_register">
           <q-item-section avatar>
             <q-icon name="fingerprint"/>
-          </q-item-section>            
+          </q-item-section>
           <q-item-section>
             <q-item-label overline>FIDO2 (WebAuthn, CTAP2)</q-item-label>
             <q-item-label>Register</q-item-label>
-          </q-item-section>                  
+          </q-item-section>
         </q-item>
         <q-item clickable @click="webauthn_validate">
           <q-item-section avatar>
             <q-icon name="done"/>
-          </q-item-section>            
+          </q-item-section>
           <q-item-section>
             <q-item-label overline>FIDO2 (WebAuthn, CTAP2)</q-item-label>
             <q-item-label>Validate</q-item-label>
-          </q-item-section>                  
-        </q-item>           
+          </q-item-section>
+        </q-item>
         <q-item clickable tag="a" :href="$store.getters['api']('logout')">
           <q-item-section avatar>
             <q-icon name="logout"/>
-          </q-item-section>           
+          </q-item-section>
           <q-item-section>
             <q-item-label>Log out</q-item-label>
-          </q-item-section>                  
-        </q-item>              
+          </q-item-section>
+        </q-item>
       </q-list>
 
     </div>
-    
+
   </q-page>
 </template>
 
@@ -108,7 +108,7 @@ export default defineComponent({
 
   components: {
     ChangePassword,
-  },  
+  },
 
   computed: {
     ...mapState({
@@ -119,9 +119,9 @@ export default defineComponent({
   },
 
   methods: {
-    
+
     refresh() {
-      this.$store.dispatch('identity/refresh'); 
+      this.$store.dispatch('identity/refresh');
     },
 
     async webauthn_register() {
@@ -188,10 +188,13 @@ export default defineComponent({
         request.clientDataJSON = arrayBufferToBase64(credentialInfo.response.clientDataJSON);
         request.attestationObject = arrayBufferToBase64(credentialInfo.response.attestationObject);
         console.log(request);
-        
-        await this.$api.post('WebAuthn/register', request);
-        console.log(registerResponse);
-        alert('Registered.');
+
+        var response = await this.$api.post('WebAuthn/register', request);
+        if(response.headers.authentication === 'required') {
+          alert("You are not logged in. Reload the page and log in.");
+        } else {
+          alert(response.data);
+        }
         //this.$q.notify({message: 'Registered.', type: 'positive'});
       } catch(err) {
         alert(err);
@@ -199,7 +202,7 @@ export default defineComponent({
       }
     },
 
-    async webauthn_validate() {  
+    async webauthn_validate() {
       try {
         var challengeResponse = await fetch(this.$store.getters['api']('loginWebAuthn'), {
             method: 'GET',
@@ -210,7 +213,7 @@ export default defineComponent({
         var challengeResponseJson = await challengeResponse.json();
         var challengeText = challengeResponseJson.challenge;
         var challenge = base64ToUint8Array(challengeText);
-        
+
         var publicKey = {
           challenge: challenge,
           rpId: rpId,
@@ -229,23 +232,39 @@ export default defineComponent({
         request.userHandle = arrayBufferToBase64(authenticatorAssertionResponse.userHandle);
         request.rpId = rpId;
         console.log(request);
-        
-        var verifyResponse = await this.$api.post('WebAuthn/register', request);
-        alert(verifyResponse.data);
+
+        var verifyResponse = await this.$api.post('WebAuthn/verify', request);
+        if(verifyResponse.headers.authentication === 'required') {
+          alert("You are not logged in. Reload the page and log in.");
+        } else {
+          alert(verifyResponse.data);
+        }
         //this.$q.notify({message: verifyResponse.data, type: 'positive'});
       } catch(err) {
-        alert(err);
+        if(err !== undefined) {
+          if(err.response !== undefined) {
+            if(err.response.data !== undefined) {
+              alert(err.response.data);
+            } else {
+              alert(err);
+            }
+          } else {
+            alert(err);
+          }
+        } else {
+          alert("error");
+        }
         //this.$q.notify({message: err, type: 'negative'});
       }
     },
   },
-  
+
   watch: {
 
   },
-  
+
   async mounted() {
-    this.$store.dispatch('identity/init');    
+    this.$store.dispatch('identity/init');
   },
 })
 </script>

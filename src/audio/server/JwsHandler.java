@@ -12,16 +12,10 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.HashMap;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-
-
-import org.tinylog.Logger;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.tinylog.Logger;
 
 import com.samskivert.mustache.MustacheException;
 
@@ -34,6 +28,10 @@ import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SigningKeyResolver;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import util.TemplateUtil;
 
 public class JwsHandler extends AbstractHandler {
@@ -148,7 +146,7 @@ public class JwsHandler extends AbstractHandler {
 			throw new RuntimeException("keyID not found");
 		}
 	};
-
+	
 	private static PublicKey stringToPublicKey(String s) {
 		byte[] bytes = Base64.getDecoder().decode(s);	
 		X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);

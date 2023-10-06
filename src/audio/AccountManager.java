@@ -190,12 +190,12 @@ public class AccountManager {
 		for(Account account:accounts) {
 			WebAuthnAccount webAuthnAccount = account.webAuthnAccount();
 			if(webAuthnAccount != null) {
-				Authenticator authenticator = account.webAuthnAccount().authenticator();
+				Authenticator authenticator = webAuthnAccount.authenticator();
 				byte[] credentialId = authenticator.getAttestedCredentialData().getCredentialId();
 				m.put(credentialId, account);
 				Logger.info("Aaguid " + authenticator.getAttestedCredentialData().getAaguid());
 				Logger.info("COSEKey " + authenticator.getAttestedCredentialData().getCOSEKey());
-				Logger.info("CredentialId " + WebAuthn.bytesToBase64(credentialId));
+				Logger.info("CredentialId " + WebAuthn.bytesToBase64(credentialId) + " for " + account.username);
 			}
 		}
 		webAuthnCredentialIdMap = m;

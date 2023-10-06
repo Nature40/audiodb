@@ -127,7 +127,14 @@
           </template>
         </q-select>
       </q-card-section>
+      <div style="color: grey; font-size: 1em; padding-left: 50px;" v-if="totalSamplesCount !== undefined">{{totalSamplesCount}} samples  (of {{samples_table_count}} total samples in database)</div>
+      <q-inner-loading :showing="requestLoading" style="z-index: 100;">
+          <q-spinner-gears size="50px" color="primary" />
+        </q-inner-loading>
 
+        <q-inner-loading :showing="requestError" style="z-index: 100;">
+          <q-badge color="red">Error loading request</q-badge><q-btn color="grey" @click="requestRefresh">refresh</q-btn>
+        </q-inner-loading>
       <q-separator/>
         <q-inner-loading :showing="$store.state.project.loading">
           <q-spinner-gears size="50px" color="primary" />
@@ -136,28 +143,30 @@
         <q-inner-loading :showing="$store.state.project.error !== undefined">
           <q-badge color="red">Error loading metadata </q-badge><q-btn color="grey" @click="$store.dispatch('project/refresh');">refresh</q-btn>
         </q-inner-loading>
-
       </q-header>
 
       <q-page-container>
 
       <q-card-section>
-
         <q-markup-table separator="cell" dense bordered>
           <thead>
             <tr>
               <th class="text-left">Location</th>
               <th class="text-left">Time <span style="font-size: 0.7em;">{{time_zone}}</span></th>
-              <th class="text-left">Device</th>
-              <th class="text-left">Id</th>
+              <!--<th class="text-left">Device</th>-->
+              <!--<th class="text-left">Id</th>-->
+              <th class="text-left">Folder</th>
+              <th class="text-left">File</th>
               </tr>
           </thead>
           <tbody>
             <tr v-for="sample, index in samples" :key="sample.id" @click="onSelectSample(sample.id)" :class="{'selected-sample': index === indexOfSelectedSampleId}">
               <td class="text-left">{{sample.location}}</td>
               <td class="text-left">{{sample.date}} <span style="color: grey;">{{sample.time}}</span></td>
-              <td class="text-left">{{sample.device}}</td>
-              <td class="text-left">{{sample.id}}</td>
+              <!--<td class="text-left">{{sample.device}}</td>-->
+              <!--<td class="text-left">{{sample.id}}</td>-->
+              <td class="text-left">{{sample.folder}}</td>
+              <td class="text-left">{{sample.file}}</td>
             </tr>
           </tbody>
         </q-markup-table>
@@ -176,7 +185,6 @@
         <q-space />
         </q-toolbar>
         <q-separator/>
-        <span v-if="totalSamplesCount !== undefined">{{totalSamplesCount}} samples received</span>
 
         <q-inner-loading :showing="requestLoading">
           <q-spinner-gears size="50px" color="primary" />
@@ -216,8 +224,7 @@ export default defineComponent({
       totalSamplesCount: undefined,
       samples: [],
       samplesOffset: 0,
-      samplesLimit: 1000,
-      selectedLocation: undefined,
+      samplesLimit: 1000,      selectedLocation: undefined,
       selectedTimestamp: undefined,
       refreshRequested: false,
       refreshRequestedMeta: false,

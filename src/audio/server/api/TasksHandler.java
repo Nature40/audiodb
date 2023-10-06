@@ -12,6 +12,7 @@ import org.tinylog.Logger;
 
 import audio.Account;
 import audio.Broker;
+import audio.role.RoleManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,11 +29,13 @@ public class TasksHandler extends AbstractHandler {
 	private final Broker broker;
 	private final Tasks tasks;
 	private final TaskHandler taskHandler;
+	private final RoleManager roleManager;
 
 	public TasksHandler(Broker broker) {
 		this.broker = broker;
 		this.tasks = broker.tasks();
 		this.taskHandler = new TaskHandler(broker);
+		this.roleManager = broker.roleManager();
 	}
 
 	@Override
@@ -101,6 +104,10 @@ public class TasksHandler extends AbstractHandler {
 	}
 
 	private void handleRoot_GET(Request request, HttpServletResponse response) throws IOException {
+		HttpSession session = request.getSession(false);
+		//Account sessionAccount = (Account) session.getAttribute("account");
+		BitSet roleBits = (BitSet) session.getAttribute("roles");
+
 		boolean fDescriptors = Web.getFlagBoolean(request, "descriptors");
 		boolean fTasks = Web.getFlagBoolean(request, "tasks");
 
@@ -111,44 +118,46 @@ public class TasksHandler extends AbstractHandler {
 			json.key("descriptors");
 			json.object();
 			Tasks.foreachDescriptor((name, descriptor) -> {
-				json.key(name);
-				json.object();
-				json.key("name");
-				json.value(name);
-				if(descriptor.description != null) {
-					json.key("description");
-					json.value(descriptor.description);
-				}
-				if(descriptor.tags != null) {
-					json.key("tags");
-					json.array();
-					for(String tag : descriptor.tags) {
-						json.value(tag);
+				if(roleManager.hasRoles(roleBits, descriptor.roles)) {
+					json.key(name);
+					json.object();
+					json.key("name");
+					json.value(name);
+					if(descriptor.description != null) {
+						json.key("description");
+						json.value(descriptor.description);
 					}
-					json.endArray();
-				}
-				json.key("cancelable");
-				json.value(descriptor.cancelable);
-				if(descriptor.params != null) {
-					json.key("params");
-					json.array();
-					for(Param param : descriptor.params) {
-						json.object();
-						json.key("name");
-						json.value(param.name);
-						json.key("type");
-						json.value(param.type);
-						json.key("preset");
-						json.value(param.preset);
-						if(param.description != null) {
-							json.key("description");
-							json.value(param.description);
+					if(descriptor.tags != null) {
+						json.key("tags");
+						json.array();
+						for(String tag : descriptor.tags) {
+							json.value(tag);
 						}
-						json.endObject();
+						json.endArray();
 					}
-					json.endArray();
+					json.key("cancelable");
+					json.value(descriptor.cancelable);
+					if(descriptor.params != null) {
+						json.key("params");
+						json.array();
+						for(Param param : descriptor.params) {
+							json.object();
+							json.key("name");
+							json.value(param.name);
+							json.key("type");
+							json.value(param.type);
+							json.key("preset");
+							json.value(param.preset);
+							if(param.description != null) {
+								json.key("description");
+								json.value(param.description);
+							}
+							json.endObject();
+						}
+						json.endArray();
+					}
+					json.endObject();
 				}
-				json.endObject();
 			});
 			json.endObject();			
 		}

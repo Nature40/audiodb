@@ -59,7 +59,7 @@ dependencies {
 	implementation group: 'org.eclipse.jetty', name: 'jetty-alpn-java-server', version: '11.0.16'
 	
 	implementation group: 'org.json', name: 'json', version: '20230618'
-	implementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
+	implementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'  // TODO: check compatibility with newer version 2.x
 	implementation group: 'de.siegmar', name: 'fastcsv', version: '2.2.2'
 	implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'  
 	implementation group: 'ch.randelshofer', name: 'fastdoubleparser', version: '0.9.0'	
@@ -71,11 +71,11 @@ dependencies {
 	//implementation group: 'com.github.aelstad', name: 'keccakj', version: '1.1.0' // server not always reachable	
 	implementation name: 'keccakj-1.1.0' // local jar file
 	
-	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.5'
+	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.5' // breaking changes in 0.12.x
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
 	
-	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.21.6.RELEASE'
+	implementation group: 'com.webauthn4j', name: 'webauthn4j-core', version: '0.21.7.RELEASE'
 	
 	implementation group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'	
 	implementation group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'

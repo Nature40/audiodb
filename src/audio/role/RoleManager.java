@@ -94,6 +94,18 @@ public class RoleManager {
 		}
 	}
 
+	public boolean hasRole(BitSet roleBits, String role) {
+		if(role == null) {
+			return true;
+		}		
+		Role r = getRole(role);
+		if(r == null) {
+			Logger.info("role not found: |" + role + "|");
+			return false;
+		}
+		return r.has(roleBits);
+	}
+
 	public void checkHasRoles(BitSet roleBits, String... roles) {
 		if(roles != null) {
 			for(String role : roles) {
@@ -102,4 +114,15 @@ public class RoleManager {
 		}
 	}
 
+	public boolean hasRoles(BitSet roleBits, String... roles) {
+		if(roles == null) {
+			return true;
+		}
+		for(String role : roles) {
+			if(!hasRole(roleBits, role)) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

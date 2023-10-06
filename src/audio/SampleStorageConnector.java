@@ -440,8 +440,8 @@ public class SampleStorageConnector {
 			PreparedStatement stmt = getStatement(SQL.QUERY_DEVICE_NAME);
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
-				String location = res.getString(1);
-				consumer.accept(location);
+				String deviceName = res.getString(1);
+				consumer.accept(deviceName);
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -583,7 +583,7 @@ public class SampleStorageConnector {
 		}
 	}
 
-	static class StorageSample {
+	public static class StorageSample {
 
 		public final int sampleId;
 

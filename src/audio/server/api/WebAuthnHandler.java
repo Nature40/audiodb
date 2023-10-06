@@ -45,7 +45,7 @@ public class WebAuthnHandler extends AbstractHandler {
 
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		Logger.info(target);
+		Logger.info("WebAuthnHandler  " + target);
 		try {
 			baseRequest.setHandled(true);
 			if(target.equals("/")) {
@@ -93,11 +93,13 @@ public class WebAuthnHandler extends AbstractHandler {
 	}
 
 	private void handleRoot(Request request, HttpServletResponse response) throws IOException {
+		Logger.info("handleRoot");
 		response.setContentType(Web.MIME_TEXT);		
 		response.getWriter().write("WebAuthn");
 	}
 
 	private void handleRegisterPOST(Request request, HttpServletResponse response) throws IOException {
+		Logger.info("handleRegisterPOST");
 		WebAuthn webAuthn = broker.webAuthn();
 		try{
 			JSONObject jsonReq = new JSONObject(new JSONTokener(request.getReader()));
@@ -141,7 +143,8 @@ public class WebAuthnHandler extends AbstractHandler {
 			account = Account.withWebAuthn(account, webAuthnAccount);
 			broker.accountManager().setAccount(account, true);
 			session.setAttribute("account", account);
-
+			response.setContentType(Web.MIME_TEXT);
+			response.getWriter().println("credential ID registered: " + account.username);
 		}
 		catch (Exception e){			
 			Logger.error(e);
@@ -150,11 +153,10 @@ public class WebAuthnHandler extends AbstractHandler {
 			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
-		response.setContentType(Web.MIME_TEXT);		
-		response.getWriter().write("WebAuthn");
 	}	
 
 	private void handleVerifyPOST(Request request, HttpServletResponse response) throws IOException {
+		Logger.info("handleVerifyPOST");
 		WebAuthn webAuthn = broker.webAuthn();
 		Logger.info(request.getOriginalURI());
 		try{
@@ -163,7 +165,14 @@ public class WebAuthnHandler extends AbstractHandler {
 			byte[] challengeBytes = WebAuthn.base64UrlToBytes(clientDataJSONobject.getString("challenge"));
 			WebAuthn.takeChallenge(challengeBytes);	
 			AuthenticationRequest authenticationRequest = webAuthn.createAuthenticationRequest(jsonReq);
-			Account account = broker.accountManager().loadByCredentialId(authenticationRequest.getCredentialId());
+			byte[] credentialId = authenticationRequest.getCredentialId();
+			if(credentialId == null) {
+				throw new RuntimeException("Missing credential ID.");
+			}
+			Account account = broker.accountManager().loadByCredentialId(credentialId);
+			if(account == null) {
+				throw new RuntimeException("Credential ID not registered. Make shure to choose the credential ID of same name as your current account name.");
+			}
 			Authenticator authenticator = account.webAuthnAccount().authenticator();
 			AuthenticationParameters authenticationParameters = webAuthn.createAuthenticationParameters(jsonReq, authenticator);
 			AuthenticationData authenticationData = webAuthn.validateAuthention(jsonReq, authenticationRequest, authenticationParameters);

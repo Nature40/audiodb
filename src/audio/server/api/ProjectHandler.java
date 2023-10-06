@@ -10,7 +10,6 @@ import org.tinylog.Logger;
 import audio.AudioProjectConfig;
 import audio.Broker;
 import audio.DeviceInventory;
-import audio.SampleManager;
 import audio.SampleStorage;
 import audio.SampleStorageConnector;
 import jakarta.servlet.ServletException;

@@ -14,6 +14,7 @@ import audio.Sample2;
 import audio.SampleManager;
 import audio.SampleStorage;
 import audio.SampleStorageConnector;
+import audio.SampleStorageConnector.StorageSample;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -90,31 +91,26 @@ public class Samples2Handler extends AbstractHandler {
 		String reqTimeZone = Web.getString(request, "tz", "UTC");
 		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
 
-		Consumer<Sample2> sampleWriter = sample -> {
+		Consumer<StorageSample> sampleWriter = sample -> {
 			json.object();
 			json.key("id");
-			json.value(sample.id);
-			if(sample.hasLocation()) {
-				json.key("location");
-				json.value(sample.location);
-			} else if(SampleManager.UNKNOWN_LOCATION_AS_DEVICE && sample.hasDevice()) { // not needed as location as devices already in db
-				json.key("location");
-				json.value("(device) " + sample.device);
-			}
-			if(sample.hasTimestamp()) {
-				//json.key("timestamp");
-				//json.value(sample.timestamp);
-				//Logger.info(sample.timestamp);
+			json.value(Integer.toString(sample.sampleId));
+			json.key("location");
+			json.value(sample.locationName);
+			if(sample.timestamp != 0) {
 				LocalDateTime dateTime = AudioTimeUtil.ofAudiotime(sample.timestamp, timeZoneOffsetSeconds);
 				json.key("date");
 				json.value(dateTime.toLocalDate());
 				json.key("time");
 				json.value(dateTime.toLocalTime());
 			}
-			if(sample.hasDevice()) {
-				json.key("device");
-				json.value(sample.device);
-			}
+			json.key("device");
+			json.value(sample.deviceName);
+			json.key("folder");
+			json.value(sample.folderName);
+			json.key("file");
+			json.value(sample.fileName);
+
 			json.endObject();			
 		};
 
@@ -158,7 +154,7 @@ public class Samples2Handler extends AbstractHandler {
 						json.array();
 						//broker.sampleManager().forEachAtTimerange(start, end, sampleWriter);
 						sampleStorageConnector.forEachOrderedSampleId(start, end, sampleId -> {
-							Sample2 sample = sampleStorage.getSample(sampleId);
+							StorageSample sample = sampleStorage.getStorageSample(sampleId);
 							sampleWriter.accept(sample);
 						}, Integer.MAX_VALUE, 0);
 						json.endArray();
@@ -167,7 +163,7 @@ public class Samples2Handler extends AbstractHandler {
 						json.array();
 						//broker.sampleManager().forEach(sampleWriter);
 						sampleStorageConnector.forEachOrderedSampleId(Long.MIN_VALUE, Long.MAX_VALUE, sampleId -> {
-							Sample2 sample = sampleStorage.getSample(sampleId);
+							StorageSample sample = sampleStorage.getStorageSample(sampleId);
 							sampleWriter.accept(sample);
 						}, Integer.MAX_VALUE, 0);
 						json.endArray();
@@ -178,7 +174,7 @@ public class Samples2Handler extends AbstractHandler {
 						json.array();
 						//broker.sampleManager().forEachAtTimerangePaged(start, end, sampleWriter, limit, offset);
 						sampleStorageConnector.forEachOrderedSampleId(start, end, sampleId -> {
-							Sample2 sample = sampleStorage.getSample(sampleId);
+							StorageSample sample = sampleStorage.getStorageSample(sampleId);
 							sampleWriter.accept(sample);
 						}, limit, offset);
 						json.endArray();
@@ -187,7 +183,7 @@ public class Samples2Handler extends AbstractHandler {
 						json.array();
 						//broker.sampleManager().forEachPaged(sampleWriter, limit, offset);
 						sampleStorageConnector.forEachOrderedSampleId(Long.MIN_VALUE, Long.MAX_VALUE, sampleId -> {
-							Sample2 sample = sampleStorage.getSample(sampleId);
+							StorageSample sample = sampleStorage.getStorageSample(sampleId);
 							sampleWriter.accept(sample);
 						}, limit, offset);
 						json.endArray();

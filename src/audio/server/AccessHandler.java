@@ -20,6 +20,7 @@ import audio.Broker;
 import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import util.TemplateUtil;
+import util.Web;
 import util.collections.vec.Vec;
 
 public class AccessHandler extends AbstractHandler {
@@ -37,6 +38,7 @@ public class AccessHandler extends AbstractHandler {
 			if(broker.config().login) {
 				baseRequest.setHandled(true);
 				response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+				response.setHeader("Authentication", "required");
 				String server_nonce = broker.accountManager().createServerNonce();
 				HashMap<String, Object> ctx = new HashMap<>();
 				ctx.put("server_nonce", server_nonce);
@@ -66,6 +68,7 @@ public class AccessHandler extends AbstractHandler {
 				}
 				ctx.put("jws", jwsList);
 				ctx.put("jws_section", !jwsList.isEmpty());
+				response.setContentType(Web.MIME_HTML);
 				TemplateUtil.getTemplate("login.mustache", true).execute(ctx, response.getWriter());
 			} else {
 				HttpSession session = request.getSession(true);
