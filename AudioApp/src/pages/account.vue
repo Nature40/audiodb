@@ -49,7 +49,7 @@
             <q-icon name="fingerprint"/>
           </q-item-section>
           <q-item-section>
-            <q-item-label overline>FIDO2 (WebAuthn, CTAP2)</q-item-label>
+            <q-item-label overline>Passkey (on an authenticator such as <b>YubiKey</b>)</q-item-label>
             <q-item-label>Register</q-item-label>
           </q-item-section>
         </q-item>
@@ -58,7 +58,7 @@
             <q-icon name="done"/>
           </q-item-section>
           <q-item-section>
-            <q-item-label overline>FIDO2 (WebAuthn, CTAP2)</q-item-label>
+            <q-item-label overline>Passkey (on an authenticator such as <b>YubiKey</b>)</q-item-label>
             <q-item-label>Validate</q-item-label>
           </q-item-section>
         </q-item>
@@ -125,6 +125,10 @@ export default defineComponent({
     },
 
     async webauthn_register() {
+      if(navigator.credentials === undefined) {
+        alert('WebAuthn authentication is not available in your browser. In general, browsers only allow WebAuthn over secure HTTPS connections. If you are accessing over an HTTP connection, browsers turn off WebAuthn.');
+        return;
+      }
       try {
         var textEncoder = new TextEncoder("utf-8");
         var textDecoder = new TextDecoder("utf-8");
@@ -203,6 +207,10 @@ export default defineComponent({
     },
 
     async webauthn_validate() {
+      if(navigator.credentials === undefined) {
+        alert('WebAuthn authentication is not available in your browser. In general, browsers only allow WebAuthn over secure HTTPS connections. If you are accessing over an HTTP connection, browsers turn off WebAuthn.');
+        return;
+      }
       try {
         var challengeResponse = await fetch(this.$store.getters['api']('loginWebAuthn'), {
             method: 'GET',

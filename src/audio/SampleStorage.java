@@ -72,6 +72,28 @@ public class SampleStorage {
 			Logger.info(Timer.stop("traverse"));
 		}
 	}
+	
+	public void  recreateLocationsFromInventory() {		
+		SampleStorageConnector sampleStorageConnector = tlSampleStorageConnector.get();
+		int[] cnt = new int[] {0};
+		sampleStorageConnector.clearLocation();
+		Logger.info("start recreateLocationsFromInventory forEachSampleTimeDevice");
+		sampleStorageConnector.forEachSampleTimeDevice((int sampleId, long timestamp, int deviceId, String deviceName) -> {
+			if(cnt[0] % 1_000_000 == 0) {
+				Logger.info(cnt[0] + "  forEachSampleTimeDevice");
+			}
+			String locationName = null;			
+			Entry entry = timestamp == 0 ? deviceInventory.getLastInfinite(deviceName) : deviceInventory.getLast(deviceName, timestamp);
+			if(entry != null && entry.location != null && !entry.location.isBlank()) {
+				locationName = entry.location;
+			}			
+			int locationId = sampleStorageConnector.getOrInsertLocationId(locationName == null ? MISSING_LOCATION : locationName);
+			sampleStorageConnector.setSample(sampleId, timestamp, deviceId, locationId);
+			cnt[0]++;			
+		});
+		Logger.info("end recreateLocationsFromInventory forEachSampleTimeDevice");
+		sampleStorageConnector.refreshOrderedSample();
+	}
 
 	private void traverse(AudioProjectConfig projectConfig, Path traversing_path, int[] stats) throws IOException {
 		Logger.info("traverse " + traversing_path);
@@ -211,7 +233,7 @@ public class SampleStorage {
 	}
 
 	public void compact() {
-		Logger.info("SHUTDOWN COMPACT");
+		Logger.info("SHUTDOWN COMPACT start");
 		tlSampleStorageConnector.get().compact();		
 		Logger.info("SHUTDOWN COMPACT done. Database is closed now. AudioDB should be manually terminated and startet again.");
 	}

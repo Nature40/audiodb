@@ -153,7 +153,7 @@
             <tr>
               <th class="text-left">Location</th>
               <th class="text-left">Time <span style="font-size: 0.7em;">{{time_zone}}</span></th>
-              <!--<th class="text-left">Device</th>-->
+              <th class="text-left">Device</th>
               <!--<th class="text-left">Id</th>-->
               <th class="text-left">Folder</th>
               <th class="text-left">File</th>
@@ -163,7 +163,7 @@
             <tr v-for="sample, index in samples" :key="sample.id" @click="onSelectSample(sample.id)" :class="{'selected-sample': index === indexOfSelectedSampleId}">
               <td class="text-left">{{sample.location}}</td>
               <td class="text-left">{{sample.date}} <span style="color: grey;">{{sample.time}}</span></td>
-              <!--<td class="text-left">{{sample.device}}</td>-->
+              <td class="text-left">{{sample.device}}</td>
               <!--<td class="text-left">{{sample.id}}</td>-->
               <td class="text-left">{{sample.folder}}</td>
               <td class="text-left">{{sample.file}}</td>

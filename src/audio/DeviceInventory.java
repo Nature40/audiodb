@@ -2,8 +2,11 @@ package audio;
 
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 
@@ -18,6 +21,15 @@ public class DeviceInventory {
 	private static Entry[] EMPTY = new Entry[] {};
 
 	public static class Entry {
+
+		public static Comparator<Entry> COMPARATOR = new Comparator<Entry>() {
+			@Override
+			public int compare(Entry o1, Entry o2) {
+				int c = Long.compare(o1.start, o2.start);				
+				return c == 0 ? Long.compare(o1.end, o2.end) : 0;
+			}
+		};
+
 		public final String device; // not null
 		public final String location;
 		public final long start;
@@ -45,7 +57,7 @@ public class DeviceInventory {
 	}
 
 	private final Path deviceInventoryPath;
-	private final Map<String, Object> deviceMap = new HashMap<String, Object>();
+	private TreeMap<String, Object> deviceMap = new TreeMap<String, Object>();
 
 	private void clear() {
 		deviceMap.clear();
@@ -96,10 +108,24 @@ public class DeviceInventory {
 					String location = cellLocation.get(csvRow);
 					String startText = cellStart.get(csvRow);
 					String endText = cellEnd.get(csvRow);
-					long start = AudioTimeUtil.toAudiotimeStart(startText);
-					long end = AudioTimeUtil.toAudiotimeEnd(endText);
-					Entry entry = new Entry(device, location, start, end);				
-					insert(entry);
+					if(device.isBlank() || device.equals("NA")) {
+						Logger.info("skip row with missing device " + csvRow);
+					} else if(location.isBlank() || location.equals("NA")) {
+						Logger.info("skip row with missing location " + csvRow);
+					} else if(startText.equals("NA")) {
+						Logger.info("skip row with start NA " + csvRow);
+					} else if(endText.equals("NA")) {
+						Logger.info("skip row with end NA " + csvRow);
+					} else{
+						long start = AudioTimeUtil.toAudiotimeStart(startText);
+						long end = AudioTimeUtil.toAudiotimeEnd(endText);
+						if(start <= end) {
+							Entry entry = new Entry(device, location, start, end);				
+							insert(entry);
+						} else {
+							Logger.warn("start higher than end not inserted " + csvRow);
+						}
+					}
 				} catch(Exception e) {
 					Logger.warn(e);
 				}
@@ -107,6 +133,9 @@ public class DeviceInventory {
 		} catch(Exception e) {
 			Logger.warn(e);
 		}
+		consolidate();
+		sort();
+		validate();
 		//forEach(entry -> Logger.info(entry));
 	}
 
@@ -184,5 +213,98 @@ public class DeviceInventory {
 				}
 			}
 		}
+	}
+
+	private void consolidate() {
+		TreeMap<String, Object> m = new TreeMap<String, Object>();
+		deviceMap.forEach((deviceName, o) -> {			
+			if(o instanceof Entry) {
+				Entry entry = (Entry) o;
+				m.put(deviceName, entry);
+			} else {
+				Entry[] v = (Entry[]) o;
+				Entry[] a = v.clone();
+				int removeCount = 0;
+				for (int i = 0; i < a.length; i++) {
+					Entry x = a[i];
+					inner: for (int j = i + 1; j < a.length; j++) {
+						Entry y = a[j];
+						if(
+								x.location.equals(y.location) 
+								&& (x.start <= (y.end + 1) || x.start <= y.end) // infinity wrap around check
+								&& ((x.end + 1) >= y.start || x.end >= y.start) // infinity wrap around check
+								) {
+							Entry z = new Entry(deviceName, x.location, Math.min(x.start, y.start), Math.max(x.end, y.end));
+							a[i] = null;
+							removeCount++;
+							a[j] = z;
+							//Logger.info("consolidated one row");
+							break inner;
+						}
+					}
+				}
+				if(removeCount == 0) {
+					m.put(deviceName, a);
+				} else {
+					int bLen = a.length - removeCount;
+					if(bLen == 0) {
+						throw new RuntimeException("error");
+					} else if(bLen == 1) {
+						for (int i = 0; i < a.length; i++) {
+							Entry x = a[i];
+							if(x != null) {
+								m.put(deviceName, x);
+								break;
+							}
+						}
+					} else {
+						Entry[] b = new Entry[bLen];
+						int bPos = 0;
+						for (int i = 0; i < a.length; i++) {
+							Entry x = a[i];
+							if(x != null) {
+								b[bPos++] = x;
+							}
+						}
+						m.put(deviceName, b);
+					}
+				}
+			}			
+		});
+		deviceMap = m;
+	}
+
+	private void sort() {
+		deviceMap.forEach((deviceName, o) -> {			
+			if(o instanceof Entry) {
+				// nothing
+			} else {
+				Entry[] a = (Entry[]) o;
+				Arrays.sort(a, Entry.COMPARATOR);
+			}			
+		});		
+	}
+
+	private void validate() {
+		deviceMap.forEach((deviceName, o) -> {			
+			if(o instanceof Entry) {
+				// nothing
+			} else {
+				Entry[] a = (Entry[]) o;
+				for (int i = 0; i < a.length; i++) {
+					Entry x = a[i];
+					for (int j = i + 1; j < a.length; j++) {
+						Entry y = a[j];
+						if(x.start <= y.end && x.end >= y.start) {
+							if(x.location.equals(y.location)) {
+								Logger.warn("not consolidated " + x + " " +y);
+							} else {
+								Logger.warn("inconsistency overlapping " + x + " " +y);
+							}
+						}
+					}
+				}
+			}			
+		});		
 	}
 }
