@@ -1,4 +1,4 @@
-package photo2.task;
+package photo.task;
 
 import java.io.File;
 import java.nio.file.Path;

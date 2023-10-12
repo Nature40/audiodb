@@ -3,7 +3,7 @@ package audio;
 
 import org.tinylog.Logger;
 
-import photo2.PhotoConfig;
+import photo.PhotoConfig;
 import util.collections.ReadonlyList;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;

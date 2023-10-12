@@ -57,7 +57,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.SessionCookieConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import photo2.api.PhotoDB2Handler;
+import photo.api.PhotoDB2Handler;
 
 public class Webserver {
 

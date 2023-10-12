@@ -1,4 +1,4 @@
-package photo2.api;
+package photo.api;
 
 import java.io.IOException;
 
@@ -12,8 +12,8 @@ import audio.Broker;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import photo2.ClassificationDefinition;
-import photo2.PhotoDB2;
+import photo.ClassificationDefinition;
+import photo.PhotoDB2;
 import util.Web;
 
 public class PhotoDB2Handler extends AbstractHandler {

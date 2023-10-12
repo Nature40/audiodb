@@ -12,8 +12,8 @@ import java.util.function.Consumer;
 
 import org.tinylog.Logger;
 
-import photo2.CsvTable;
-import photo2.CsvTable.CsvCell;
+import photo.CsvTable;
+import photo.CsvTable.CsvCell;
 import util.AudioTimeUtil;
 
 public class DeviceInventory {

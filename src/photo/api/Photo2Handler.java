@@ -1,4 +1,4 @@
-package photo2.api;
+package photo.api;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -26,9 +26,9 @@ import audio.Account;
 import audio.Broker;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import photo2.Photo2;
-import photo2.PhotoDB2;
-import photo2.ThumbManager;
+import photo.Photo2;
+import photo.PhotoDB2;
+import photo.ThumbManager;
 import util.JsonUtil;
 import util.Web;
 

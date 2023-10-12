@@ -1,4 +1,4 @@
-package photo2.task;
+package photo.task;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 import org.tinylog.Logger;
 
-import photo2.PhotoProjectConfig;
+import photo.PhotoProjectConfig;
 import task.Cancelable;
 import task.Description;
 import task.Role;

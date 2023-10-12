@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

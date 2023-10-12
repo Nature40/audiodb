@@ -14,7 +14,7 @@ import audio.labeling.LabelingListManager;
 import audio.review.ReviewListManager;
 import audio.role.RoleManager;
 import audio.worklist.WorklistStore;
-import photo2.PhotoDB2;
+import photo.PhotoDB2;
 import task.Tasks;
 import util.yaml.YamlMap;
 

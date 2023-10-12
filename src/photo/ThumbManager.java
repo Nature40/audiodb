@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;

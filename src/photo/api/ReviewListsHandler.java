@@ -1,4 +1,4 @@
-package photo2.api;
+package photo.api;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -21,10 +21,10 @@ import org.tinylog.Logger;
 import audio.Broker;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import photo2.SqlConnector;
-import photo2.SqlConnector.SQL;
-import photo2.Photo2;
-import photo2.PhotoDB2;
+import photo.Photo2;
+import photo.PhotoDB2;
+import photo.SqlConnector;
+import photo.SqlConnector.SQL;
 import util.JsonUtil;
 import util.Web;
 import util.collections.vec.Vec;

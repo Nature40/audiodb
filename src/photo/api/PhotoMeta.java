@@ -1,4 +1,4 @@
-package photo2.api;
+package photo.api;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;

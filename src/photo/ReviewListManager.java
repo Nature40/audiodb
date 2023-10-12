@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,8 +9,8 @@ import java.sql.SQLException;
 
 import org.tinylog.Logger;
 
-import photo2.CsvTable.CsvCell;
-import photo2.SqlConnector.SQL;
+import photo.CsvTable.CsvCell;
+import photo.SqlConnector.SQL;
 
 public class ReviewListManager {	
 

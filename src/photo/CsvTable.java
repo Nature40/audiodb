@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.io.Closeable;
 import java.io.IOException;

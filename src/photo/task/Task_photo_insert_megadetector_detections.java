@@ -1,4 +1,4 @@
-package photo2.task;
+package photo.task;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,9 +9,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.tinylog.Logger;
 
-import photo2.Photo2;
-import photo2.PhotoDB2;
-import photo2.PhotoProjectConfig;
+import photo.Photo2;
+import photo.PhotoDB2;
+import photo.PhotoProjectConfig;
 import task.Cancelable;
 import task.Description;
 import task.Descriptor.Param.Type;

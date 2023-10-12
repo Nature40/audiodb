@@ -1,4 +1,4 @@
-package photo2.task;
+package photo.task;
 
 import task.Description;
 import task.Role;

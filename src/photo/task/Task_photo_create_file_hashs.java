@@ -1,9 +1,9 @@
-package photo2.task;
+package photo.task;
 
 import org.tinylog.Logger;
 
-import photo2.Photo2;
-import photo2.PhotoDB2;
+import photo.Photo2;
+import photo.PhotoDB2;
 import task.Cancelable;
 import task.Description;
 import task.Role;

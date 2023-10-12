@@ -6,10 +6,10 @@ WHITE='\033[0;97m'
 NC='\033[0m' # No Color
 echo -e ""
 echo -e "${WHITE}--------------------------------------------------------------------------------------------------${NC}"
-echo -e "${RED}!! only proceed if you stopped a running AudioDB/PhotoDB instance !!${NC}"
+echo -e "${RED}!! only proceed if you stopped a running AudioDB instance !!${NC}"
 echo -e "${GREEN}Do you want to remove all database cache files?${NC}"
-echo -e "${WHITE}This may be needed after update to a newer AudioDB/PhotoDB Version.${NC}"
-echo -e "${WHITE}At next start of AudioDB/PhotoDB the database cache will be regenerated.${NC}"
+echo -e "${WHITE}This may be needed after update to a newer AudioDB Version.${NC}"
+echo -e "${WHITE}At next start of AudioDB the database cache will be regenerated.${NC}"
 echo -e "${WHITE}--------------------------------------------------------------------------------------------------${NC}"
 select yn in "Yes" "No" "Cancel"; do
     case $yn in
@@ -35,4 +35,4 @@ unlink sample_meta.mv.db
 unlink sample_meta.trace.db
 unlink sample_meta.trace.db.old
 
-echo -e "${GREEN}Done. Now you may start AudioDB/PhotoDB. It may take some time to regenerate database caches.${NC}"
+echo -e "${GREEN}Done. Now you may start AudioDB. It may take some time to regenerate database caches.${NC}"

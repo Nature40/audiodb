@@ -1,4 +1,4 @@
-package photo2.api;
+package photo.api;
 
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;

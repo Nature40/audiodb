@@ -16,6 +16,8 @@ import java.util.function.LongConsumer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.tinylog.Logger;
 
+import util.Timer;
+
 public class SampleStorageConnector {
 	private static LinkedHashMap<String, String[]> TABLE_MAP = new LinkedHashMap<String, String[]>();
 
@@ -509,6 +511,8 @@ public class SampleStorageConnector {
 	}*/
 
 	public void refreshOrderedSample() {
+		Timer.start("refreshOrderedSample");
+		Logger.info("refreshOrderedSample start");
 		try {
 			dropTable("ORDERED_SAMPLE");
 			createTable("ORDERED_SAMPLE", TABLE_MAP.get("ORDERED_SAMPLE"));
@@ -521,6 +525,8 @@ public class SampleStorageConnector {
 
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
+		} finally {
+			Logger.info("refreshOrderedSample end  " + Timer.stop("refreshOrderedSample"));
 		}
 	}
 

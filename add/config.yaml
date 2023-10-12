@@ -1,11 +1,64 @@
-http_port: 8080
 login: false
+http_port: 8080
     
-photo:
-  projects:
-
-  - project: myproject
-    root_path: 'photo_meta'
-    root_data_path: 'photo_data'
-    classification_definition_csv: photo_classification_definitions.csv
-    review_list_path: 'photo_review_lists'
+audio:
+  project: myproject
+  root_data_path: ./audio
+  root_path: ./audio_meta
+  
+  player_fft_window: 4096
+  player_fft_window_step_factor: 0.125
+  player_time_expansion_factor: 1
+  player_spectrum_threshold: 12.0
+  player_fft_intensity_max: 19.5
+  player_static_lines_frequency: [3000, 8000]
+  player_fft_cutoff_lower_frequency: 2000
+  player_fft_cutoff_upper_frequency: 10000 
+  detail_fft_window_overlap_percent: 92  
+  player_mouse_move_factor: 1
+  
+  profiles:  
+    birds:
+      player_fft_window: 4096
+      player_fft_window_step_factor: 0.125
+      player_time_expansion_factor: 1
+      player_spectrum_threshold: 12.0
+      player_fft_intensity_max: 19.5
+      player_static_lines_frequency: [3000, 8000]
+      player_fft_cutoff_lower_frequency: 2000
+      player_fft_cutoff_upper_frequency: 10000 
+      detail_fft_window_overlap_percent: 92
+      player_mouse_move_factor: 1      
+    birds_overview:
+      player_fft_window: 4096
+      player_fft_window_step_factor: 0.25
+      player_spectrum_shrink_Factor: 2
+      player_time_expansion_factor: 1
+      player_spectrum_threshold: 12.0
+      player_fft_intensity_max: 19.5
+      player_static_lines_frequency: [3000, 8000]
+      player_fft_cutoff_lower_frequency: 2000
+      player_fft_cutoff_upper_frequency: 10000 
+      detail_fft_window_overlap_percent: 92
+      player_mouse_move_factor: 1       
+    birds_detail:
+      player_fft_window: 4096
+      player_fft_window_step_factor: 0.0625
+      player_time_expansion_factor: 1
+      player_spectrum_threshold: 12.0
+      player_fft_intensity_max: 19.5
+      player_static_lines_frequency: [3000, 8000]
+      player_fft_cutoff_lower_frequency: 2000
+      player_fft_cutoff_upper_frequency: 10000 
+      detail_fft_window_overlap_percent: 92 
+      player_mouse_move_factor: 1       
+    full_bandwith:
+      player_fft_window: 1024
+      player_fft_window_step_factor: 0.5
+      player_spectrum_shrink_Factor: 2
+      player_time_expansion_factor: 1
+      player_spectrum_threshold: 12.0
+      player_fft_intensity_max: 19.5
+      player_static_lines_frequency: [3000, 8000]
+      detail_fft_window_overlap_percent: 92  
+      player_mouse_move_factor: 1 

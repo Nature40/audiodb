@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 
 import org.tinylog.Logger;
 
-import photo2.api.PhotoMeta;
+import photo.api.PhotoMeta;
 import util.HashUtil;
 import util.yaml.YamlList;
 import util.yaml.YamlMap;

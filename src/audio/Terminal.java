@@ -9,9 +9,7 @@ import org.tinylog.Logger;
 public class Terminal {	
 	static { // needs to be positioned as first entry in class!
 		System.setProperty("java.awt.headless", "true");
-	}
-
-	
+	}	
 
 	@FunctionalInterface
 	interface CommandProvider {

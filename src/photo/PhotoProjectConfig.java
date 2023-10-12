@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

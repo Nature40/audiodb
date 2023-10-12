@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -25,8 +25,8 @@ import de.siegmar.fastcsv.reader.CloseableIterator;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.CsvRow;
-import photo2.SqlConnector.SQL;
-import photo2.api.PhotoMeta;
+import photo.SqlConnector.SQL;
+import photo.api.PhotoMeta;
 import util.Timer;
 import util.collections.vec.Vec;
 import util.yaml.YamlMap;

@@ -1,6 +1,6 @@
-package photo2.task;
+package photo.task;
 
-import photo2.PhotoDB2.Interrupter;
+import photo.PhotoDB2.Interrupter;
 import task.Cancelable;
 import task.Description;
 import task.Param;

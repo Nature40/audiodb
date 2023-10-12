@@ -1,4 +1,4 @@
-package photo2;
+package photo;
 
 import java.util.Collections;
 import java.util.HashMap;
