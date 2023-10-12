@@ -1,0 +1,92 @@
+label_definitions:
+- {name: Amsel, desc: Turdus merula}
+- {name: Bachstelze, desc: Motacilla alba}
+- {name: Blaumeise, desc: Poecile caeruleus}
+- {name: Buchfink, desc: Fringilla coelebs}
+- {name: Buntspecht, desc: Dendrocopos major}
+- {name: Dohle, desc: Coloeus monedula}
+- {name: Dorngrasmuecke, desc: Sylvia communis}
+- {name: Eichelhaeher, desc: Garrulus glandarius}
+- {name: Elster, desc: Pica pica}
+- {name: Erlenzeisig, desc: Carduelis spinus}
+- {name: Feldlerche, desc: Alauda arvensis}
+- {name: Feldsperling, desc: Passer montanus}
+- {name: Fichtenkreuzschnabel, desc: Loxia curvirostra}
+- {name: Fitis, desc: Phylloscopus trochilus}
+- {name: Gartenbaumlaeufer, desc: Certhia brachydactyla}
+- {name: Gartengrasmuecke, desc: Sylvia borin}
+- {name: Gartenrotschwanz, desc: Phoenicurus phoenicurus}
+- {name: Gebirgsstelze, desc: Motacilla cinerea}
+- {name: Gelbspoetter, desc: Hippolais icterina}
+- {name: Gimpel, desc: Pyrrhula pyrrhula}
+- {name: Girlitz, desc: Serinus serinus}
+- {name: Goldammer, desc: Emberiza citrinella}
+- {name: Graureiher, desc: Ardea cinerea}
+- {name: Grauschnaepper, desc: Muscicapa striata}
+- {name: Grauspecht, desc: Picus canus}
+- {name: Gruenfink, desc: Carduelis chloris}
+- {name: Gruenspecht, desc: Picus viridis}
+- {name: Habicht, desc: Accipiter gentilis}
+- {name: Haselhuhn, desc: Tetrastes bonasia}
+- {name: Haubenmeise, desc: Parus cristatus}
+- {name: Hausrotschwanz, desc: Phoenicurus ochruros}
+- {name: Haussperling, desc: Passer domesticus}
+- {name: Heckenbraunelle, desc: Prunella modularis}
+- {name: Hohltaube, desc: Columba oenas}
+- {name: Kernbeisser, desc: Coccothraustes coccothraustes}
+- {name: Klappergrasmuecke, desc: Sylvia curruca}
+- {name: Kleiber, desc: Sitta europaea}
+- {name: Kohlmeise, desc: Parus major}
+- {name: Kolkrabe, desc: Corvus corax}
+- {name: Kuckuck, desc: Cuculus canorus}
+- {name: Mauersegler, desc: Apus apus}
+- {name: Maeusebussard, desc: Buteo buteo}
+- {name: Mehlschwalbe, desc: Delichon urbicum}
+- {name: Misteldrossel, desc: Turdus viscivorus}
+- {name: Misteldrossel Warnruf, desc: Turdus viscivorus}
+- {name: Mittelspecht, desc: Dendrocopos medius}
+- {name: Moenchsgrasmuecke, desc: Sylvia atricapilla}
+- {name: Nachtigall, desc: Luscinia megarhynchos}
+- {name: Pirol, desc: Oriolus oriolus}
+- {name: Rabenkraehe, desc: Corvus corone}
+- {name: Rauchschwalbe, desc: Hirundo rustica}
+- {name: Rauhfusskauz, desc: Aegolius funereus}
+- {name: Ringeltaube, desc: Columba palumbus}
+- {name: Rotkehlchen, desc: Erithacus rubecula}
+- {name: Rotmilan, desc: Milvus milvus}
+- {name: Schleiereule, desc: Tyto alba}
+- {name: Schwanzmeise, desc: Aegithalos caudatus}
+- {name: Schwarzmilan, desc: Milvus migrans}
+- {name: Schwarzspecht, desc: Dryocopus martius}
+- {name: Schwarzstorch, desc: Ciconia nigra}
+- {name: Singdrossel, desc: Turdus philomelos}
+- {name: Sommergoldhaehnchen, desc: Regulus ignicapilla}
+- {name: Sperber, desc: Accipiter nisus}
+- {name: Sperlingskauz, desc: Glaucidium passerinum}
+- {name: Star, desc: Sturnus vulgaris}
+- {name: Stieglitz, desc: Carduelis carduelis}
+- {name: Sumpfmeise, desc: Parus palustris}
+- {name: Tannenhäher, desc: Nucifraga caryocatactes}
+- {name: Tannenmeise, desc: Parus ater}
+- {name: Trauerschnäpper, desc: Ficedula hypoleuca}
+- {name: Uhu, desc: Bubo bubo}
+- {name: Wacholderdrossel, desc: Turdus pilaris}
+- {name: Waldbaumlaeufer, desc: Certhia familiaris}
+- {name: Waldkauz, desc: Strix aluco}
+- {name: Waldlaubsaenger, desc: Phylloscopus sibilatrix}
+- {name: Waldohreule, desc: Asio otus}
+- {name: Waldschnepfe, desc: Scolopax rusticola}
+- {name: Wendehals, desc: Jynx torquilla}
+- {name: Wespenbussard, desc: Pernis apivorus}
+- {name: Wintergoldhaenchen, desc: Regulus regulus}
+- {name: Zaunkoenig, desc: Troglodytes troglodytes}
+- {name: Zilpzalp, desc: Phylloscopus collybita}
+- {name: Zwergohreule, desc: Otus scops}
+
+
+
+
+
+
+
+

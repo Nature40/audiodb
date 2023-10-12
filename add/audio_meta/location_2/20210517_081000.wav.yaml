@@ -1,0 +1,21 @@
+AudioSens: v1.1
+file: 20210517_081000.wav
+file_size: 262144
+recording_time_zone: UTC+1
+timestamp: 1621235400
+gain_setting: medium-high
+battery_state: greater than 4.9V
+temperature: 8.8
+Comment: Recorded at 08:10:00 17/05/2021 (UTC+1) by AudioMoth 2222222222222222 at
+  medium-high gain setting while battery state was greater than 4.9V and temperature
+  was 8.8C.
+Artist: AudioMoth 2222222222222222
+device_type: AudioMoth
+device_id: '2222222222222222'
+SampleRate: 48000
+AvgBytesPerSec: 96000
+BitsPerSample: 16
+Samples: 130828
+Duration: 2.7255833333333332
+log:
+- {action: create_yaml, date: '2023-10-12T11:44:21+02'}
