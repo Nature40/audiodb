@@ -140,8 +140,9 @@ public class Task_audio_qoa_convert extends Task {
 
 		int shortsWritten = 0;
 		try(RafQOAEncoder quaEncoder = new RafQOAEncoder(raf)) {
+			long startPos = raf.getFilePointer();
 			if(!quaEncoder.writeHeader(frameLength, 1, sampleRate)) {
-				throw new RuntimeException("data write error");
+				throw new RuntimeException("QOA header write error");
 			}
 
 			int bytesMaxLen = QOABase.MAX_FRAME_SAMPLES * 2;
@@ -167,16 +168,25 @@ public class Task_audio_qoa_convert extends Task {
 				shortBuffer.rewind();
 				shortBuffer.get(shorts, 0, shortsLen);
 				if(!quaEncoder.writeFrame(shorts, shortsLen)) {
-					throw new RuntimeException("data write error");
+					throw new RuntimeException("QOA data write error");
 				}
 				shortsWritten += shortsLen;
 				//Logger.info("written " + shortsLen);
 			}
-			//streamQOAEncoder.flushAlways();	
+			
+			quaEncoder.flush();
+			
+			if(frameLength != shortsWritten) {
+				long endPos = raf.getFilePointer();
+				raf.seek(startPos); // header position
+				if(!quaEncoder.writeHeader(shortsWritten, 1, sampleRate)) {
+					throw new RuntimeException("QOA header rewrite error");
+				}
+				quaEncoder.flush();
+				raf.seek(endPos); // set to end for riff write at end of file
+				Logger.info("Due to unexpected end of file, less data written.   meta data samples " +  frameLength + "  written samples " + shortsWritten);
+				//throw new RuntimeException("Due to unexpected end of file, less data written.   meta data samples " +  frameLength + "  written samples " + shortsWritten);
+			}
 		}
-		if(frameLength != shortsWritten) {
-			throw new RuntimeException("not all audio data written  " +  frameLength + "  " + shortsWritten);
-		}
-
 	}
 }

@@ -10,10 +10,9 @@ import java.util.function.Consumer;
 import org.tinylog.Logger;
 
 import audio.Broker;
-import audio.LabelStoreConnector;
+import audio.SampleStorage;
 import util.AbstractTable.ColumnReaderDouble;
 import util.AbstractTable.ColumnReaderString;
-import util.MapVec;
 import util.StreamTable;
 import util.collections.vec.Vec;
 
@@ -38,18 +37,12 @@ public class WorklistStore {
 		return worklistMap.get(worklistId);
 	}
 
-	private void addAllSamplesWorklist() {
+	/*private void addAllSamplesWorklist() {
 		Vec<WorklistEntry> vec = new Vec<WorklistEntry>();
 		broker.sampleStorage().forEachOrderedSample(sample -> {
 			WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (sample.samples() / sample.sampleRate()), "full sample");
-			//WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (1));
 			vec.add(e);
 		});
-		/*broker.sampleManager().forEach(sample -> {
-			WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (sample.samples() / sample.sampleRate()), "full sample");
-			//WorklistEntry e = new WorklistEntry(vec.size(), sample.id, 0, (float) (1));
-			vec.add(e);
-		});*/
 		Worklist worklist = new Worklist();
 		worklist.replace(vec);
 		worklistMap.put("all_samples", worklist);
@@ -84,12 +77,12 @@ public class WorklistStore {
 			String name = "generator_label." + labelName; 
 			worklistMap.put(name, worklist);
 		});		
-	}
+	}*/
 
 	public void refresh() {		
-		addAllSamplesWorklist();
-		addAllGeneratorLabelsWorklist();
-		addNamedGeneratorLabelsWorklist();	
+		//addAllSamplesWorklist();
+		//addAllGeneratorLabelsWorklist();
+		//addNamedGeneratorLabelsWorklist();	
 		loadWorklistsFromFiles();
 	}
 
@@ -115,7 +108,7 @@ public class WorklistStore {
 					try {
 						loadWorklistFromFile(sub, id);
 					} catch(Exception e) {
-						Logger.warn("Error loading " + sub);
+						Logger.warn("Error loading " + sub + " :  " + e.getMessage());
 					}
 				}
 			} else {
@@ -131,16 +124,34 @@ public class WorklistStore {
 			Vec<WorklistEntry> vec = new Vec<WorklistEntry>();
 			table = StreamTable.openCSV(path, ',');
 			ColumnReaderString colFile = table.createColumnReader("file");
-			ColumnReaderDouble colStart = table.createColumnReaderDouble("start");
-			ColumnReaderDouble colEnd = table.createColumnReaderDouble("end");
-			ColumnReaderString colLabel = table.createColumnReader("label");
+			if(colFile == null) {
+				throw new RuntimeException("For Worklist " + path + "  column 'file' missing in CSV");
+			}
+			ColumnReaderDouble colStart = table.createColumnReaderDouble("start", Double.NaN);
+			ColumnReaderDouble colEnd = table.createColumnReaderDouble("end", Double.NaN);
+			ColumnReaderString colLabel = table.createColumnReader("label", null);
 			for(String[] row = table.readNext(); row != null; row = table.readNext()) {
 				String file = colFile.get(row);
-				float start = (float) colStart.get(row, false);
-				float end = (float) colEnd.get(row, false);
-				String label = colLabel.get(row);
-				if(!file.isBlank() && Double.isFinite(start) && Double.isFinite(end)) {
-					vec.add(index -> new WorklistEntry(index, file, start, end, label));		
+				file = file.replace('\\', '/');
+				Logger.info(file);
+				int filenameStart = file.lastIndexOf('/');
+				String fileName = filenameStart < 0 ? file : file.substring(filenameStart + 1);
+				String folderName = filenameStart < 0 ? SampleStorage.ROOT_FOLDER_MARKER : file.substring(0, filenameStart);
+				int sampleId = broker.sampleStorage().tlSampleStorageConnector.get().getSampleIdByFile(folderName, fileName);
+				if(sampleId < 0) {
+					Logger.info("sample not found: " + file + "   " + folderName + "   " + fileName);
+				} else {
+					Logger.info(file + " -> " + sampleId);
+					float start = (float) colStart.get(row, false);
+					float end = (float) colEnd.get(row, false);
+					String label = colLabel.get(row);
+					//if(!file.isBlank() && Double.isFinite(start) && Double.isFinite(end)) {
+						vec.add(index -> {
+							WorklistEntry worklistEntry = new WorklistEntry(index, sampleId, start, end, label);
+							Logger.info(worklistEntry);
+							return worklistEntry;
+						});		
+					//}
 				}
 			}
 			Worklist worklist = new Worklist();

@@ -1,6 +1,7 @@
 package audio.server.api;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.function.Predicate;
 
 import org.eclipse.jetty.http.HttpStatus;
@@ -22,18 +23,17 @@ public class WorklistHandler {
 
 	private final Broker broker;
 	private final WorklistStore worklistStore;
-	
+
 	private final Predicate<WorklistEntry> SKIP_DONE_PREDICATE;
 	private static final Predicate<WorklistEntry> TRUE_PREDICATE = e -> true;
 
 	public WorklistHandler(Broker broker) {
 		this.broker = broker;
 		this.worklistStore = broker.worklistStore();		
-		
+
 		SKIP_DONE_PREDICATE = e -> {
 			Logger.info(e.sample);
-			//Sample2 sample = broker.sampleManager().getById(e.sample);
-			Sample2 sample = broker.sampleStorage().getSample(Integer.parseInt(e.sample));
+			Sample2 sample = broker.sampleStorage().getSample(e.sample);
 			if(sample == null) {
 				return false;
 			}
@@ -45,7 +45,7 @@ public class WorklistHandler {
 			Logger.info(label);
 			Logger.info("|" + label.labelStatus + "|");
 			return label.labelStatus != LabelStatus.DONE;
-			
+
 		};		
 	}
 
@@ -100,7 +100,7 @@ public class WorklistHandler {
 			json.endObject();
 			return;
 		}
-		
+
 		int first = Web.getInt(request, "first", Integer.MIN_VALUE);
 		boolean skipDone = Web.getBoolean(request, "skip_done", false);
 		WorklistEntry worklistEntry = null;
@@ -120,7 +120,40 @@ public class WorklistHandler {
 			json.endObject();
 			return;
 		}
-		
+
+		writeWorklistEntry(response, worklistEntry);
+	}
+
+	private void writeWorklistEntry(HttpServletResponse response, WorklistEntry worklistEntry) throws IOException {
+
+		Sample2 sample = broker.sampleStorage().getSample(worklistEntry.sample);
+		Logger.info(worklistEntry);
+		Logger.info(sample);
+		float duration = (float) sample.duration();
+		Logger.info(duration);
+
+		float start = worklistEntry.start;
+		if(!Float.isFinite(start)) {
+			start = 0;
+		}
+		if(start < 0) {
+			start = 0;
+		}
+		if(start > duration) {
+			start = duration;
+		}
+
+		float end = worklistEntry.end;
+		if(!Float.isFinite(end)) {
+			end = duration;
+		}
+		if(end > duration) {
+			end = duration;
+		}
+		if(end < start) {
+			end = start;
+		}
+
 		response.setContentType(Web.MIME_JSON);
 		JSONWriter json = new JSONWriter(response.getWriter());
 		json.object();
@@ -130,15 +163,16 @@ public class WorklistHandler {
 		json.key("sample");
 		json.value(worklistEntry.sample);
 		json.key("start");
-		json.value(worklistEntry.start);
+		json.value(start);
 		json.key("end");
-		json.value(worklistEntry.end);
-		json.key("title");
-		json.value(worklistEntry.title);
-
+		json.value(end);
+		if(worklistEntry.title != null) {
+			json.key("title");
+			json.value(worklistEntry.title);
+		}
 		json.endObject();
 	}
-	
+
 	private void handleLast(String worklistId, Request request, HttpServletResponse response) throws IOException {
 		Worklist worklist = worklistStore.getWorklistByd(worklistId);
 		if(worklist == null) {
@@ -151,7 +185,7 @@ public class WorklistHandler {
 			json.endObject();
 			return;
 		}
-		
+
 		int last = Web.getInt(request, "last", Integer.MAX_VALUE);		
 		boolean skipDone = Web.getBoolean(request, "skip_done", false);
 		WorklistEntry worklistEntry = null;
@@ -171,22 +205,7 @@ public class WorklistHandler {
 			json.endObject();
 			return;
 		}
-		
-		response.setContentType(Web.MIME_JSON);
-		JSONWriter json = new JSONWriter(response.getWriter());
-		json.object();
 
-		json.key("index");
-		json.value(worklistEntry.index);
-		json.key("sample");
-		json.value(worklistEntry.sample);
-		json.key("start");
-		json.value(worklistEntry.start);
-		json.key("end");
-		json.value(worklistEntry.end);
-		json.key("title");
-		json.value(worklistEntry.title);		
-
-		json.endObject();
+		writeWorklistEntry(response, worklistEntry);
 	}
 }

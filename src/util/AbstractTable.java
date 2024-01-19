@@ -308,13 +308,13 @@ public abstract class AbstractTable {
 	}
 	public ColumnReaderDouble createColumnReaderDouble(String name) {
 		int columnIndex = getColumnIndex(name);
-		if(columnIndex<0) {
+		if(columnIndex < 0) {
 			return null;
 		}
 		return new ColumnReaderDouble(columnIndex);
 	}
 	public ColumnReaderDouble createColumnReaderDouble(String name, double missing) {
-		int columnIndex = getColumnIndex(name);
+		int columnIndex = getColumnIndex(name, false);
 		if(columnIndex<0) {
 			return new ColumnReaderDoubleMissing(missing);
 		}

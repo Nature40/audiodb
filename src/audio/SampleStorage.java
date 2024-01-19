@@ -134,7 +134,9 @@ public class SampleStorage {
 			throw new RuntimeException("wrong meta");
 		}
 		String data_filename = meta_filename.substring(0, meta_filename.length() - 5);
-		int folderID = sampleStorageConnector.getOrInsertFolderId(meta_rel_parent_path == null ? ROOT_FOLDER_MARKER : meta_rel_parent_path.toString());
+		String data_foldername = meta_rel_parent_path == null ? ROOT_FOLDER_MARKER : meta_rel_parent_path.toString();
+		data_foldername = data_foldername.replace('\\', '/');
+		int folderID = sampleStorageConnector.getOrInsertFolderId(data_foldername);
 		long fileLastModified = metaPath.toFile().lastModified();
 		Pair<Integer, Long> pair = sampleStorageConnector.getOrInsertSampleIdByFile(folderID, data_filename, fileLastModified);
 		int sampleId = pair.getLeft();

@@ -50,7 +50,7 @@ public class QoaMeta extends AudioFileMetaData {
 			//Logger.info(fileLen + " fileLen");
 			//Logger.info(quaFileLen + " quaFileLen");
 			if(fileLen < quaFileLen) {
-				throw new RuntimeException("missing end in QOA audio file");
+				throw new RuntimeException("missing end in QOA audio file " + fileLen + "  qoa " + quaFileLen);
 			}
 			if(fileLen > quaFileLen) {
 				try {

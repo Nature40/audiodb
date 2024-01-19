@@ -8,7 +8,6 @@ import java.sql.Statement;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
@@ -39,29 +38,29 @@ public class SampleStorageConnector {
 
 		TABLE_MAP.put("FOLDER", new String[] {
 				"FOLDER_ID INT AUTO_INCREMENT PRIMARY KEY",
-				"FOLDER_NAME VARCHAR(255) NOT NULL",
+				"FOLDER_NAME TEXT NOT NULL",
 		});
 
 		TABLE_MAP.put("FILE", new String[] {
 				"SAMPLE_ID INT AUTO_INCREMENT PRIMARY KEY",
 				"FOLDER_ID INT NOT NULL",
-				"FILE_NAME VARCHAR(255) NOT NULL",
+				"FILE_NAME TEXT NOT NULL",
 				"LAST_MODIFIED BIGINT NOT NULL",
 		});
 
 		TABLE_MAP.put("DEVICE", new String[] {
 				"DEVICE_ID INT AUTO_INCREMENT PRIMARY KEY",
-				"DEVICE_NAME VARCHAR(255) NOT NULL",
+				"DEVICE_NAME TEXT NOT NULL",
 		});
 
 		TABLE_MAP.put("LOCATION", new String[] {
 				"LOCATION_ID INT AUTO_INCREMENT PRIMARY KEY",
-				"LOCATION_NAME VARCHAR(255) NOT NULL",
+				"LOCATION_NAME TEXT NOT NULL",
 		});
 
 		TABLE_MAP.put("EXCLUDED_FILE", new String[] {
 				"FOLDER_ID INT NOT NULL",
-				"FILE_NAME VARCHAR(255) NOT NULL",
+				"FILE_NAME TEXT NOT NULL",
 				"LAST_MODIFIED BIGINT NOT NULL",
 				"PRIMARY KEY (FOLDER_ID, FILE_NAME)",
 		});
@@ -145,6 +144,8 @@ public class SampleStorageConnector {
 		QUERY_ORDERED_SAMPLES_AT_LOCATION_ID("SELECT SAMPLE_ID FROM ORDERED_SAMPLE WHERE TIMESTAMP >= ? AND TIMESTAMP <= ? AND LOCATION_ID = ? LIMIT ? OFFSET ?"),
 
 		SHUTDOWN_COMPACT("SHUTDOWN COMPACT"),
+		
+		QUERY_SAMPLE_ID_BY_FOLDER_FILE("SELECT SAMPLE_ID FROM FILE JOIN FOLDER ON FILE.FOLDER_ID = FOLDER.FOLDER_ID WHERE FOLDER.FOLDER_NAME = ? AND FILE.FILE_NAME = ?"),
 
 		END_MARKER("");
 
@@ -313,6 +314,27 @@ public class SampleStorageConnector {
 					throw new RuntimeException("insert key error");
 				}
 			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param folderName
+	 * @param fileName
+	 * @return sampleId -1 if not found
+	 */
+	public int getSampleIdByFile(String folderName, String fileName) {
+		try {
+			PreparedStatement stmt = getStatement(SQL.QUERY_SAMPLE_ID_BY_FOLDER_FILE);
+			stmt.setString(1, folderName);
+			stmt.setString(2, fileName);
+			ResultSet res = stmt.executeQuery();
+			if (res.next()) {
+				return res.getInt(1);
+			}
+			return -1;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -634,7 +656,7 @@ public class SampleStorageConnector {
 		public long timestamp;
 		public String deviceName;
 		public String locationName;
-		public String folderName;
+		public String folderName; // SampleStorage.ROOT_FOLDER_MARKER of root folder
 		public String fileName;
 		public long lastModified;		
 

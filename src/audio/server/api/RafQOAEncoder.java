@@ -39,6 +39,13 @@ public class RafQOAEncoder extends QOAEncoder implements Closeable {
 		return true;		
 	}
 
+	public void flush() throws IOException {
+		if(pos > 0) {
+			raf.write(buf, 0, pos);
+			pos = 0;
+		}
+	}
+
 	public void flushAlways() throws IOException {
 		raf.write(buf, 0, pos);
 		pos = 0;

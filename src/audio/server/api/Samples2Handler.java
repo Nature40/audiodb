@@ -10,8 +10,6 @@ import org.json.JSONWriter;
 import org.tinylog.Logger;
 
 import audio.Broker;
-import audio.Sample2;
-import audio.SampleManager;
 import audio.SampleStorage;
 import audio.SampleStorageConnector;
 import audio.SampleStorageConnector.StorageSample;
@@ -50,8 +48,9 @@ public class Samples2Handler extends AbstractHandler {
 				sampleHandler.handle(name, next, baseRequest, response);
 			}
 		} catch(Exception e) {
-			Logger.error(e);
-			e.printStackTrace();
+			Logger.error(e.getMessage());
+			//Logger.error(e);
+			//e.printStackTrace();
 			try {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.setContentType(Web.MIME_TEXT);
@@ -106,8 +105,10 @@ public class Samples2Handler extends AbstractHandler {
 			}
 			json.key("device");
 			json.value(sample.deviceName);
-			json.key("folder");
-			json.value(sample.folderName);
+			if(!sample.folderName.equals(SampleStorage.ROOT_FOLDER_MARKER)) { // non root folder
+				json.key("folder");
+				json.value(sample.folderName);
+			}
 			json.key("file");
 			json.value(sample.fileName);
 

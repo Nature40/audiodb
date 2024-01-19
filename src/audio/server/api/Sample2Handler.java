@@ -128,48 +128,52 @@ public class Sample2Handler {
 	}
 
 	private void handleRoot_GET(Sample2 sample, Request request, HttpServletResponse response) throws IOException {
-		response.setContentType(Web.MIME_JSON);
-		JSONWriter json = new JSONWriter(response.getWriter());
+		try {
+			response.setContentType(Web.MIME_JSON);
+			JSONWriter json = new JSONWriter(response.getWriter());
 
-		boolean reqSamples = Web.getFlagBoolean(request, "samples");
-		boolean reqSampleRate = Web.getFlagBoolean(request, "sample_rate");
-		boolean reqLabels = Web.getFlagBoolean(request, "labels");
-		String reqTimeZone = Web.getString(request, "tz", "UTC");
-		int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
+			boolean reqSamples = Web.getFlagBoolean(request, "samples");
+			boolean reqSampleRate = Web.getFlagBoolean(request, "sample_rate");
+			boolean reqLabels = Web.getFlagBoolean(request, "labels");
+			String reqTimeZone = Web.getString(request, "tz", "UTC");
+			int timeZoneOffsetSeconds = AudioTimeUtil.getTimeZoneOffsetSeconds(reqTimeZone);
 
-		json.object();
-		json.key("sample");		
-		json.object();
-		json.key("id");
-		json.value(sample.id);
-		json.key("project");
-		json.value(sample.project);
-		if(sample.hasLocation()) {
-			json.key("location");
-			json.value(sample.location);
+			json.object();
+			json.key("sample");		
+			json.object();
+			json.key("id");
+			json.value(sample.id);
+			json.key("project");
+			json.value(sample.project);
+			if(sample.hasLocation()) {
+				json.key("location");
+				json.value(sample.location);
+			}
+			if(sample.hasDevice()) {
+				json.key("device");
+				json.value(sample.device);
+			}
+			if(sample.hasTimestamp()) {
+				AudioTimeUtil.writePropsTimestampDateTime(json, sample.timestamp, timeZoneOffsetSeconds);
+			}
+			if(reqSamples && sample.hasSamples()) {
+				json.key("samples");
+				json.value(sample.samples());
+			}
+			if(reqSampleRate && sample.hasSampleRate()) {
+				json.key("sample_rate");
+				json.value(sample.sampleRate());
+			}
+			if(reqLabels) {
+				Vec<Label> labels = sample.getLabels();
+				json.key("labels");
+				JsonUtil.writeArray(json, labels,  Label::toJSON);
+			}
+			json.endObject();
+			json.endObject();
+		} catch(Exception FileNotFoundException) {
+			throw new RuntimeException("Metadata file not found: " + sample.metaPath);
 		}
-		if(sample.hasDevice()) {
-			json.key("device");
-			json.value(sample.device);
-		}
-		if(sample.hasTimestamp()) {
-			AudioTimeUtil.writePropsTimestampDateTime(json, sample.timestamp, timeZoneOffsetSeconds);
-		}
-		if(reqSamples && sample.hasSamples()) {
-			json.key("samples");
-			json.value(sample.samples());
-		}
-		if(reqSampleRate && sample.hasSampleRate()) {
-			json.key("sample_rate");
-			json.value(sample.sampleRate());
-		}
-		if(reqLabels) {
-			Vec<Label> labels = sample.getLabels();
-			json.key("labels");
-			JsonUtil.writeArray(json, labels,  Label::toJSON);
-		}
-		json.endObject();
-		json.endObject();
 	}
 
 	private void handleRoot_POST(Sample2 sample, Request request, HttpServletResponse response) throws IOException {
