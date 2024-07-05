@@ -28,7 +28,7 @@ public class Tasks {
 	private static final String TASK_PREFIX = "Task_";
 	private static final int TASK_PREFIX_LEN = TASK_PREFIX.length();
 
-	private static final String[] TASK_PACKAGES = new String[] {"audio.task", "photo2.task"};
+	private static final String[] TASK_PACKAGES = new String[] {"audio.task", "photo.task"};
 
 	static {
 		descriptorMap = new TreeMap<String, Descriptor>();

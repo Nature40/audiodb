@@ -111,9 +111,12 @@ public class ThumbManager {
 					throw new RuntimeException("image too large");
 				}
 				BufferedImage dstImage = ThumbManager.scale(bufferedImage, (int) calcWidth, (int) calcHeight);			
-				ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-				ThumbManager.writeJPG(dstImage, 0.95f, outStream);	
-				ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
+				ByteArrayOutputStream outStream = new ByteArrayOutputStream();				
+				//ThumbManager.writeJPG(dstImage, 0.95f, outStream);
+				ThumbManager.writeJPG(dstImage, 0.50f, outStream);
+				byte[] outBytes = outStream.toByteArray();
+				Logger.info("outBytes " + outBytes.length);
+				ByteArrayInputStream inStream = new ByteArrayInputStream(outBytes);
 				outStream.close();				
 				sqlconnector.stmt_insert_file.setString(1, cacheFilename);
 				sqlconnector.stmt_insert_file.setString(2, photo.id);

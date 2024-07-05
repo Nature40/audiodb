@@ -4,8 +4,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import org.tinylog.Logger;
-
 import io.jsonwebtoken.lang.Objects;
 import util.collections.vec.Vec;
 import util.yaml.YamlList;
