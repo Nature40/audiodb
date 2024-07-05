@@ -1,0 +1,16 @@
+PhotoSens: v1.0
+file: photo4_20220101_040101.jpg
+log:
+- {action: create yaml, date: '2022-02-22T17:03:23'}
+- {action: generate jpg metadata, date: '2022-02-22T17:03:47'}
+location: photo_data
+date: '2022-01-01T04:01:01'
+width: 35
+height: 26
+detections:
+- bbox: [0.37142858, 0.115384616, 0.2, 0.34615386]
+  classifications:
+  - {classification: Hirsch, classificator: Expert, identity: anonymous, date: '2022-02-28T11:29:19'}
+- bbox: [0.4857143, 0.5769231, 0.22857143, 0.30769232]
+  classifications:
+  - {classification: Wildkatze, classificator: Expert, identity: anonymous, date: '2022-02-28T11:29:41'}

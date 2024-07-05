@@ -2,12 +2,12 @@ login: false
 http_port: 8080
     
 audio:
-  project: myproject
+  project: my_audio_project
   time_zone: UTC+1
   root_data_path: ./audio
   root_path: ./audio_meta
-  device_inventory_file: recorder_inventory.csv
-  label_definitions_file: label_definitions.yaml    
+  device_inventory_file: audio_recorder_inventory.csv
+  label_definitions_file: audio_label_definitions.yaml    
   
   player_fft_window: 1024
   player_fft_window_step_factor: 1
@@ -40,4 +40,13 @@ audio:
       player_static_lines_frequency: [3000, 8000]
       player_fft_cutoff_lower_frequency: 2000
       player_fft_cutoff_upper_frequency: 10000 
-      detail_fft_window_overlap_percent: 92  
+      detail_fft_window_overlap_percent: 92
+      
+photo:
+  projects:
+
+  - project: my_photo_project
+    root_path: 'photo_meta'
+    root_data_path: 'photo_data'
+    classification_definition_csv: photo_classification_definitions.csv
+    review_list_path: 'photo_review_lists'

@@ -1,0 +1,13 @@
+PhotoSens: v1.0
+file: photo1_20220101_010101.jpg
+log:
+- {action: create yaml, date: '2022-02-22T17:03:23'}
+- {action: generate jpg metadata, date: '2022-02-22T17:03:46'}
+location: photo_data
+date: '2022-01-01T01:01:01'
+width: 33
+height: 28
+detections:
+- bbox: [0.42424244, 0.4642857, 0.18181819, 0.25]
+  classifications:
+  - {classification: Hauskatze, classificator: Expert, identity: anonymous, date: '2022-02-28T11:28:46'}

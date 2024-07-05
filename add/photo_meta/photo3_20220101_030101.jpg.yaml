@@ -1,0 +1,13 @@
+PhotoSens: v1.0
+file: photo3_20220101_030101.jpg
+log:
+- {action: create yaml, date: '2022-02-22T17:03:23'}
+- {action: generate jpg metadata, date: '2022-02-22T17:03:47'}
+location: photo_data
+date: '2022-01-01T03:01:01'
+width: 36
+height: 19
+detections:
+- bbox: [0.44444445, 0.10526316, 0.2777778, 0.42105263]
+  classifications:
+  - {classification: Waschbär, classificator: Expert, identity: anonymous, date: '2022-02-28T11:29:06'}
