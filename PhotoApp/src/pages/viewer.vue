@@ -1,5 +1,5 @@
 <template>
-  
+
 <div style="overflow: auto" class="fit">
 
 <q-page class="flex flex-center" v-if="photo === undefined">
@@ -33,6 +33,8 @@
         title="Show current selected detection box only."
       />
       <a :href="imageURL" target="_blank" title="Open current image at new tab to view details."><q-icon size="md" name="image_search" /></a>
+      <q-btn @click="$refs.metaview.id = photo; $refs.metaview.show = true" icon="description" title="Meta view" padding="xs" flat round color="primary"></q-btn>
+      <meta-view ref="metaview"/>
     </div>
     <div style="position: relative;" class="" ref="imageDiv">
       <img :src="imageURL" :style="{'max-width': maxImageWidth + 'px', 'max-height': maxImageHeight + 'px'}" ref="image" @load="onLoadImage" @error="onErrorImage"/>
@@ -46,12 +48,12 @@
       <q-btn :disable="!hasPrevDetection" @click="movePrevDetection" icon="arrow_left" :style="hasPrevDetection ? {} : {color: 'grey'}" title="Move to previous detection within this image."></q-btn>
       <span>{{selectedDetectionIndex + 1}}</span>
       <q-btn :disable="!hasNextDetection" @click="moveNextDetection" icon="arrow_right" :style="hasNextDetection ? {} : {color: 'grey'}" title="Move to next detection within this image,"></q-btn>
-      of 
+      of
       {{detections.length}}
     </div>
     <div class="row"  style="padding-bottom: 5px;">
       <q-btn-toggle
-        v-model="classificationSelectMode" 
+        v-model="classificationSelectMode"
         push
         glossy
         toggle-color="primary"
@@ -62,16 +64,16 @@
       />
       <q-select v-if="classificationSelectMode === 'list'"
         filled
-        v-model="selectedClassification" 
+        v-model="selectedClassification"
         use-input
         hide-selected
         fill-input
         input-debounce="0"
         label="Classification"
-        :options="classification_definitions_list_filtered" 
+        :options="classification_definitions_list_filtered"
         @filter="classificationSelectionFilterFn"
         style="min-width: 200px;"
-        :options-dense="true" 
+        :options-dense="true"
         option-label="name"
         dense
         title="Select classification from predefined list of classifications."
@@ -89,18 +91,18 @@
               No results
             </q-item-section>
           </q-item>
-        </template>        
+        </template>
       </q-select>
-      <q-input 
-        v-if="classificationSelectMode === 'custom'" 
-        filled 
-        v-model="customClassificationText" 
-        label="Custom Classification" 
-        stack-label 
-        dense 
+      <q-input
+        v-if="classificationSelectMode === 'custom'"
+        filled
+        v-model="customClassificationText"
+        label="Custom Classification"
+        stack-label
+        dense
         style="min-width: 200px;"
         placeholder="name"
-        title="Type custom classification. Use only if classifications from the list of classifications are not suitable." 
+        title="Type custom classification. Use only if classifications from the list of classifications are not suitable."
       />
       <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification(undefined)" text-color="green" />
       <q-btn v-show="userBox === undefined" icon="close_fullscreen" title="Store as misaligned box - too large or too small box." round @click="onSubmitClassification('Misaligned box')" text-color="red" />
@@ -123,31 +125,32 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(entry) in selectedDetection.classifications" 
-          :key="JSON.stringify(entry)" 
-          style="margin-right: 15px; color: #111191c4;" 
+          <tr v-for="(entry) in selectedDetection.classifications"
+          :key="JSON.stringify(entry)"
+          style="margin-right: 15px; color: #111191c4;"
           :style="{'background-color': 'rgba(196, 196, 196, 0.57)'}">
             <td><b>{{entry.classification}}</b></td>
             <td>{{entry.conf}}</td>
             <td>{{entry.classificator}}</td>
-            <td>{{entry.identity}}</td>            
+            <td>{{entry.identity}}</td>
             <td>{{entry.date}}</td>
           </tr>
         </tbody>
       </table>
-    </div>    
+    </div>
 </q-page>
 
 <tags-dialog ref="tagsDialog"/>
 
 </div>
-  
+
 </template>
 
 <script>
 import {mapState, mapGetters, mapActions} from 'vuex'
 
 import tagsDialog from '../components/tags-dialog'
+import MetaView from 'components/meta-view';
 
 function pad(number) {
   if (number < 10) {
@@ -161,6 +164,7 @@ export default {
 
   components: {
     tagsDialog,
+    MetaView,
   },
 
   data: () => ({
@@ -183,25 +187,25 @@ export default {
     lastSelectedDetectionIndexModeAll: undefined,
     lastSelectedDetectionIndexModeNoIncorrect: undefined,
     showCurrentDetectionOnly: false,
-  }),  
+  }),
 
   computed: {
     ...mapState({
       photo: state => state.photo.photo,
       photoMeta: state => state.photo.meta,
       classification_definitions: state => state.meta?.data?.classification_definitions,
-    }),     
+    }),
     ...mapGetters({
       api: 'api',
       hasPrev: 'photo/hasPrev',
       hasNext: 'photo/hasNext',
-      apiPOST: 'apiPOST',      
+      apiPOST: 'apiPOST',
     }),
-    classification_definitions_list_server() {      
+    classification_definitions_list_server() {
       return this.classification_definitions === undefined ? [] : this.classification_definitions;
     },
     classification_definitions_list() {
-      if(this.classificationsInImage.length === 0) {      
+      if(this.classificationsInImage.length === 0) {
         return this.classification_definitions_list_server;
       }
       let cs = new Set();
@@ -214,7 +218,7 @@ export default {
           a.push({name: c});
         }
       });
-      return a;      
+      return a;
     },
     imageURL() {
       //return this.api('photodb2', 'photos', this.photo, 'image.jpg');
@@ -225,9 +229,9 @@ export default {
         } else if(this.processing === 'lighten strong') {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=3&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
         } else if(this.processing === 'darken') {
-          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.75&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;  
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.75&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
         } else if(this.processing === 'darken strong') {
-          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.5&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;                   
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.5&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
         } else {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?&width=' + this.maxImageWidth + '&height=' + this.maxImageHeight;
         }
@@ -237,9 +241,9 @@ export default {
         } else if(this.processing === 'lighten strong') {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=3';
         } else if(this.processing === 'darken') {
-          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.75';          
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.75';
         } else if(this.processing === 'darken strong') {
-          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.5';           
+          return this.api('photodb2', 'photos', this.photo, 'image.jpg') + '?gamma=0.5';
         } else {
           return this.api('photodb2', 'photos', this.photo, 'image.jpg');
         }
@@ -256,7 +260,7 @@ export default {
         return "0000-00-00 00:00";
       }
       var date = this.photoMeta.date;
-      if(isFinite(date.getUTCFullYear())) {     
+      if(isFinite(date.getUTCFullYear())) {
         return date.getUTCFullYear() +
           '-' + pad(date.getUTCMonth() + 1) +
           '-' + pad(date.getUTCDate()) +
@@ -285,9 +289,9 @@ export default {
             let classification = classifications[classifications.length - 1].classification;
             console.log(classification);
             return classification !== 'incorrect box' && classification !== 'Empty box' && classification !== 'Misaligned box';
-          }          
+          }
         });
-      } else if(this.show_box_mode === 'all') {        
+      } else if(this.show_box_mode === 'all') {
         return this.photoMeta.data.detections;
       } else {
         return [];
@@ -350,7 +354,7 @@ export default {
     },
     hasNextDetection() {
       return this.detections !== undefined && this.detections.length > 0 && this.selectedDetectionIndex !== undefined && this.selectedDetectionIndex < this.detections.length - 1;
-    },           
+    },
   },
 
   methods: {
@@ -360,7 +364,7 @@ export default {
     }),
     redrawImageOverlay() {
       this.$nextTick(() => {
-        //console.log("draw");      
+        //console.log("draw");
         var image = this.$refs.image;
         if(image === undefined) {
           return;
@@ -480,7 +484,7 @@ export default {
         } else if(this.selectedDetection !== undefined && this.selectedDetection.bbox !== undefined) {
           action.bbox = this.selectedDetection.bbox;
         }
-        var content = {actions: [action]}; 
+        var content = {actions: [action]};
         try {
           var response = await this.apiPOST(['photodb2', 'photos', this.photo], content);
           if(this.userBox !== undefined && this.detections !== undefined && this.detections.length > 0) {
@@ -588,9 +592,9 @@ export default {
     },
     onMouseLeaveImage() {
       console.log('onMouseLeaveImage');
-    },          
+    },
   },
-  
+
   watch: {
     /*detections() {
       console.log('detections');
@@ -618,7 +622,7 @@ export default {
           if(this.detectionsOfPhoto === this.photo) {
             if(this.selectedDetectionIndex === undefined) {
               this.selectedDetectionIndex = 0;
-            } 
+            }
             if(this.detections.length === 0) {
               this.selectedDetectionIndex = undefined;
             } else if(this.selectedDetectionIndex >= this.detections.length) {
@@ -687,7 +691,7 @@ export default {
         this.lastSelectedDetectionIndexModeNoIncorrect = currentSelectedDetectionIndex;
       } else {
         // nothing
-      }      
+      }
     },
     showCurrentDetectionOnly() {
       this.redrawImageOverlay();

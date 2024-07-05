@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -24,6 +25,7 @@ import com.drew.imaging.ImageProcessingException;
 
 import audio.Account;
 import audio.Broker;
+import audio.Sample2;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import photo.Photo2;
@@ -72,7 +74,7 @@ public class Photo2Handler {
 					handleImage(photo, curr, next, request, response);
 					break;
 				case "meta.yaml":
-					handleMeta(photo, curr, next, request, response);
+					handleMetaYaml_GET(photo, curr, next, request, response);
 					break;					
 				default:
 					throw new RuntimeException("unknown path");
@@ -85,7 +87,7 @@ public class Photo2Handler {
 			response.setContentType(Web.MIME_TEXT);
 			response.getWriter().println("ERROR: " + e.getMessage());
 		}
-	}
+	}	
 
 	private void handleImage(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
 		long reqWidth = Web.getInt(request, "width", 0);
@@ -160,14 +162,11 @@ public class Photo2Handler {
 		}
 	}
 
-	private void handleMeta(Photo2 photo, String target, String next, Request request, HttpServletResponse response) throws FileNotFoundException, IOException {
-		File file = photo.metaPath.toFile();
-		long fileLen = file.length();
-		response.setContentType("application/x-yaml");
-		response.setContentLengthLong(fileLen);
-		try(FileInputStream in = new FileInputStream(file)) {
-			IO.copy(in, response.getOutputStream());
-		}
+	private void handleMetaYaml_GET(Photo2 photo, String curr, String next, Request request, HttpServletResponse response) throws IOException {
+		try(InputStream inputStream = new FileInputStream(photo.metaPath.toFile())) {
+			response.setContentType(Web.MIME_TEXT);
+			inputStream.transferTo(response.getOutputStream());
+		}	
 	}
 
 	private void handleRoot(Photo2 photo, Request request, HttpServletResponse response) throws ImageProcessingException, IOException {
@@ -198,7 +197,7 @@ public class Photo2Handler {
 		}
 		return bbox;
 	}
-	
+
 	private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
 	private void handleRoot_POST(Photo2 photo, Request request, HttpServletResponse response) throws IOException, ImageProcessingException {
