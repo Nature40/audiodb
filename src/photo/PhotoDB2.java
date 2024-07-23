@@ -24,7 +24,8 @@ import audio.Broker;
 import de.siegmar.fastcsv.reader.CloseableIterator;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
-import de.siegmar.fastcsv.reader.CsvRow;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
 import photo.SqlConnector.SQL;
 import photo.api.PhotoMeta;
 import util.Timer;
@@ -668,7 +669,7 @@ public class PhotoDB2 {
 	}
 
 	private volatile AtomicReference<Interrupter> interrupterUpdateThumbs = new AtomicReference<>();
-	
+
 	public Interrupter getInterrupterUpdateThumbs() {
 		return interrupterUpdateThumbs.get();
 	}
@@ -732,10 +733,21 @@ public class PhotoDB2 {
 		HashMap<String, Vec<ClassificationDefinition>> map = new HashMap<String, Vec<ClassificationDefinition>>();
 		for(PhotoProjectConfig pc: config.projectMap.values()) {
 			if(pc.classification_definition_csv != null) {
-				try (CsvReader csv = CsvReader.builder().commentStrategy(CommentStrategy.SKIP).build(pc.classification_definition_csv, Charset.forName("UTF-8"))) {
-					try(CloseableIterator<CsvRow> it = csv.iterator()) {
+				//try (CsvReader csv = CsvReader.builder().commentStrategy(CommentStrategy.SKIP).build(pc.classification_definition_csv, Charset.forName("UTF-8"))) {
+				try(CsvReader<CsvRecord> csv = CsvReader.builder()
+						.fieldSeparator(',')
+						.quoteCharacter('"')
+						.commentStrategy(CommentStrategy.SKIP)
+						.commentCharacter('#')
+						.skipEmptyLines(true)
+						.ignoreDifferentFieldCount(true)
+						.acceptCharsAfterQuotes(false)
+						.detectBomHeader(true)
+						.build(new CsvRecordHandler(), pc.classification_definition_csv, Charset.forName("UTF-8"))
+						) {
+					try(CloseableIterator<CsvRecord> it = csv.iterator()) {
 						if(it.hasNext()) {
-							CsvRow header = it.next();
+							CsvRecord header = it.next();
 							HashMap<String, Integer> headerMap = new HashMap<String, Integer>();
 
 							for(int i = 0; i < header.getFieldCount(); i++) {
@@ -748,7 +760,7 @@ public class PhotoDB2 {
 							Vec<ClassificationDefinition> vec = new Vec<ClassificationDefinition>();
 
 							while(it.hasNext()) {
-								CsvRow row = it.next();
+								CsvRecord row = it.next();
 								int rowLen = row.getFieldCount();
 								String name = row.getField(iName);
 								String description = iDescription < 0 || rowLen <= iDescription  ? "" : row.getField(iDescription);

@@ -14,6 +14,7 @@ import java.util.Locale;
 import org.tinylog.Logger;
 
 import de.siegmar.fastcsv.writer.CsvWriter;
+import de.siegmar.fastcsv.writer.LineDelimiter;
 import task.Cancelable;
 import task.Description;
 import task.Descriptor.Param.Type;
@@ -89,10 +90,10 @@ public class Task_audio_sample_statistics extends Task {
 		validateFilenameThrow(filename);
 		boolean hasFilter_by_location = !filter_by_location.isBlank();
 		boolean hasFilter_by_device = !filter_by_device.isBlank();
-		
+
 		long time_min = Long.MIN_VALUE;
 		long time_max = Long.MAX_VALUE;
-		
+
 		if(!filter_by_time.isBlank()) {
 			long tmin = AudioTimeUtil.toAudiotimeStart(filter_by_time);
 			long tmax = AudioTimeUtil.toAudiotimeEnd(filter_by_time);
@@ -109,7 +110,7 @@ public class Task_audio_sample_statistics extends Task {
 				}
 			}
 		}
-		
+
 		if(!filter_by_time_start.isBlank()) {
 			long tmin = AudioTimeUtil.toAudiotimeStart(filter_by_time_start);
 			if(tmin != Long.MIN_VALUE) {
@@ -119,7 +120,7 @@ public class Task_audio_sample_statistics extends Task {
 				}
 			}
 		}
-		
+
 		if(!filter_by_time_end.isBlank()) {
 			long tmax = AudioTimeUtil.toAudiotimeEnd(filter_by_time_end);
 			if(tmax != Long.MAX_VALUE) {
@@ -129,12 +130,20 @@ public class Task_audio_sample_statistics extends Task {
 				}
 			}
 		}
-		
+
 		long time_minf = time_min;
 		long time_maxf = time_max;
 
 		Path output_target = output_path.resolve(filename);
-		try (CsvWriter csv = CsvWriter.builder().build(output_target)) {
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_target)
+				) {
 			Vec<String> cols = new Vec<String>();
 
 			if(col_location) {
@@ -167,7 +176,7 @@ public class Task_audio_sample_statistics extends Task {
 			if(col_file_size) {
 				cols.add("file_size");	
 			}
-			csv.writeRow(cols);
+			csv.writeRecord(cols);
 			Vec<String> row = new Vec<String>();
 			final long[] fileSizeCounter = new long[] {0};
 			final double[] durationCounter = new double[] {0};
@@ -248,7 +257,7 @@ public class Task_audio_sample_statistics extends Task {
 							row.add("");
 						}					
 					}
-					csv.writeRow(row);
+					csv.writeRecord(row);
 				}
 				fileCounter[0]++;
 				if(fileCounter[0] % 1000 == 0) {

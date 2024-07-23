@@ -10,97 +10,104 @@ import java.util.function.Consumer;
 import de.siegmar.fastcsv.reader.CloseableIterator;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
-import de.siegmar.fastcsv.reader.CsvRow;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
 
 public class CsvTable implements Closeable {
 
-	private CsvReader csv;
-	private CloseableIterator<CsvRow> it;
+	private CsvReader<CsvRecord> csv;
+	private CloseableIterator<CsvRecord> it;
 	private HashMap<String, Integer> headerMap;
-	
+
 	public static class CsvCell {
 		public static CsvCell DEFAULT = new CsvCell();
 		private CsvCell() {
 		}
-		public String get(CsvRow row) {
+		public String get(CsvRecord row) {
 			return null;			
 		}
 	}
-	
+
 	public static class CsvCellPos extends CsvCell {
 		private final int pos;
 		public CsvCellPos(int pos) {
 			this.pos = pos;
 		}
-		public String get(CsvRow row) {
+		public String get(CsvRecord row) {
 			return pos < row.getFieldCount() ? row.getField(pos) : null;			
 		}
 	}
 
 	public CsvTable(Path path) throws IOException {
-		this.csv = CsvReader.builder().commentStrategy(CommentStrategy.SKIP).build(path, Charset.forName("UTF-8"));
+		CsvReader<CsvRecord> csv = CsvReader.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.commentStrategy(CommentStrategy.SKIP)
+				.commentCharacter('#')
+				.skipEmptyLines(true)
+				.ignoreDifferentFieldCount(true)
+				.acceptCharsAfterQuotes(false)
+				.detectBomHeader(true)
+				.build(new CsvRecordHandler(), path, Charset.forName("UTF-8"));
+
 		this.it = csv.iterator();
 		this.headerMap = new HashMap<String, Integer>();
 		if(it.hasNext()) {
-			CsvRow header = it.next();
+			CsvRecord header = it.next();
 			int headerLen = header.getFieldCount();
 			for(int i = 0; i < headerLen; i++) {
 				headerMap.putIfAbsent(header.getField(i), i);
 			}
 		}
 	}
-	
+
 	public CsvCell getCell(String name) {
 		Integer pos = headerMap.get(name);
 		return pos == null ? CsvCell.DEFAULT : new CsvCellPos(pos);
 	}
-	
-	public void forEach(Consumer<CsvRow> action) {
+
+	public void forEach(Consumer<CsvRecord> action) {
 		it.forEachRemaining(action);
 	}
-	
+
 	@FunctionalInterface
-	public interface CsvRowConsumer {
-		void accept(CsvRow csvRow, int pos) throws Exception;
+	public interface CsvRecordConsumer {
+		void accept(CsvRecord csvRow, int pos) throws Exception;
 	}
-	
-	public void forEach(CsvRowConsumer consumer) throws Exception {
-		CloseableIterator<CsvRow> itt = this.it;
+
+	public void forEach(CsvRecordConsumer consumer) throws Exception {
+		CloseableIterator<CsvRecord> itt = this.it;
 		int pos = 0;
 		while(itt.hasNext()) {
-			CsvRow csvRow = itt.next();
-			if(!csvRow.isComment() && !csvRow.isEmpty()) {
-				consumer.accept(csvRow, pos);
-				pos++;
-			}
+			CsvRecord csvRow = itt.next();
+			consumer.accept(csvRow, pos);
+			pos++;
 		}
 	}
-	
+
 	@FunctionalInterface
-	public interface CsvRowConsumerThrowable<E extends Exception> {
-		void accept(CsvRow csvRow, int pos) throws E;
+	public interface CsvRecordConsumerThrowable<E extends Exception> {
+		void accept(CsvRecord csvRow, int pos) throws E;
 	}
-	
-	public <E extends Exception> void forEachThrowable(CsvRowConsumerThrowable<E> consumer) throws E {
-		CloseableIterator<CsvRow> itt = this.it;
+
+	public <E extends Exception> void forEachThrowable(CsvRecordConsumerThrowable<E> consumer) throws E {
+		CloseableIterator<CsvRecord> itt = this.it;
 		int pos = 0;
 		while(itt.hasNext()) {
-			CsvRow csvRow = itt.next();
-			if(!csvRow.isComment() && !csvRow.isEmpty()) {
-				consumer.accept(csvRow, pos);
-				pos++;
-			}
+			CsvRecord csvRow = itt.next();
+			consumer.accept(csvRow, pos);
+			pos++;
 		}
 	}
 
 	@Override
 	public void close() throws IOException {
-		CloseableIterator<CsvRow> i = it;
+		CloseableIterator<CsvRecord> i = it;
 		if(i != null) {
 			i.close();
 		}
 		it = null;
-		CsvReader c = csv;
+		CsvReader<CsvRecord> c = csv;
 		if(c != null) {
 			c.close();
 		}		

@@ -24,6 +24,7 @@ import audio.processing.Metric;
 import audio.processing.Metrics;
 import audio.processing.SampleProcessor;
 import de.siegmar.fastcsv.writer.CsvWriter;
+import de.siegmar.fastcsv.writer.LineDelimiter;
 import util.Web;
 import util.collections.vec.Vec;
 
@@ -127,13 +128,20 @@ public class QueryHandler extends AbstractHandler {
 		}
 
 		response.setContentType(Web.MIME_CSV);
-		try (CsvWriter csv = CsvWriter.builder().build(response.getWriter())) {
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF).build(response.getWriter())
+				) {
 			String[] header = new String[HEADER_META_ROWS + metrics.size()];
 			header[0] = "sample";
 			for (int i = 0; i < metrics.size(); i++) {
 				header[HEADER_META_ROWS + i] = metrics.get(i).name;
 			}
-			csv.writeRow(header);		    
+			csv.writeRecord(header);		    
 			process(csv, metrics);	    
 		}			
 	}
@@ -194,7 +202,7 @@ public class QueryHandler extends AbstractHandler {
 		Vec<String[]> rows = processSample(sample, metrics);
 		synchronized (csv) {
 			for(String[] row:rows) {
-				csv.writeRow(row);
+				csv.writeRecord(row);
 			}			
 		}
 	}

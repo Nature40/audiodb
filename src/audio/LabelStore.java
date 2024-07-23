@@ -2,6 +2,7 @@ package audio;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,7 +11,14 @@ import java.time.LocalDateTime;
 import org.tinylog.Logger;
 
 import audio.LabelStoreConnector.TlLabelStoreConnector;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
 import de.siegmar.fastcsv.writer.CsvWriter;
+import de.siegmar.fastcsv.writer.LineDelimiter;
+import de.siegmar.fastcsv.writer.QuoteStrategies;
+import de.siegmar.fastcsv.writer.QuoteStrategy;
 import util.AudioTimeUtil;
 
 public class LabelStore {
@@ -27,11 +35,11 @@ public class LabelStore {
 	public void rebuild() {
 		LabelStoreConnector conn = tlLabelStoreConnector.get();
 		conn.init(true);
-		
+
 		Path root_data_path = broker.config().audioConfig.root_data_path;
-		
+
 		broker.sampleStorage().forEachOrderedSample(sample -> {
-		//broker.sampleManager().forEach(sample -> {
+			//broker.sampleManager().forEach(sample -> {
 			Path path = root_data_path.relativize(sample.samplePath);
 			int sampleMapId = conn.getOrCreateIdBySample(path.toString());
 			Logger.info(sample.id);
@@ -78,8 +86,16 @@ public class LabelStore {
 		}
 		Path output_path = output_file.toPath();
 
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("generator_label.csv"))) {
-			csv.writeRow("location", "time", "label", "reliability", "start", "end", "sample");		    
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("generator_label.csv"))
+				) {
+			csv.writeRecord("location", "time", "label", "reliability", "start", "end", "sample");		    
 			conn.forEachGeneratorLabel((int id, int label, float reliability, int location, int time, float start, float end) -> {				
 				String labelName = conn.getLabelById(label);
 				String reliabilityName = "" + reliability;
@@ -88,14 +104,22 @@ public class LabelStore {
 				String startName = "" + start;
 				String endName = "" + end;
 				String sampleName = conn.getSampleById(id);
-				csv.writeRow(locationName, timeName, labelName, reliabilityName , startName, endName, sampleName);
+				csv.writeRecord(locationName, timeName, labelName, reliabilityName , startName, endName, sampleName);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
 
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label.csv"))) {
-			csv.writeRow("location", "time", "label", "start", "end", "creator", "creation_time", "sample");		    
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("user_label.csv"))
+				) {
+			csv.writeRecord("location", "time", "label", "start", "end", "creator", "creation_time", "sample");		    
 			conn.forEachUserLabel((int id, int label, int location, int time, float start, float end, int creator, int creation_time) -> {
 				String labelName = conn.getLabelById(label);
 				String locationName = conn.getLocationById(location);
@@ -105,80 +129,136 @@ public class LabelStore {
 				String creatorName = conn.getCreatorById(creator);
 				String creationTimeName = AudioTimeUtil.ofAudiotime(creation_time).toString();
 				String sampleName = conn.getSampleById(id);
-				csv.writeRow(locationName, timeName, labelName, startName, endName, creatorName, creationTimeName, sampleName);
+				csv.writeRecord(locationName, timeName, labelName, startName, endName, creatorName, creationTimeName, sampleName);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
 
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("location.csv"))) {
-			csv.writeRow("location");		    
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("location.csv"))
+				) {
+			csv.writeRecord("location");		    
 			conn.forEachLocation((int id, String location) -> {
-				csv.writeRow(location);
+				csv.writeRecord(location);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
 
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("label.csv"))) {
-			csv.writeRow("label");		    
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("label.csv"))
+				) {
+			csv.writeRecord("label");		    
 			conn.forEachLabel((int id, String label) -> {
-				csv.writeRow(label);
+				csv.writeRecord(label);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
 
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("creator.csv"))) {
-			csv.writeRow("creator");		    
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("creator.csv"))
+				) {
+			csv.writeRecord("creator");		    
 			conn.forEachCreator((int id, String creator) -> {
-				csv.writeRow(creator);
+				csv.writeRecord(creator);
 			});		    
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
-		
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label_label.csv"))) {
-			csv.writeRow("label", "count");
+
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("user_label_label.csv"))
+				) {
+			csv.writeRecord("label", "count");
 			ResultSet res = conn.conn.createStatement().executeQuery("SELECT LABEL, COUNT(*) FROM USER_LABEL_STORE GROUP BY LABEL ORDER BY COUNT(*) DESC");
 			while(res.next()) {
 				int label = res.getInt(1);
 				int count = res.getInt(2);
 				String labelName = conn.getLabelById(label);
-				csv.writeRow(labelName, ""+count);
+				csv.writeRecord(labelName, ""+count);
 			}
 		} catch (SQLException | IOException e) {
 			Logger.warn(e);
 		}
-		
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label_location.csv"))) {
-			csv.writeRow("location", "count");
+
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("user_label_location.csv"))
+				) {
+			csv.writeRecord("location", "count");
 			ResultSet res = conn.conn.createStatement().executeQuery("SELECT LOCATION, COUNT(*) FROM USER_LABEL_STORE GROUP BY LOCATION ORDER BY COUNT(*) DESC");
 			while(res.next()) {
 				int location = res.getInt(1);
 				int count = res.getInt(2);
 				String locationName = conn.getLocationById(location);
-				csv.writeRow(locationName, ""+count);
+				csv.writeRecord(locationName, ""+count);
 			}
 		} catch (SQLException | IOException e) {
 			Logger.warn(e);
 		}
-		
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label_creator.csv"))) {
-			csv.writeRow("creator", "count");
+
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("user_label_creator.csv"))
+				) {
+			csv.writeRecord("creator", "count");
 			ResultSet res = conn.conn.createStatement().executeQuery("SELECT CREATOR, COUNT(*) FROM USER_LABEL_STORE GROUP BY CREATOR ORDER BY COUNT(*) DESC");
 			while(res.next()) {
 				int creator = res.getInt(1);
 				int count = res.getInt(2);
 				String creatorName = conn.getCreatorById(creator);
-				csv.writeRow(creatorName, ""+count);
+				csv.writeRecord(creatorName, ""+count);
 			}
 		} catch (SQLException | IOException e) {
 			Logger.warn(e);
 		}
-		
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label_location_label.csv"))) {
-			csv.writeRow("location", "label", "count");
+
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("user_label_location_label.csv"))
+				) {
+			csv.writeRecord("location", "label", "count");
 			ResultSet res = conn.conn.createStatement().executeQuery("SELECT LOCATION, LABEL, COUNT(*) FROM USER_LABEL_STORE GROUP BY LOCATION, LABEL ORDER BY LOCATION ASC, COUNT(*) DESC, LABEL ASC");
 			while(res.next()) {
 				int location = res.getInt(1);
@@ -186,14 +266,22 @@ public class LabelStore {
 				int count = res.getInt(3);
 				String locationName = conn.getLocationById(location);
 				String labelName = conn.getLabelById(label);
-				csv.writeRow(locationName, labelName, ""+count);
+				csv.writeRecord(locationName, labelName, ""+count);
 			}
 		} catch (SQLException | IOException e) {
 			Logger.warn(e);
 		}
-		
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label_label_location.csv"))) {
-			csv.writeRow("label", "location", "count");
+
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(output_path.resolve("user_label_label_location.csv"))
+				) {
+			csv.writeRecord("label", "location", "count");
 			ResultSet res = conn.conn.createStatement().executeQuery("SELECT LABEL, LOCATION, COUNT(*) FROM USER_LABEL_STORE GROUP BY LABEL, LOCATION ORDER BY LABEL ASC, COUNT(*) DESC, LOCATION ASC");
 			while(res.next()) {
 				int label = res.getInt(1);
@@ -201,20 +289,27 @@ public class LabelStore {
 				int count = res.getInt(3);
 				String labelName = conn.getLabelById(label);
 				String locationName = conn.getLocationById(location);
-				csv.writeRow(labelName, locationName, ""+count);
+				csv.writeRecord(labelName, locationName, ""+count);
 			}
 		} catch (SQLException | IOException e) {
 			Logger.warn(e);
 		}
-		
-		try (CsvWriter csv = CsvWriter.builder().build(output_path.resolve("user_label_sample.csv"))) {
-			csv.writeRow("sample", "count");
+
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF).build(output_path.resolve("user_label_sample.csv"))
+				) {
+			csv.writeRecord("sample", "count");
 			ResultSet res = conn.conn.createStatement().executeQuery("SELECT SAMPLE, COUNT(*) FROM USER_LABEL_STORE GROUP BY SAMPLE ORDER BY COUNT(*) DESC");
 			while(res.next()) {
 				int sample = res.getInt(1);
 				int count = res.getInt(2);
 				String sampleName = conn.getSampleById(sample);
-				csv.writeRow(sampleName, ""+count);
+				csv.writeRecord(sampleName, ""+count);
 			}
 		} catch (SQLException | IOException e) {
 			Logger.warn(e);

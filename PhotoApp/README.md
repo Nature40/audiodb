@@ -19,7 +19,7 @@ export NODE_OPTIONS=--openssl-legacy-provider
 ```
 
 On Windows, run before "quasar dev" or "quasar build":
-```bash
+```Batchfile
 set NODE_OPTIONS=--openssl-legacy-provider
 ```
 

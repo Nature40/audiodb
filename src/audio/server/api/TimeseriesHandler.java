@@ -20,6 +20,7 @@ import org.json.JSONWriter;
 import audio.Broker;
 import audio.Sample;
 import de.siegmar.fastcsv.writer.CsvWriter;
+import de.siegmar.fastcsv.writer.LineDelimiter;
 import util.AudioTimeUtil;
 import util.Web;
 import util.collections.vec.Vec;
@@ -132,14 +133,22 @@ public class TimeseriesHandler extends AbstractHandler {
 
 	private void process(Vec<String> indices, HttpServletResponse response) throws IOException {
 		response.setContentType(Web.MIME_CSV);		
-		try (CsvWriter csv = CsvWriter.builder().build(response.getWriter())) {
+		try (
+				CsvWriter csv = CsvWriter.builder()
+				.fieldSeparator(',')
+				.quoteCharacter('"')
+				.quoteStrategy(null) // quote when needed only
+				.commentCharacter('#')
+				.lineDelimiter(LineDelimiter.CRLF)
+				.build(response.getWriter())
+				) {
 			String[] header = new String[HEADER_META_ROWS + indices.size()];
 			header[0] = "plotID";
 			header[1] = "datetime";
 			for (int i = 0; i < indices.size(); i++) {
 				header[HEADER_META_ROWS + i] = indices.get(i);
 			}
-			csv.writeRow(header);		    
+			csv.writeRecord(header);		    
 			process(csv, indices);	    
 		}
 	}
@@ -180,7 +189,7 @@ public class TimeseriesHandler extends AbstractHandler {
 		Vec<String[]> rows = processSample(sample, indices);
 		synchronized (csv) {
 			for(String[] row:rows) {
-				csv.writeRow(row);
+				csv.writeRecord(row);
 			}			
 		}
 	}
