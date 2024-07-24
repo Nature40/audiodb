@@ -11,7 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
@@ -311,7 +313,7 @@ public class PhotoDB2 {
 				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED);
 				stmt.setString(1, project);
 			} else {
-				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_WITH_LOCATION);
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_AT_LOCATION);
 				stmt.setString(1, project);
 				stmt.setString(2, location);
 			}
@@ -326,16 +328,38 @@ public class PhotoDB2 {
 		}
 	}
 
-	public void foreachIdSortDate(String project, String location, Consumer<String> consumer) {
+	/**
+	 * 
+	 * @param project
+	 * @param location nullable
+	 * @param date nullable
+	 * @param consumer
+	 */
+	public void foreachIdSortDate(String project, String location, LocalDate date, Consumer<String> consumer) {
 		try {
 			PreparedStatement stmt;
 			if(location == null) {
-				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_SORT_DATE);
-				stmt.setString(1, project);
+				if(date == null) {
+					stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_SORT_DATE);
+					stmt.setString(1, project);
+				} else {
+					stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_WITH_DATE_RANGE_NOT_LOCKED_SORT_DATE);
+					stmt.setString(1, project);
+					stmt.setObject(2, LocalDateTime.of(date, LocalTime.of(0, 0, 0)));
+					stmt.setObject(3, LocalDateTime.of(date, LocalTime.of(23, 59, 59)));
+				}
 			} else {
-				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_WITH_LOCATION_SORT_DATE);
-				stmt.setString(1, project);
-				stmt.setString(2, location);
+				if(date == null) {
+					stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_AT_LOCATION_SORT_DATE);
+					stmt.setString(1, project);
+					stmt.setString(2, location);
+				} else {
+					stmt = tlsqlconnector.get().getStatement(SQL.QUERY_IDS_NOT_LOCKED_AT_LOCATION_DATE_RANGE_SORT_DATE);
+					stmt.setString(1, project);
+					stmt.setString(2, location);
+					stmt.setObject(3, LocalDateTime.of(date, LocalTime.of(0, 0, 0)));
+					stmt.setObject(4, LocalDateTime.of(date, LocalTime.of(23, 59, 59)));
+				}
 			}
 			ResultSet res = stmt.executeQuery();
 			while(res.next()) {
@@ -548,6 +572,41 @@ public class PhotoDB2 {
 			while(res.next()) {
 				String location = res.getString(1);
 				consumer.accept(location);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * 
+	 * @param project
+	 * @param location nullable
+	 * @param consumer
+	 */
+	public void foreachDate(String project, String location, Consumer<LocalDateTime> consumer) {
+		try {
+			/*PreparedStatement stmt = conn.prepareStatement("EXPLAIN ANALYZE " + SQL.QUERY_DATES);
+			stmt.setString(1, project);
+			ResultSet explRes = stmt.executeQuery();
+			if(explRes.next()) {
+				String expl = explRes.getString(1);
+				Logger.info("\n\n" + expl + "\n\n");
+			}*/
+			PreparedStatement stmt;
+			if(location == null) {
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_DATES);
+				stmt.setString(1, project);
+			} else {
+				Logger.info("with real location " + location);
+				stmt = tlsqlconnector.get().getStatement(SQL.QUERY_DATES_AT_LOCATION);
+				stmt.setString(1, project);
+				stmt.setString(2, location);
+			}
+			ResultSet res = stmt.executeQuery();
+			while(res.next()) {
+				LocalDateTime date = res.getObject(1, java.time.LocalDateTime.class);
+				consumer.accept(date);
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);

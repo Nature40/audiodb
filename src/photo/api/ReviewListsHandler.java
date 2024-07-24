@@ -199,7 +199,7 @@ public class ReviewListsHandler {
 		}
 
 		PreparedStatement insStmt = sqlConnector.getStatement(SQL.INSERT_REVIEW_LIST_ENTRY);
-		photodb.foreachIdSortDate(project, null, photoId -> {
+		photodb.foreachIdSortDate(project, null, null, photoId -> {
 			Photo2 photo = photodb.getPhoto2(photoId, true);
 			if(photo != null) {
 				String location = photo.location;

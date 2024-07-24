@@ -1,7 +1,7 @@
 package photo.api;
 
 import java.io.IOException;
-
+import java.time.LocalDate;
 
 import org.tinylog.Logger;
 import org.eclipse.jetty.server.Request;
@@ -65,13 +65,15 @@ public class Photos2Handler {
 		} else if(Web.has(request, "project")) {
 			String project = Web.getString(request, "project");
 			String location = Web.getString(request, "location");
-
+			String dateText = Web.getString(request, "date");
+			LocalDate date = dateText == null ? null : LocalDate.parse(dateText);
+			
 			response.setContentType(Web.MIME_JSON);
 			JSONWriter json = new JSONWriter(response.getWriter());
 			json.object();
 			json.key("photos");
 			json.array();		
-			photodb.foreachIdSortDate(project, location, id -> {
+			photodb.foreachIdSortDate(project, location, date, id -> {
 				json.value(id);
 			});		
 			json.endArray();

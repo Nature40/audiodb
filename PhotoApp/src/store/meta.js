@@ -26,7 +26,7 @@ export default {
       state.error = error;
     },
   },
-  
+
   actions: {
     init({state, dispatch}) {
       if(state.data === undefined) {
@@ -39,6 +39,7 @@ export default {
         params = {};
       }
       params.locations = true;
+      params.dates = true;
       params.classification_definitions = true;
       params.review_lists = true;
       try {

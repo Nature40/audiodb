@@ -4,17 +4,17 @@
     <div v-if="projects === undefined">
       loading projects
     </div>
-    <q-select 
-      v-else 
-      rounded 
-      outlined 
-      bottom-slots 
-      v-model="selectedProject" 
-      :options="projects" 
-      label="Project" 
-      dense 
-      options-dense 
-      options-selected-class="text-deep-blue" 
+    <q-select
+      v-else
+      rounded
+      outlined
+      bottom-slots
+      v-model="selectedProject"
+      :options="projects"
+      label="Project"
+      dense
+      options-dense
+      options-selected-class="text-deep-blue"
       style="min-width: 200px;"
       title="Select one project of images."
     >
@@ -50,20 +50,20 @@
         title="Select working images by subset query or by image lists."
       />
     </div>
-    
+
     <hr style="min-width: 500px;">
-    
+
     <div class="column items-center" v-if="selectedQueryMode === 'query'">
-      <q-select 
-        rounded 
-        outlined 
-        bottom-slots 
-        v-model="selectedLocation" 
-        :options="locations" 
-        label="Location" 
-        dense 
-        options-dense 
-        options-selected-class="text-deep-blue" 
+      <q-select
+        rounded
+        outlined
+        bottom-slots
+        v-model="selectedLocation"
+        :options="locations"
+        label="Location"
+        dense
+        options-dense
+        options-selected-class="text-deep-blue"
         style="min-width: 200px;"
         title="Select one location of images."
       >
@@ -80,41 +80,71 @@
         </template>
       </q-select>
       <div v-if="selectedLocation === ''">
-        No location selected. 
+        No location selected.
         <br><q-icon name="info"/> Select a location!
       </div>
+
+      <q-select
+        rounded
+        outlined
+        bottom-slots
+        v-model="selectedDate"
+        :options="dates"
+        label="Date"
+        dense
+        options-dense
+        options-selected-class="text-deep-blue"
+        style="min-width: 200px;"
+        title="Select one location of images."
+      >
+        <template v-slot:prepend>
+          <q-icon name="location_on" />
+        </template>
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+            {{scope.opt}}
+          </q-item>
+        </template>
+        <template v-slot:selected-item="scope">
+          {{scope.opt}}
+        </template>
+      </q-select>
+      <div v-if="selectedDate === ''">
+        No date selected.
+        <br><q-icon name="info"/> Select a date!
+      </div>
     </div>
-    
+
     <div class="column items-center" v-if="selectedQueryMode === 'review_list'">
       <div class="row">
-      <q-select 
-        rounded 
-        outlined 
-        bottom-slots 
-        v-model="selectedReviewListSet" 
-        :options="review_list_sets" 
-        option-label="name" 
-        label="Review list set" 
-        dense 
-        options-dense 
-        options-selected-class="text-deep-blue" 
+      <q-select
+        rounded
+        outlined
+        bottom-slots
+        v-model="selectedReviewListSet"
+        :options="review_list_sets"
+        option-label="name"
+        label="Review list set"
+        dense
+        options-dense
+        options-selected-class="text-deep-blue"
         style="min-width: 200px;"
         title="Select one set of image lists."
       >
         <template v-slot:prepend>
           <q-icon name="folder" />
         </template>
-      </q-select>      
-      <q-select 
-        rounded 
-        outlined 
-        bottom-slots 
-        v-model="selectedReviewList" 
-        :options="review_lists" 
-        label="Review list" 
-        dense 
-        options-dense 
-        options-selected-class="text-deep-blue" 
+      </q-select>
+      <q-select
+        rounded
+        outlined
+        bottom-slots
+        v-model="selectedReviewList"
+        :options="review_lists"
+        label="Review list"
+        dense
+        options-dense
+        options-selected-class="text-deep-blue"
         style="min-width: 400px;"
         title="Select one image list."
       >
@@ -128,23 +158,23 @@
         </template>
         <template v-slot:selected-item="scope">
           {{scope.opt.name}}
-        </template>        
+        </template>
         <template v-slot:after>
           <q-btn push color="grey-7" round icon="edit_note" @click="$refs.manageReviewListSetsDialog.show()" title="Manage image list sets."/>
-          <manage-review-list-sets-dialog ref="manageReviewListSetsDialog" @closed="refreshProjectMeta" @refresh="refreshProjectMeta"/>          
+          <manage-review-list-sets-dialog ref="manageReviewListSetsDialog" @closed="refreshProjectMeta" @refresh="refreshProjectMeta"/>
         </template>
       </q-select>
       </div>
       <div v-if="review_lists === undefined || review_lists === null || review_lists.length === 0">
         No review_list found.
       </div>
-    </div>    
+    </div>
 
     <hr style="min-width: 500px;">
 
     <div class="column items-center">
       {{photos.length}} photos selected.
-    </div>    
+    </div>
 
   </q-page>
 </template>
@@ -171,16 +201,19 @@ export default {
 
   components: {
     manageReviewListSetsDialog,
-  },  
+  },
 
   data: () => ({
     photosMessage: 'init',
     selectedProject: undefined,
     selectedLocation: '',
+    selectedDate: '',
     selectedQueryMode: 'query',
     selectedReviewListSet: undefined,
     selectedReviewList: undefined,
-  }),  
+
+    locationDates: undefined,
+  }),
 
   computed: {
     ...mapState({
@@ -190,9 +223,10 @@ export default {
       projects: state => state.projects?.data?.projects,
       meta: state => state.meta?.data,
       locations: state => state.meta?.data?.locations,
+      allDates: state => state.meta?.data?.dates,
       review_lists_unfiltered: state => state.meta?.data?.review_lists,
       review_list_sets: state => state.meta?.data?.review_list_sets,
-    }),    
+    }),
     ...mapGetters({
       api: 'api',
       apiGET: 'apiGET',
@@ -206,13 +240,20 @@ export default {
       }
       return this.review_lists_unfiltered.filter(entry => entry.set === this.selectedReviewListSet.id).sort(entryCompareFn);
     },
+    dates() {
+      if(this.locationDates !== undefined && this.locationDates.location === this.selectedLocation) {
+        return this.locationDates.dates;
+      } else {
+        return this.allDates;
+      }
+    },
   },
 
   watch: {
     projects() {
       console.log(this.projects);
       if(this.projects === undefined || this.projects.length === 0) {
-        this.selectedProject = undefined; 
+        this.selectedProject = undefined;
       } else {
         if(this.selectedProject === undefined) {
           this.selectedProject = this.projects[0];
@@ -229,7 +270,20 @@ export default {
         this.selectedLocation = this.locations[0];
       }
     },
+    dates() {
+      if(this.dates === undefined || this.dates.length === 0) {
+        this.selectedDate = '';
+      } else {
+        this.selectedDate = this.dates[0];
+      }
+    },
     selectedLocation() {
+      this.$nextTick(() => {
+        this.queryDatesAtLocation();
+        this.sendQuery();
+      });
+    },
+    selectedDate() {
       this.$nextTick(() => this.sendQuery());
     },
     selectedReviewList() {
@@ -251,7 +305,7 @@ export default {
       } else {
         this.selectedReviewListSet = this.review_list_sets[0];
       }
-    },         
+    },
   },
 
   methods: {
@@ -264,10 +318,37 @@ export default {
       this.photoSetIndex(index);
       this.$router.push('/viewer');
     },
+    async queryDatesAtLocation() {
+      try {
+        if(
+          this.selectedProject !== undefined
+
+        && this.selectedLocation !== undefined
+        && this.selectedLocation !== null
+        && this.selectedLocation !== ''
+        ) {
+          var params = { project: this.selectedProject, location: this.selectedLocation};
+          var response =  await this.apiGET(['photodb2', 'dates'], {params});
+          this.locationDates = response.data;
+        }
+      } catch(e) {
+        console.log(e);
+      }
+    },
     sendQuery() {
       if(this.selectedQueryMode === 'query') {
-        if(this.selectedProject !== undefined && this.selectedLocation !== undefined && this.selectedLocation !== null && this.selectedLocation !== '') {
-          this.photosQuery({project: this.selectedProject, location: this.selectedLocation});
+        if(
+          this.selectedProject !== undefined
+
+        && this.selectedLocation !== undefined
+        && this.selectedLocation !== null
+        && this.selectedLocation !== ''
+
+        && this.selectedDate !== undefined
+        && this.selectedDate !== null
+        && this.selectedDate !== ''
+        ) {
+          this.photosQuery({project: this.selectedProject, location: this.selectedLocation, date: this.selectedDate});
         } else {
           this.photosQuery();
         }
@@ -282,11 +363,11 @@ export default {
     async refreshProjectMeta() {
       await this.$store.dispatch('setProject', this.selectedProject);
       this.$nextTick(() => this.sendQuery());
-    },    
+    },
   },
 
   async mounted() {
-    this.$store.dispatch('projects/init');    
+    this.$store.dispatch('projects/init');
   },
 }
 </script>

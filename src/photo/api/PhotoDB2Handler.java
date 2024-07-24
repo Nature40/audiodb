@@ -22,6 +22,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 	private final PhotoDB2 photodb;
 	private final Photos2Handler photos2Handler;
 	private final LocationsHandler locationsHandler;
+	private final DatesHandler datesHandler;
 	private final ReviewListsHandler reviewListsHandler;
 
 	public PhotoDB2Handler(Broker broker) {
@@ -29,6 +30,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 		this.photodb = broker.photodb2();
 		this.photos2Handler = new Photos2Handler(broker);
 		this.locationsHandler = new LocationsHandler(broker);
+		this.datesHandler = new DatesHandler(broker);
 		this.reviewListsHandler = new ReviewListsHandler(broker);
 	}
 
@@ -54,6 +56,9 @@ public class PhotoDB2Handler extends AbstractHandler {
 				case "locations":
 					locationsHandler.handle(next, baseRequest, response);					
 					break;
+				case "dates":
+					datesHandler.handle(next, baseRequest, response);					
+					break;					
 				case "review_lists":
 					reviewListsHandler.handle(next, baseRequest, response);					
 					break;						
@@ -75,6 +80,7 @@ public class PhotoDB2Handler extends AbstractHandler {
 		boolean projects = Web.getFlagBoolean(request, "projects");
 		String project = Web.getString(request, "project", null);
 		boolean locations = Web.getFlagBoolean(request, "locations");
+		boolean dates = Web.getFlagBoolean(request, "dates");
 		boolean classification_definitions = Web.getFlagBoolean(request, "classification_definitions");
 		boolean review_lists = Web.getFlagBoolean(request, "review_lists");	
 
@@ -99,6 +105,9 @@ public class PhotoDB2Handler extends AbstractHandler {
 			json.value(project);
 			if(locations) {
 				locationsHandler.writeLocationsJSON(project, json);	
+			}
+			if(dates) {
+				datesHandler.writeDatesJSON(project, json);	
 			}
 			if(classification_definitions) {				
 				json.key("classification_definitions");

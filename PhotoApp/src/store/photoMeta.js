@@ -31,7 +31,7 @@ export default {
       state.error = error;
     },
   },
-  
+
   actions: {
     async refresh({rootState, commit, rootGetters}) {
       commit('setLoading')
@@ -41,7 +41,7 @@ export default {
         params.detections = true;
         console.log(rootState.photo.photo);
         try {
-            var response =  await rootGetters.apiGET(['photodb2','photos', rootState.photo.photo], {params});
+            var response =  await rootGetters.apiGET(['photodb2', 'photos', rootState.photo.photo], {params});
             commit('setData', response.data.photo);
         } catch(e) {
           console.log(e);
