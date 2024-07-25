@@ -10,6 +10,6 @@ Releases: https://github.com/Nature40/audiodb/releases
 
 ---
 
-**Dokumentation**: [table of contents](docs/index.md)
+# Dokumentation: [>>>**table of contents**<<<](docs/index.md)
 
 ---
