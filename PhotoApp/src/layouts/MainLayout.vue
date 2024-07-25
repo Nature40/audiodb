@@ -13,10 +13,10 @@
         />
 
         <q-toolbar-title>
-          PhotoApp  
-          <span class="text-blue-1 q-pa-xl">
+          PhotoApp
+          <span class="text-yellow-4 q-pa-xl">
             <span v-if="project === undefined">no project selected</span>
-            <span v-else><span class="text-blue-10">Project:</span> {{project}}</span> 
+            <span v-else><span class="text-blue-5">Project:</span> {{project}}</span>
           </span>
         </q-toolbar-title>
 
@@ -25,7 +25,7 @@
     </q-header>
 
     <q-drawer
-      v-model="leftDrawerOpen"      
+      v-model="leftDrawerOpen"
       bordered
       content-class="bg-grey-1"
     >
@@ -66,7 +66,7 @@ export default {
     ...mapState({
       project: state => state.project,
     }),
-  },   
+  },
   mounted () {
   },
 }

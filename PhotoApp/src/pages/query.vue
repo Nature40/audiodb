@@ -68,7 +68,7 @@
         title="Select one location of images."
       >
         <template v-slot:prepend>
-          <q-icon name="location_on" />
+          <q-icon name="flag" />
         </template>
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
@@ -88,8 +88,8 @@
         rounded
         outlined
         bottom-slots
-        v-model="selectedDate"
         :options="dates"
+        v-model="selectedDate"
         label="Date"
         dense
         options-dense
@@ -98,18 +98,18 @@
         title="Select one location of images."
       >
         <template v-slot:prepend>
-          <q-icon name="location_on" />
+          <q-icon name="calendar_month" />
         </template>
         <template v-slot:option="scope">
-          <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
-            {{scope.opt}}
+          <q-item v-bind="scope.itemProps" v-on="scope.itemEvents" :class="{'text-grey': !scope.opt.loc}">
+            {{scope.opt.date}}
           </q-item>
         </template>
         <template v-slot:selected-item="scope">
-          {{scope.opt}}
+          {{scope.opt.date}}
         </template>
       </q-select>
-      <div v-if="selectedDate === ''">
+      <div v-if="!selectedDate">
         No date selected.
         <br><q-icon name="info"/> Select a date!
       </div>
@@ -207,7 +207,7 @@ export default {
     photosMessage: 'init',
     selectedProject: undefined,
     selectedLocation: '',
-    selectedDate: '',
+    selectedDate: undefined,
     selectedQueryMode: 'query',
     selectedReviewListSet: undefined,
     selectedReviewList: undefined,
@@ -242,9 +242,14 @@ export default {
     },
     dates() {
       if(this.locationDates !== undefined && this.locationDates.location === this.selectedLocation) {
-        return this.locationDates.dates;
+        let datesSet = new Set(this.locationDates.dates);
+        return this.allDates.map(date => {return {date: date, loc: datesSet.has(date)};});
       } else {
-        return this.allDates;
+        if(this.allDates !== undefined && this.allDates !== null) {
+          return this.allDates.map(date => {return {date: date};});
+        } else {
+          return [];
+        }
       }
     },
   },
@@ -272,7 +277,7 @@ export default {
     },
     dates() {
       if(this.dates === undefined || this.dates.length === 0) {
-        this.selectedDate = '';
+        this.selectedDate = undefined;
       } else {
         this.selectedDate = this.dates[0];
       }
@@ -348,7 +353,7 @@ export default {
         && this.selectedDate !== null
         && this.selectedDate !== ''
         ) {
-          this.photosQuery({project: this.selectedProject, location: this.selectedLocation, date: this.selectedDate});
+          this.photosQuery({project: this.selectedProject, location: this.selectedLocation, date: this.selectedDate.date});
         } else {
           this.photosQuery();
         }
