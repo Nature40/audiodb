@@ -22,7 +22,7 @@ import task.Task;
 import util.JsonUtil;
 
 @Tag("photo")
-@Description("Insert MegaDetector detections. Detections ")
+@Description("Insert MegaDetector detections.")
 @Param(name = "filename", type = Type.STRING, preset = "megadetector_output.json", description = "Location of MegaDetector detections result JSON file at the server.")
 @Cancelable
 @Role("admin")

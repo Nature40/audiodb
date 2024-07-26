@@ -10,9 +10,14 @@
 * **Operating**
   * [On **Ubuntu**](operating_on_ubuntu.md)
   * [On **Windows**](operating_on_windows.md)
+* **AudioDB usage**
+* **PhotoDB usage**
+  * [**Classification definitions**](classification_definition.md)   
+  * [**Review lists**](review_lists.md)
+  * [**Tasks**](photodb_tasks.md)   
 * **Maintenance**
   * [**Updating** application](update.md)
 * **Development**
   * [**Server** backend](../AudioApp/README.md)
-  * [**AudioApp**](../AudioApp/README.md)
-  * [**PhotoApp**](../PhotoApp/README.md)  
+  * [**AudioApp** web-interface](../AudioApp/README.md)
+  * [**PhotoApp** web-interface](../PhotoApp/README.md)  
