@@ -14,7 +14,8 @@
 * **PhotoDB usage**
   * [**Classification definitions**](classification_definition.md)   
   * [**Review lists**](review_lists.md)
-  * [**Tasks**](photodb_tasks.md)   
+  * [**Tasks**](photodb_tasks.md)
+  * [**PhotoApp viewer**](photo_app_viewer.md)      
 * **Maintenance**
   * [**Updating** application](update.md)
 * **Development**

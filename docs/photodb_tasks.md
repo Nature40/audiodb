@@ -29,7 +29,7 @@ There, open the left navigation side panel and select the entry `Task submission
 
 **photo_create_file_hashs**
 
-For all photo files create checksums, skip files with already created cheksums.
+For all photo files create checksums, skip files with already created checksums.
 
 ---
 
