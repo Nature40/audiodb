@@ -31,7 +31,7 @@ On the page center the selected image is shown in detail, fitted to the screen s
 
 - Select a label from the preset list
 - Type in a custom label name if not in preset list
-- Label selction control or custom label typung control
+- Label selection control or custom label typing control
 - Store selected label
 - Store currently selected box as incorrect
 - Store as incorrect empty box

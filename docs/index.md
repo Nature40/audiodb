@@ -15,6 +15,7 @@
   * [**Classification definitions**](classification_definition.md)   
   * [**Review lists**](review_lists.md)
   * [**Tasks**](photodb_tasks.md)
+  * [**PhotoApp browser**](photo_app_browser.md) 
   * [**PhotoApp viewer**](photo_app_viewer.md)      
 * **Maintenance**
   * [**Updating** application](update.md)
