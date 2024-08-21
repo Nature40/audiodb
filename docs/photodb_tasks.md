@@ -29,13 +29,15 @@ There, open the left navigation side panel and select the entry `Task submission
 
 **photo_create_file_hashs**
 
-For all photo files create checksums, skip files with already created checksums.
+For all photo files create checksums, skip files with already created checksums.  
+See [image metadata property **XXH64**](image_metadata.md) 
 
 ---
 
 **photo_create_yaml**
 
-Traverse `root_data_path` and, for all jpg files without YAML file in root_path, create a new YAML file.
+Traverse `root_data_path` and, for all jpg files without YAML file in root_path, create a new YAML file.  
+See [image metadata](image_metadata.md) 
 
 ---
 

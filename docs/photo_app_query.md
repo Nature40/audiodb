@@ -18,7 +18,9 @@ By **date**-control one day in time is selected. Days that contain images at the
 
 ### Review lists from files
 
-Review lists can be loaded from files, see [**Review lists**](review_lists.md). By **review list selection control**, the available review lists can be viewed and selected, structured by review list sets reflecting file system folder structure.
+Review lists can be loaded from files.  
+See [**Review lists**](review_lists.md).  
+By **review list selection control**, the available review lists can be viewed and selected, structured by review list sets reflecting file system folder structure.
 
 ### Review lists from generation
 
