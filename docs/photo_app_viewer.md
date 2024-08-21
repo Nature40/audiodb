@@ -1,6 +1,6 @@
 # PhotoApp viewer page
 
-On the PhotoApp viewer page, the currently selected image can be viewed and labelled.
+*On the PhotoApp viewer page, the currently selected image can be viewed and labelled.*
 
 On the page center the selected image is shown in detail, fitted to the screen size.
 

@@ -1,6 +1,6 @@
 # PhotoApp browser page
 
-On the PhotoApp browser page, the currently selected sequence of images is shown a thumbnail images gallery.
+*On the PhotoApp browser page, the currently selected sequence of images is shown a thumbnail images gallery.*
 
 ## Exploration
 

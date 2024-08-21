@@ -12,11 +12,13 @@
   * [On **Windows**](operating_on_windows.md)
 * **AudioDB usage**
 * **PhotoDB usage**
+  * [**Image metadata**](image_metadata.md)  
   * [**Classification definitions**](classification_definition.md)   
   * [**Review lists**](review_lists.md)
   * [**Tasks**](photodb_tasks.md)
-  * [**PhotoApp browser**](photo_app_browser.md) 
-  * [**PhotoApp viewer**](photo_app_viewer.md)      
+  * [PhotoApp **query**](photo_app_query.md)   
+  * [PhotoApp **browser**](photo_app_browser.md) 
+  * [PhotoApp **viewer**](photo_app_viewer.md)      
 * **Maintenance**
   * [**Updating** application](update.md)
 * **Development**
