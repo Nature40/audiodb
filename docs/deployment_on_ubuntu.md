@@ -8,7 +8,7 @@ sudo apt install openjdk-11-jdk
 java -version
 ```
 
-Download distribution package, extract and make excutable:
+Download distribution package, extract and make executable:
 ```bash
 unzip *.zip
 chmod +x *.sh

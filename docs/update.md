@@ -47,3 +47,5 @@ At application folder, files ending with ".db" are cache files to be deleted, e.
 * photo_cache.mv.db
 * sample_meta.mv.db
 * thumb_cache.mv.db
+
+On Ubuntu, this file deleting task can be run by the script ```clear_cache.sh```

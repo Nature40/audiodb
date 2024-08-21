@@ -30,7 +30,7 @@ There, open the left navigation side panel and select the entry `Task submission
 **photo_create_file_hashs**
 
 For all photo files create checksums, skip files with already created checksums.  
-*See [image metadata property **XXH64**](image_metadata.md)*. 
+*See [image metadata property XXH64](image_metadata.md)*. 
 
 ---
 
@@ -45,13 +45,15 @@ Traverse `root_data_path` and, for all jpg files without YAML file in root_path,
 
 Insert MegaDetector detections.
 
-MegaDetector retuns a JSON result files. Detections content of that file can be inserted in PhotDB meta data YAML files by this task.
+MegaDetector retuns a JSON result files. Detections content of that file can be inserted in PhotDB meta data YAML files by this task.  
+*See [image metadata property detections](image_metadata.md)*.
 
 ---
 
 **photo_refresh**
 
-Traverse `root_path` and check for changed or added or removed YAML files to update photo database.
+Traverse `root_path` and check for changed or added or removed YAML files to update photo database.  
+*See [PhotoDB configuration properties root_path and root_data_path](config_photodb.md)*.
 
 This task needs to be run if some data was changed external, e.g. photo files have been added or YAML meta data has been modified manually.
 
