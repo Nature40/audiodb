@@ -24,4 +24,5 @@
 * **Development**
   * [**Server** backend](../AudioApp/README.md)
   * [**AudioApp** web-interface](../AudioApp/README.md)
-  * [**PhotoApp** web-interface](../PhotoApp/README.md)  
+  * [**PhotoApp** web-interface](../PhotoApp/README.md)
+* [**Troubleshooting**](troubleshooting.md)  
