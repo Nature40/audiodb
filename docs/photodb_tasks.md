@@ -19,7 +19,7 @@ Then to switch to AudioApp, you need to replace the `photo` part with `audio`:
 ```text
 http://localhost:8080/web/audio
 ```
-There, open the left navigation side panel and select the entry `Task submission` to execute PhotoDB tasks.
+There, click on the top left button to open the left navigation side panel and select the entry `Task submission` to execute PhotoDB tasks.
 
 ---
 

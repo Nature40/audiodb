@@ -1,5 +1,7 @@
 # AudioApp (audio_app)
 
+*For normal application usage, development is not needed.*
+
 A Quasar Framework app
 
 ## Install the dependencies

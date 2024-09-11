@@ -1,5 +1,7 @@
 # Development of server backend
 
+*For normal application usage, development is not needed.*
+
 The backend server is developed in Java.
 
 Java source code folder:

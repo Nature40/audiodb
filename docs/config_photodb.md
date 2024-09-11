@@ -25,18 +25,13 @@ Name of the project, e.g. shown at the top panel at PhotoApp web-interface:
 ```yaml
 project: my_photo_project
 ```
-
-Quoted:
-```yaml
-login: 'my project'
-```
 ---
 
 **root_path**
 
 Folder of project photo metadata files.
 
-Folder relative to application folder:
+Folder relative to application root folder:
 ```yaml
 root_path: 'photo_meta'
 ```
@@ -44,9 +39,9 @@ root_path: 'photo_meta'
 
 **root_data_path**
 
-Folder of project photo files. If not set photo files are expected to be in same folder as metadata files of `root_path`.
+Folder of project photo files. If not set, photo files are expected to be in same folder as metadata files of `root_path`.
 
-Folder relative to application folder:
+Folder relative to application root folder:
 ```yaml
 root_data_path: 'photo_data'
 ```
@@ -60,6 +55,8 @@ File relative to application folder:
 ```yaml
 classification_definition_csv: photo_classification_definitions.csv
 ```
+*See [classification definitions](classification_definition.md)*.
+
 ---
 
 **review_list_path**
@@ -70,4 +67,6 @@ Folder relative to application folder:
 ```yaml
 review_list_path: 'photo_review_lists'
 ```
+*See [review lists](review_lists.md)*.
+
 ---

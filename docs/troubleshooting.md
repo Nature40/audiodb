@@ -1,6 +1,7 @@
 # Troubleshooting
 
-Known issues and their solutions are listed on this page. If you found an issue not listed here you may [post a new issue](https://github.com/Nature40/audiodb/issues).
+Known issues and their solutions are listed on this page.  
+If you found an issue not listed here you may [post a new issue](https://github.com/Nature40/audiodb/issues).
 
 ## PhotoDB
 

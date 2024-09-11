@@ -5,6 +5,7 @@
   * [On **Windows**](deployment_on_windows.md)
 * **Configuration**
   * [Application **server**](config.md)  
+  * [HTTPS **certificates**](https_certificates.md) 
   * [**AudioDB**](config_audiodb.md)  
   * [**PhotoDB**](config_photodb.md)    
 * **Operating**
@@ -18,11 +19,12 @@
   * [**Tasks**](photodb_tasks.md)
   * [PhotoApp **query**](photo_app_query.md)   
   * [PhotoApp **browser**](photo_app_browser.md) 
-  * [PhotoApp **viewer**](photo_app_viewer.md)      
+  * [PhotoApp **viewer**](photo_app_viewer.md)
+* [**User accounts**](user_accounts.md)        
 * **Maintenance**
   * [**Updating** application](update.md)
 * **Development**
-  * [**Server** backend](../AudioApp/README.md)
+  * [**Server** backend](development_server.md)
   * [**AudioApp** web-interface](../AudioApp/README.md)
   * [**PhotoApp** web-interface](../PhotoApp/README.md)
 * [**Troubleshooting**](troubleshooting.md)  
