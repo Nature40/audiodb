@@ -50,7 +50,7 @@ public class WebAuthnAccount {
 
 	public static WebAuthnAccount ofYAML(YamlMap yamlWebAuthn) {
 		Object object = yamlWebAuthn.getObject("attestationObjectBytes");
-		Logger.info(object.getClass().getName());
+		//Logger.info(object.getClass().getName());
 		byte[] attestationObjectBytes = (byte[]) object;
 		return new WebAuthnAccount(attestationObjectBytes);
 	}

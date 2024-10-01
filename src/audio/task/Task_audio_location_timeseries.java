@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 
 import org.tinylog.Logger;
 
-import audio.Sample2;
 import audio.SampleStorage;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import de.siegmar.fastcsv.writer.LineDelimiter;

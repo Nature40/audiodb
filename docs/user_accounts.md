@@ -37,7 +37,7 @@ On the newly installed application, there are no accounts registered, so a login
 The **account management page** is located at the AudioApp web interface.
 
 
-Even for PhotoDB only projects, you need to open the audio web-interface to manage accounts.
+Even for PhotoDB only projects, you need to open the AudioDB web interface to manage accounts.
 
 ---
 

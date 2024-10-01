@@ -684,7 +684,7 @@ public class PhotoDB2 {
 				if(checkLocked && locked) {
 					return null;
 				}
-				Logger.info("locked " + locked + "  " + meta_rel_path + "    " + image_rel_path);
+				//Logger.info("locked " + locked + "  " + meta_rel_path + "    " + image_rel_path);
 				return new Photo2(id, projectConfig, projectConfig.root_path.resolve(meta_rel_path), projectConfig.root_data_path.resolve(image_rel_path), location, date, last_modified, locked);
 			}
 			return null;

@@ -2,7 +2,7 @@
 
 *For HTTP connections, no certificates are needed.*
 
-For encrypted and certified **HTTPS** connections a valid certificate has to be provided in the **PKCS #12** format.
+For encrypted and certified **HTTPS** connections a valid certificate has to be provided in the [**PKCS #12**](https://en.wikipedia.org/wiki/PKCS_12) format.
 
 *See [config](config.md)*.
 
@@ -10,7 +10,7 @@ For encrypted and certified **HTTPS** connections a valid certificate has to be 
 
 If you have the **PKCS #12** certificate already, you may use the `openssl` commands to check your certificate for correctness, e.g. correct password.
 
-How to create a suitable certificate file depends on the certificate you have. The following steps may guide you from a typically used **X.509** certificate with separate certificate **root chain** to the encrypted **PKCS #12** certificate file.
+How to create a suitable certificate file depends on the certificate you have. The following steps may guide you from a typically used [**X.509**](https://en.wikipedia.org/wiki/X.509) certificate with separate certificate **root chain** to the encrypted **PKCS #12** certificate file.
 
 
 Following intput files are presumed:
