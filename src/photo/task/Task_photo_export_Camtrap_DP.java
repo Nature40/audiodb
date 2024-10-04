@@ -7,6 +7,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import org.json.JSONWriter;
@@ -20,11 +24,50 @@ import task.Description;
 import task.Role;
 import task.Tag;
 import task.Task;
+import util.yaml.YamlMap;
 
 @Tag("photo")
 @Description("Export photo meta data to CSV files in structure of Camtrap DP.")
 @Role("admin")
 public class Task_photo_export_Camtrap_DP extends Task {
+	
+	private static final DateTimeFormatter CAMTRAP_DP_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH:mm:ssXXX");
+	private final ZoneId TIMEZONE = ZoneId.systemDefault();	
+	
+	private static final LocalDateTime MAX_DATE = LocalDateTime.parse("3000-12-31T23:59:59");
+	private static final LocalDateTime MIN_DATE = LocalDateTime.parse("1000-01-01T00:00:00");
+
+	private String localDateTimeToString(LocalDateTime localDateTime) {		
+		//return localDateTime.toString()+"Z";
+		//return ZonedDateTime.of(localDateTime, ZoneId.systemDefault()).toString();
+		return CAMTRAP_DP_DATETIME_FORMATTER.format(ZonedDateTime.of(localDateTime, TIMEZONE));
+	}
+
+	public static String classificatorToClassificationMethod(String classificator) {
+		if(classificator == null) {
+			return "";
+		}
+		if(classificator.isBlank()) {
+			return "";
+		}
+		switch(classificator) {
+		case "expert":
+			return "human";
+		default:
+			return "machine";
+		}
+	}
+	
+	public String getClassifiedBy(YamlMap cmap) {		
+		String pre = "";
+		if(cmap.contains("classificator")) {
+			String c = cmap.getString("classificator");
+			if(!c.equals("expert")) {
+				pre = c;
+			}
+		}
+		return pre + " " + (cmap.contains("identity") ? cmap.getString("identity") : "");			
+	}
 
 	private static final CsvWriterBuilder CSV_BUILDER = CsvWriter.builder()
 			.fieldSeparator(',')
@@ -45,6 +88,9 @@ public class Task_photo_export_Camtrap_DP extends Task {
 		}		
 
 		HashSet<String> scientificNameSet = new HashSet<String>();
+		LocalDateTime[] deplMin = new LocalDateTime[] {MAX_DATE};
+		LocalDateTime[] deplMax = new LocalDateTime[] {MIN_DATE};		
+		HashMap<String, LocalDateTime[]> rangeMap = new HashMap<String, LocalDateTime[]>();
 
 		try (
 				CsvWriter mediaCSV = CSV_BUILDER.build(output_folder_path.resolve("media" + ".csv"));
@@ -52,21 +98,36 @@ public class Task_photo_export_Camtrap_DP extends Task {
 				) {
 			mediaCSV.writeRecord(
 					"mediaID", 
-					"deploymentID", 
+					"deploymentID",
+					"captureMethod",
 					"timestamp", 
 					"filePath", 
-					"filePublic", 
-					"fileMediatype"
+					"filePublic",
+					"fileName",
+					"fileMediatype",
+					"exifData",
+					"favorite",
+					"mediaComments"
 					);
 			observationsCSV.writeRecord(
 					"observationID", 
 					"deploymentID", 
 					"mediaID", 
+					"eventID",
 					"eventStart", 
 					"eventEnd", 
 					"observationLevel", 
 					"observationType",
+					"cameraSetupType",
 					"scientificName",
+					"count",
+					"lifeStage",
+					"sex",
+					"behavior",
+					"individualID",
+					"individualPositionRadius",
+					"individualPositionAngle",
+					"individualSpeed",					
 					"bboxX",
 					"bboxY",
 					"bboxWidth",
@@ -75,27 +136,59 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					"classifiedBy",
 					"classificationTimestamp",
 					"classificationProbability",
+					"observationTags",
 					"observationComments"
 					);
+			
 			ctx.broker.photodb2().foreachIdNotLocked(photo_id -> {
 				Photo2 photo = ctx.broker.photodb2().getPhoto2(photo_id, true);
 				if(photo != null) {
 					Logger.info(photo.id);
 					String mediaID = photo.id;
 					String deploymentID = photo.location;
-					String timestamp = photo.date.toString();
+					String captureMethod = ""; // optional
+					String timestamp = localDateTimeToString(photo.date);
 					String filePath = photo.imagePath.toString();
 					String filePublic = false ? "true" : "false";
+					String fileName = ""; // optional
 					String fileMediatype = "image/jpeg";
-					String observationComments = "comment"; // TODO
+					String exifData = ""; // optional
+					String favorite = ""; // optional
+					String mediaComments = ""; // optional
+					
+					if(deplMin[0].isAfter(photo.date)) {
+						deplMin[0] = photo.date; 
+					}
+					if(deplMax[0].isBefore(photo.date)) {
+						deplMax[0] = photo.date; 
+					}
+					
+					LocalDateTime[] range = rangeMap.get(photo.location);
+					if(range == null) {
+						range = new LocalDateTime[] {MAX_DATE, MIN_DATE};
+						rangeMap.put(photo.location, range);
+					}
+					if(range[0].isAfter(photo.date)) {
+						range[0] = photo.date; 
+					}
+					if(range[1].isBefore(photo.date)) {
+						range[1] = photo.date; 
+					}
+
 					mediaCSV.writeRecord(
 							mediaID, 
 							deploymentID, 
+							captureMethod,
 							timestamp, 
 							filePath, 
 							filePublic, 
-							fileMediatype
+							fileName,
+							fileMediatype,
+							exifData,
+							favorite,
+							mediaComments
 							);
+
 
 					int[] obsCnt = new int[]{0};
 					String eventStart = timestamp;
@@ -103,10 +196,10 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					String observationLevel = "media";
 					photo.foreachDetection(map -> {
 
-						String bboxX = "";
-						String bboxY = "";
-						String bboxWidth = "";
-						String bboxHeight = "";
+						String bboxX = ""; // optional
+						String bboxY = ""; // optional
+						String bboxWidth = ""; // optional
+						String bboxHeight = ""; // optional
 
 						if(map.contains("bbox")) {
 							float[] bbox = map.getList("bbox").asFloatArray();
@@ -126,22 +219,44 @@ public class Task_photo_export_Camtrap_DP extends Task {
 						map.optList("classifications").asMaps().forEach(cmap -> {
 
 							String observationID = mediaID + "__" + obsCnt[0]++;
-							String observationType = "unknown"; // TODO							
-							String scientificName = cmap.contains("classification") ? cmap.getString("classification") : "";							
-							String classificationMethod = cmap.contains("classificator") ? cmap.getString("classificator") : "";							
-							String classifiedBy = cmap.contains("identity") ? cmap.getString("identity") : "";							
-							String classificationTimestamp = cmap.contains("date") ? cmap.getLocalDateTime("date").toString() : "";							
-							String classificationProbability = cmap.contains("conf") ? cmap.getString("conf") : "";
+							String eventID = ""; // optional							
+							String observationType = "unknown"; // TODO	
+							String cameraSetupType = ""; // optional
+							String scientificName = cmap.contains("classification") ? cmap.getString("classification") : ""; // optional
+							String count = ""; // optional
+							String lifeStage = ""; // optional
+							String sex = ""; // optional
+							String behavior = ""; // optional
+							String individualID = ""; // optional
+							String individualPositionRadius = ""; // optional
+							String individualPositionAngle = ""; // optional
+							String individualSpeed = ""; // optional							
+							String classificationMethod = cmap.contains("classificator") ? classificatorToClassificationMethod(cmap.getString("classificator")) : ""; // optional							
+							String classifiedBy = getClassifiedBy(cmap); // optional							
+							String classificationTimestamp = cmap.contains("date") ? localDateTimeToString(cmap.getLocalDateTime("date")) : ""; // optional							
+							String classificationProbability = cmap.contains("conf") ? cmap.getString("conf") : ""; // optional							
+							String observationTags = ""; // optional
+							String observationComments = ""; // optional
 
 							observationsCSV.writeRecord(
 									observationID, 
 									deploymentID, 
-									mediaID, 
+									mediaID, // optional
+									eventID,
 									eventStart, 
 									eventEnd, 
 									observationLevel, 
 									observationType,
+									cameraSetupType,
 									scientificName,
+									count,
+									lifeStage,
+									sex,
+									behavior,
+									individualID,
+									individualPositionRadius,
+									individualPositionAngle,
+									individualSpeed,
 									_bboxX,
 									_bboxY,
 									_bboxWidth,
@@ -150,9 +265,10 @@ public class Task_photo_export_Camtrap_DP extends Task {
 									classifiedBy,
 									classificationTimestamp,
 									classificationProbability,
+									observationTags,
 									observationComments									
 									);
-							
+
 							scientificNameSet.add(scientificName);
 						});
 
@@ -166,8 +282,8 @@ public class Task_photo_export_Camtrap_DP extends Task {
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
-		
-		
+
+
 		try (				
 				CsvWriter deploymentsCSV = CSV_BUILDER.build(output_folder_path.resolve("deployments" + ".csv"));				
 				) {
@@ -177,26 +293,77 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					"locationName",
 					"latitude",
 					"longitude",
+					"coordinateUncertainty",
 					"deploymentStart",
-					"deploymentEnd"
+					"deploymentEnd",
+					"setupBy",
+					"cameraID",
+					"cameraModel",
+					"cameraDelay",
+					"cameraHeight",
+					"cameraDepth",
+					"cameraTilt",
+					"cameraHeading",
+					"detectionDistance",
+					"timestampIssues",
+					"baitUse",
+					"featureType",
+					"habitat",
+					"deploymentGroups",
+					"deploymentTags",
+					"deploymentComments"
 					);
 			ctx.broker.photodb2().foreachProject(projectConfig -> {
 				ctx.broker.photodb2().foreachLocation(projectConfig.project, location -> {
 					String deploymentID = location;
-					String locationID = location;
-					String locationName = location;
+					String locationID = location; // optional
+					String locationName = location; // optional
 					String latitude = Double.toString(0);
 					String longitude = Double.toString(0);
-					String deploymentStart = "2000-01-01T00:00:00Z"; // TODO
-					String deploymentEnd = "2000-01-01T00:00:00Z"; // TODO
+					String coordinateUncertainty = Integer.toString(1); // optional
+					String deploymentStart = localDateTimeToString(rangeMap.get(location)[0]);
+					String deploymentEnd = localDateTimeToString(rangeMap.get(location)[1]);
+					String setupBy = ""; // optional
+					String cameraID = ""; // optional
+					String cameraModel = ""; // optional
+					String cameraDelay = ""; // optional
+					String cameraHeight = ""; // optional
+					String cameraDepth = ""; // optional
+					String cameraTilt = ""; // optional
+					String cameraHeading = ""; // optional
+					String detectionDistance = ""; // optional
+					String timestampIssues = ""; // optional
+					String baitUse = ""; // optional
+					String featureType = ""; // optional
+					String habitat = ""; // optional
+					String deploymentGroups = ""; // optional
+					String deploymentTags = ""; // optional
+					String deploymentComments = ""; // optional
 					deploymentsCSV.writeRecord(
 							deploymentID,
 							locationID,
 							locationName,
 							latitude,
 							longitude,
+							coordinateUncertainty,
 							deploymentStart,
-							deploymentEnd
+							deploymentEnd,
+							setupBy,
+							cameraID,
+							cameraModel,
+							cameraDelay,
+							cameraHeight,
+							cameraDepth,
+							cameraTilt,
+							cameraHeading,
+							detectionDistance,
+							timestampIssues,
+							baitUse,
+							featureType,
+							habitat,
+							deploymentGroups,
+							deploymentTags,
+							deploymentComments
 							);
 				});
 			});			
@@ -302,9 +469,9 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("temporal");
 			json.object();
 			json.key("start");
-			json.value("2000-01-01"); // TODO
+			json.value(localDateTimeToString(deplMin[0]));
 			json.key("end");
-			json.value("2000-01-01"); // TODO
+			json.value(localDateTimeToString(deplMax[0]));
 			json.endObject();
 			json.key("taxonomic");
 			json.array();
