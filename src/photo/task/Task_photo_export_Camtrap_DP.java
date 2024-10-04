@@ -44,36 +44,6 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			}
 		}		
 
-		try (				
-				CsvWriter deploymentsCSV = CSV_BUILDER.build(output_folder_path.resolve("deployments" + ".csv"));				
-				) {
-			deploymentsCSV.writeRecord(
-					"deploymentID",
-					"latitude",
-					"longitude",
-					"deploymentStart",
-					"deploymentEnd"
-					);
-			ctx.broker.photodb2().foreachProject(projectConfig -> {
-				ctx.broker.photodb2().foreachLocation(projectConfig.project, location -> {
-					String deploymentID = location;
-					String latitude = Double.toString(0);
-					String longitude = Double.toString(0);
-					String deploymentStart = "now";
-					String deploymentEnd = "now";
-					deploymentsCSV.writeRecord(
-							deploymentID,
-							latitude,
-							longitude,
-							deploymentStart,
-							deploymentEnd
-							);
-				});
-			});			
-		} catch (IOException e) {
-			Logger.warn(e);
-		}
-		
 		HashSet<String> scientificNameSet = new HashSet<String>();
 
 		try (
@@ -104,7 +74,8 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					"classificationMethod",
 					"classifiedBy",
 					"classificationTimestamp",
-					"classificationProbability"
+					"classificationProbability",
+					"observationComments"
 					);
 			ctx.broker.photodb2().foreachIdNotLocked(photo_id -> {
 				Photo2 photo = ctx.broker.photodb2().getPhoto2(photo_id, true);
@@ -116,6 +87,7 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					String filePath = photo.imagePath.toString();
 					String filePublic = false ? "true" : "false";
 					String fileMediatype = "image/jpeg";
+					String observationComments = "comment"; // TODO
 					mediaCSV.writeRecord(
 							mediaID, 
 							deploymentID, 
@@ -177,7 +149,8 @@ public class Task_photo_export_Camtrap_DP extends Task {
 									classificationMethod,
 									classifiedBy,
 									classificationTimestamp,
-									classificationProbability
+									classificationProbability,
+									observationComments									
 									);
 							
 							scientificNameSet.add(scientificName);
@@ -190,6 +163,43 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					Logger.warn("photo not found: " + photo_id);
 				}
 			});
+		} catch (IOException e) {
+			Logger.warn(e);
+		}
+		
+		
+		try (				
+				CsvWriter deploymentsCSV = CSV_BUILDER.build(output_folder_path.resolve("deployments" + ".csv"));				
+				) {
+			deploymentsCSV.writeRecord(
+					"deploymentID",
+					"locationID",
+					"locationName",
+					"latitude",
+					"longitude",
+					"deploymentStart",
+					"deploymentEnd"
+					);
+			ctx.broker.photodb2().foreachProject(projectConfig -> {
+				ctx.broker.photodb2().foreachLocation(projectConfig.project, location -> {
+					String deploymentID = location;
+					String locationID = location;
+					String locationName = location;
+					String latitude = Double.toString(0);
+					String longitude = Double.toString(0);
+					String deploymentStart = "2000-01-01T00:00:00Z"; // TODO
+					String deploymentEnd = "2000-01-01T00:00:00Z"; // TODO
+					deploymentsCSV.writeRecord(
+							deploymentID,
+							locationID,
+							locationName,
+							latitude,
+							longitude,
+							deploymentStart,
+							deploymentEnd
+							);
+				});
+			});			
 		} catch (IOException e) {
 			Logger.warn(e);
 		}
@@ -216,7 +226,7 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("encoding");
 			json.value("utf-8");
 			json.key("schema");
-			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0/deployments-table-schema.json");
+			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0.1/deployments-table-schema.json");
 			json.endObject();
 			json.object();
 			json.key("name");
@@ -232,7 +242,7 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("encoding");
 			json.value("utf-8");
 			json.key("schema");
-			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0/deployments-table-schema.json");
+			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0.1/media-table-schema.json");
 			json.endObject();
 			json.object();
 			json.key("name");
@@ -248,15 +258,19 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("encoding");
 			json.value("utf-8");
 			json.key("schema");
-			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0/deployments-table-schema.json");
+			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0.1/observations-table-schema.json");
 			json.endObject();
 			json.endArray();
 			json.key("profile");
-			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0/camtrap-dp-profile.json");
+			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0.1/camtrap-dp-profile.json");
 			json.key("created");
 			json.value(LocalDateTime.now().toString());
 			json.key("contributors");
 			json.array();
+			json.object();
+			json.key("title");
+			json.value("PhotoDB");
+			json.endObject();
 			json.endArray();
 			json.key("project");
 			json.object();
@@ -265,17 +279,32 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("samplingDesign");
 			json.value("opportunistic");
 			json.key("captureMethod");
+			json.array();
 			json.value("activityDetection");
+			json.endArray();
 			json.key("individualAnimals");
-			json.value("false");
+			json.value(false);
 			json.key("observationLevel");
+			json.array();
 			json.value("media");
+			json.endArray();
 			json.endObject();
 			json.key("spatial");
-			json.object();			
+			json.object();		
+			json.key("type");
+			json.value("Point"); // TODO
+			json.key("coordinates");
+			json.array();
+			json.value(0); // TODO
+			json.value(0); // TODO
+			json.endArray();
 			json.endObject();
 			json.key("temporal");
-			json.object();			
+			json.object();
+			json.key("start");
+			json.value("2000-01-01"); // TODO
+			json.key("end");
+			json.value("2000-01-01"); // TODO
 			json.endObject();
 			json.key("taxonomic");
 			json.array();
