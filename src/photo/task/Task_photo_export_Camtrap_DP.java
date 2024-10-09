@@ -27,7 +27,7 @@ import task.Task;
 import util.yaml.YamlMap;
 
 @Tag("photo")
-@Description("Export photo meta data to CSV files in structure of Camtrap DP.")
+@Description("Export photo metadata according to the Camtrap DP standard.")
 @Role("admin")
 public class Task_photo_export_Camtrap_DP extends Task {
 	
@@ -88,8 +88,7 @@ public class Task_photo_export_Camtrap_DP extends Task {
 		}		
 
 		HashSet<String> scientificNameSet = new HashSet<String>();
-		LocalDateTime[] deplMin = new LocalDateTime[] {MAX_DATE};
-		LocalDateTime[] deplMax = new LocalDateTime[] {MIN_DATE};		
+		LocalDateTime[] deplRange = new LocalDateTime[] {MAX_DATE, MIN_DATE};
 		HashMap<String, LocalDateTime[]> rangeMap = new HashMap<String, LocalDateTime[]>();
 
 		try (
@@ -156,11 +155,11 @@ public class Task_photo_export_Camtrap_DP extends Task {
 					String favorite = ""; // optional
 					String mediaComments = ""; // optional
 					
-					if(deplMin[0].isAfter(photo.date)) {
-						deplMin[0] = photo.date; 
+					if(deplRange[0].isAfter(photo.date)) {
+						deplRange[0] = photo.date; 
 					}
-					if(deplMax[0].isBefore(photo.date)) {
-						deplMax[0] = photo.date; 
+					if(deplRange[1].isBefore(photo.date)) {
+						deplRange[1] = photo.date; 
 					}
 					
 					LocalDateTime[] range = rangeMap.get(photo.location);
@@ -431,12 +430,14 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("profile");
 			json.value("https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0.1/camtrap-dp-profile.json");
 			json.key("created");
-			json.value(LocalDateTime.now().toString());
+			json.value(localDateTimeToString(LocalDateTime.now()));
 			json.key("contributors");
 			json.array();
 			json.object();
 			json.key("title");
 			json.value("PhotoDB");
+			json.key("role");
+			json.value("publisher");
 			json.endObject();
 			json.endArray();
 			json.key("project");
@@ -469,9 +470,9 @@ public class Task_photo_export_Camtrap_DP extends Task {
 			json.key("temporal");
 			json.object();
 			json.key("start");
-			json.value(localDateTimeToString(deplMin[0]));
+			json.value(localDateTimeToString(deplRange[0]));
 			json.key("end");
-			json.value(localDateTimeToString(deplMax[0]));
+			json.value(localDateTimeToString(deplRange[1]));
 			json.endObject();
 			json.key("taxonomic");
 			json.array();

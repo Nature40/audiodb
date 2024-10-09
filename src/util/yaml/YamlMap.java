@@ -17,13 +17,9 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
-
-import org.tinylog.Logger;
-
 import util.collections.ReadonlyList;
 
-public class YamlMap {
-	
+public class YamlMap {	
 	
 	public static final YamlMap EMPTY_MAP = new YamlMap(new HashMap<>());
 
