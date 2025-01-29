@@ -102,11 +102,11 @@
         </template>
         <template v-slot:option="scope">
           <q-item v-bind="scope.itemProps" v-on="scope.itemEvents" :class="{'text-grey': !scope.opt.loc}">
-            {{scope.opt.date}}
+            {{'1970-01-01' === scope.opt.date ? 'no_date' : scope.opt.date}}
           </q-item>
         </template>
         <template v-slot:selected-item="scope">
-          {{scope.opt.date}}
+          {{'1970-01-01' === scope.opt.date ? 'no_date' : scope.opt.date}}
         </template>
       </q-select>
       <div v-if="!selectedDate">

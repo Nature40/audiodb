@@ -73,7 +73,7 @@ public class DatesHandler {
 		photodb2.foreachDate(project, null, date -> {
 			dates.add(date.toLocalDate());			
 		});
-		for(LocalDate date:dates) {
+		for(LocalDate date:dates) {			
 			json.value(date);
 		}
 		json.endArray();

@@ -105,8 +105,9 @@
         title="Type custom classification. Use only if classifications from the list of classifications are not suitable."
       />
       <q-btn icon="where_to_vote" title="Store selected classification." round @click="onSubmitClassification(undefined)" text-color="green" />
-      <q-btn v-show="userBox === undefined" icon="close_fullscreen" title="Store as misaligned box - too large or too small box." round @click="onSubmitClassification('Misaligned box')" text-color="red" />
+      <q-btn v-show="userBox === undefined && selectedDetection !== undefined" icon="close_fullscreen" title="Store as misaligned box - too large or too small box." round @click="onSubmitClassification('Misaligned box')" text-color="red" />
       <q-btn v-show="userBox === undefined" icon="minimize" title="Store as empty box - no animal shown in box." round @click="onSubmitClassification('Empty box')" text-color="red" />
+      <q-btn v-show="userBox === undefined && selectedDetection !== undefined" icon="delete_forever" title="Store as removed box - incorrectly set box." round @click="onSubmitClassification('Removed box')" text-color="red" />
       <span style="color: green;" v-show="userBox !== undefined">
         (new box and classification) <q-btn @click="userBox = undefined;" style="color: red; height: 40px;" title="Discard new box and classification.">x</q-btn>
       </span>
@@ -256,7 +257,7 @@ export default {
       return this.photoMeta.data.location;
     },
     dateText() {
-      if(this.photoMeta === undefined || this.photoMeta.date === undefined) {
+      if(this.photoMeta === undefined || this.photoMeta.date === undefined || this.photoMeta.date.getUTCFullYear() === 1970) {
         return "0000-00-00 00:00";
       }
       var date = this.photoMeta.date;
@@ -288,7 +289,7 @@ export default {
           } else {
             let classification = classifications[classifications.length - 1].classification;
             console.log(classification);
-            return classification !== 'incorrect box' && classification !== 'Empty box' && classification !== 'Misaligned box';
+            return classification !== 'incorrect box' && classification !== 'Empty box' && classification !== 'Misaligned box' && classification !== 'Removed box';
           }
         });
       } else if(this.show_box_mode === 'all') {
@@ -492,7 +493,7 @@ export default {
           }
           this.userBox = undefined;
           if(this.hasNextDetection) {
-            if(this.show_box_mode === 'no_incorrect' && (action.classification === 'Misaligned box' || action.classification === 'Empty box')) {
+            if(this.show_box_mode === 'no_incorrect' && (action.classification === 'Misaligned box' || action.classification === 'Empty box' || action.classification === 'Removed box')) {
               // nothing
             } else {
               this.moveNextDetection();

@@ -16,6 +16,7 @@ import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 
+import photo.PhotoDB2;
 import util.collections.vec.Vec;
 import util.yaml.YamlUtil;
 
@@ -39,13 +40,15 @@ public class MetaCreator {
 			} catch(Exception e) {
 				Logger.warn(e);
 			}
-			m.put("location", missingLocation);
-			
+			if(missingLocation != null && !missingLocation.isBlank() && !PhotoDB2.NO_LOCATION.equals(missingLocation)) {
+				m.put("location", missingLocation);
+			}
+
 			LocalDateTime datetime = getDateByFilename(filename);
-			if(datetime == null) {
+			if(datetime == null || PhotoDB2.NO_DATE.equals(datetime)) {
 				datetime = getDateByExif(file);
 			}
-			if(datetime != null) {
+			if(datetime != null && !PhotoDB2.NO_DATE.equals(datetime)) {
 				m.put("date", datetime.format(ISO_FORMATTER));
 			}
 
@@ -63,7 +66,7 @@ public class MetaCreator {
 			return false;
 		}
 	}
-	
+
 	public static LocalDateTime getDateByFilename(String filename) {
 		try {
 			Matcher matcher = FILE_TIME_PATTERN.matcher(filename);
@@ -79,14 +82,22 @@ public class MetaCreator {
 			return null;
 		}		
 	}
-	
+
 	public static LocalDateTime getDateByExif(File file) {	
 		try {
 			Metadata metadata = ImageMetadataReader.readMetadata(file);
 			ExifSubIFDDirectory directory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-			Date date = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
-			LocalDateTime datetime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-			return datetime;
+			if(directory != null) {
+				Date date = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
+				if(date != null) {
+					LocalDateTime datetime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+					return datetime;
+				} else {
+					return null;
+				}			
+			} else {
+				return null;
+			}
 		} catch(Exception e) {
 			Logger.warn(e);
 			return null;

@@ -201,6 +201,9 @@ public class PhotoDB2 {
 	public void refreshPhotoDBentry(Photo2 photo, int[] stats) {
 		refreshPhotoDBentry(photo.projectConfig, photo.metaPath.getParent(), photo.metaPath, stats);
 	}
+	
+	public static final String NO_LOCATION = "no_location";
+	public static final LocalDateTime NO_DATE = LocalDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT);
 
 	public void refreshPhotoDBentry(PhotoProjectConfig projectConfig, Path root, Path metaPath, int[] stats) {
 		String meta_rel_path = projectConfig.root_path.relativize(metaPath).toString();
@@ -215,11 +218,14 @@ public class PhotoDB2 {
 					String image_file = yamlMap.getString("file");
 					String location = yamlMap.optString("location");
 					if(location == null) {
-						location = "missing";
+						location = NO_LOCATION;
 					}
-					LocalDateTime date = null;
+					LocalDateTime date = NO_DATE;
 					try {
-						date = yamlMap.optLocalDateTime("date"); // nullable
+						LocalDateTime optDate = yamlMap.optLocalDateTime("date"); // nullable
+						if(optDate != null) {
+							date = optDate;
+						}
 					} catch (Exception e) {
 						Logger.warn(e.getMessage());
 					}

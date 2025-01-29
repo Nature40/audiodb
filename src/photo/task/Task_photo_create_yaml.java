@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 
 import org.tinylog.Logger;
 
+import photo.PhotoDB2;
 import photo.PhotoProjectConfig;
 import task.Cancelable;
 import task.Description;
@@ -20,7 +21,7 @@ import task.Tag;
 import task.Task;
 
 @Tag("photo")
-@Description("Traverse root_data_path and for all jpg files without YAML file in root_path create a new YAML file.")
+@Description("Traverse folder and subfolders of root_data_path and, for all JPG image files without the YAML metadata file in folder of root_path, create a new YAML file. As preliminary location name, the path from root_data_path up to image file is set. If image file is directly at root_data_path, no location is set. The date is parsed from image file name (currently only format: '*_yyyyMMdd_HHmmss.jpg'). If not possible, date is parsed from image internal meta data. If not possible, no date is set.")
 @Cancelable
 @Role("admin")
 public class Task_photo_create_yaml extends Task {
@@ -52,6 +53,9 @@ public class Task_photo_create_yaml extends Task {
 	@Override
 	public void run() {
 		traverseFolder(root_data_path, root_data_path);
+		setMessage("refresh PhotoDB");
+		ctx.broker.photodb2().refresh();
+		setMessage("done");
 	}
 
 	private long traverseFolder(Path folder, Path rootPath) {
@@ -117,7 +121,8 @@ public class Task_photo_create_yaml extends Task {
 					File yamlFile = yamlPath.toFile();
 					if(!yamlFile.exists()) {
 						Path relativePath = rootPath.relativize(path);
-						String missingLocation = relativePath.getParent().toString();
+						Path parentPath = relativePath.getParent();
+						String missingLocation = parentPath != null ? parentPath.toString() : PhotoDB2.NO_LOCATION;
 						yamlFile.getParentFile().mkdirs();
 						return MetaCreator.createYaml(file, yamlPath, missingLocation);
 					} else {
