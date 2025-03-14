@@ -29,6 +29,7 @@ public class Task_photo_create_yaml extends Task {
 	private Path root_path;
 	private Path root_data_path;
 	private boolean root_path_same_root_data_path;
+	private PhotoProjectConfig photoProjectConfig;
 
 	private Path getYamlPath(Path path) {
 		if(!root_path_same_root_data_path) {
@@ -45,6 +46,7 @@ public class Task_photo_create_yaml extends Task {
 			throw new RuntimeException("missing photo project");
 		}
 		PhotoProjectConfig photoProjectConfig = values[0];
+		this.photoProjectConfig = photoProjectConfig;
 		root_path = photoProjectConfig.root_path;
 		root_data_path = photoProjectConfig.root_data_path;
 		root_path_same_root_data_path = root_path == root_data_path;
@@ -124,7 +126,7 @@ public class Task_photo_create_yaml extends Task {
 						Path parentPath = relativePath.getParent();
 						String missingLocation = parentPath != null ? parentPath.toString() : PhotoDB2.NO_LOCATION;
 						yamlFile.getParentFile().mkdirs();
-						return MetaCreator.createYaml(file, yamlPath, missingLocation);
+						return MetaCreator.createYaml(file, yamlPath, missingLocation, parentPath, photoProjectConfig);
 					} else {
 						//Logger.info("already exists " + path);
 					}	

@@ -50,3 +50,4 @@ photo:
     root_data_path: 'photo_data'
     classification_definition_csv: photo_classification_definitions.csv
     review_list_path: 'photo_review_lists'
+    original_path_keys: ['location', 'category']

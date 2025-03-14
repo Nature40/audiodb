@@ -5,10 +5,13 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 
 import org.tinylog.Logger;
 
@@ -17,6 +20,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 
 import photo.PhotoDB2;
+import photo.PhotoProjectConfig;
 import util.collections.vec.Vec;
 import util.yaml.YamlUtil;
 
@@ -26,14 +30,46 @@ public class MetaCreator {
 	private static final DateTimeFormatter FILE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
 	private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+	
+	private static final String[] RESERVED_KEYS = new String[] {"", " ", "*", "_", "PhotoSens", "original_path", "file", "file_size", "log"};
+	
+	private static final HashSet<String> RESEVED_KEY_SET = new HashSet<String>();
+	
+	static {
+		RESEVED_KEY_SET.addAll(Arrays.asList(RESERVED_KEYS));
+	}
 
-	public static boolean createYaml(File file, Path yamlPath, String missingLocation) {
+	/**
+	 * 
+	 * @param relativeFolderPath  nullable
+	 * @return not null
+	 */
+	private static String[] pathToArray(Path relativeFolderPath) {
+		if(relativeFolderPath == null) {
+			return new String[] {};
+		}
+		return StreamSupport.stream(relativeFolderPath.spliterator(), false).map(Path::toString).toArray(String[]::new);		
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @param yamlPath
+	 * @param missingLocation
+	 * @param relativeFolderPath nullable
+	 * @param photoProjectConfig 
+	 * @param photoConfig 
+	 * @return
+	 */
+	public static boolean createYaml(File file, Path yamlPath, String missingLocation, Path relativeFolderPath, PhotoProjectConfig photoProjectConfig) {
 		try {
 			String filename = file.getName();
 			//Logger.info(filename);			
 			LinkedHashMap<String, Object> m = new LinkedHashMap<String, Object>();
 			//Riff riff = new Riff(file);
 			m.put("PhotoSens", "v1.0");
+			String[] originalPath = pathToArray(relativeFolderPath);
+			m.put("original_path", originalPath);
 			m.put("file", filename);
 			try {
 				m.put("file_size", file.length());
@@ -59,6 +95,20 @@ public class MetaCreator {
 			logO.put("date", LocalDateTime.now().format(ISO_FORMATTER));
 			logList.add(logO);
 			m.put("log", logList);
+			
+			if(photoProjectConfig.original_path_keys != null && photoProjectConfig.original_path_keys.length > 0 && originalPath != null && originalPath.length > 0) {
+				int len = Math.min(photoProjectConfig.original_path_keys.length, originalPath.length);
+				for(int i=0; i<len; i++) {
+					String key = photoProjectConfig.original_path_keys[i];
+					String value = originalPath[i];
+					if(key != null && !key.isBlank() && key != "_" && value != null && !value.isBlank() && value != "_") {
+						if(!RESEVED_KEY_SET.contains(key)) {
+							m.put(key, value);
+						}
+					}
+				}
+			}
+			
 			YamlUtil.writeSafeYamlMap(yamlPath, m);
 			return true;
 		} catch (Exception e) {
